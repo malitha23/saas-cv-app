@@ -1,0 +1,179 @@
+{% extends "legal/layout.html" %}
+
+{% block title %}Terms of Service & Conditions - ResuMatch AI{% endblock %}
+{% block meta_description %}Terms of Service and Subscription Agreement for ResuMatch AI. Details on user rights, 100% resume ownership, SaaS subscription plans, and acceptable use.{% endblock %}
+
+{% block legal_content %}
+<div class="legal-card bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+  
+  <!-- Header -->
+  <div class="border-b border-slate-800 pb-6 space-y-2">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold uppercase tracking-wider">
+      <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+      Official Subscription Agreement • Effective Date: January 1, 2026
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">Terms of Service & Conditions</h1>
+    <p class="text-xs sm:text-sm text-slate-400">
+      Please read these terms carefully before accessing or using ResuMatch AI. By creating an account or accessing our tools, you agree to be bound by this agreement.
+    </p>
+  </div>
+
+  <!-- Key Highlights -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+        <i data-lucide="award" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">100% You Own Your Resume</h4>
+      <p class="text-[11px] text-slate-400">You retain full legal ownership, copyright, and commercial rights to all resumes, cover letters, and portfolios created.</p>
+    </div>
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+        <i data-lucide="repeat" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">Cancel Anytime in 1-Click</h4>
+      <p class="text-[11px] text-slate-400">No hidden fees, lock-ins, or complicated phone calls. Cancel your recurring subscription anytime from your profile.</p>
+    </div>
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+        <i data-lucide="globe" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">Fair Country Pricing (PPP)</h4>
+      <p class="text-[11px] text-slate-400">Transparent billing adapted to local economies (e.g. LKR Rs. 990/mo for Sri Lanka vs. USD $9/mo globally).</p>
+    </div>
+  </div>
+
+  <!-- Detailed Sections -->
+  <div class="space-y-8 text-xs sm:text-sm text-slate-300 leading-relaxed">
+
+    <!-- 1. Agreement & Eligibility -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">1</span>
+        Agreement to Terms & Eligibility
+      </h2>
+      <p>
+        These Terms of Service constitute a legally binding agreement between you ("User", "you") and ResuMatch AI ("Company", "we", "us"). You must be at least 16 years of age (or the minimum age of majority in your jurisdiction) to use our platform. By registering or using the services, you affirm that you possess the legal capacity to enter into these terms.
+      </p>
+    </section>
+
+    <!-- 2. SaaS Subscriptions & Quota Rules -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">2</span>
+        SaaS Subscription Plans & Quotas
+      </h2>
+      <p>
+        ResuMatch AI offers freemium access alongside paid subscription plans and job-hunt passes. All quotas and access permissions are governed by the following rules:
+      </p>
+      <div class="space-y-2 text-xs">
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-400 font-bold uppercase text-[11px]">Free Starter Tier ($0 / Forever Free):</strong>
+          <p class="text-slate-400">
+            Includes up to <strong>2 AI Tailoring Runs per day</strong>; <strong>2 Lifetime Classic ATS PDF Downloads</strong>; <strong>1 Lifetime Visual Photo CV Download</strong>; and <strong>3 AI Cover Letters</strong> (the 1st download is completely watermark-free; subsequent downloads include a watermark badge). Resumes may be auto-saved to MySQL Cloud storage; however, restoring saved cloud resumes into the active workspace requires an active Pro plan.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-300 font-bold uppercase text-[11px]">Pro Career Plan ($9 / month or Rs. 990 / month in LK):</strong>
+          <p class="text-slate-400">
+            Unlocks unlimited AI resume tailoring runs; unlimited Classic ATS and Visual Photo PDF downloads without watermarks; unlimited cloud resume save and restore; and live web portfolio hosting on custom subdomains.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-amber-300 font-bold uppercase text-[11px]">Executive Elite Plan ($19 / month or Rs. 2,490 / month in LK):</strong>
+          <p class="text-slate-400">
+            Includes all Pro Career features plus custom domain mapping with automated SSL provisioning, high-priority Gemini AI reasoning latency, and dedicated candidate support.
+          </p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-emerald-300 font-bold uppercase text-[11px]">7-Day Sprint Pass ($4.99 or Rs. 490 in LK):</strong>
+          <p class="text-slate-400">
+            A one-time, non-renewing access pass granting full Pro Career capabilities for 7 consecutive calendar days.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Billing, Renewals & Currency -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">3</span>
+        Billing, Automatic Renewals & Purchasing Power Parity
+      </h2>
+      <p>
+        - <strong>Automatic Renewal:</strong> Monthly subscriptions renew automatically at the end of each billing cycle unless cancelled prior to the renewal date.
+        <br>
+        - <strong>Purchasing Power Parity (PPP):</strong> ResuMatch AI automatically determines local pricing based on IP geolocation and user selection. Users paying in Sri Lankan Rupees (LKR) will be billed in LKR; all other international users will be billed in USD ($) unless specified otherwise.
+        <br>
+        - <strong>Price Adjustments:</strong> Any pricing updates will be communicated at least 30 days in advance. Continued use after the effective date constitutes acceptance.
+      </p>
+    </section>
+
+    <!-- 4. Intellectual Property & User Ownership -->
+    <section class="space-y-3 p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30">
+      <h2 class="text-base sm:text-lg font-bold text-indigo-200 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center text-xs">4</span>
+        100% User Ownership of Generated Resumes
+      </h2>
+      <p class="text-slate-300">
+        You retain all copyright, title, and intellectual property rights in and to the content you upload and the final resume PDFs, cover letters, and portfolios generated through ResuMatch AI.
+      </p>
+      <p class="text-xs text-slate-400">
+        ResuMatch AI claims zero intellectual property or licensing rights over your resume text. The templates, AI algorithms, software code, and visual designs remain the proprietary property of ResuMatch AI.
+      </p>
+    </section>
+
+    <!-- 5. Acceptable Use Policy -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">5</span>
+        Acceptable Use Policy
+      </h2>
+      <p>You agree not to:</p>
+      <ul class="list-disc pl-5 space-y-1.5 text-slate-400 text-xs">
+        <li>Use the platform to generate fraudulent, deceptive, or maliciously fabricated academic or professional credentials.</li>
+        <li>Attempt to circumvent, bypass, or tamper with software quota limits, watermark layers, or subscription barriers.</li>
+        <li>Deploy automated bots, spiders, or scrapers to extract platform data or exhaust AI API tokens.</li>
+        <li>Engage in unauthorized penetration testing, reverse engineering, or denial-of-service (DDoS) attacks against our infrastructure.</li>
+        <li>Host defamatory, obscene, or infringing material on custom web portfolio subdomains.</li>
+      </ul>
+      <p class="text-xs text-slate-400">Violation of this policy will result in immediate account termination without refund.</p>
+    </section>
+
+    <!-- 6. AI Output Disclaimer & Limitation of Liability -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">6</span>
+        AI Output Disclaimer & Limitation of Liability
+      </h2>
+      <p>
+        ResuMatch AI utilizes advanced probabilistic generative AI models to provide resume recommendations and ATS keyword alignments. Because generative models can occasionally generate imperfect suggestions:
+      </p>
+      <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 space-y-1.5">
+        <p><strong class="text-amber-400">User Verification Required:</strong> You are solely responsible for reviewing, verifying, and ensuring the factual accuracy of all resume statements, experience dates, and bullet points before submitting them to potential employers.</p>
+        <p><strong class="text-amber-400">No Guarantee of Employment:</strong> While our platform is engineered to maximize ATS parsing scores and interview callbacks, ResuMatch AI does not warrant or guarantee that any user will receive job offers, interviews, or employment opportunities.</p>
+        <p><strong class="text-slate-300">Liability Cap:</strong> To the maximum extent permitted by applicable law, ResuMatch AI's total aggregate liability arising out of or related to your use of the service shall not exceed the total fees paid by you to ResuMatch in the three (3) months preceding the claim.</p>
+      </div>
+    </section>
+
+    <!-- 7. Account Termination & Governing Law -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">7</span>
+        Termination & Governing Law
+      </h2>
+      <p>
+        You may terminate your account at any time by contacting support or via your account settings. ResuMatch AI may suspend or terminate your account if you breach any term of this agreement.
+      </p>
+      <p>
+        These terms shall be governed by and construed in accordance with standard international commercial law and consumer protection standards. For inquiries regarding legal notices, please write to: <code class="text-indigo-300 bg-slate-800 px-2 py-0.5 rounded">legal@resumatch.ai</code>.
+      </p>
+    </section>
+
+  </div>
+
+</div>
+{% endblock %}

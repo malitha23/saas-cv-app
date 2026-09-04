@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise Admin Portal — ResuMatch.ai</title>
+  
+  <!-- Tailwind CSS CDN & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: 'Inter', sans-serif; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col" x-data="adminPortalApp()" x-init="init()">
+
+  <!-- 1. STRICT ACCESS DENIED SCREEN (Shown if user is not verified Admin) -->
+  <div x-show="accessDenied" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950">
+    <div class="bg-slate-900 border border-red-500/30 rounded-3xl max-w-md w-full p-8 text-center space-y-5 shadow-2xl">
+      <div class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto shadow-lg shadow-red-500/10">
+        <i data-lucide="shield-alert" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-1">
+        <h2 class="text-xl font-black text-slate-100">403 Forbidden Access</h2>
+        <p class="text-xs text-slate-400 leading-relaxed">This portal is strictly restricted to authenticated System Administrators. Your identity could not be verified.</p>
+      </div>
+      <div class="pt-2">
+        <a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow transition">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Return to Application</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. AUTHENTICATED ADMIN CONSOLE -->
+  <div x-show="!accessDenied && isReady" x-cloak class="min-h-screen flex flex-col">
+    
+    <!-- Top Admin Navigation Bar -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30 px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 font-bold shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-base tracking-tight text-slate-100">ResuMatch<span class="text-purple-400"> Admin</span></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              High Security Portal
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">SaaS Subscription Engine • Real-time Plan Customizer • User Controls</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="/" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Back to App</span>
+        </a>
+
+        <div class="flex items-center space-x-2 bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-1 text-xs">
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-[10px] text-white"
+            x-text="(adminUser?.full_name || 'A').charAt(0).toUpperCase()"></div>
+          <span class="font-semibold text-slate-200 max-w-[120px] truncate" x-text="adminUser?.email"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Admin Dashboard Body with Navigation Tabs -->
+    <div class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-6">
+      
+      <!-- Tab Selector Pills -->
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-4">
+        <button @click="activeTab = 'plans'"
+          :class="activeTab === 'plans' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="crown" class="w-4 h-4"></i>
+          <span>3-Tier Plans Customizer</span>
+        </button>
+
+        <button @click="activeTab = 'country_pricing'"
+          :class="activeTab === 'country_pricing' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="globe" class="w-4 h-4"></i>
+          <span>Country-Specific Pricing (PPP)</span>
+        </button>
+
+        <button @click="activeTab = 'overview'"
+          :class="activeTab === 'overview' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>Financials & Overview</span>
+        </button>
+
+        <button @click="activeTab = 'rules'"
+          :class="activeTab === 'rules' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+          <span>Quota & Engine Rules</span>
+        </button>
+
+        <button @click="activeTab = 'users'"
+          :class="activeTab === 'users' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>User Directory (<span x-text="usersList.length"></span>)</span>
+        </button>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 1: 3-TIER PLANS FULL CUSTOMIZER ENGINE -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'plans'" class="space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-purple-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span>Dynamic Monetization Engine</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-100">Customize All 3 Subscription Plans</h2>
+            <p class="text-xs text-slate-400">Edit titles, badges, prices, periods, marketing descriptions and bullet points live in the user-facing Pricing Modal.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span x-show="plansSaveMsg" class="text-xs font-semibold text-emerald-400" x-text="plansSaveMsg"></span>
+            <button @click="savePlansConfig()" :disabled="isSavingPlans"
+              class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/30 flex items-center gap-2 transition disabled:opacity-50">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span x-text="isSavingPlans ? 'Updating Database...' : 'Save All Plan Configurations'"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Plans Editing Cards Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <template x-for="(p, pIdx) in editablePlans" :key="p.plan_key">
+            <div class="bg-slate-900/90 border rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl flex flex-col justify-between transition"
+              :class="p.is_popular ? 'border-indigo-500 shadow-indigo-500/10' : 'border-slate-800'">
+              
+              <div class="space-y-4">
+                <!-- Card Header with Plan Key & Popular Toggle -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider"
+                    :class="{
+                      'bg-slate-800 text-slate-300': p.plan_key === 'free',
+                      'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': p.plan_key === 'pro',
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/30': p.plan_key === 'elite'
+                    }"
+                    x-text="'PLAN: ' + p.plan_key.toUpperCase()"></span>
+
+                  <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-400 font-medium">
+                    <input type="checkbox" x-model="p.is_popular" class="accent-indigo-500 rounded">
+                    <span>Best Seller Tag</span>
+                  </label>
+                </div>
+
+                <!-- Plan Title & Badge Fields -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-300">Plan Title</label>
+                    <input type="text" x-model="p.title"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-bold focus:border-purple-500 outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-300">Badge Label</label>
+                    <input type="text" x-model="p.badge" placeholder="e.g. Freemium"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:border-purple-500 outline-none">
+                  </div>
+                </div>
+
+                <!-- Price & Period Display Fields -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-300">Price Display</label>
+                    <input type="text" x-model="p.price_display" placeholder="$0 or $9"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-bold font-mono focus:border-purple-500 outline-none">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-300">Billing Period</label>
+                    <input type="text" x-model="p.period_display" placeholder="/ month"
+                      class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-mono focus:border-purple-500 outline-none">
+                  </div>
+                </div>
+
+                <!-- Sub-billing line (e.g. or $19 for 3-Month Pass) -->
+                <div class="space-y-1 text-xs">
+                  <label class="text-[11px] font-semibold text-slate-300">Sub-Billing Promo Line (Optional)</label>
+                  <input type="text" x-model="p.sub_billing_text" placeholder="e.g. or $19 for 3-Month Job Hunt Pass"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:border-purple-500 outline-none">
+                </div>
+
+                <!-- Description Textarea -->
+                <div class="space-y-1 text-xs">
+                  <label class="text-[11px] font-semibold text-slate-300">Marketing Description</label>
+                  <textarea x-model="p.description" rows="2"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-300 focus:border-purple-500 outline-none"></textarea>
+                </div>
+
+                <!-- Button CTA Text -->
+                <div class="space-y-1 text-xs">
+                  <label class="text-[11px] font-semibold text-slate-300">Button CTA Text</label>
+                  <input type="text" x-model="p.button_text"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:border-purple-500 outline-none">
+                </div>
+
+                <!-- Features Bullets Editor -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-200">Feature Bullet Points</label>
+                    <button @click="addPlanFeature(pIdx)"
+                      class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-purple-300 text-[11px] font-semibold rounded-lg flex items-center gap-1">
+                      <i data-lucide="plus" class="w-3 h-3"></i> Add Bullet
+                    </button>
+                  </div>
+
+                  <div class="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                    <template x-for="(feat, fIdx) in p.features" :key="fIdx">
+                      <div class="flex items-center gap-1.5">
+                        <input type="text" x-model="p.features[fIdx]"
+                          class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                        <button @click="removePlanFeature(pIdx, fIdx)"
+                          class="p-1 hover:bg-red-500/20 text-slate-500 hover:text-red-400 rounded transition" title="Delete Bullet">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: COUNTRY-SPECIFIC PRICING (PURCHASING POWER PARITY) -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'country_pricing'" class="space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-purple-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 text-xs font-semibold">
+              <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+              <span>Purchasing Power Parity (PPP) Engine</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-100">Country-Specific Dynamic Pricing Manager</h2>
+            <p class="text-xs text-slate-400">Configure customized local currency pricing for specific countries (e.g. Sri Lanka LKR, India INR) vs Global USD.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span x-show="countrySaveMsg" class="text-xs font-semibold text-emerald-400" x-text="countrySaveMsg"></span>
+            <button @click="openAddCountryModal()"
+              class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/30 flex items-center gap-2 transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Add New Country Rule</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Country Rules List Cards -->
+        <div class="space-y-4">
+          <template x-for="(cData, cCode) in countryPricingMap" :key="cCode">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-3">
+                  <span class="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300 flex items-center justify-center font-black font-mono text-xs" x-text="cCode"></span>
+                  <div>
+                    <h3 class="font-extrabold text-slate-100 text-sm flex items-center gap-2">
+                      <span x-text="cData.country_name"></span>
+                      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300" x-text="cData.currency_code + ' (' + cData.currency_symbol + ')'"></span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400">7-Day Sprint Pass: <b class="text-indigo-300 font-mono" x-text="cData.sprint_price"></b></p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button @click="saveCountryPricing(cCode)" :disabled="isSavingCountry"
+                    class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow flex items-center gap-1 transition">
+                    <i data-lucide="save" class="w-3.5 h-3.5"></i> Save Country
+                  </button>
+                  <button x-show="cCode !== 'DEFAULT'" @click="deleteCountryPricing(cCode)"
+                    class="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition" title="Delete Country Rule">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Plans Pricing for this Country -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <template x-for="(p, pIdx) in cData.plans" :key="p.plan_key">
+                  <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold uppercase tracking-wider text-[11px]"
+                        :class="p.plan_key === 'pro' ? 'text-indigo-400' : (p.plan_key === 'elite' ? 'text-amber-400' : 'text-slate-300')"
+                        x-text="p.title"></span>
+                      <span class="text-[10px] text-slate-500 uppercase font-mono" x-text="p.plan_key"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-[10px] text-slate-400 font-semibold">Price Display</label>
+                        <input type="text" x-model="p.price_display"
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 font-bold font-mono outline-none">
+                      </div>
+                      <div>
+                        <label class="text-[10px] text-slate-400 font-semibold">Period</label>
+                        <input type="text" x-model="p.period_display"
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 font-mono outline-none">
+                      </div>
+                    </div>
+
+                    <div>
+                      <label class="text-[10px] text-slate-400 font-semibold">Sub-Billing Line</label>
+                      <input type="text" x-model="p.sub_billing_text"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300 outline-none">
+                    </div>
+
+                    <div>
+                      <label class="text-[10px] text-slate-400 font-semibold">Button CTA</label>
+                      <input type="text" x-model="p.button_text"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-200 outline-none">
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 2: OVERVIEW & REVENUE ANALYTICS -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'overview'" class="space-y-6">
+        <template x-if="overview">
+          <div class="space-y-6">
+            <!-- KPI Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1.5 shadow">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estimated MRR</span>
+                <p class="text-3xl font-black text-emerald-400 font-mono" x-text="'$' + overview.estimated_mrr_usd.toFixed(2)"></p>
+                <span class="text-[11px] text-emerald-500/80">Active monthly subscriptions</span>
+              </div>
+
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1.5 shadow">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Registered Accounts</span>
+                <p class="text-3xl font-black text-slate-100 font-mono" x-text="overview.total_users"></p>
+                <span class="text-[11px] text-slate-400">Total users in MySQL</span>
+              </div>
+
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1.5 shadow">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pro & Elite Members</span>
+                <p class="text-3xl font-black text-amber-400 font-mono" x-text="overview.pro_users + overview.elite_users"></p>
+                <span class="text-[11px] text-amber-500/80" x-text="overview.pro_users + ' Pro • ' + overview.elite_users + ' Elite'"></span>
+              </div>
+
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-1.5 shadow">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">MySQL Cloud Resumes</span>
+                <p class="text-3xl font-black text-indigo-400 font-mono" x-text="overview.total_saved_resumes"></p>
+                <span class="text-[11px] text-indigo-400/80">Saved candidate documents</span>
+              </div>
+            </div>
+
+            <!-- Server Health & Plan Distribution Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                  <i data-lucide="pie-chart" class="w-4 h-4 text-purple-400"></i>
+                  <span>Plan Tier Distribution</span>
+                </h3>
+                <div class="space-y-2.5 text-xs text-slate-300">
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Free Starter Tier</span>
+                    <span class="font-bold font-mono text-slate-200" x-text="overview.free_users + ' users'"></span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Pro Career Plan</span>
+                    <span class="font-bold font-mono text-indigo-300" x-text="overview.pro_users + ' users'"></span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Executive Elite Plan</span>
+                    <span class="font-bold font-mono text-amber-300" x-text="overview.elite_users + ' users'"></span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> System Administrators</span>
+                    <span class="font-bold font-mono text-purple-300" x-text="overview.admin_users + ' accounts'"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                  <span>Security & System Architecture</span>
+                </h3>
+                <div class="space-y-2.5 text-xs text-slate-300">
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span>OWASP Security Headers</span>
+                    <span class="text-emerald-400 font-bold">Enforced (HSTS, CSP, nosniff)</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span>Cryptographic Authentication</span>
+                    <span class="text-emerald-400 font-bold">BCrypt + HMAC SHA-256 JWT</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span>Database Engine</span>
+                    <span class="text-emerald-400 font-bold">MariaDB / MySQL (Port 3306)</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <span>AI Engine</span>
+                    <span class="text-emerald-400 font-bold">Gemini 1.5 Flash + Deterministic Parser</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 3: QUOTA & ENGINE RULES -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'rules'" class="space-y-6">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+          <div>
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+              <span>Runtime Engine Limits & Permissions</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Configure limits without restarting the FastAPI server</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-semibold text-slate-200">Daily Free AI Generations</label>
+                <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 font-mono font-bold rounded" x-text="rulesState.free_daily_ai_limit"></span>
+              </div>
+              <input type="range" min="1" max="10" step="1" x-model="rulesState.free_daily_ai_limit" class="w-full accent-indigo-500 cursor-pointer">
+              <p class="text-[11px] text-slate-400">Maximum Gemini AI tailoring runs allowed per day for free users.</p>
+            </div>
+
+            <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-semibold text-slate-200">Daily Free ATS PDF Downloads</label>
+                <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 font-mono font-bold rounded" x-text="rulesState.free_daily_pdf_limit"></span>
+              </div>
+              <input type="range" min="0" max="5" step="1" x-model="rulesState.free_daily_pdf_limit" class="w-full accent-indigo-500 cursor-pointer">
+              <p class="text-[11px] text-slate-400">Classic ATS PDF exports per day for free tier (0 = downloads require Pro).</p>
+            </div>
+
+            <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
+              <div>
+                <p class="font-semibold text-slate-200">Allow Free Visual CV Download</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Allow downloading Photo & Modern CVs in Free tier (Default: Disabled).</p>
+              </div>
+              <input type="checkbox" x-model="rulesState.free_allow_visual_download" class="w-5 h-5 rounded accent-purple-500 cursor-pointer">
+            </div>
+
+            <div class="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
+              <div>
+                <p class="font-semibold text-slate-200">Allow Free Cloud Restore</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Allow free users to reload past revisions into editor (Default: Disabled).</p>
+              </div>
+              <input type="checkbox" x-model="rulesState.free_allow_cloud_restore" class="w-5 h-5 rounded accent-purple-500 cursor-pointer">
+            </div>
+
+            <!-- Google OAuth 2.0 Client ID Configuration -->
+            <div class="md:col-span-2 p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-semibold text-slate-200 flex items-center gap-2">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+                  </svg>
+                  <span>Google OAuth 2.0 Web Client ID</span>
+                </label>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase"
+                  :class="rulesState.google_client_id ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'">
+                  <span x-text="rulesState.google_client_id ? 'Active' : 'Not Configured'"></span>
+                </span>
+              </div>
+              <input type="text" x-model="rulesState.google_client_id" placeholder="e.g. 123456789-abcdefghijk.apps.googleusercontent.com"
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none font-mono">
+              <p class="text-[11px] text-slate-400">
+                Obtain your Web Client ID from <span class="text-indigo-300 font-semibold">Google Cloud Console &gt; APIs &amp; Services &gt; Credentials</span>. Required for Google Sign-In &amp; Registration on the login modal.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <span class="text-xs font-semibold text-emerald-400" x-text="rulesSaveMsg"></span>
+            <button @click="saveRulesSettings()" :disabled="isSavingRules"
+              class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/25 flex items-center gap-2 transition disabled:opacity-50">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span x-text="isSavingRules ? 'Saving...' : 'Save Engine Rules'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 4: USER DIRECTORY & OVERRIDES -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'users'" class="space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" x-model="userSearchQuery" placeholder="Filter users by email or candidate name..."
+              class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-purple-500 outline-none">
+          </div>
+          <button @click="loadUsers()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-800 rounded-2xl shadow">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">User</th>
+                <th class="py-3 px-4">Plan Tier</th>
+                <th class="py-3 px-4">Validity</th>
+                <th class="py-3 px-4">Today's Usage</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 bg-slate-950">
+              <template x-for="u in filteredUsers" :key="u.id">
+                <tr class="hover:bg-slate-900/60 transition">
+                  <td class="py-3.5 px-4">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0"
+                        x-text="(u.full_name || 'U').charAt(0).toUpperCase()"></div>
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="font-bold text-slate-200" x-text="u.full_name"></span>
+                          <span x-show="u.is_admin" class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30">ADMIN</span>
+                        </div>
+                        <span class="text-[11px] text-slate-400 font-mono" x-text="u.email"></span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td class="py-3.5 px-4">
+                    <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase"
+                      :class="{
+                        'bg-slate-800 text-slate-400 border border-slate-700': u.plan_tier === 'free',
+                        'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': u.plan_tier === 'pro',
+                        'bg-amber-500/20 text-amber-300 border border-amber-500/30': u.plan_tier === 'elite'
+                      }"
+                      x-text="u.plan_tier">
+                    </span>
+                  </td>
+
+                  <td class="py-3.5 px-4 text-[11px]">
+                    <template x-if="u.subscription_expires_at">
+                      <div>
+                        <span class="text-slate-200 font-medium" x-text="u.subscription_expires_at"></span>
+                        <p class="text-[10px] text-emerald-400 font-mono" x-text="u.subscription_days_remaining + ' days left'"></p>
+                      </div>
+                    </template>
+                    <template x-if="!u.subscription_expires_at">
+                      <span class="text-slate-500">Lifetime Free</span>
+                    </template>
+                  </td>
+
+                  <td class="py-3.5 px-4 text-[11px] font-mono text-slate-400">
+                    <span x-text="'AI: ' + u.daily_ai_generations_count"></span> •
+                    <span x-text="'PDF: ' + u.daily_pdf_downloads_count"></span>
+                  </td>
+
+                  <td class="py-3.5 px-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <select @change="changeUserPlan(u.id, $event.target.value)" :value="u.plan_tier"
+                        class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none">
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                        <option value="elite">Elite</option>
+                      </select>
+
+                      <button @click="extendUserPlan(u.id, 30)"
+                        class="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold transition"
+                        title="Add 30 days">
+                        +30 Days
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Admin Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600 mt-auto">
+      <p>ResuMatch.ai Enterprise Admin Console • Strict RBAC Security Guard Active</p>
+    </footer>
+
+  </div>
+
+  <!-- Admin App JavaScript -->
+  <script>
+    function adminPortalApp() {
+      return {
+        accessDenied: false,
+        isReady: false,
+        activeTab: 'plans',
+        adminUser: null,
+        overview: null,
+        usersList: [],
+        userSearchQuery: '',
+        editablePlans: [],
+        isSavingPlans: false,
+        plansSaveMsg: '',
+        countryPricingMap: {},
+        isSavingCountry: false,
+        countrySaveMsg: '',
+        rulesState: {
+          free_daily_ai_limit: 2,
+          free_daily_pdf_limit: 1,
+          free_allow_visual_download: false,
+          free_allow_cloud_restore: false,
+          google_client_id: ''
+        },
+        isSavingRules: false,
+        rulesSaveMsg: '',
+
+        get filteredUsers() {
+          if (!this.userSearchQuery) return this.usersList;
+          const q = this.userSearchQuery.toLowerCase();
+          return this.usersList.filter(u =>
+            (u.email && u.email.toLowerCase().includes(q)) ||
+            (u.full_name && u.full_name.toLowerCase().includes(q))
+          );
+        },
+
+        async init() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) {
+            this.accessDenied = true;
+            this.isReady = true;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Unauthorized');
+            const user = await res.json();
+            if (!user.is_admin) {
+              this.accessDenied = true;
+              this.isReady = true;
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+              return;
+            }
+
+            this.adminUser = user;
+            this.isReady = true;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+
+            await Promise.all([
+              this.loadPlansConfig(),
+              this.loadCountryPricing(),
+              this.loadOverview(),
+              this.loadRules(),
+              this.loadUsers()
+            ]);
+          } catch (e) {
+            this.accessDenied = true;
+            this.isReady = true;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async loadPlansConfig() {
+          try {
+            const res = await fetch('/api/plans');
+            if (res.ok) {
+              const data = await res.json();
+              this.editablePlans = data.plans || [];
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            console.error('Failed to load plans:', err);
+          }
+        },
+
+        addPlanFeature(planIdx) {
+          if (this.editablePlans[planIdx]) {
+            this.editablePlans[planIdx].features.push('New Plan Feature Highlight');
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        removePlanFeature(planIdx, featIdx) {
+          if (this.editablePlans[planIdx]) {
+            this.editablePlans[planIdx].features.splice(featIdx, 1);
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async savePlansConfig() {
+          this.isSavingPlans = true;
+          this.plansSaveMsg = '';
+          const token = localStorage.getItem('saas_token');
+
+          try {
+            const res = await fetch('/api/admin/plans/update', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ plans: this.editablePlans })
+            });
+
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Save failed');
+            }
+
+            this.plansSaveMsg = '✅ All 3 plans updated successfully in database!';
+            setTimeout(() => { this.plansSaveMsg = ''; }, 4000);
+          } catch (err) {
+            alert('Plan Save Error: ' + err.message);
+          } finally {
+            this.isSavingPlans = false;
+          }
+        },
+
+        async loadCountryPricing() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/country-pricing', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.countryPricingMap = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            console.error('Failed to load country pricing:', err);
+          }
+        },
+
+        async saveCountryPricing(countryCode) {
+          const cData = this.countryPricingMap[countryCode];
+          if (!cData) return;
+          this.isSavingCountry = true;
+          this.countrySaveMsg = '';
+          const token = localStorage.getItem('saas_token');
+
+          try {
+            const res = await fetch('/api/admin/country-pricing/update', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(cData)
+            });
+
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Save failed');
+            }
+
+            this.countrySaveMsg = `✅ Saved pricing for ${cData.country_name}!`;
+            setTimeout(() => { this.countrySaveMsg = ''; }, 4000);
+          } catch (err) {
+            alert('Country Save Error: ' + err.message);
+          } finally {
+            this.isSavingCountry = false;
+          }
+        },
+
+        async deleteCountryPricing(countryCode) {
+          if (!confirm(`Are you sure you want to remove the pricing rule for ${countryCode}?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/country-pricing/${countryCode}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              delete this.countryPricingMap[countryCode];
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            alert('Delete Error: ' + err.message);
+          }
+        },
+
+        openAddCountryModal() {
+          const code = prompt('Enter 2-letter Country Code (e.g. IN, UK, AU, SG):');
+          if (!code || code.trim().length < 2) return;
+          const cc = code.trim().toUpperCase();
+          const name = prompt('Enter Country Name (e.g. India, United Kingdom):') || cc;
+          const currency = prompt('Enter Currency Code (e.g. INR, GBP, EUR):') || 'USD';
+          const symbol = prompt('Enter Currency Symbol (e.g. ₹, £, €):') || '$';
+
+          // Copy default plans with empty price template
+          const basePlans = JSON.parse(JSON.stringify(this.countryPricingMap['DEFAULT'] ? this.countryPricingMap['DEFAULT'].plans : this.editablePlans));
+          this.countryPricingMap[cc] = {
+            country_code: cc,
+            country_name: name,
+            currency_code: currency,
+            currency_symbol: symbol,
+            sprint_price: `${symbol}3.99`,
+            plans: basePlans
+          };
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        async loadOverview() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/overview', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.overview = await res.json();
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        },
+
+        async loadRules() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/settings', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const settings = await res.json();
+              for (const s of settings) {
+                if (s.key === 'free_allow_visual_download' || s.key === 'free_allow_cloud_restore') {
+                  this.rulesState[s.key] = (s.value === 'true');
+                } else if (s.key in this.rulesState) {
+                  this.rulesState[s.key] = s.value;
+                }
+              }
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        },
+
+        async saveRulesSettings() {
+          this.isSavingRules = true;
+          this.rulesSaveMsg = '';
+          const token = localStorage.getItem('saas_token');
+          const payload = {
+            settings: {
+              free_daily_ai_limit: String(this.rulesState.free_daily_ai_limit),
+              free_daily_pdf_limit: String(this.rulesState.free_daily_pdf_limit),
+              free_allow_visual_download: String(this.rulesState.free_allow_visual_download),
+              free_allow_cloud_restore: String(this.rulesState.free_allow_cloud_restore),
+              google_client_id: String(this.rulesState.google_client_id || '')
+            }
+          };
+
+          try {
+            const res = await fetch('/api/admin/settings/update', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Failed to update rules');
+            this.rulesSaveMsg = '✅ Rules saved successfully!';
+            setTimeout(() => { this.rulesSaveMsg = ''; }, 3500);
+          } catch (e) {
+            alert('Error: ' + e.message);
+          } finally {
+            this.isSavingRules = false;
+          }
+        },
+
+        async loadUsers() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/users', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.usersList = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        },
+
+        async changeUserPlan(userId, plan) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/users/${userId}/plan`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ plan_tier: plan, duration_days: 30 })
+            });
+            if (res.ok) {
+              await this.loadUsers();
+              await this.loadOverview();
+            }
+          } catch (e) {
+            alert('Error changing user plan: ' + e.message);
+          }
+        },
+
+        async extendUserPlan(userId, days = 30) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const user = this.usersList.find(u => u.id === userId);
+            const targetPlan = (user && user.plan_tier !== 'free') ? user.plan_tier : 'pro';
+            const res = await fetch(`/api/admin/users/${userId}/plan`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ plan_tier: targetPlan, duration_days: days })
+            });
+            if (res.ok) {
+              await this.loadUsers();
+              await this.loadOverview();
+              alert(`✅ User #${userId} subscription extended by +${days} days!`);
+            }
+          } catch (e) {
+            alert('Error extending plan: ' + e.message);
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html>

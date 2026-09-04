@@ -1,0 +1,349 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ENTERPRISE SAAS ADMIN MANAGEMENT DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showAdminModal" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md">
+  
+  <div class="bg-slate-900 border border-purple-500/30 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl shadow-purple-950/40 space-y-5 max-h-[90vh] flex flex-col overflow-hidden">
+    
+    <!-- Admin Header -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4 shrink-0">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 font-bold shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="font-extrabold text-slate-100 text-base sm:text-lg">ResuMatch Admin Control Center</h2>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Super Admin
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Real-time SaaS metrics, quota limits, pricing configuration & user tier management</p>
+        </div>
+      </div>
+      <button @click="showAdminModal = false" class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Admin Navigation Tabs -->
+    <div class="flex items-center space-x-2 border-b border-slate-800/80 pb-2 shrink-0">
+      <button @click="adminActiveTab = 'overview'"
+        :class="adminActiveTab === 'overview' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+        <i data-lucide="activity" class="w-4 h-4"></i>
+        <span>Overview & Revenue</span>
+      </button>
+
+      <button @click="adminActiveTab = 'settings'"
+        :class="adminActiveTab === 'settings' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span>Subscription Rules</span>
+      </button>
+
+      <button @click="adminActiveTab = 'users'"
+        :class="adminActiveTab === 'users' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span>User Directory (<span x-text="adminUsersList.length"></span>)</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: OVERVIEW & REVENUE METRICS -->
+    <div x-show="adminActiveTab === 'overview'" class="flex-1 overflow-y-auto space-y-4 pr-1">
+      <template x-if="isLoadingAdminOverview">
+        <div class="flex items-center justify-center p-12 space-y-2 text-slate-400 flex-col">
+          <div class="w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs">Loading live system analytics...</span>
+        </div>
+      </template>
+
+      <template x-if="!isLoadingAdminOverview && adminOverview">
+        <div class="space-y-4">
+          <!-- KPI Cards Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Estimated MRR</span>
+              <p class="text-2xl font-black text-emerald-400" x-text="'$' + adminOverview.estimated_mrr_usd.toFixed(2)"></p>
+              <span class="text-[10px] text-emerald-500/80 font-medium">Monthly recurring revenue</span>
+            </div>
+
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Users</span>
+              <p class="text-2xl font-black text-slate-100" x-text="adminOverview.total_users"></p>
+              <span class="text-[10px] text-slate-400 font-medium">Registered SaaS accounts</span>
+            </div>
+
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Pro & Elite Subs</span>
+              <p class="text-2xl font-black text-amber-400" x-text="adminOverview.pro_users + adminOverview.elite_users"></p>
+              <span class="text-[10px] text-amber-500/80 font-medium" x-text="adminOverview.pro_users + ' Pro, ' + adminOverview.elite_users + ' Elite'"></span>
+            </div>
+
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">MySQL Resumes</span>
+              <p class="text-2xl font-black text-indigo-400" x-text="adminOverview.total_saved_resumes"></p>
+              <span class="text-[10px] text-indigo-400/80 font-medium">Saved cloud documents</span>
+            </div>
+          </div>
+
+          <!-- Subscription Breakdown & Server Security Status -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-3">
+              <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-purple-400"></i>
+                <span>Plan Tier Distribution</span>
+              </h4>
+              <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between text-slate-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Free Starter</span>
+                  <span class="font-bold font-mono" x-text="adminOverview.free_users + ' users'"></span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Pro Career ($9/mo)</span>
+                  <span class="font-bold font-mono" x-text="adminOverview.pro_users + ' users'"></span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Executive Elite ($29/mo)</span>
+                  <span class="font-bold font-mono" x-text="adminOverview.elite_users + ' users'"></span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-400"></span> Admins</span>
+                  <span class="font-bold font-mono" x-text="adminOverview.admin_users + ' accounts'"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl space-y-3">
+              <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
+                <span>Hardened Defense & Security Health</span>
+              </h4>
+              <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between text-slate-300">
+                  <span>OWASP Security Headers</span>
+                  <span class="text-emerald-400 font-bold">Enforced (HSTS, CSP, nosniff)</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span>Server-Side Quota Enforcement</span>
+                  <span class="text-emerald-400 font-bold">Active (FastAPI Guards)</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span>Authentication Engine</span>
+                  <span class="text-emerald-400 font-bold">BCrypt + HMAC SHA-256 JWT</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-300">
+                  <span>MySQL Connection Pool</span>
+                  <span class="text-emerald-400 font-bold">MariaDB / XAMPP (Port 3306)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- TAB 2: DYNAMIC SUBSCRIPTION RULES & PRICING CONFIG -->
+    <div x-show="adminActiveTab === 'settings'" class="flex-1 overflow-y-auto space-y-4 pr-1">
+      <div class="bg-slate-950/80 border border-slate-800 p-5 rounded-2xl space-y-5">
+        <div>
+          <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+            <span>Real-time SaaS Subscription Engine Rules</span>
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Changes take effect immediately across all users without restarting the server</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <!-- Daily Free AI Generations -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="font-semibold text-slate-200">Daily Free AI Generations</label>
+              <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 font-mono rounded font-bold" x-text="adminSettingsState.free_daily_ai_limit"></span>
+            </div>
+            <input type="range" min="1" max="10" step="1" x-model="adminSettingsState.free_daily_ai_limit"
+              class="w-full accent-indigo-500 cursor-pointer">
+            <p class="text-[11px] text-slate-400">Maximum Gemini AI tailoring runs allowed per day for free users.</p>
+          </div>
+
+          <!-- Daily Free ATS PDF Downloads -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="font-semibold text-slate-200">Daily Free ATS PDF Downloads</label>
+              <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 font-mono rounded font-bold" x-text="adminSettingsState.free_daily_pdf_limit"></span>
+            </div>
+            <input type="range" min="0" max="5" step="1" x-model="adminSettingsState.free_daily_pdf_limit"
+              class="w-full accent-indigo-500 cursor-pointer">
+            <p class="text-[11px] text-slate-400">Allowed Classic ATS PDF exports per day for free tier (0 = downloads require Pro).</p>
+          </div>
+
+          <!-- Free Visual CV Download Toggle -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold text-slate-200">Allow Free Visual CV Download</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Allow downloading Photo & Modern CVs in Free tier (Default: Disabled, Pro only).</p>
+            </div>
+            <input type="checkbox" x-model="adminSettingsState.free_allow_visual_download"
+              class="w-5 h-5 rounded accent-purple-500 cursor-pointer">
+          </div>
+
+          <!-- Free Cloud Restore Toggle -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold text-slate-200">Allow Free Cloud Restore</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Allow free users to reload past revisions into editor (Default: Disabled, Pro only).</p>
+            </div>
+            <input type="checkbox" x-model="adminSettingsState.free_allow_cloud_restore"
+              class="w-5 h-5 rounded accent-purple-500 cursor-pointer">
+          </div>
+
+          <!-- Pro Monthly Price -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5">
+            <label class="font-semibold text-slate-200">Pro Career Monthly Price (USD $)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-slate-400 font-mono">$</span>
+              <input type="number" step="0.5" x-model="adminSettingsState.pro_monthly_price"
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-7 pr-3 py-1.5 text-slate-100 font-mono font-bold focus:border-purple-500 outline-none">
+            </div>
+          </div>
+
+          <!-- Elite Monthly Price -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5">
+            <label class="font-semibold text-slate-200">Executive Elite Monthly Price (USD $)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-slate-400 font-mono">$</span>
+              <input type="number" step="0.5" x-model="adminSettingsState.elite_monthly_price"
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-7 pr-3 py-1.5 text-slate-100 font-mono font-bold focus:border-purple-500 outline-none">
+            </div>
+          </div>
+
+          <!-- Sprint Price -->
+          <div class="p-3.5 bg-slate-900 border border-slate-800 rounded-xl space-y-1.5">
+            <label class="font-semibold text-slate-200">7-Day Sprint Pass Price (USD $)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2 text-slate-400 font-mono">$</span>
+              <input type="number" step="0.5" x-model="adminSettingsState.sprint_price"
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-7 pr-3 py-1.5 text-slate-100 font-mono font-bold focus:border-purple-500 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+          <span class="text-[11px] text-slate-400" x-text="adminSettingsSaveMsg"></span>
+          <button @click="saveAdminSettings()" :disabled="isSavingAdminSettings"
+            class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 flex items-center gap-2 transition disabled:opacity-50">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span x-text="isSavingAdminSettings ? 'Applying changes...' : 'Save SaaS Rules'"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: USER DIRECTORY & SUBSCRIPTION OVERRIDES -->
+    <div x-show="adminActiveTab === 'users'" class="flex-1 overflow-y-auto space-y-3 pr-1">
+      <!-- Search Input -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" x-model="adminUserSearchQuery" placeholder="Filter users by email or candidate name..."
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-purple-500 outline-none">
+        </div>
+        <button @click="loadAdminUsers()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <!-- Users Table -->
+      <div class="overflow-x-auto border border-slate-800 rounded-2xl">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-3.5">User</th>
+              <th class="py-3 px-3.5">Plan Tier</th>
+              <th class="py-3 px-3.5">Validity</th>
+              <th class="py-3 px-3.5">Today's Usage</th>
+              <th class="py-3 px-3.5 text-right">Admin Overrides</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+            <template x-for="u in filteredAdminUsers" :key="u.id">
+              <tr class="hover:bg-slate-850 transition">
+                <td class="py-3 px-3.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-bold text-[11px] text-white shrink-0"
+                      x-text="(u.full_name || 'U').charAt(0).toUpperCase()"></div>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-slate-200" x-text="u.full_name"></span>
+                        <span x-show="u.is_admin" class="px-1.5 py-0.2 rounded text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30">ADMIN</span>
+                      </div>
+                      <span class="text-[11px] text-slate-400 font-mono" x-text="u.email"></span>
+                    </div>
+                  </div>
+                </td>
+
+                <td class="py-3 px-3.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase"
+                    :class="{
+                      'bg-slate-800 text-slate-400 border border-slate-700': u.plan_tier === 'free',
+                      'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': u.plan_tier === 'pro',
+                      'bg-amber-500/20 text-amber-300 border border-amber-500/30': u.plan_tier === 'elite'
+                    }"
+                    x-text="u.plan_tier">
+                  </span>
+                </td>
+
+                <td class="py-3 px-3.5 text-[11px]">
+                  <template x-if="u.subscription_expires_at">
+                    <div>
+                      <span class="text-slate-200" x-text="u.subscription_expires_at"></span>
+                      <p class="text-[10px] text-emerald-400 font-mono" x-text="u.subscription_days_remaining + ' days left'"></p>
+                    </div>
+                  </template>
+                  <template x-if="!u.subscription_expires_at">
+                    <span class="text-slate-500">Lifetime Free</span>
+                  </template>
+                </td>
+
+                <td class="py-3 px-3.5 text-[11px] font-mono text-slate-400">
+                  <span x-text="'AI: ' + u.daily_ai_generations_count"></span> •
+                  <span x-text="'PDF: ' + u.daily_pdf_downloads_count"></span>
+                </td>
+
+                <td class="py-3 px-3.5 text-right">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <select @change="adminChangeUserPlan(u.id, $event.target.value)" :value="u.plan_tier"
+                      class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 outline-none">
+                      <option value="free">Free</option>
+                      <option value="pro">Pro</option>
+                      <option value="elite">Elite</option>
+                    </select>
+
+                    <button @click="adminExtendUserPlan(u.id, 30)"
+                      class="px-2 py-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-[11px] font-semibold transition"
+                      title="Add 30 days of active subscription">
+                      +30 Days
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="flex items-center justify-between border-t border-slate-800 pt-3 text-xs shrink-0">
+      <span class="text-slate-500">Admin Session Active: <b class="text-purple-400" x-text="currentUser?.email"></b></span>
+      <button @click="showAdminModal = false" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

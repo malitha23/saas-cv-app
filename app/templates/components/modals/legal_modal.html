@@ -1,0 +1,271 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- IN-APP LEGAL & COMPLIANCE MODAL -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showLegalModal" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">
+  
+  <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden relative"
+    @click.outside="showLegalModal = false">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 shrink-0">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center text-white font-bold text-base shadow-md shadow-indigo-500/20">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-base text-slate-100 flex items-center gap-2">
+            <span>ResuMatch AI Legal Hub</span>
+            <span class="px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full">2026 Compliant</span>
+          </h3>
+          <p class="text-[11px] text-slate-400">Official legal agreements, privacy guarantees & refund policies</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Open Standalone Page Link -->
+        <a :href="'/' + (activeLegalTab === 'cookies' ? 'privacy' : activeLegalTab)" target="_blank"
+          class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+          title="Open this legal page in a new browser tab">
+          <span>Open Full Page</span>
+          <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i>
+        </a>
+
+        <button @click="showLegalModal = false"
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition border border-slate-700">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Switcher Bar -->
+    <div class="px-6 py-2.5 border-b border-slate-800/80 bg-slate-950/40 flex items-center space-x-1 sm:space-x-2 overflow-x-auto text-xs shrink-0">
+      
+      <button @click="activeLegalTab = 'privacy'"
+        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'privacy', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'privacy'}"
+        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        <span>Privacy Policy</span>
+      </button>
+
+      <button @click="activeLegalTab = 'terms'"
+        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'terms', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'terms'}"
+        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+        <span>Terms of Service</span>
+      </button>
+
+      <button @click="activeLegalTab = 'refund'"
+        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'refund', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'refund'}"
+        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+        <span>Refund & Cancellation</span>
+      </button>
+
+      <button @click="activeLegalTab = 'security'"
+        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'security', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'security'}"
+        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+        <span>Security & Compliance</span>
+      </button>
+
+      <button @click="activeLegalTab = 'cookies'"
+        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'cookies', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'cookies'}"
+        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+        <i data-lucide="cookie" class="w-3.5 h-3.5"></i>
+        <span>Cookies</span>
+      </button>
+
+    </div>
+
+    <!-- Scrollable Content Body -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6 text-xs sm:text-sm text-slate-300 leading-relaxed">
+      
+      <!-- TAB 1: PRIVACY POLICY -->
+      <div x-show="activeLegalTab === 'privacy'" class="space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h4 class="text-base font-bold text-slate-100">Privacy Policy (GDPR & CCPA Compliant)</h4>
+            <p class="text-xs text-slate-400">Effective Date: January 1, 2026 • Zero Data Retention for Foundation Model Training</p>
+          </div>
+          <a href="/privacy" target="_blank" class="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1">
+            <span>Read full document</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <strong class="text-emerald-400">Zero AI Retention</strong>
+            <p class="text-[11px] text-slate-400 mt-1">Uploaded resume text and job descriptions are never used to train generalized LLMs.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <strong class="text-indigo-400">Google OAuth Limited Use</strong>
+            <p class="text-[11px] text-slate-400 mt-1">Google profile data is strictly utilized for sign-in and avatar rendering. Never sold.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <strong class="text-purple-400">Right to be Forgotten</strong>
+            <p class="text-[11px] text-slate-400 mt-1">Users can delete their account and cloud saved resumes with immediate permanent effect.</p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <strong class="text-slate-100 text-sm">1. Data Controller Information:</strong>
+            <p class="text-slate-400 mt-1">ResuMatch AI acts as the Data Controller for your account credentials and Data Processor for resume files. Contact our Data Protection Officer at <code class="text-indigo-300">privacy@resumatch.ai</code>.</p>
+          </div>
+
+          <div>
+            <strong class="text-slate-100 text-sm">2. Google API Services Compliance:</strong>
+            <p class="text-slate-400 mt-1">Our use and transfer to any other app of information received from Google APIs adheres to the Google API Services User Data Policy, including Limited Use requirements.</p>
+          </div>
+
+          <div>
+            <strong class="text-slate-100 text-sm">3. Storage & Encryption:</strong>
+            <p class="text-slate-400 mt-1">All data transmitted to ResuMatch AI is encrypted in transit using TLS 1.3. User passwords are salted and hashed using bcrypt. MySQL Cloud resumes are stored under strict user-isolated row-level access controls.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TERMS OF SERVICE -->
+      <div x-show="activeLegalTab === 'terms'" class="space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h4 class="text-base font-bold text-slate-100">Terms of Service & Conditions</h4>
+            <p class="text-xs text-slate-400">Effective Date: January 1, 2026 • User Retains 100% Resume Ownership</p>
+          </div>
+          <a href="/terms" target="_blank" class="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1">
+            <span>Read full document</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-xs text-indigo-200">
+          <strong class="text-indigo-300">100% User Intellectual Property Ownership:</strong> You retain full copyright and ownership of all resume documents, cover letters, and portfolio content created with ResuMatch AI. We claim zero rights over your career deliverables.
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <strong class="text-slate-100 text-sm">1. Subscription Plans & Quotas:</strong>
+            <p class="text-slate-400 mt-1">
+              <strong>Free Starter:</strong> 2 AI Tailored Runs/day, 2 Lifetime Classic ATS PDFs, 1 Lifetime Visual CV, and 3 Cover Letters (1st Clean, subsequent watermarked). Cloud save is supported; loading/restoring requires Pro.
+              <br>
+              <strong>Pro Career ($9/mo or Rs. 990/mo in LK):</strong> Unlimited AI runs, unlimited watermark-free downloads, cloud restore, and portfolio hosting.
+            </p>
+          </div>
+
+          <div>
+            <strong class="text-slate-100 text-sm">2. AI Generation Disclaimer:</strong>
+            <p class="text-slate-400 mt-1">
+              ResuMatch AI provides automated keyword alignment recommendations. Users must verify all experience dates and claims before submitting applications. ResuMatch AI does not guarantee employment offers or interview callbacks.
+            </p>
+          </div>
+
+          <div>
+            <strong class="text-slate-100 text-sm">3. Acceptable Use:</strong>
+            <p class="text-slate-400 mt-1">
+              Users may not create fraudulent credentials, scrape the platform with automated scripts, or attempt to circumvent security quota barriers.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: REFUND & CANCELLATION -->
+      <div x-show="activeLegalTab === 'refund'" class="space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h4 class="text-base font-bold text-slate-100">Refund & Cancellation Policy</h4>
+            <p class="text-xs text-slate-400">14-Day Money-Back Guarantee for Eligible Digital SaaS Subscriptions</p>
+          </div>
+          <a href="/refund" target="_blank" class="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1">
+            <span>Read full document</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <strong class="text-emerald-400">14-Day Refund Window:</strong>
+            <p class="text-slate-400">If you purchased a recurring subscription and have downloaded no more than 2 premium resumes, you are eligible for an immediate 100% full refund upon request.</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <strong class="text-indigo-400">Cancel Anytime in 1-Click:</strong>
+            <p class="text-slate-400">Cancel recurring billing anytime from your Profile Menu. Your access remains active until the end of the billing period with zero further charges.</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
+          <strong class="text-slate-100">How to request a refund:</strong>
+          <p class="text-slate-400">Email <code class="text-indigo-300 bg-slate-900 px-1.5 py-0.5 rounded">billing@resumatch.ai</code> with your account email and transaction reference. Approved refunds are credited to your original payment method in 3-7 business days.</p>
+        </div>
+      </div>
+
+      <!-- TAB 4: SECURITY & COMPLIANCE -->
+      <div x-show="activeLegalTab === 'security'" class="space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h4 class="text-base font-bold text-slate-100">Security & Sub-processor Registry</h4>
+            <p class="text-xs text-slate-400">Enterprise OWASP Top 10 Hardening & Zero-Trust Validation</p>
+          </div>
+          <a href="/security" target="_blank" class="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1">
+            <span>Read full document</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <strong class="text-indigo-300">OWASP Protection Headers:</strong>
+            <p class="text-slate-400 mt-1">X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), X-XSS-Protection, and Referrer-Policy are enforced on every HTTP response.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <strong class="text-indigo-300">Authorized Sub-processors:</strong>
+            <p class="text-slate-400 mt-1">Google Cloud (Gemini AI inference with zero-training retention), MySQL Enterprise (Row-level encrypted cloud resume storage), Stripe (PCI-DSS Level 1 payment gateway).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: COOKIES & LOCAL STORAGE -->
+      <div x-show="activeLegalTab === 'cookies'" class="space-y-6">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h4 class="text-base font-bold text-slate-100">Cookie & Local Storage Preferences</h4>
+            <p class="text-xs text-slate-400">Privacy-First • No Intrusive Third-Party Trackers</p>
+          </div>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <p class="text-slate-300">ResuMatch AI only utilizes strictly necessary browser storage to maintain your user session, theme, and billing preferences:</p>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-indigo-300 font-bold">saas_token</span>
+              <span class="text-emerald-400 font-bold text-[10px] uppercase">Strictly Necessary</span>
+            </div>
+            <p class="text-slate-400">Stores cryptographically signed JWT token for session authentication.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-mono text-indigo-300 font-bold">resumatch_theme & resumatch_country</span>
+              <span class="text-emerald-400 font-bold text-[10px] uppercase">Preferences</span>
+            </div>
+            <p class="text-slate-400">Persists Dark/Light mode and currency selection (LKR / USD).</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between shrink-0 text-xs">
+      <div class="flex items-center gap-2 text-slate-500">
+        <i data-lucide="shield" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Need a custom Enterprise DPA? Email <a href="mailto:legal@resumatch.ai" class="text-indigo-400 hover:underline">legal@resumatch.ai</a></span>
+      </div>
+      <button @click="showLegalModal = false"
+        class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

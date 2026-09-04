@@ -1,0 +1,101 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PRO FEATURE MODAL: CLOUD RESTORE & EDITOR REVISION SYNC -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showProRestoreModal" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-all duration-200">
+  
+  <div class="relative bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 overflow-hidden animate-in fade-in zoom-in-95">
+    
+    <!-- Decorative background glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Modal Header -->
+    <div class="flex items-start justify-between relative z-10">
+      <div class="flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 font-bold shrink-0">
+          <i data-lucide="crown" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-extrabold text-slate-100 text-lg">Restore Resume to Editor</h3>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Pro Feature
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Resume version loading requires an active Pro or Elite pass</p>
+        </div>
+      </div>
+      <button @click="showProRestoreModal = false" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Targeted Resume Pill -->
+    <div x-show="pendingRestoreResume" class="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2.5 truncate">
+        <i data-lucide="file-text" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+        <div class="truncate">
+          <span class="font-bold text-slate-200" x-text="pendingRestoreResume?.title"></span>
+          <span class="text-slate-400 ml-1.5 text-[11px]" x-text="'(' + (pendingRestoreResume?.template_style || 'ATS') + ')'"></span>
+        </div>
+      </div>
+      <span class="text-[10px] text-amber-400 font-mono shrink-0 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Locked in Free</span>
+    </div>
+
+    <!-- Feature Checklist -->
+    <div class="space-y-2.5 text-xs text-slate-300 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+      <div class="font-semibold text-slate-200 text-xs flex items-center gap-2 pb-1">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Upgrade unlocks full editor access & cloud storage:</span>
+      </div>
+      <div class="grid grid-cols-1 gap-2 text-[11.5px]">
+        <div class="flex items-center gap-2 text-slate-300">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span><b>Instant Cloud Restore:</b> Load any saved resume back into the interactive editor</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-300">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span><b>MySQL Cloud Auto-Save:</b> All edits, colors, and keywords continuously preserved</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-300">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span><b>Visual Photo CV Downloads:</b> Unlimited PDF exports for all 4 modern templates</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-300">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span><b>Unlimited AI Tailoring:</b> No daily quota limits on Gemini Flash optimization</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing Choices Buttons -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+      <button @click="showProRestoreModal = false; upgradePlan('pro', 1);"
+        class="w-full py-3 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex flex-col items-center justify-center transition hover:scale-[1.02] active:scale-[0.98]">
+        <span class="flex items-center gap-1.5 text-sm">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>Upgrade to Pro Pass</span>
+        </span>
+        <span class="text-[10px] font-semibold text-slate-900 mt-0.5">$9/month • Cancel anytime</span>
+      </button>
+
+      <button @click="showProRestoreModal = false; upgradePlan('sprint', 1);"
+        class="w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold text-xs rounded-xl flex flex-col items-center justify-center transition hover:scale-[1.02] active:scale-[0.98]">
+        <span class="flex items-center gap-1.5 text-sm">
+          <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+          <span>7-Day Sprint Pass</span>
+        </span>
+        <span class="text-[10px] font-medium text-slate-400 mt-0.5">$3 one-time • Ideal for interview week</span>
+      </button>
+    </div>
+
+    <!-- Dismiss button -->
+    <div class="text-center pt-1">
+      <button @click="showProRestoreModal = false" class="text-xs text-slate-500 hover:text-slate-400 transition font-medium">
+        Stay on Free Plan (View History Only)
+      </button>
+    </div>
+
+  </div>
+</div>

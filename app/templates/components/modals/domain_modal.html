@@ -1,0 +1,52 @@
+
+  <!-- Custom Private Domain Setup Modal -->
+  <div x-show="showDomainModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="globe" class="w-5 h-5 text-pink-400"></i>
+          <h3 class="font-bold text-slate-100 text-base">Connect Custom Private Domain</h3>
+        </div>
+        <button @click="showDomainModal = false" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 leading-relaxed">
+        Map your personal domain (e.g., <b>malitha.dev</b> or <b>portfolio.yourname.com</b>) to your live portfolio. We
+        automatically issue a free SSL certificate!
+      </p>
+
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Your Domain Name</label>
+        <div class="flex gap-2 mt-1">
+          <input type="text" x-model="customDomainInput" placeholder="e.g. malitha.dev"
+            class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:border-pink-500 focus:outline-none">
+          <button @click="verifyDomain()"
+            class="px-4 py-2 bg-pink-600 hover:bg-pink-500 font-semibold text-xs text-white rounded-xl shadow transition">
+            Verify DNS
+          </button>
+        </div>
+      </div>
+
+      <!-- DNS Instructions Table -->
+      <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+        <span class="text-[11px] font-bold text-indigo-300 block">Required DNS Records in Cloudflare / Namecheap /
+          GoDaddy:</span>
+        <div class="space-y-1.5 font-mono text-[11px]">
+          <div class="flex justify-between bg-slate-900 p-2 rounded border border-slate-800">
+            <span class="text-slate-400">Type: <b class="text-slate-200">CNAME</b></span>
+            <span class="text-slate-400">Host: <b class="text-slate-200">@ or www</b></span>
+            <span class="text-slate-400">Target: <b class="text-pink-400">cname.resumatch.ai</b></span>
+          </div>
+        </div>
+        <p class="text-[10px] text-slate-500">SSL is auto-provisioned within 60 seconds after DNS propagation.</p>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-2">
+        <button @click="showDomainModal = false"
+          class="px-4 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
