@@ -1,0 +1,231 @@
+          <!-- SUB-TAB 2: Style, Colors & Section Visibility -->
+          <div x-show="editorTab === 'design'" class="space-y-4">
+            
+            <!-- 1. Accent Color Picker & Presets -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="paint-brush" class="w-3.5 h-3.5 text-indigo-400"></i> Primary Accent Color
+                </span>
+                <span class="text-[10px] font-mono text-indigo-300" x-text="tailoredData.custom_accent_color || 'Default'"></span>
+              </div>
+
+              <!-- Color Palette Presets -->
+              <div class="grid grid-cols-4 gap-2">
+                <button @click="setAccentColor('#1E3A8A')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#1E3A8A]"></span> Navy
+                </button>
+                <button @click="setAccentColor('#4F46E5')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#4F46E5]"></span> Indigo
+                </button>
+                <button @click="setAccentColor('#059669')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#059669]"></span> Emerald
+                </button>
+                <button @click="setAccentColor('#C9A96E')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#C9A96E]"></span> Gold
+                </button>
+                <button @click="setAccentColor('#06B6D4')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#06B6D4]"></span> Cyan
+                </button>
+                <button @click="setAccentColor('#E11D48')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#E11D48]"></span> Crimson
+                </button>
+                <button @click="setAccentColor('#7C3AED')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#7C3AED]"></span> Violet
+                </button>
+                <button @click="setAccentColor('#334155')" class="p-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:border-indigo-400 flex items-center gap-1.5 text-[10px] text-slate-200">
+                  <span class="w-3.5 h-3.5 rounded-full bg-[#334155]"></span> Slate
+                </button>
+              </div>
+
+              <!-- Custom Color Picker Input -->
+              <div class="flex items-center gap-2 pt-1 border-t border-slate-800">
+                <label class="text-[10px] text-slate-400 uppercase font-semibold">Custom Hex Picker:</label>
+                <input type="color" :value="tailoredData.custom_accent_color || '#1E3A8A'"
+                  @input="setAccentColor($event.target.value)"
+                  class="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+                <input type="text" x-model="tailoredData.custom_accent_color" @input="refreshAllPreviews()"
+                  placeholder="#1E3A8A" class="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-slate-200">
+                <button @click="setAccentColor(null)" class="px-2 py-1 text-[10px] bg-slate-800 hover:bg-slate-700 rounded text-slate-300">
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Font Family / Typography Style -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="type" class="w-3.5 h-3.5 text-indigo-400"></i> Typography Style / Font Family
+                </span>
+                <span class="text-[10px] text-indigo-300 font-mono" x-text="tailoredData.font_family || 'Helvetica'"></span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <button @click="setFontFamily('Helvetica')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.font_family || 'Helvetica') === 'Helvetica', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.font_family || 'Helvetica') !== 'Helvetica'}"
+                  class="p-2.5 rounded-lg text-left transition font-sans">
+                  <span class="block font-bold text-xs text-slate-100">Modern Sans</span>
+                  <span class="text-[9px] opacity-80 block">Helvetica (Crisp, Clean)</span>
+                </button>
+                <button @click="setFontFamily('Times-Roman')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_family === 'Times-Roman', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_family !== 'Times-Roman'}"
+                  class="p-2.5 rounded-lg text-left transition font-serif">
+                  <span class="block font-bold text-xs text-slate-100">Executive Serif</span>
+                  <span class="text-[9px] opacity-80 block">Times (Classic, Formal)</span>
+                </button>
+                <button @click="setFontFamily('Courier')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_family === 'Courier', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_family !== 'Courier'}"
+                  class="p-2.5 rounded-lg text-left transition font-mono">
+                  <span class="block font-bold text-xs text-slate-100">Tech Mono</span>
+                  <span class="text-[9px] opacity-80 block">Courier (Terminal / Code)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Font Size Scale / Page Density -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="scaling" class="w-3.5 h-3.5 text-indigo-400"></i> Font Size Scale & Document Density
+                </span>
+                <span class="text-[10px] text-indigo-300 font-mono capitalize" x-text="tailoredData.font_size_scale || 'standard'"></span>
+              </div>
+              <div class="grid grid-cols-4 gap-2 text-xs">
+                <button @click="setFontScale('compact')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'compact', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'compact'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">Compact</span>
+                  <span class="text-[8.5px] opacity-75">8.5pt (Fit Max)</span>
+                </button>
+                <button @click="setFontScale('standard')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.font_size_scale || 'standard') === 'standard', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.font_size_scale || 'standard') !== 'standard'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">Standard</span>
+                  <span class="text-[8.5px] opacity-75">9.2pt (Default)</span>
+                </button>
+                <button @click="setFontScale('large')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'large', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'large'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">Large</span>
+                  <span class="text-[8.5px] opacity-75">9.8pt (Clear)</span>
+                </button>
+                <button @click="setFontScale('spacious')"
+                  :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'spacious', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'spacious'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">Spacious</span>
+                  <span class="text-[8.5px] opacity-75">10.5pt (Airy)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Section Visibility Switches -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="eye" class="w-3.5 h-3.5 text-indigo-400"></i> Section Visibility Toggles (Show / Hide)
+              </span>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_summary" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Summary</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_skills" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Technical Skills</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_experience" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Work Experience</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_projects" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Key Projects</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_education" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Education</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_certifications" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Certifications</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer col-span-2">
+                  <input type="checkbox" x-model="tailoredData.show_photo" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">Profile Photo (Visual Resumes)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 4. Skill Progress Bar Settings (Visual Formats) -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-indigo-400"></i> Skill Progress Bars (Visual Formats)
+                </span>
+                <label class="flex items-center gap-1.5 cursor-pointer bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                  <input type="checkbox" x-model="tailoredData.show_skill_bars" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-[10px] text-slate-300 font-semibold">Enable Bars</span>
+                </label>
+              </div>
+
+              <div x-show="tailoredData.show_skill_bars !== false" class="space-y-2 pt-1">
+                <label class="text-[10px] text-slate-400 uppercase font-semibold block">Progress Bar Meter Style:</label>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                  <button @click="setSkillBarStyle('segmented')"
+                    :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.skill_bar_style || 'segmented') === 'segmented', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.skill_bar_style || 'segmented') !== 'segmented'}"
+                    class="p-2 rounded-lg text-center transition">
+                    <span class="block font-bold text-[11px]">▮ Segmented</span>
+                    <span class="text-[8.5px] opacity-75">10-Block Meter</span>
+                  </button>
+                  <button @click="setSkillBarStyle('sleek')"
+                    :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.skill_bar_style === 'sleek', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.skill_bar_style !== 'sleek'}"
+                    class="p-2 rounded-lg text-center transition">
+                    <span class="block font-bold text-[11px]">━ Continuous</span>
+                    <span class="text-[8.5px] opacity-75">Smooth Rounded</span>
+                  </button>
+                  <button @click="setSkillBarStyle('badge')"
+                    :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.skill_bar_style === 'badge', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.skill_bar_style !== 'badge'}"
+                    class="p-2 rounded-lg text-center transition">
+                    <span class="block font-bold text-[11px]">🏷️ Slim Pill</span>
+                    <span class="text-[8.5px] opacity-75">Compact Badge</span>
+                  </button>
+                </div>
+                <p class="text-[9.5px] text-slate-400">You can adjust each skill's percentage level directly under Technical Skills in the Content tab.</p>
+              </div>
+            </div>
+
+            <!-- 6. Section Positions & Order (Reordering) -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-indigo-400"></i> Section Positions & Order
+                </span>
+                <button @click="resetSectionOrder()" class="text-[10px] text-slate-400 hover:text-indigo-400 font-semibold transition">
+                  Reset Order
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-400">Use the Up (▲) and Down (▼) buttons to move sections up or down to avoid awkward page breaks and customize your layout.</p>
+
+              <div class="space-y-1.5 pt-1">
+                <template x-for="(sec, sIdx) in (tailoredData.section_order || ['summary', 'skills', 'experience', 'projects', 'education', 'certifications'])" :key="sec">
+                  <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs">
+                    <span class="font-medium text-slate-200 flex items-center gap-2">
+                      <span class="text-[10px] font-mono text-indigo-400 w-4 font-bold" x-text="sIdx + 1"></span>
+                      <span x-text="getSectionDisplayName(sec)"></span>
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <button @click="moveSection(sIdx, -1)" :disabled="sIdx === 0"
+                        class="p-1 px-2 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-200 font-bold transition text-xs" title="Move Up">
+                        ▲
+                      </button>
+                      <button @click="moveSection(sIdx, 1)" :disabled="sIdx === (tailoredData.section_order || []).length - 1"
+                        class="p-1 px-2 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-slate-200 font-bold transition text-xs" title="Move Down">
+                        ▼
+                      </button>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+          </div>
+

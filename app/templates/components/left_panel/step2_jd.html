@@ -1,0 +1,75 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- STEP 2: TARGET JOB DESCRIPTION & OPTIMIZE ACTION COMPONENT -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <div
+        class="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs">
+        2</div>
+      <h2 class="font-semibold text-sm text-slate-200">Target Job Description (JD)</h2>
+    </div>
+    <button @click="jobDescription = sampleJD"
+      class="text-[11px] text-slate-400 hover:text-indigo-400 transition">
+      Paste Example JD
+    </button>
+  </div>
+
+  <textarea x-model="jobDescription" rows="5"
+    placeholder="Paste the target job posting (Responsibilities, requirements, tech stack)..."
+    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"></textarea>
+
+  <!-- Overrides & Tone Selector -->
+  <div class="grid grid-cols-2 gap-2 pt-1">
+    <div>
+      <label class="text-[10px] text-slate-400 uppercase font-semibold">Target Title</label>
+      <input type="text" x-model="targetJobTitle" placeholder="e.g. Software Engineer"
+        class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="text-[10px] text-slate-400 uppercase font-semibold">Cover Letter Tone</label>
+      <select x-model="coverLetterTone"
+        class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+        <option value="professional">Professional & Direct</option>
+        <option value="assertive">High-Impact & Assertive</option>
+        <option value="enthusiastic">Enthusiastic & Passionate</option>
+        <option value="executive">Senior Executive</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Action Button: Run Optimization -->
+<div>
+  <button @click="tailorResume()" :disabled="isTailoring || (currentUser && (!resumeText || !jobDescription))"
+    class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition transform active:scale-[0.99]">
+    <template x-if="!isTailoring">
+      <span class="flex items-center gap-2">
+        <template x-if="!currentUser">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="lock" class="w-4 h-4 text-amber-300"></i>
+            <span>Generate Resumes (Register / Sign In)</span>
+          </span>
+        </template>
+        <template x-if="currentUser">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Generate ATS & Visual Designer Resumes</span>
+          </span>
+        </template>
+        <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-normal">&lt; 10s</span>
+      </span>
+    </template>
+
+    <template x-if="isTailoring">
+      <span class="flex items-center gap-2">
+        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <span x-text="tailorStatusText">Extracting real achievements & generating formats...</span>
+      </span>
+    </template>
+  </button>
+
+  <p class="text-center text-[11px] text-slate-500 mt-2">
+    ATS Formats (Workday/Taleo) • Visual Photo Designs • Live Portfolio Website
+  </p>
+</div>

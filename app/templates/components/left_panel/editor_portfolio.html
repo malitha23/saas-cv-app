@@ -1,0 +1,572 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SUB-TAB 4: PORTFOLIO DESIGN STUDIO & 100% FULL CRUD CUSTOMIZATION SUITE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="editorTab === 'portfolio'" class="space-y-4 max-h-[700px] overflow-y-auto pr-1">
+
+  <!-- 1. Architectural Template Style Selector -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+        <i data-lucide="layout-grid" class="w-4 h-4 text-pink-400"></i>
+        <span>Portfolio Design Architecture</span>
+      </span>
+      <span class="text-[10px] font-mono text-pink-400 uppercase font-semibold"
+        x-text="portfolioTheme.replace('_', ' ')"></span>
+    </div>
+
+    <!-- 8 Distinct Architecture Selection Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+      
+      <!-- Template White: Aurora White Minimalist Studio -->
+      <button @click="setPortfolioTheme('aurora_white')"
+        :class="portfolioTheme === 'aurora_white' ? 'border-sky-400 bg-sky-500/10 shadow-lg shadow-sky-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group relative overflow-hidden">
+        <span class="absolute top-1.5 right-1.5 px-1.5 py-0.5 text-[8px] font-bold rounded bg-sky-500/20 text-sky-300 uppercase tracking-wider">🤍 Light</span>
+        <div class="flex items-center justify-between pr-28">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">🤍</span> Aurora White (Scandinavian Clean Light)
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'aurora_white' ? 'bg-sky-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Pure white pearlescent aesthetic, sticky header, floating light cards & animated progress bars.</p>
+      </button>
+
+      <!-- Template A: Kinetic Motion Studio -->
+      <button @click="setPortfolioTheme('motion_zenith')"
+        :class="portfolioTheme === 'motion_zenith' ? 'border-amber-400 bg-amber-500/10 shadow-lg shadow-amber-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group relative overflow-hidden">
+        <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 text-[8px] font-bold rounded bg-amber-500/20 text-amber-300 uppercase tracking-wider">✨ Kinetic</span>
+        <div class="flex items-center justify-between pr-14">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">✨</span> Kinetic Motion Studio
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'motion_zenith' ? 'bg-amber-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Live typewriter headline, 3D card perspective tilt & animated skill bars.</p>
+      </button>
+
+      <!-- Template B: Particle Galaxy -->
+      <button @click="setPortfolioTheme('galaxy_canvas')"
+        :class="portfolioTheme === 'galaxy_canvas' ? 'border-cyan-400 bg-cyan-500/10 shadow-lg shadow-cyan-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group relative overflow-hidden">
+        <span class="absolute top-1.5 right-1.5 px-1.5 py-0.2 text-[8px] font-bold rounded bg-cyan-500/20 text-cyan-300 uppercase tracking-wider">🚀 60fps</span>
+        <div class="flex items-center justify-between pr-14">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">🚀</span> Particle Galaxy
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'galaxy_canvas' ? 'bg-cyan-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Interactive mouse constellation particle canvas & counting metrics.</p>
+      </button>
+
+      <!-- Template 1: Bento Grid Studio -->
+      <button @click="setPortfolioTheme('bento_grid')"
+        :class="portfolioTheme === 'bento_grid' ? 'border-pink-500 bg-pink-500/10 shadow-lg shadow-pink-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">🍱</span> Bento Grid Studio
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'bento_grid' ? 'bg-pink-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Modular Apple/Linear card layout with metrics and spotlight cards.</p>
+      </button>
+
+      <!-- Template 2: Executive Split-Sidebar -->
+      <button @click="setPortfolioTheme('split_sidebar')"
+        :class="portfolioTheme === 'split_sidebar' ? 'border-pink-500 bg-pink-500/10 shadow-lg shadow-pink-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">📑</span> Executive Split
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'split_sidebar' ? 'bg-pink-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Fixed profile sidebar with smooth-scrolling career trajectory.</p>
+      </button>
+
+      <!-- Template 3: Cyber Terminal CLI -->
+      <button @click="setPortfolioTheme('terminal_dev')"
+        :class="portfolioTheme === 'terminal_dev' ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">💻</span> Cyber Terminal CLI
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'terminal_dev' ? 'bg-emerald-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Multi-tab IDE with interactive bash console, quick commands & diagnostics.</p>
+      </button>
+
+      <!-- Template 4: Minimalist Swiss Editorial -->
+      <button @click="setPortfolioTheme('editorial_swiss')"
+        :class="portfolioTheme === 'editorial_swiss' ? 'border-slate-200 bg-slate-200/10 shadow-lg' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">📰</span> Swiss Editorial
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'editorial_swiss' ? 'bg-white' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Rotating monogram seal, 60fps running marquee ticker & luxury exhibits.</p>
+      </button>
+
+      <!-- Template 5: Neo-Glassmorphic 3D Glow -->
+      <button @click="setPortfolioTheme('neon_glass')"
+        :class="portfolioTheme === 'neon_glass' ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/10' : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'"
+        class="p-3 rounded-xl border text-left space-y-1 transition group">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span class="text-sm">🌌</span> Neo-Glassmorphic 3D Glow
+          </span>
+          <span class="w-2 h-2 rounded-full" :class="portfolioTheme === 'neon_glass' ? 'bg-indigo-400' : 'bg-transparent'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Deep cosmic mesh background with floating translucent cards & neon glow.</p>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- 2. Portfolio Accent Color & Typography Palette -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+      <i data-lucide="palette" class="w-4 h-4 text-pink-400"></i>
+      <span>Accent Color & Typography</span>
+    </span>
+
+    <!-- Accent Color Presets -->
+    <div>
+      <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1.5">Accent Color Preset</label>
+      <div class="flex flex-wrap items-center gap-2">
+        <button @click="setPortfolioAccent('#6366f1')"
+          class="w-7 h-7 rounded-lg bg-[#6366f1] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#6366f1' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#06b6d4')"
+          class="w-7 h-7 rounded-lg bg-[#06b6d4] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#06b6d4' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#10b981')"
+          class="w-7 h-7 rounded-lg bg-[#10b981] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#10b981' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#f43f5e')"
+          class="w-7 h-7 rounded-lg bg-[#f43f5e] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#f43f5e' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#f59e0b')"
+          class="w-7 h-7 rounded-lg bg-[#f59e0b] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#f59e0b' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#8b5cf6')"
+          class="w-7 h-7 rounded-lg bg-[#8b5cf6] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#8b5cf6' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+        <button @click="setPortfolioAccent('#94a3b8')"
+          class="w-7 h-7 rounded-lg bg-[#94a3b8] ring-2 transition transform active:scale-95"
+          :class="portfolioAccent === '#94a3b8' ? 'ring-white scale-110' : 'ring-transparent'"></button>
+
+        <!-- Custom Hex Input -->
+        <div class="flex items-center gap-1.5 ml-auto">
+          <input type="color" x-model="portfolioAccent" @input="updatePortfolioAccent(portfolioAccent)"
+            class="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+          <input type="text" x-model="portfolioAccent" @input="updatePortfolioAccent(portfolioAccent)"
+            class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-slate-200">
+        </div>
+      </div>
+    </div>
+
+    <!-- Font Family Selector -->
+    <div class="pt-1">
+      <label class="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Portfolio Typography</label>
+      <select x-model="portfolioFont" @change="updatePortfolioFont(portfolioFont)"
+        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-200 focus:border-pink-500 focus:outline-none">
+        <option value="Inter">Inter (Clean Modern Tech)</option>
+        <option value="JetBrains Mono">JetBrains Mono (Developer Monospace)</option>
+        <option value="Outfit">Outfit (Geometric Aesthetic)</option>
+        <option value="Playfair Display">Playfair Display (Luxury Editorial Serif)</option>
+        <option value="Plus Jakarta Sans">Plus Jakarta Sans (Corporate Enterprise)</option>
+        <option value="Fira Code">Fira Code (Hacker Terminal)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 3. Section Visibility Controls -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-2.5">
+    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+      <i data-lucide="sliders" class="w-4 h-4 text-pink-400"></i>
+      <span>Section Visibility & Features</span>
+    </span>
+
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_bio" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Hero Bio / Summary</span>
+      </label>
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_skills" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Skills Arsenal</span>
+      </label>
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_projects" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Featured Projects</span>
+      </label>
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_experience" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Experience Milestones</span>
+      </label>
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_education" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Qualifications</span>
+      </label>
+      <label class="flex items-center gap-2 p-2 bg-slate-900/60 rounded-lg border border-slate-800 cursor-pointer">
+        <input type="checkbox" x-model="tailoredData.portfolio_show_resume_download" @change="refreshAllPreviews()"
+          class="rounded bg-slate-950 border-slate-700 text-pink-600 focus:ring-0">
+        <span class="text-slate-300 font-medium">Direct Resume Download</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- 4. 👤 Hero Profile, Identity & Bio (Full CRUD) -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+      <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+      <span>Hero Profile, Identity & Bio</span>
+    </span>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Candidate Full Name</label>
+        <input type="text" x-model="tailoredData.personal_info.full_name" @input="refreshAllPreviews()"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 font-semibold">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Target Role / Headline</label>
+        <input type="text" x-model="tailoredData.target_job_title" @input="refreshAllPreviews()"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 font-semibold">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Availability Status Badge</label>
+        <input type="text" x-model="tailoredData.personal_info.availability_badge" @input="refreshAllPreviews()"
+          placeholder="Available for High-Impact Roles"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Location / Base</label>
+        <input type="text" x-model="tailoredData.personal_info.location" @input="refreshAllPreviews()"
+          placeholder="Colombo, Sri Lanka / Remote"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200">
+      </div>
+
+      <!-- Avatar Photo URL with visual thumbnail preview -->
+      <div class="sm:col-span-2 pt-1">
+        <div class="flex items-center gap-3">
+          <template x-if="tailoredData.personal_info.avatar_url">
+            <img :src="tailoredData.personal_info.avatar_url" class="w-12 h-12 rounded-xl object-cover ring-2 ring-pink-500/50">
+          </template>
+          <template x-if="!tailoredData.personal_info.avatar_url">
+            <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 font-bold text-xs">
+              NO IMG
+            </div>
+          </template>
+          <div class="flex-1">
+            <label class="text-[10px] text-slate-400 uppercase font-semibold block">Profile Photo / Avatar Image URL</label>
+            <input type="text" x-model="tailoredData.personal_info.avatar_url" @input="refreshAllPreviews()"
+              placeholder="https://example.com/avatar.jpg"
+              class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 font-mono text-[11px]">
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Bio Textarea -->
+      <div class="sm:col-span-2">
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Hero Bio / Executive Summary</label>
+        <textarea x-model="tailoredData.professional_summary" @input="refreshAllPreviews()" rows="3"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 leading-relaxed"></textarea>
+      </div>
+
+      <!-- Primary CTA Configuration -->
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Primary CTA Button Label</label>
+        <input type="text" x-model="tailoredData.portfolio_cta_text" @input="refreshAllPreviews()"
+          placeholder="Get in Touch"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 font-semibold">
+      </div>
+      <div>
+        <label class="text-[10px] text-slate-400 uppercase font-semibold">Primary CTA Link / Mailto</label>
+        <input type="text" x-model="tailoredData.portfolio_cta_url" @input="refreshAllPreviews()"
+          placeholder="mailto:you@example.com or https://cal.com/user"
+          class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 font-mono text-[11px]">
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 📊 Key Stat Counters & Metrics (Full CRUD) -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-400"></i>
+        <span>Stat Counters & Metric Highlights</span>
+      </span>
+      <button @click="addPortfolioMetric()"
+        class="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+        <i data-lucide="plus" class="w-3 h-3"></i> Add Counter
+      </button>
+    </div>
+
+    <!-- Stat items list -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <template x-for="(m, mIdx) in tailoredData.portfolio_metrics" :key="mIdx">
+        <div class="p-2.5 bg-slate-900/80 border border-slate-800 rounded-xl space-y-1.5 relative group">
+          <div class="flex items-center justify-between gap-2">
+            <input type="text" x-model="m.value" @input="refreshAllPreviews()"
+              placeholder="e.g. 15+"
+              class="w-20 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-cyan-300 font-bold text-sm font-mono">
+            <input type="text" x-model="m.label" @input="refreshAllPreviews()"
+              placeholder="e.g. Key Projects"
+              class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-300 font-semibold text-[11px]">
+            <button @click="removePortfolioMetric(mIdx)" class="text-slate-500 hover:text-red-400 p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 6. 🚀 Featured Projects Studio (Full CRUD) -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+        <i data-lucide="folder-git-2" class="w-4 h-4 text-indigo-400"></i>
+        <span>Featured Projects Studio (CRUD)</span>
+      </span>
+      <button @click="addPortfolioProject()"
+        class="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+        <i data-lucide="plus" class="w-3 h-3"></i> Add Project
+      </button>
+    </div>
+
+    <!-- Projects List -->
+    <div class="space-y-3">
+      <template x-for="(p, pIdx) in tailoredData.projects" :key="pIdx">
+        <div class="p-3 bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-xl space-y-2.5 transition">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] font-mono text-indigo-400 font-bold" x-text="'#' + (pIdx+1)"></span>
+            <input type="text" x-model="p.name" @input="refreshAllPreviews()"
+              placeholder="Project Title"
+              class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-100 font-bold text-xs">
+            <button @click="removePortfolioProject(pIdx)" class="text-slate-500 hover:text-red-400 p-1">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Technologies tags -->
+          <div>
+            <label class="text-[10px] text-slate-500 uppercase font-semibold">Tech Stack (Comma Separated)</label>
+            <input type="text"
+              :value="p.technologies ? p.technologies.join(', ') : ''"
+              @input="p.technologies = $event.target.value.split(',').map(s => s.trim()).filter(Boolean); refreshAllPreviews()"
+              placeholder="TypeScript, Next.js, FastAPI, PostgreSQL"
+              class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-cyan-300 font-mono text-[11px]">
+          </div>
+
+          <!-- Links -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase font-semibold">Live Demo URL</label>
+              <input type="text" x-model="p.demo_url" @input="refreshAllPreviews()"
+                placeholder="https://demo.example.com"
+                class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 font-mono text-[10px]">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-500 uppercase font-semibold">Source Code Repo URL</label>
+              <input type="text" x-model="p.link" @input="refreshAllPreviews()"
+                placeholder="https://github.com/user/repo"
+                class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 font-mono text-[10px]">
+            </div>
+          </div>
+
+          <!-- Bullets -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+              <span>Impact & Architecture Bullets</span>
+              <button @click="addProjectBullet(pIdx)" class="text-indigo-400 hover:underline flex items-center gap-0.5">
+                <i data-lucide="plus" class="w-3 h-3"></i> Add Bullet
+              </button>
+            </div>
+            <template x-for="(b, bIdx) in p.description_bullets" :key="bIdx">
+              <div class="flex items-center gap-1.5">
+                <input type="text" x-model="p.description_bullets[bIdx]" @input="refreshAllPreviews()"
+                  class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-300 text-[11px]">
+                <button @click="removeProjectBullet(pIdx, bIdx)" class="text-slate-600 hover:text-red-400 p-1">
+                  <i data-lucide="x" class="w-3 h-3"></i>
+                </button>
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 7. ⚡ Technical Skills & Proficiency Sliders (Full CRUD) -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+        <i data-lucide="cpu" class="w-4 h-4 text-emerald-400"></i>
+        <span>Technical Skills & Proficiency (CRUD)</span>
+      </span>
+      <button @click="addSkillCategory()"
+        class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+        <i data-lucide="plus" class="w-3 h-3"></i> Add Category
+      </button>
+    </div>
+
+    <!-- Category list -->
+    <div class="space-y-3">
+      <template x-for="(cat, cIdx) in tailoredData.skill_categories" :key="cIdx">
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <input type="text" x-model="cat.category_name" @input="refreshAllPreviews()"
+              class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-emerald-300 font-bold text-xs">
+            <button @click="addPortfolioSkill(cIdx)"
+              class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-semibold flex items-center gap-1">
+              <i data-lucide="plus" class="w-3 h-3"></i> Add Skill
+            </button>
+            <button @click="removeSkillCategory(cIdx)" class="text-slate-500 hover:text-red-400 p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Skills list with proficiency sliders -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <template x-for="(s, sIdx) in cat.skills" :key="sIdx">
+              <div class="p-2 bg-slate-950 border border-slate-800/80 rounded-lg space-y-1">
+                <div class="flex items-center justify-between">
+                  <input type="text" x-model="cat.skills[sIdx]" @input="refreshAllPreviews()"
+                    class="bg-transparent border-none text-slate-200 font-medium text-xs focus:outline-none flex-1">
+                  <span class="text-[10px] font-mono text-emerald-400 font-bold"
+                    x-text="(cat.skill_levels ? cat.skill_levels[s] || 85 : 85) + '%'"></span>
+                  <button @click="removePortfolioSkill(cIdx, sIdx)" class="text-slate-600 hover:text-red-400 ml-1">
+                    <i data-lucide="x" class="w-3 h-3"></i>
+                  </button>
+                </div>
+                <input type="range" min="10" max="100" step="5"
+                  :value="cat.skill_levels ? cat.skill_levels[s] || 85 : 85"
+                  @input="updateSkillLevel(cIdx, s, $event.target.value)"
+                  class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400">
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 8. 💼 Career Milestones & Experience (Full CRUD) -->
+  <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+        <i data-lucide="briefcase" class="w-4 h-4 text-amber-400"></i>
+        <span>Career Milestones & Experience (CRUD)</span>
+      </span>
+      <button @click="addPortfolioExperience()"
+        class="px-2.5 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+        <i data-lucide="plus" class="w-3 h-3"></i> Add Milestone
+      </button>
+    </div>
+
+    <!-- Experience items -->
+    <div class="space-y-3">
+      <template x-for="(exp, eIdx) in tailoredData.work_experience" :key="eIdx">
+        <div class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <input type="text" x-model="exp.job_title" @input="refreshAllPreviews()"
+              placeholder="Job Title"
+              class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-slate-100 font-bold text-xs">
+            <button @click="removePortfolioExperience(eIdx)" class="text-slate-500 hover:text-red-400 p-1">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label class="text-[9px] text-slate-500 uppercase font-semibold">Company</label>
+              <input type="text" x-model="exp.company" @input="refreshAllPreviews()"
+                class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 text-[11px]">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-500 uppercase font-semibold">Start Date</label>
+              <input type="text" x-model="exp.start_date" @input="refreshAllPreviews()"
+                class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 text-[11px]">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-500 uppercase font-semibold">End Date</label>
+              <input type="text" x-model="exp.end_date" @input="refreshAllPreviews()"
+                class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 text-[11px]">
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- 9. Custom Domain Connector Box -->
+  <div class="bg-gradient-to-r from-pink-950/40 to-indigo-950/40 border border-pink-500/30 rounded-xl p-3.5 space-y-2">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-1.5">
+        <i data-lucide="globe" class="w-4 h-4 text-pink-400"></i>
+        <span class="text-xs font-bold text-slate-200">Private Custom Domain</span>
+      </div>
+      <button @click="showDomainModal = true"
+        class="text-[10px] text-pink-400 hover:underline font-semibold flex items-center gap-0.5">
+        DNS Guide <i data-lucide="chevron-right" class="w-3 h-3"></i>
+      </button>
+    </div>
+    <div class="flex gap-2">
+      <input type="text" x-model="tailoredData.personal_info.custom_domain" @input="refreshAllPreviews()"
+        placeholder="e.g. malitha.dev"
+        class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:border-pink-500 focus:outline-none">
+      <button @click="verifyAndConnectDomain()"
+        class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-semibold text-xs rounded-lg shadow transition">
+        Connect
+      </button>
+    </div>
+  </div>
+
+  <!-- 10. Social Media & Custom Links Manager (CRUD) -->
+  <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+    <div class="flex items-center justify-between">
+      <label class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+        <i data-lucide="share-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Social Media & Contact Endpoints</span>
+      </label>
+      <button @click="addSocialLink()"
+        class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1">
+        <i data-lucide="plus" class="w-3 h-3"></i> Add Link
+      </button>
+    </div>
+
+    <!-- List of Editable Social Links -->
+    <template x-for="(link, lIdx) in tailoredData.personal_info.social_links" :key="lIdx">
+      <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-xs">
+        <input type="text" x-model="link.name" @input="refreshAllPreviews()"
+          class="w-24 bg-slate-950 border border-slate-800 rounded p-1 text-slate-200 font-semibold text-[11px]"
+          placeholder="Platform">
+        <input type="text" x-model="link.url" @input="refreshAllPreviews()"
+          class="flex-1 bg-slate-950 border border-slate-800 rounded p-1 text-slate-300 text-[11px]"
+          placeholder="URL / handle">
+        <button @click="link.enabled = !link.enabled; refreshAllPreviews()"
+          :class="link.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'"
+          class="p-1 rounded text-[10px] font-bold px-1.5">
+          <span x-text="link.enabled ? 'ON' : 'OFF'"></span>
+        </button>
+        <button @click="removeSocialLink(lIdx)" class="text-slate-500 hover:text-red-400 p-1">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </template>
+  </div>
+
+</div>

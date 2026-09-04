@@ -1,0 +1,20 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- GUEST EXPLORATION BANNER COMPONENT -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<template x-if="!currentUser">
+  <div class="col-span-1 lg:col-span-12 p-3 bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-slate-900/90 border border-indigo-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg">
+    <div class="flex items-center gap-2.5">
+      <div class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 shrink-0">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <span class="font-bold text-slate-100">Welcome, Guest! Explore all features freely.</span>
+        <span class="text-slate-300 ml-1">You can test sample demos, preview all 8 visual templates, and customize designs. <b class="text-indigo-300">Sign in or register to generate your optimized CV & download PDFs!</b></span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button @click="openAuthModal('login')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold transition">Sign In</button>
+      <button @click="openAuthModal('register')" class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg font-semibold shadow transition">Register Free</button>
+    </div>
+  </div>
+</template>

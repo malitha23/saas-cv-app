@@ -1,0 +1,215 @@
+          <!-- SUB-TAB 3: Cover Letter Customizer -->
+          <div x-show="editorTab === 'cover_letter'" class="space-y-4 max-h-[680px] overflow-y-auto pr-1">
+            
+            <!-- 1. Letterhead & Layout Style Selector -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="layout-template" class="w-3.5 h-3.5 text-violet-400"></i> Letterhead Layout Style
+                </span>
+                <span class="text-[10px] text-violet-300 font-mono" x-text="tailoredData.cover_letter.layout_style || 'modern_banner'"></span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <button @click="tailoredData.cover_letter.layout_style = 'modern_banner'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold shadow': (tailoredData.cover_letter.layout_style || 'modern_banner') === 'modern_banner', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.cover_letter.layout_style !== 'modern_banner'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">🎨 Accent Banner</span>
+                  <span class="text-[8.5px] opacity-75">Colored Header</span>
+                </button>
+                <button @click="tailoredData.cover_letter.layout_style = 'classic_corporate'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold shadow': tailoredData.cover_letter.layout_style === 'classic_corporate', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.cover_letter.layout_style !== 'classic_corporate'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">🏛️ Corporate</span>
+                  <span class="text-[8.5px] opacity-75">Formal Letterhead</span>
+                </button>
+                <button @click="tailoredData.cover_letter.layout_style = 'minimal_clean'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold shadow': tailoredData.cover_letter.layout_style === 'minimal_clean', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.cover_letter.layout_style !== 'minimal_clean'}"
+                  class="p-2 rounded-lg text-center transition">
+                  <span class="block font-bold text-[11px]">✨ Minimal</span>
+                  <span class="text-[8.5px] opacity-75">Centered Clean</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Date & Subject Reference -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5 text-xs">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-violet-400"></i> Date & Subject Reference
+              </span>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="text-[9px] text-slate-400 uppercase font-semibold">Letter Date</label>
+                    <button @click="setCoverLetterDateToday()" class="text-[9px] text-violet-400 hover:underline">Set Today</button>
+                  </div>
+                  <input type="text" x-model="tailoredData.cover_letter.letter_date" @input="refreshAllPreviews()"
+                    placeholder="e.g. September 3, 2026" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-400 uppercase font-semibold block mb-1">Subject / RE Line</label>
+                  <input type="text" x-model="tailoredData.cover_letter.reference_subject" @input="refreshAllPreviews()"
+                    placeholder="e.g. Application for Software Engineer" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Recipient & Employer Details -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 text-xs">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="building-2" class="w-3.5 h-3.5 text-violet-400"></i> Recipient & Employer Details
+              </span>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Recipient Name</label>
+                  <input type="text" x-model="tailoredData.cover_letter.recipient_name" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 font-semibold" placeholder="Hiring Manager">
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Recipient Title</label>
+                  <input type="text" x-model="tailoredData.cover_letter.recipient_title" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200" placeholder="Head of Engineering">
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Target Company</label>
+                  <input type="text" x-model="tailoredData.cover_letter.company_name" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 font-semibold">
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Company Location</label>
+                  <input type="text" x-model="tailoredData.cover_letter.company_address" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200" placeholder="Remote / City">
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[9px] text-slate-500 uppercase">Salutation</label>
+                <input type="text" x-model="tailoredData.cover_letter.salutation" @input="refreshAllPreviews()"
+                  class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
+              </div>
+
+              <div>
+                <label class="text-[9px] text-slate-400 uppercase font-semibold">Opening Hook Paragraph</label>
+                <textarea x-model="tailoredData.cover_letter.opening_paragraph" @input="refreshAllPreviews()" rows="3"
+                  class="w-full mt-1 bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:border-violet-500 focus:outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[9px] text-slate-400 uppercase font-semibold">Core Achievements Body Paragraph</label>
+                <textarea x-model="tailoredData.cover_letter.body_paragraph" @input="refreshAllPreviews()" rows="4"
+                  class="w-full mt-1 bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:border-violet-500 focus:outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[9px] text-slate-400 uppercase font-semibold">Closing & Next Steps Paragraph</label>
+                <textarea x-model="tailoredData.cover_letter.closing_paragraph" @input="refreshAllPreviews()" rows="3"
+                  class="w-full mt-1 bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-300 focus:border-violet-500 focus:outline-none"></textarea>
+              </div>
+            </div>
+
+            <!-- 4. Digital Signature Studio -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="feather" class="w-3.5 h-3.5 text-violet-400"></i> Digital Signature Studio
+                </span>
+                <span class="text-[10px] text-violet-300 capitalize font-mono" x-text="tailoredData.cover_letter.signature_mode || 'script'"></span>
+              </div>
+
+              <!-- Signature Mode Selector -->
+              <div class="grid grid-cols-4 gap-1.5">
+                <button @click="tailoredData.cover_letter.signature_mode = 'script'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold': (tailoredData.cover_letter.signature_mode || 'script') === 'script', 'bg-slate-900 text-slate-400 border border-slate-800': tailoredData.cover_letter.signature_mode !== 'script'}"
+                  class="p-1.5 rounded-lg text-center text-[10px] transition">
+                  ✍️ Script Font
+                </button>
+                <button @click="tailoredData.cover_letter.signature_mode = 'draw'; $nextTick(() => initSigCanvas()); refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold': tailoredData.cover_letter.signature_mode === 'draw', 'bg-slate-900 text-slate-400 border border-slate-800': tailoredData.cover_letter.signature_mode !== 'draw'}"
+                  class="p-1.5 rounded-lg text-center text-[10px] transition">
+                  🖊️ Draw
+                </button>
+                <button @click="tailoredData.cover_letter.signature_mode = 'upload'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold': tailoredData.cover_letter.signature_mode === 'upload', 'bg-slate-900 text-slate-400 border border-slate-800': tailoredData.cover_letter.signature_mode !== 'upload'}"
+                  class="p-1.5 rounded-lg text-center text-[10px] transition">
+                  📤 Upload
+                </button>
+                <button @click="tailoredData.cover_letter.signature_mode = 'none'; refreshAllPreviews()"
+                  :class="{'bg-violet-600 text-white font-bold': tailoredData.cover_letter.signature_mode === 'none', 'bg-slate-900 text-slate-400 border border-slate-800': tailoredData.cover_letter.signature_mode !== 'none'}"
+                  class="p-1.5 rounded-lg text-center text-[10px] transition">
+                  🚫 None
+                </button>
+              </div>
+
+              <!-- Script Signature Preview -->
+              <div x-show="(tailoredData.cover_letter.signature_mode || 'script') === 'script'" class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                <label class="text-[9px] text-slate-400 uppercase font-semibold block">Stylized Cursive Signature Preview:</label>
+                <div class="h-12 bg-white/95 rounded border border-slate-700 flex items-center justify-center px-4">
+                  <span class="text-xl text-indigo-900 italic font-serif" style="font-family: 'Times New Roman', Georgia, serif; font-style: italic; letter-spacing: 0.5px;"
+                    x-text="tailoredData.personal_info.full_name"></span>
+                </div>
+                <p class="text-[9px] text-slate-400">Renders an executive calligraphy signature automatically derived from your candidate name.</p>
+              </div>
+
+              <!-- Draw Signature Canvas -->
+              <div x-show="tailoredData.cover_letter.signature_mode === 'draw'" class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-[9px] text-slate-400 uppercase font-semibold">Draw your signature with mouse or touch:</label>
+                  <button @click="clearSigCanvas()" class="text-[9px] text-red-400 hover:underline">Clear Canvas</button>
+                </div>
+                <canvas id="sigCanvas" width="340" height="90" class="w-full bg-white rounded border border-slate-600 cursor-crosshair touch-none"></canvas>
+                <div class="flex items-center justify-between">
+                  <span class="text-[9px] text-slate-400">Sign within the white box above</span>
+                  <button @click="saveSigCanvas()" class="px-2.5 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded text-[10px] font-bold">
+                    Apply Signature
+                  </button>
+                </div>
+              </div>
+
+              <!-- Upload Signature Image -->
+              <div x-show="tailoredData.cover_letter.signature_mode === 'upload'" class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                <label class="text-[9px] text-slate-400 uppercase font-semibold block">Upload Signature Image (PNG / JPEG):</label>
+                <input type="file" @change="handleSigFileUpload($event)" accept="image/png,image/jpeg"
+                  class="text-xs text-slate-300 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500 cursor-pointer">
+                <template x-if="tailoredData.cover_letter.signature_image_data">
+                  <div class="flex items-center gap-3 p-2 bg-slate-950 rounded border border-slate-800">
+                    <img :src="tailoredData.cover_letter.signature_image_data" class="h-10 max-w-[150px] object-contain bg-white rounded p-1">
+                    <button @click="tailoredData.cover_letter.signature_image_data = null; refreshAllPreviews()" class="text-[10px] text-red-400 hover:underline">Remove Image</button>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Sign-off Details -->
+              <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Formal Sign-Off</label>
+                  <input type="text" x-model="tailoredData.cover_letter.sign_off" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200" placeholder="Sincerely,">
+                </div>
+                <div>
+                  <label class="text-[9px] text-slate-500 uppercase">Signer Designation / Title</label>
+                  <input type="text" x-model="tailoredData.cover_letter.sign_off_title" @input="refreshAllPreviews()"
+                    class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200" placeholder="Software Engineer">
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Additional Letter Elements (P.S. & Enclosures) -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5 text-xs">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="paperclip" class="w-3.5 h-3.5 text-violet-400"></i> Postscript & Attachments
+              </span>
+              <div>
+                <label class="text-[9px] text-slate-400 uppercase font-semibold">💡 Postscript (P.S.) Hook</label>
+                <input type="text" x-model="tailoredData.cover_letter.postscript" @input="refreshAllPreviews()"
+                  placeholder="P.S. I would welcome the opportunity to share a live architectural demo..."
+                  class="w-full mt-1 bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
+              </div>
+              <div>
+                <label class="text-[9px] text-slate-400 uppercase font-semibold">📎 Enclosures / Attachments Line</label>
+                <input type="text" x-model="tailoredData.cover_letter.enclosure" @input="refreshAllPreviews()"
+                  placeholder="Enclosure: Resume, Engineering Portfolio, GitHub Repositories"
+                  class="w-full mt-1 bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200">
+              </div>
+            </div>
+
+          </div>
+

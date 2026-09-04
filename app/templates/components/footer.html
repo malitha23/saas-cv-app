@@ -1,0 +1,202 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- COMPREHENSIVE ENTERPRISE SAAS FOOTER COMPONENT -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<footer class="border-t border-slate-800/80 bg-slate-950 text-slate-400 text-xs mt-12 transition-colors">
+  
+  <!-- Main Footer Content Grid -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
+      
+      <!-- Column 1: Brand, Mission & Trust (Spans 2 cols on lg) -->
+      <div class="lg:col-span-2 space-y-4">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg shrink-0">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-extrabold text-lg tracking-tight text-slate-100">ResuMatch<span class="text-indigo-400">.ai</span></span>
+            <span class="ml-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">SaaS</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-400 leading-relaxed max-w-sm">
+          The AI-Powered Career Operating System. Tailor ATS resumes to job descriptions in seconds, design executive visual photo CVs, generate tailored cover letters, and host modern live portfolios with custom domains.
+        </p>
+
+        <!-- Trust Badges -->
+        <div class="pt-1 flex flex-wrap items-center gap-2 text-[10.5px]">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>GDPR & CCPA Ready</span>
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>256-Bit TLS Security</span>
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400"></i>
+            <span>Zero AI Model Retention</span>
+          </span>
+        </div>
+
+        <!-- System Operational Status -->
+        <div class="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>All SaaS Systems Operational</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-400">v1.3.0 Production</span>
+        </div>
+      </div>
+
+      <!-- Column 2: Product Suite -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Product Studio</h4>
+        <ul class="space-y-2 text-xs">
+          <li>
+            <button @click="activePreviewTab = 'ats'; scrollToPreview()" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Classic ATS Resume</span>
+            </button>
+          </li>
+          <li>
+            <button @click="activePreviewTab = 'visual'; scrollToPreview()" class="hover:text-pink-400 text-left transition flex items-center gap-1.5">
+              <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-400"></i>
+              <span>Visual Photo CV</span>
+            </button>
+          </li>
+          <li>
+            <button @click="activePreviewTab = 'cover_letter'; scrollToPreview()" class="hover:text-violet-400 text-left transition flex items-center gap-1.5">
+              <i data-lucide="mail" class="w-3.5 h-3.5 text-violet-400"></i>
+              <span>AI Cover Letter Builder</span>
+            </button>
+          </li>
+          <li>
+            <button @click="activePreviewTab = 'portfolio'; scrollToPreview()" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+              <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Web Portfolio Studio</span>
+            </button>
+          </li>
+          <li>
+            <button @click="showPricingModal = true" class="hover:text-amber-400 text-left transition flex items-center gap-1.5 font-semibold text-amber-300">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Subscription Pricing</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Column 3: Resources & Cloud -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Platform & Tools</h4>
+        <ul class="space-y-2 text-xs">
+          <li>
+            <button @click="openSavedResumesModal()" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+              <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>MySQL Saved Resumes</span>
+            </button>
+          </li>
+          <li>
+            <button @click="loadSample('software_engineer')" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+              <i data-lucide="code-2" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Full Stack Sample</span>
+            </button>
+          </li>
+          <li>
+            <button @click="loadSample('product_manager')" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+              <i data-lucide="briefcase" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Product Mgr Sample</span>
+            </button>
+          </li>
+          <template x-if="currentUser && currentUser.is_admin">
+            <li>
+              <a href="/admin" class="text-purple-400 hover:text-purple-300 transition flex items-center gap-1.5 font-bold">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                <span>Admin Control Center</span>
+              </a>
+            </li>
+          </template>
+          <li>
+            <a href="mailto:support@resumatch.ai" class="hover:text-slate-200 transition flex items-center gap-1.5">
+              <i data-lucide="headphones" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Candidate Support</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Column 4: Legal & Compliance -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Legal & Governance</h4>
+        <ul class="space-y-2 text-xs">
+          <li>
+            <a href="/privacy" @click.prevent="openLegalModal('privacy')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Privacy Policy</span>
+            </a>
+          </li>
+          <li>
+            <a href="/terms" @click.prevent="openLegalModal('terms')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Terms of Service</span>
+            </a>
+          </li>
+          <li>
+            <a href="/refund" @click.prevent="openLegalModal('refund')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Refund & Cancellation</span>
+            </a>
+          </li>
+          <li>
+            <a href="/security" @click.prevent="openLegalModal('security')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Security & Sub-processors</span>
+            </a>
+          </li>
+          <li>
+            <button @click="openLegalModal('cookies')" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+              <i data-lucide="cookie" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Cookie Preferences</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Divider -->
+    <div class="border-t border-slate-800/80 my-8"></div>
+
+    <!-- Bottom Bar: Copyright, PPP Currency & Theme Toggle -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+      
+      <!-- Copyright & AI Transparency Statement -->
+      <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-slate-500 text-center sm:text-left">
+        <span>© 2026 ResuMatch AI Technology Solutions. All rights reserved.</span>
+        <span class="hidden sm:inline">•</span>
+        <span class="text-[11px] text-slate-400">Users retain 100% intellectual property ownership of all generated documents.</span>
+      </div>
+
+      <!-- Currency, Language & Theme Indicators -->
+      <div class="flex items-center space-x-3">
+        <!-- Active Currency Badge -->
+        <button @click="showPricingModal = true"
+          class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[11px] font-bold flex items-center gap-1.5 transition"
+          title="Change billing currency">
+          <span class="text-indigo-400 font-mono" x-text="activeCurrencySymbol || 'Rs.'"></span>
+          <span x-text="activeCurrency || 'LKR'"></span>
+          <span class="text-slate-500 font-normal">Pricing</span>
+        </button>
+
+        <!-- Theme Toggle Button in Footer -->
+        <button @click="toggleDarkMode()"
+          class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
+          :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <i x-show="darkMode" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+          <i x-show="!darkMode" data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</footer>

@@ -1,0 +1,442 @@
+    <!-- RIGHT COLUMN: ATS Intelligence, Template Controls, Portfolio Web & Preview (7 cols) -->
+    <div class="lg:col-span-7 space-y-5 flex flex-col">
+
+      <!-- ATS Score Banner (Shows when tailored data exists) -->
+      <template x-if="tailoredData">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+
+            <!-- Overall Score Circle Gauge -->
+            <div
+              class="md:col-span-4 flex items-center space-x-3 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+              <div
+                class="relative w-16 h-16 flex items-center justify-center rounded-full bg-slate-900 border-4 border-emerald-500/80 text-emerald-400 font-extrabold text-xl shadow-lg shadow-emerald-500/20">
+                <span x-text="tailoredData.ats_analysis.overall_score + '%'">96%</span>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-slate-200">ATS Match Score</span>
+                <p class="text-[11px] text-emerald-400 font-medium">Top Tier ATS Readiness</p>
+                <p class="text-[10px] text-slate-400">100% Real Candidate Data</p>
+              </div>
+            </div>
+
+            <!-- Breakdown Metrics -->
+            <div class="md:col-span-8 grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] block">ATS Format</span>
+                <span class="font-bold text-emerald-400">100% Clean</span>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] block">Visual Formats</span>
+                <span class="font-bold text-indigo-400">Photo & Colors</span>
+              </div>
+              <div class="bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                <span class="text-slate-400 text-[10px] block">Portfolio Web</span>
+                <span class="font-bold text-pink-400">Live Ready</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Matched Skills Tags -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[11px] text-slate-400 font-semibold mr-1">Matched Skills:</span>
+              <template x-for="kw in tailoredData.ats_analysis.matched_keywords" :key="kw">
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-md"
+                  x-text="kw"></span>
+              </template>
+            </div>
+          </div>
+
+        </div>
+      </template>
+
+      <!-- Main Preview Container Card -->
+      <div
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden min-h-[640px]">
+
+        <!-- Tab Switcher, Template Selector & Actions Bar -->
+        <div class="p-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/90">
+
+          <!-- 4 Tabs -->
+          <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <button @click="activeTab = 'resume'; renderPdfPreview()"
+              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'resume', 'text-slate-400 hover:text-slate-200': activeTab !== 'resume'}"
+              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+              <span>PDF Resume</span>
+            </button>
+            <button @click="activeTab = 'cover_letter'; renderPdfPreview()"
+              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'cover_letter', 'text-slate-400 hover:text-slate-200': activeTab !== 'cover_letter'}"
+              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+              <span>Cover Letter</span>
+            </button>
+            <button @click="activeTab = 'portfolio'; renderPortfolioPreview()"
+              :class="{'bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-semibold shadow': activeTab === 'portfolio', 'text-slate-400 hover:text-slate-200': activeTab !== 'portfolio'}"
+              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="globe" class="w-3.5 h-3.5 text-pink-300"></i>
+              <span>Portfolio Web</span>
+              <span
+                class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[9px] font-bold rounded uppercase">Pro</span>
+            </button>
+            <button @click="activeTab = 'text'"
+              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'text', 'text-slate-400 hover:text-slate-200': activeTab !== 'text'}"
+              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+              <span>Plain Text</span>
+            </button>
+          </div>
+
+          <!-- Template Switcher (Both ATS & Visual Graphic Designer Styles) -->
+          <template x-if="tailoredData && activeTab === 'resume'">
+            <div
+              class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 flex-wrap">
+              <span class="text-[9px] text-slate-400 px-1 font-bold uppercase">ATS:</span>
+              <button @click="setTemplate('classic')"
+                :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
+                class="px-1.5 py-0.5 rounded text-[10px]">Classic</button>
+              <button @click="setTemplate('modern')"
+                :class="currentTemplate === 'modern' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
+                class="px-1.5 py-0.5 rounded text-[10px]">Navy</button>
+              <button @click="setTemplate('minimal')"
+                :class="currentTemplate === 'minimal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
+                class="px-1.5 py-0.5 rounded text-[10px]">Compact</button>
+
+              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase border-l border-slate-800 ml-1">🎨 Visual
+                Formats:</span>
+              <button @click="setTemplate('visual_sidebar')"
+                :class="currentTemplate === 'visual_sidebar' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
+                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                <span>Sidebar Photo</span>
+              </button>
+              <button @click="setTemplate('banner_periwinkle')"
+                :class="currentTemplate === 'banner_periwinkle' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
+                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                <span>Periwinkle Banner</span>
+              </button>
+              <button @click="setTemplate('creative_gradient')"
+                :class="currentTemplate === 'creative_gradient' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
+                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                <span>Indigo Banner</span>
+              </button>
+              <button @click="setTemplate('emerald_prestige')"
+                :class="currentTemplate === 'emerald_prestige' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
+                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                <span>Emerald Prestige</span>
+              </button>
+              <button @click="setTemplate('tech_noir')"
+                :class="currentTemplate === 'tech_noir' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
+                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                <span>Tech Noir</span>
+              </button>
+            </div>
+          </template>
+
+          <!-- Portfolio Theme Selector -->
+          <!-- Portfolio Architecture Selector -->
+          <template x-if="tailoredData && activeTab === 'portfolio'">
+            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 flex-wrap">
+              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase">Architecture:</span>
+              <button @click="setPortfolioTheme('aurora_white')"
+                :class="{'bg-sky-400 text-slate-950 font-bold shadow': portfolioTheme === 'aurora_white', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'aurora_white'}"
+                class="px-2 py-0.5 rounded text-[10px]">🤍 White</button>
+              <button @click="setPortfolioTheme('motion_zenith')"
+                :class="{'bg-amber-500 text-slate-950 font-bold shadow': portfolioTheme === 'motion_zenith', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'motion_zenith'}"
+                class="px-2 py-0.5 rounded text-[10px]">✨ Motion</button>
+              <button @click="setPortfolioTheme('galaxy_canvas')"
+                :class="{'bg-cyan-500 text-slate-950 font-bold shadow': portfolioTheme === 'galaxy_canvas', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'galaxy_canvas'}"
+                class="px-2 py-0.5 rounded text-[10px]">🚀 Galaxy</button>
+              <button @click="setPortfolioTheme('bento_grid')"
+                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'bento_grid', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'bento_grid'}"
+                class="px-2 py-0.5 rounded text-[10px]">🍱 Bento</button>
+              <button @click="setPortfolioTheme('split_sidebar')"
+                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'split_sidebar', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'split_sidebar'}"
+                class="px-2 py-0.5 rounded text-[10px]">📑 Split</button>
+              <button @click="setPortfolioTheme('terminal_dev')"
+                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'terminal_dev', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'terminal_dev'}"
+                class="px-2 py-0.5 rounded text-[10px]">💻 Terminal</button>
+              <button @click="setPortfolioTheme('editorial_swiss')"
+                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'editorial_swiss', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'editorial_swiss'}"
+                class="px-2 py-0.5 rounded text-[10px]">📰 Swiss</button>
+              <button @click="setPortfolioTheme('neon_glass')"
+                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'neon_glass', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'neon_glass'}"
+                class="px-2 py-0.5 rounded text-[10px]">🌌 Neon</button>
+            </div>
+          </template>
+
+          <!-- Download & Publish CTAs -->
+          <div class="flex items-center space-x-2">
+            <template x-if="activeTab === 'resume'">
+              <button @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
+                class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span
+                  x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+              </button>
+            </template>
+
+            <template x-if="activeTab === 'cover_letter'">
+              <button @click="downloadCoverLetterPdf()" :disabled="!tailoredData || isDownloading"
+                class="px-3.5 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Download Cover Letter (PDF)</span>
+              </button>
+            </template>
+
+            <template x-if="activeTab === 'portfolio'">
+              <div class="flex items-center space-x-2">
+                <button @click="publishLivePortfolio()" :disabled="!tailoredData || isPublishing"
+                  class="px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-pink-600/20 flex items-center gap-1.5 transition">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  <span x-text="isPublishing ? 'Publishing...' : 'Publish Live URL'"></span>
+                </button>
+                <button @click="downloadPortfolioHtml()" :disabled="!tailoredData"
+                  class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  <span>Export HTML</span>
+                </button>
+              </div>
+            </template>
+
+            <template x-if="activeTab === 'text'">
+              <button @click="copyPlainText()" :disabled="!tailoredData"
+                class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span x-text="copied ? 'Copied!' : 'Copy Plain Text'"></span>
+              </button>
+            </template>
+          </div>
+
+        </div>
+
+        <!-- Published Live URL Alert -->
+        <template x-if="publishedLiveUrl && activeTab === 'portfolio'">
+          <div
+            class="bg-gradient-to-r from-pink-950/60 to-indigo-950/60 border-b border-pink-500/30 px-4 py-2.5 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span class="text-slate-300">Your portfolio is LIVE at:</span>
+              <a :href="publishedLiveUrl" target="_blank" class="font-mono text-pink-300 font-bold hover:underline"
+                x-text="window.location.origin + publishedLiveUrl"></a>
+            </div>
+            <a :href="publishedLiveUrl" target="_blank"
+              class="px-2.5 py-1 bg-pink-500/20 text-pink-300 hover:bg-pink-500/30 rounded font-semibold flex items-center gap-1 transition">
+              <span>Open in New Tab</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+        </template>
+
+        <!-- Preview Body Container -->
+        <div class="flex-1 bg-slate-950 flex items-center justify-center p-2 relative overflow-hidden">
+
+          <!-- Empty State -->
+          <template x-if="!tailoredData && !isTailoring">
+            <div class="text-center p-8 max-w-sm space-y-3">
+              <div
+                class="w-14 h-14 mx-auto rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+                <i data-lucide="sparkles" class="w-7 h-7 text-indigo-400"></i>
+              </div>
+              <h3 class="text-sm font-semibold text-slate-300">Generate ATS & Visual Designer Resumes</h3>
+              <p class="text-xs text-slate-500">Switch between 100% single-column ATS layouts and modern visual
+                templates with candidate photos, colored shapes, and sidebars.</p>
+              <div class="pt-2">
+                <button @click="loadSample('software_engineer')"
+                  class="text-xs text-indigo-400 hover:underline font-medium">
+                  Load Software Engineer Demo &rarr;
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- Loading State -->
+          <template x-if="isTailoring">
+            <div class="text-center p-8 space-y-4">
+              <div class="relative w-16 h-16 mx-auto">
+                <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin">
+                </div>
+                <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
+                  <i data-lucide="sparkles" class="w-6 h-6 animate-pulse"></i>
+                </div>
+              </div>
+              <div>
+                <h4 class="text-sm font-semibold text-slate-200">Gemini Flash Processing</h4>
+                <p class="text-xs text-slate-400 mt-1" x-text="tailorStatusText">Generating documents...</p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Tab 1: Live PDF Embed (Supports ATS + Visual Designer Formats) -->
+          <template x-if="tailoredData && activeTab === 'resume'">
+            <div class="w-full h-full min-h-[580px] flex flex-col">
+              <iframe :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
+                type="application/pdf"></iframe>
+            </div>
+          </template>
+
+          <!-- Tab 2: Cover Letter Tab -->
+          <template x-if="tailoredData && activeTab === 'cover_letter'">
+            <div
+              class="w-full h-full min-h-[580px] p-6 bg-white text-slate-900 rounded-xl overflow-y-auto font-sans leading-relaxed shadow-inner">
+              <div class="max-w-2xl mx-auto space-y-4 text-sm">
+                
+                <!-- 1. Header by Layout Style -->
+                <!-- A. Modern Accent Banner -->
+                <template x-if="(tailoredData.cover_letter.layout_style || 'modern_banner') === 'modern_banner'">
+                  <div class="rounded-lg overflow-hidden border border-slate-200 mb-5 shadow-sm">
+                    <div class="p-4" :style="'background-color: ' + (tailoredData.custom_accent_color || '#1E3A8A') + '; color: white;'">
+                      <h2 class="text-xl font-bold tracking-tight uppercase" x-text="tailoredData.personal_info.full_name"></h2>
+                      <p class="text-xs text-slate-200 uppercase font-semibold tracking-wider mt-0.5"
+                        x-text="tailoredData.cover_letter.sign_off_title || tailoredData.target_job_title || 'Software Engineer'"></p>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-2 text-xs text-slate-600 border-t border-slate-200 flex flex-wrap gap-x-3 gap-y-1">
+                      <span x-show="tailoredData.personal_info.email" x-text="'✉ ' + tailoredData.personal_info.email"></span>
+                      <span x-show="tailoredData.personal_info.phone" x-text="'☎ ' + tailoredData.personal_info.phone"></span>
+                      <span x-show="tailoredData.personal_info.location" x-text="'📍 ' + tailoredData.personal_info.location"></span>
+                      <span x-show="tailoredData.personal_info.linkedin" x-text="'🔗 ' + tailoredData.personal_info.linkedin"></span>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- B. Classic Corporate Letterhead -->
+                <template x-if="tailoredData.cover_letter.layout_style === 'classic_corporate'">
+                  <div class="border-b pb-3 mb-4" :style="'border-color: ' + (tailoredData.custom_accent_color || '#1E3A8A')">
+                    <h2 class="text-2xl font-bold tracking-tight uppercase" :style="'color: ' + (tailoredData.custom_accent_color || '#1E3A8A')"
+                      x-text="tailoredData.personal_info.full_name"></h2>
+                    <p class="text-xs text-slate-600 mt-1">
+                      <span x-text="tailoredData.personal_info.location"></span> •
+                      <span x-text="tailoredData.personal_info.email"></span> •
+                      <span x-text="tailoredData.personal_info.phone"></span>
+                      <template x-if="tailoredData.personal_info.linkedin">
+                        <span> • <span x-text="tailoredData.personal_info.linkedin"></span></span>
+                      </template>
+                    </p>
+                  </div>
+                </template>
+
+                <!-- C. Minimal Clean Letterhead -->
+                <template x-if="tailoredData.cover_letter.layout_style === 'minimal_clean'">
+                  <div class="text-center pb-3 mb-4 border-b border-slate-200">
+                    <h2 class="text-2xl font-bold tracking-wider uppercase text-slate-900" x-text="tailoredData.personal_info.full_name"></h2>
+                    <p class="text-xs text-slate-500 mt-1">
+                      <span x-text="tailoredData.personal_info.email"></span> •
+                      <span x-text="tailoredData.personal_info.phone"></span> •
+                      <span x-text="tailoredData.personal_info.location"></span>
+                    </p>
+                  </div>
+                </template>
+
+                <!-- 2. Date -->
+                <template x-if="tailoredData.cover_letter.letter_date">
+                  <div class="text-xs font-semibold text-slate-700" x-text="tailoredData.cover_letter.letter_date"></div>
+                </template>
+
+                <!-- 3. Recipient Block -->
+                <div class="text-xs text-slate-700 space-y-0.5">
+                  <p class="font-bold text-slate-900 text-sm" x-text="tailoredData.cover_letter.recipient_name"></p>
+                  <p x-show="tailoredData.cover_letter.recipient_title" x-text="tailoredData.cover_letter.recipient_title"></p>
+                  <p class="font-semibold text-slate-800" x-text="tailoredData.cover_letter.company_name"></p>
+                  <p x-show="tailoredData.cover_letter.company_address" x-text="tailoredData.cover_letter.company_address"></p>
+                </div>
+
+                <!-- 4. Subject / RE Line -->
+                <template x-if="tailoredData.cover_letter.reference_subject">
+                  <div class="font-bold text-xs uppercase tracking-wide py-1"
+                    :style="'color: ' + (tailoredData.custom_accent_color || '#1E3A8A')">
+                    RE: <span x-text="tailoredData.cover_letter.reference_subject"></span>
+                  </div>
+                </template>
+
+                <!-- 5. Salutation & Body Paragraphs -->
+                <p class="font-bold text-slate-900 pt-1" x-text="tailoredData.cover_letter.salutation"></p>
+                
+                <div class="space-y-3.5 text-slate-800 text-justify text-[13px] leading-relaxed">
+                  <p x-text="tailoredData.cover_letter.opening_paragraph"></p>
+                  <p x-text="tailoredData.cover_letter.body_paragraph"></p>
+                  <p x-text="tailoredData.cover_letter.closing_paragraph"></p>
+                </div>
+
+                <!-- 6. Sign-off & Digital Signature Section -->
+                <div class="pt-3 text-slate-900 space-y-1">
+                  <p x-text="tailoredData.cover_letter.sign_off || 'Sincerely,'"></p>
+
+                  <!-- Drawn or Uploaded Signature Image -->
+                  <template x-if="['draw', 'upload'].includes(tailoredData.cover_letter.signature_mode) && tailoredData.cover_letter.signature_image_data">
+                    <div class="py-1">
+                      <img :src="tailoredData.cover_letter.signature_image_data" alt="Digital Signature" class="h-10 object-contain">
+                    </div>
+                  </template>
+
+                  <!-- Stylized Script Signature -->
+                  <template x-if="(tailoredData.cover_letter.signature_mode || 'script') === 'script'">
+                    <div class="text-2xl italic font-serif py-1 tracking-wide"
+                      :style="'font-family: Times New Roman, Georgia, serif; color: ' + (tailoredData.custom_accent_color || '#1E3A8A')"
+                      x-text="tailoredData.personal_info.full_name"></div>
+                  </template>
+
+                  <!-- Signer Name & Title -->
+                  <p class="font-bold text-sm" x-text="tailoredData.personal_info.full_name"></p>
+                  <p x-show="tailoredData.cover_letter.sign_off_title" class="text-xs text-slate-500 font-medium"
+                    x-text="tailoredData.cover_letter.sign_off_title"></p>
+                </div>
+
+                <!-- 7. Postscript & Enclosure -->
+                <template x-if="tailoredData.cover_letter.postscript">
+                  <div class="pt-3 border-t border-slate-100 text-xs italic text-slate-700">
+                    <span class="font-bold not-italic">P.S.</span> <span x-text="tailoredData.cover_letter.postscript.replace(/^P\.S\.\s*/i, '')"></span>
+                  </div>
+                </template>
+
+                <template x-if="tailoredData.cover_letter.enclosure">
+                  <div class="pt-1 text-[11px] text-slate-500 italic" x-text="tailoredData.cover_letter.enclosure"></div>
+                </template>
+
+              </div>
+            </div>
+          </template>
+
+          <!-- Tab 3: LIVE PORTFOLIO WEB PREVIEW -->
+          <template x-if="tailoredData && activeTab === 'portfolio'">
+            <div
+              class="w-full h-full min-h-[580px] flex flex-col rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl">
+              <div
+                class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                </div>
+                <div
+                  class="bg-slate-950 px-6 py-1 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 flex items-center gap-2">
+                  <i data-lucide="lock" class="w-3 h-3 text-emerald-400"></i>
+                  <span>https://<span
+                      x-text="tailoredData.personal_info.custom_domain || ('resumatch.ai/p/' + (tailoredData.personal_info.full_name || 'developer').toLowerCase().replace(/\s+/g, '-'))"></span></span>
+                </div>
+                <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <i data-lucide="check-circle" class="w-3 h-3"></i> Live Customizer
+                </div>
+              </div>
+              <iframe :srcdoc="portfolioHtml" class="w-full h-full flex-1 border-0 bg-slate-950"
+                sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+          </template>
+
+          <!-- Tab 4: Plain Text -->
+          <template x-if="tailoredData && activeTab === 'text'">
+            <div class="w-full h-full min-h-[580px] flex flex-col p-2">
+              <textarea readonly
+                class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-300 leading-relaxed focus:outline-none select-all"
+                x-text="getFormattedPlainText()"></textarea>
+            </div>
+          </template>
+
+        </div>
+
+      </div>
+
+    </div>
+

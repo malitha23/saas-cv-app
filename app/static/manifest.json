@@ -1,0 +1,18 @@
+{
+  "name": "ResuMatch AI - ATS Resume & Portfolio Builder",
+  "short_name": "ResuMatch AI",
+  "description": "Optimize resumes, generate ATS-friendly PDFs, design visual CVs, and publish modern custom web portfolios.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "64x64 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"]
+}

@@ -1,0 +1,143 @@
+{% extends "legal/layout.html" %}
+
+{% block title %}Security & Data Compliance - ResuMatch AI{% endblock %}
+{% block meta_description %}ResuMatch AI enterprise security architecture, OWASP protection, encryption standards, and sub-processor disclosures.{% endblock %}
+
+{% block legal_content %}
+<div class="legal-card bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+  
+  <!-- Header -->
+  <div class="border-b border-slate-800 pb-6 space-y-2">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+      <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+      Enterprise Security & Compliance Whitepaper
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">Security & Compliance Architecture</h1>
+    <p class="text-xs sm:text-sm text-slate-400">
+      How ResuMatch AI engineers zero-trust data protection, OWASP hardening, and cryptographic integrity across every layer.
+    </p>
+  </div>
+
+  <!-- Security Pillars Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+        <i data-lucide="lock" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">TLS 1.3 & Bcrypt Hashing</h4>
+      <p class="text-[11px] text-slate-400">Strict modern ciphers in transit. One-way salt hashing prevents credential compromise.</p>
+    </div>
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+        <i data-lucide="shield" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">OWASP Hardened Middleware</h4>
+      <p class="text-[11px] text-slate-400">Enforced security headers against Clickjacking, MIME-sniffing, XSS, and Referrer leakage.</p>
+    </div>
+    <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+      <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+        <i data-lucide="server" class="w-4 h-4"></i>
+      </div>
+      <h4 class="font-bold text-slate-200">Zero-Trust Server Validation</h4>
+      <p class="text-[11px] text-slate-400">All PDF quotas, tier permissions, and admin operations are cryptographically verified server-side.</p>
+    </div>
+  </div>
+
+  <!-- Detailed Sections -->
+  <div class="space-y-8 text-xs sm:text-sm text-slate-300 leading-relaxed">
+
+    <!-- 1. OWASP Top 10 Protection -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">1</span>
+        Application Security & OWASP Hardening
+      </h2>
+      <p>
+        ResuMatch AI is built on an enterprise FastAPI framework hardened with mandatory HTTP security middleware:
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-300">X-Frame-Options: SAMEORIGIN</strong>
+          <p class="text-slate-400">Prevents clickjacking attacks by blocking unauthorized framing from third-party websites.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-300">X-Content-Type-Options: nosniff</strong>
+          <p class="text-slate-400">Disables MIME-type sniffing to eliminate drive-by executable downloads and cross-site scripting.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-300">Strict Referrer-Policy</strong>
+          <p class="text-slate-400">Restricts sensitive URL leakage across origins while enabling clean avatar loading via explicit referrerpolicy.</p>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+          <strong class="text-indigo-300">Parameterized ORM Queries</strong>
+          <p class="text-slate-400">All MySQL database operations utilize parameterized SQLAlchemy 2.0 queries, eliminating SQL injection.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Zero-Trust Access & JWT Cryptography -->
+    <section class="space-y-3">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">2</span>
+        Authentication & Zero-Trust Verification
+      </h2>
+      <p>
+        - <strong>Bcrypt Salt Hashing:</strong> User passwords undergo cryptographic key derivation with high cost factors. Plaintext passwords never touch logs or storage.
+        <br>
+        - <strong>HMAC-SHA256 JWT Tokens:</strong> Sessions are secured using JSON Web Tokens containing short expiration windows and validated cryptographic signatures.
+        <br>
+        - <strong>Google OAuth 2.0 GIS:</strong> Google tokens are verified via Google's public token verification certificates, with issuer (<code class="text-slate-300">accounts.google.com</code>), audience (<code class="text-slate-300">client_id</code>), expiration, and email-verification validation.
+        <br>
+        - <strong>Role-Based Access Control (RBAC):</strong> Administrative endpoints require active database flag verification (<code class="text-slate-300">is_admin=True</code>); front-end state cannot grant unauthorized access.
+      </p>
+    </section>
+
+    <!-- 3. Sub-Processor Registry -->
+    <section class="space-y-3 p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30">
+      <h2 class="text-base sm:text-lg font-bold text-indigo-200 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center text-xs">3</span>
+        Authorized Sub-Processor Registry
+      </h2>
+      <p class="text-slate-300">
+        To deliver our services, we partner with trusted infrastructure sub-processors who adhere to SOC 2, ISO 27001, and GDPR standards:
+      </p>
+      <div class="space-y-2 mt-2 text-xs">
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div>
+            <strong class="text-slate-200">Google Cloud / Google Gemini API</strong>
+            <p class="text-[11px] text-slate-400">Enterprise AI model inference (Zero model training retention).</p>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SOC 2 / ISO 27001</span>
+        </div>
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div>
+            <strong class="text-slate-200">MySQL Enterprise Database Hosting</strong>
+            <p class="text-[11px] text-slate-400">Encrypted user profiles and saved cloud resume storage.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">AES-256 Encrypted</span>
+        </div>
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div>
+            <strong class="text-slate-200">Stripe / Payment Gateways</strong>
+            <p class="text-[11px] text-slate-400">PCI-DSS Level 1 compliant recurring billing & subscription management.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PCI-DSS Level 1</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Responsible Disclosure -->
+    <section class="space-y-3 p-4 rounded-2xl bg-slate-950 border border-slate-800">
+      <h2 class="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-xs">4</span>
+        Vulnerability Reporting & Responsible Disclosure
+      </h2>
+      <p class="text-xs text-slate-400">
+        If you discover a potential security vulnerability in our application, API, or infrastructure, please submit a responsible disclosure report to <code class="text-indigo-400 bg-slate-800 px-2 py-0.5 rounded">security@resumatch.ai</code>. We provide prompt triage, fast remediation, and acknowledgment in our security hall of fame.
+      </p>
+    </section>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Legal & Compliance - ResuMatch AI{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Official legal agreements, privacy policies, terms of service, and refund terms for ResuMatch AI.{% endblock %}">
+  <link rel="canonical" href="https://resumatch.ai/{{ active_page }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- Favicon & Open Graph -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <meta property="og:site_name" content="ResuMatch AI">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{% block og_title %}Legal & Compliance - ResuMatch AI{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Official privacy policy, terms of service, and refund terms for ResuMatch AI.{% endblock %}">
+  <meta property="og:image" content="https://resumatch.ai/static/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@ResuMatchAI">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- Tailwind CSS CDN with JIT & Inter Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    @media print {
+      header, footer, .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .legal-card { border: none !important; box-shadow: none !important; background: transparent !important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-200 antialiased selection:bg-indigo-500/30 selection:text-indigo-200"
+  x-data="{
+    darkMode: localStorage.getItem('resumatch_theme') !== 'light',
+    toggleTheme() {
+      this.darkMode = !this.darkMode;
+      localStorage.setItem('resumatch_theme', this.darkMode ? 'dark' : 'light');
+      if (this.darkMode) {
+        document.documentElement.classList.remove('light-mode');
+        document.documentElement.style.backgroundColor = '#020617';
+        document.documentElement.style.color = '#f8fafc';
+      } else {
+        document.documentElement.classList.add('light-mode');
+        document.documentElement.style.backgroundColor = '#f1f5f9';
+        document.documentElement.style.color = '#0f172a';
+      }
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+    init() {
+      if (localStorage.getItem('resumatch_theme') === 'light') {
+        this.darkMode = false;
+        document.documentElement.classList.add('light-mode');
+        document.documentElement.style.backgroundColor = '#f1f5f9';
+        document.documentElement.style.color = '#0f172a';
+      }
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    }
+  }">
+
+  <!-- TOP BRAND NAVBAR -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center space-x-2.5 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg group-hover:scale-105 transition-transform">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <span class="font-extrabold text-lg tracking-tight text-slate-100">ResuMatch<span class="text-indigo-400">.ai</span></span>
+          <span class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700 rounded-full">Legal Hub</span>
+        </div>
+      </a>
+
+      <!-- Right Navigation Actions -->
+      <div class="flex items-center space-x-3 text-xs">
+        <button @click="window.print()" class="no-print hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Print document">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Print</span>
+        </button>
+
+        <a href="/" class="px-3.5 py-1.5 font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-md shadow-indigo-500/20 flex items-center gap-1.5 transition">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Back to App</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- SECONDARY LEGAL NAVIGATION SUB-BAR -->
+  <nav class="border-b border-slate-800/60 bg-slate-900/50 backdrop-blur sticky top-16 z-30 no-print overflow-x-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center space-x-1 sm:space-x-2 py-2 text-xs font-semibold whitespace-nowrap">
+      
+      <a href="/privacy"
+        class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'privacy' %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        <span>Privacy Policy</span>
+      </a>
+
+      <a href="/terms"
+        class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'terms' %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+        <span>Terms & Conditions</span>
+      </a>
+
+      <a href="/refund"
+        class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'refund' %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+        <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+        <span>Refund & Cancellation</span>
+      </a>
+
+      <a href="/security"
+        class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'security' %}bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold{% else %}text-slate-400 hover:text-slate-200 hover:bg-slate-800{% endif %}">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+        <span>Security & Compliance</span>
+      </a>
+
+    </div>
+  </nav>
+
+  <!-- MAIN LEGAL CONTENT WRAPPER -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    {% block legal_content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-500 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+        <span>ResuMatch AI Career Operating System • 100% Privacy-First ATS Optimization</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="/privacy" class="hover:text-slate-300 transition">Privacy</a>
+        <a href="/terms" class="hover:text-slate-300 transition">Terms</a>
+        <a href="/refund" class="hover:text-slate-300 transition">Refunds</a>
+        <a href="/security" class="hover:text-slate-300 transition">Security</a>
+        <a href="/" class="text-indigo-400 hover:underline">Resume Editor</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
