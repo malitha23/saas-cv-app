@@ -53,34 +53,34 @@
         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Product Studio</h4>
         <ul class="space-y-2 text-xs">
           <li>
-            <button @click="activePreviewTab = 'ats'; scrollToPreview()" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'ats'; scrollToPreview(); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
               <span>Classic ATS Resume</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="activePreviewTab = 'visual'; scrollToPreview()" class="hover:text-pink-400 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'visual'; scrollToPreview(); }" class="hover:text-pink-400 text-left transition flex items-center gap-1.5">
               <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-400"></i>
               <span>Visual Photo CV</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="activePreviewTab = 'cover_letter'; scrollToPreview()" class="hover:text-violet-400 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'cover_letter'; scrollToPreview(); }" class="hover:text-violet-400 text-left transition flex items-center gap-1.5">
               <i data-lucide="mail" class="w-3.5 h-3.5 text-violet-400"></i>
               <span>AI Cover Letter Builder</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="activePreviewTab = 'portfolio'; scrollToPreview()" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'portfolio'; scrollToPreview(); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
               <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
               <span>Web Portfolio Studio</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="showPricingModal = true" class="hover:text-amber-400 text-left transition flex items-center gap-1.5 font-semibold text-amber-300">
+            <a href="/app" @click="if (typeof showPricingModal !== 'undefined') { $event.preventDefault(); showPricingModal = true; }" class="hover:text-amber-400 text-left transition flex items-center gap-1.5 font-semibold text-amber-300">
               <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
               <span>Subscription Pricing</span>
-            </button>
+            </a>
           </li>
         </ul>
       </div>
@@ -90,26 +90,26 @@
         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Platform & Tools</h4>
         <ul class="space-y-2 text-xs">
           <li>
-            <button @click="openSavedResumesModal()" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof openSavedResumesModal === 'function') { $event.preventDefault(); openSavedResumesModal(); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
               <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i>
               <span>MySQL Saved Resumes</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="loadSample('software_engineer')" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof loadSample === 'function') { $event.preventDefault(); loadSample('software_engineer'); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
               <i data-lucide="code-2" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Full Stack Sample</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button @click="loadSample('product_manager')" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
+            <a href="/app" @click="if (typeof loadSample === 'function') { $event.preventDefault(); loadSample('product_manager'); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
               <i data-lucide="briefcase" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Product Mgr Sample</span>
-            </button>
+            </a>
           </li>
-          <template x-if="currentUser && currentUser.is_admin">
+          <template x-if="typeof currentUser !== 'undefined' && currentUser && currentUser.is_admin">
             <li>
-              <a href="/admin" class="text-purple-400 hover:text-purple-300 transition flex items-center gap-1.5 font-bold">
+              <a href="/paneladmin" class="text-purple-400 hover:text-purple-300 transition flex items-center gap-1.5 font-bold">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
                 <span>Admin Control Center</span>
               </a>
@@ -124,39 +124,39 @@
         </ul>
       </div>
 
-      <!-- Column 4: Legal & Compliance -->
+      <!-- Column 4: Legal & Governance -->
       <div class="space-y-3">
         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Legal & Governance</h4>
         <ul class="space-y-2 text-xs">
           <li>
-            <a href="/privacy" @click.prevent="openLegalModal('privacy')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+            <a href="/privacy" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('privacy'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
               <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Privacy Policy</span>
             </a>
           </li>
           <li>
-            <a href="/terms" @click.prevent="openLegalModal('terms')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+            <a href="/terms" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('terms'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
               <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Terms of Service</span>
             </a>
           </li>
           <li>
-            <a href="/refund" @click.prevent="openLegalModal('refund')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+            <a href="/refund" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('refund'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
               <i data-lucide="credit-card" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Refund & Cancellation</span>
             </a>
           </li>
           <li>
-            <a href="/security" @click.prevent="openLegalModal('security')" class="hover:text-indigo-400 transition flex items-center gap-1.5">
+            <a href="/security" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('security'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
               <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Security & Sub-processors</span>
             </a>
           </li>
           <li>
-            <button @click="openLegalModal('cookies')" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
+            <a href="/privacy#cookies" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('cookies'); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
               <i data-lucide="cookie" class="w-3.5 h-3.5 text-slate-400"></i>
               <span>Cookie Preferences</span>
-            </button>
+            </a>
           </li>
         </ul>
       </div>
@@ -170,30 +170,34 @@
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
       
       <!-- Copyright & AI Transparency Statement -->
-      <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-slate-500 text-center sm:text-left">
+      <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2.5 text-slate-500 text-center sm:text-left">
         <span>© 2026 ResuMatch AI Technology Solutions. All rights reserved.</span>
-        <span class="hidden sm:inline">•</span>
+        <span class="hidden sm:inline text-slate-700">•</span>
         <span class="text-[11px] text-slate-400">Users retain 100% intellectual property ownership of all generated documents.</span>
       </div>
 
       <!-- Currency, Language & Theme Indicators -->
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-3 shrink-0">
         <!-- Active Currency Badge -->
-        <button @click="showPricingModal = true"
-          class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[11px] font-bold flex items-center gap-1.5 transition"
-          title="Change billing currency">
-          <span class="text-indigo-400 font-mono" x-text="activeCurrencySymbol || 'Rs.'"></span>
-          <span x-text="activeCurrency || 'LKR'"></span>
-          <span class="text-slate-500 font-normal">Pricing</span>
-        </button>
+        <a href="/#pricing"
+          @click="if (typeof showPricingModal !== 'undefined') { $event.preventDefault(); showPricingModal = true; }"
+          class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold transition shadow-sm shrink-0 whitespace-nowrap"
+          title="Pricing Plans & Currency">
+          <span class="text-indigo-400 font-mono font-bold" x-text="(typeof activeCurrencySymbol !== 'undefined' && activeCurrencySymbol) ? activeCurrencySymbol : 'Rs.'">Rs.</span>
+          <span class="text-slate-200 font-bold" x-text="(typeof activeCurrency !== 'undefined' && activeCurrency) ? activeCurrency : 'LKR'">LKR</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-400 font-medium">Pricing</span>
+        </a>
 
-        <!-- Theme Toggle Button in Footer -->
-        <button @click="toggleDarkMode()"
-          class="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition"
-          :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-          <i x-show="darkMode" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
-          <i x-show="!darkMode" data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>
-        </button>
+        <!-- Theme Toggle Button in Footer (Rendered only when toggleDarkMode is available) -->
+        <template x-if="typeof toggleDarkMode === 'function'">
+          <button @click="toggleDarkMode()"
+            class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0"
+            :title="(typeof darkMode !== 'undefined' && darkMode) ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+            <i x-show="typeof darkMode !== 'undefined' && darkMode" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+            <i x-show="typeof darkMode !== 'undefined' && !darkMode" data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>
+          </button>
+        </template>
       </div>
 
     </div>

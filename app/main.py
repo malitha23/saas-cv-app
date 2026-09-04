@@ -1545,13 +1545,20 @@ os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-@app.get("/admin", response_class=HTMLResponse)
+@app.get("/paneladmin", response_class=HTMLResponse)
 async def serve_admin_page(request: Request):
-    """Serve dedicated, enterprise-hardened standalone Administrator Control Center."""
+    """Serve dedicated, enterprise-hardened standalone Administrator Control Center via obfuscated URL."""
     response = templates.TemplateResponse(request=request, name="admin.html")
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Pragma"] = "no-cache"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
     return response
+
+
+@app.get("/admin")
+async def trap_legacy_admin():
+    """Honeypot / bot decoy: Return HTTP 404 on /admin to prevent automated scanner enumeration."""
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 @app.get("/privacy", response_class=HTMLResponse)
@@ -1587,6 +1594,7 @@ async def serve_robots_txt():
     """Serve dynamic, crawler-friendly robots.txt for Google, Bing, and major search engines."""
     content = """User-agent: *
 Allow: /
+Allow: /app
 Allow: /privacy
 Allow: /terms
 Allow: /refund
@@ -1615,6 +1623,12 @@ async def serve_sitemap_xml():
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://resumatch.ai/app</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://resumatch.ai/privacy</loc>
@@ -1665,7 +1679,13 @@ async def serve_favicon():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_index(request: Request):
-    """Serve the modularized SaaS Web Application frontend with OWASP security headers."""
+async def serve_landing(request: Request):
+    """Serve the modern, high-converting Landing Page with OWASP security headers."""
+    return templates.TemplateResponse(request=request, name="landing.html")
+
+
+@app.get("/app", response_class=HTMLResponse)
+async def serve_app(request: Request):
+    """Serve the complete ATS AI Resume Builder, Editor & Portfolio Studio application."""
     return templates.TemplateResponse(request=request, name="index.html")
 
