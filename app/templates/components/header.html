@@ -5,9 +5,9 @@
   <div class="max-w-8xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
     <!-- 1. BRAND LOGO & TITLE -->
-    <div class="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
+    <a href="/" class="flex items-center space-x-2.5 sm:space-x-3 shrink-0 hover:opacity-90 transition group" title="Return to Home">
       <div
-        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg sm:text-xl shrink-0">
+        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg sm:text-xl shrink-0 group-hover:scale-105 transition">
         <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i>
       </div>
       <div class="flex flex-col">
@@ -22,10 +22,18 @@
         </div>
         <p class="text-[11px] text-slate-400 hidden lg:block tracking-normal">ATS Resumes • Visual Photo Formats • Live Portfolios</p>
       </div>
-    </div>
+    </a>
 
     <!-- 2. DESKTOP HEADER ACTIONS (Visible on lg/xl screens) -->
     <div class="hidden lg:flex items-center space-x-3 xl:space-x-4">
+
+      <!-- Return to Home Link -->
+      <a href="/"
+        class="px-2.5 py-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 hover:bg-slate-700/70 text-slate-300 hover:text-white transition text-xs font-semibold flex items-center gap-1.5"
+        title="Return to Landing Page">
+        <i data-lucide="home" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Home</span>
+      </a>
       
       <!-- Sample Loaders -->
       <div class="flex items-center space-x-1.5 text-xs bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
@@ -134,7 +142,7 @@
           <!-- Admin Control Center (Super Admin Only) -->
           <template x-if="currentUser.is_admin">
             <div class="flex items-center space-x-1.5">
-              <a href="/admin"
+              <a href="/paneladmin"
                 class="px-2.5 py-1.5 text-xs font-extrabold rounded-lg border border-purple-500/40 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 transition flex items-center gap-1.5 shadow-sm"
                 title="Dedicated Enterprise Admin Portal">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i>
@@ -444,7 +452,7 @@
                 </button>
 
                 <template x-if="currentUser.is_admin">
-                  <a href="/admin"
+                  <a href="/paneladmin"
                     class="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 text-purple-300 transition flex items-center justify-between text-xs group">
                     <span class="flex items-center gap-2">
                       <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform"></i>
@@ -699,13 +707,13 @@
           <!-- Admin Control Center (Mobile) -->
           <template x-if="currentUser?.is_admin">
             <div class="space-y-1.5">
-              <a href="/admin"
+              <a href="/paneladmin"
                 class="w-full py-2.5 px-3 bg-purple-600/25 hover:bg-purple-600/35 border border-purple-500/40 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-between transition">
                 <span class="flex items-center gap-2">
                   <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
                   <span>Dedicated Admin Portal</span>
                 </span>
-                <span class="text-[10px] bg-purple-500/30 px-2 py-0.5 rounded-full text-purple-100 font-mono">/admin</span>
+                <span class="text-[10px] bg-purple-500/30 px-2 py-0.5 rounded-full text-purple-100 font-mono">/paneladmin</span>
               </a>
               <button @click="openAdminModal(); mobileMenuOpen = false;"
                 class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 flex items-center justify-between transition">

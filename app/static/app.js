@@ -1705,11 +1705,11 @@ function resumeApp() {
           }
         });
       } else {
-        // Fallback for development/setup when Client ID has not been pasted in /admin yet
+        // Fallback for development/setup when Client ID has not been pasted in /paneladmin yet
         const promptSimulate = confirm(
           "⚙️ Google Sign-In Setup Notice\n\n" +
           "Your Google OAuth 2.0 Web Client ID is not configured yet in the database.\n\n" +
-          "• To connect your live Google Cloud Console credentials, navigate to /admin > Runtime Engine Limits & Permissions > Google OAuth 2.0 Web Client ID.\n\n" +
+          "• To connect your live Google Cloud Console credentials, navigate to /paneladmin > Runtime Engine Limits & Permissions > Google OAuth 2.0 Web Client ID.\n\n" +
           "Would you like to sign in using a verified Google test account now?"
         );
         if (promptSimulate) {
