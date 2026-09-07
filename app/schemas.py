@@ -136,8 +136,12 @@ class TailoredResume(BaseModel):
     show_projects: bool = Field(default=True, description="Show/Hide Key Projects")
     show_education: bool = Field(default=True, description="Show/Hide Education")
     show_certifications: bool = Field(default=True, description="Show/Hide Certifications")
+    role_archetype: str = Field(
+        default="general_professional",
+        description="Role blueprint: 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'"
+    )
     section_order: List[str] = Field(
-        default_factory=lambda: ["summary", "experience", "projects", "education", "certifications"],
+        default_factory=lambda: ["summary", "skills", "experience", "projects", "education", "certifications"],
         description="Display order of resume sections"
     )
     skill_categories: List[SkillCategory] = Field(default_factory=list)
@@ -168,6 +172,10 @@ class TailorRequest(BaseModel):
     job_description: str = Field(..., description="Target Job Description text")
     job_title: Optional[str] = Field(None, description="Optional target job title override")
     company_name: Optional[str] = Field(None, description="Optional target company override")
+    role_archetype: Optional[str] = Field(
+        "auto",
+        description="Role blueprint: 'auto', 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'"
+    )
     template_style: Optional[str] = Field("classic", description="Template: classic, modern, minimal")
     cover_letter_tone: Optional[str] = Field("professional", description="Tone of cover letter")
     api_key: Optional[str] = Field(None, description="User-provided Gemini API key (optional)")

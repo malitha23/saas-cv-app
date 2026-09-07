@@ -63,8 +63,18 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
         info.availability_badge = sanitize_text(info.availability_badge)
         info.custom_domain = sanitize_text(info.custom_domain)
 
+        # Ensure direct fields (linkedin, github, portfolio) are synced into social_links if not already present
+        existing_names = {sl.name.lower() for sl in info.social_links}
+        synced_social_links = list(info.social_links)
+        if info.linkedin and not any("linkedin" in n for n in existing_names):
+            synced_social_links.append(SocialLink(name="LinkedIn", url=info.linkedin, icon="linkedin", enabled=True))
+        if info.github and not any("github" in n for n in existing_names):
+            synced_social_links.append(SocialLink(name="GitHub", url=info.github, icon="github", enabled=True))
+        if info.portfolio and not any("portfolio" in n or "website" in n for n in existing_names):
+            synced_social_links.append(SocialLink(name="Portfolio", url=info.portfolio, icon="globe", enabled=True))
+
         safe_links = []
-        for sl in info.social_links:
+        for sl in synced_social_links:
             safe_links.append(SocialLink(
                 name=sanitize_text(sl.name),
                 url=sanitize_url(sl.url),

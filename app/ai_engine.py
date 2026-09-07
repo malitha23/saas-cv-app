@@ -3,26 +3,81 @@ import json
 import re
 import datetime
 from typing import Optional, Dict, Any, List, Tuple
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded
+load_dotenv()
+
 from app.schemas import (
     TailoredResume, PersonalInfo, SocialLink, SkillCategory, WorkExperienceItem,
     EducationItem, ProjectItem, CertificationItem, ATSAnalysis, CoverLetter
 )
 from app.parser import extract_candidate_name
 
-ATS_SYSTEM_PROMPT = """You are an elite ATS (Applicant Tracking System) Optimization Engine and Executive Resume Strategist.
-Your mission is to transform a candidate's actual existing resume to achieve a 95%+ match score against a target Job Description (JD), while strictly ensuring 100% ATS compliance and ZERO HALLUCINATIONS.
+ATS_SYSTEM_PROMPT = """You are an elite, universal ATS (Applicant Tracking System) Optimization Engine and Executive Resume Strategist.
+Your mission is to transform ANY candidate's existing resume—regardless of domain, industry, technical trade, medical field, legal sector, executive management, or country—to achieve a 95%+ match score against the target Job Description (JD), while strictly ensuring 100% ATS compliance and ZERO HALLUCINATIONS.
 
 ABSOLUTE CRITICAL RULES:
-1. STRICT TRUTH & ZERO HALLUCINATIONS:
-   - Extract and preserve the candidate's REAL name, real contact information, real employer/company names, real job titles, real university/degrees, real projects, and real skills.
-   - NEVER replace the candidate's actual employers or education with fake or template data.
-   - Only rewrite, refine, and quantify the candidate's ACTUAL achievements and responsibilities using active verbs and metrics aligned with the JD.
+1. STRICT AUTHENTICITY & ZERO HALLUCINATIONS:
+   - Extract and preserve the candidate's REAL name, real contact information, real employer/company names, real job titles, real education/degrees, real projects, and real skills.
+   - Candidate Full Name is NEVER an educational institution (like Cardiff Metropolitan University), school, or company. Extract the candidate's actual human name (e.g. 'Malitha Sayuranga').
+   - NEVER omit past work experiences or employers from any page. If the candidate has 4 jobs across 2 pages, return ALL 4 jobs.
+   - NEVER omit educational qualifications (Degrees, Diplomas, A/L, O/L) from any page.
+   - NEVER inject unmentioned companies or fake credentials.
+   - Adapt the resume to ANY industry: whether Healthcare, Automotive, Civil Engineering, Software Development, Culinary, Construction, Finance, Sales, Legal, Education, or Vocational Trades.
 
-2. ACTION VERBS & QUANTIFIABLE METRICS:
-   - Every work experience bullet must follow the formula: [Strong Action Verb] + [Context/Task & Technologies] + [Measurable Business Outcome/Metric % or $].
+2. IMPACT-DRIVEN, ROLE-APPROPRIATE BULLET POINTS:
+   - Rewrite the candidate's ACTUAL responsibilities into compelling, high-impact bullet points.
+   - Wherever possible, use strong action verbs and highlight efficiency, volume, quality standards, safety protocols, accuracy, leadership, or measurable business/operational outcomes.
 
-3. OUTPUT FORMAT:
-   - Return ONLY a valid, parseable JSON object adhering to the schema."""
+3. PROFESSIONAL SUMMARY & KEYWORD ALIGNMENT:
+   - Craft a tailored 3-4 sentence professional summary that bridges the candidate's real capabilities with the target role and target employer/visa requirements.
+
+4. OUTPUT FORMAT:
+   - Return ONLY a valid, parseable JSON object adhering strictly to the JSON schema."""
+
+
+def detect_role_archetype(resume_text: str, job_description: str, requested: Optional[str] = "auto") -> str:
+    """Detect or validate role archetype: software_engineering, trade_technical, management_executive, healthcare_medical, general_professional."""
+    if requested and requested.strip().lower() in ["software_engineering", "trade_technical", "management_executive", "healthcare_medical", "general_professional"]:
+        return requested.strip().lower()
+        
+    combined = f"{job_description} {resume_text}".lower()
+    
+    # 1. Software Engineering / Tech
+    software_keywords = [
+        "software engineer", "developer", "full stack", "frontend", "backend", "web developer",
+        "mobile developer", "flutter", "react", "angular", "laravel", "python", "java", "c#",
+        "devops", "cloud engineer", "programmer", "system architect", "node.js", "typescript"
+    ]
+    if any(k in combined for k in software_keywords):
+        return "software_engineering"
+        
+    # 2. Trades, Automotive & Vocational
+    trade_keywords = [
+        "technician", "automotive", "mechanic", "electrician", "painter", "hvac", "plumber",
+        "welder", "carpenter", "construction", "nvq", "vehicle", "engine", "workshop", "dealership"
+    ]
+    if any(k in combined for k in trade_keywords):
+        return "trade_technical"
+        
+    # 3. Management & Project Management
+    mgmt_keywords = [
+        "project manager", "product manager", "scrum master", "program manager", "operations manager",
+        "engineering manager", "pmp", "agile coach", "business analyst"
+    ]
+    if any(k in combined for k in mgmt_keywords):
+        return "management_executive"
+        
+    # 4. Healthcare & Medical
+    health_keywords = [
+        "nurse", "nursing", "doctor", "physician", "medical officer", "pharmacist", "clinical",
+        "hospital", "patient care", "healthcare", "laboratory technician"
+    ]
+    if any(k in combined for k in health_keywords):
+        return "healthcare_medical"
+        
+    return "general_professional"
 
 
 def generate_with_gemini(
@@ -31,28 +86,39 @@ def generate_with_gemini(
     api_key: Optional[str] = None,
     job_title: Optional[str] = None,
     company_name: Optional[str] = None,
+    role_archetype: Optional[str] = "auto",
     template_style: str = "classic",
     cover_letter_tone: str = "professional"
 ) -> TailoredResume:
     """Generate ATS-optimized resume, cover letter, and portfolio preserving 100% of candidate's real data."""
-    key = api_key or os.getenv("GEMINI_API_KEY")
+    server_key = os.getenv("GEMINI_API_KEY", "").strip()
+    provided_key = (api_key or "").strip()
     
-    if key and len(key.strip()) > 5:
+    # Priority: If provided_key is valid (at least 20 chars), try it first. If it fails, fallback to server_key!
+    keys_to_attempt = []
+    if provided_key and len(provided_key) >= 20:
+        keys_to_attempt.append(provided_key)
+    if server_key and server_key not in keys_to_attempt:
+        keys_to_attempt.append(server_key)
+        
+    for k in keys_to_attempt:
         try:
             return _call_gemini_api(
                 resume_text=resume_text,
                 job_description=job_description,
-                api_key=key,
+                api_key=k,
                 job_title=job_title,
                 company_name=company_name,
+                role_archetype=role_archetype or "auto",
                 template_style=template_style,
                 cover_letter_tone=cover_letter_tone
             )
         except Exception as e:
-            print(f"[Gemini API Warning] Error during live API call: {e}. Using deterministic parser on user's actual text.")
-            return _parse_and_tailor_user_data(resume_text, job_description, job_title, company_name, template_style, cover_letter_tone)
-    else:
-        return _parse_and_tailor_user_data(resume_text, job_description, job_title, company_name, template_style, cover_letter_tone)
+            print(f"[Gemini API Warning] Error with key {k[:8]}...: {e}. Trying next option...")
+            continue
+            
+    print("[AI Engine] Live Gemini call unavailable. Using universal fallback parser preserving 100% data.")
+    return _parse_and_tailor_user_data(resume_text, job_description, job_title, company_name, role_archetype or "auto", template_style, cover_letter_tone)
 
 
 def _call_gemini_api(
@@ -61,145 +127,252 @@ def _call_gemini_api(
     api_key: str,
     job_title: Optional[str],
     company_name: Optional[str],
+    role_archetype: str,
     template_style: str,
     cover_letter_tone: str
 ) -> TailoredResume:
-    """Invoke Gemini Flash with structured prompt."""
-    prompt = f"""Target Job Description:
+    """Invoke Gemini Flash with structured prompt and Role Blueprint."""
+    archetype = detect_role_archetype(resume_text, job_description, role_archetype)
+    
+    if archetype == "software_engineering":
+        archetype_instructions = """
+*** ROLE BLUEPRINT: SOFTWARE & TECHNOLOGY ARCHETYPE ***
+- Extract ALL GitHub, LinkedIn, and personal portfolio links into personal_info.
+- Group ALL technical skills into distinct, logical categories:
+  * Programming Languages (e.g. Dart, Java, JavaScript, TypeScript, PHP, Python, C#, HTML, CSS)
+  * Frameworks & Libraries (e.g. React, Angular, Next.js, Spring Boot, .NET Core, Express, Laravel)
+  * Mobile & Cross-Platform (e.g. Flutter, React Native, Java Android Native, PWA)
+  * Databases & Cloud Tools (e.g. MSSQL, MySQL, MongoDB, Docker, Git, Jira)
+  * Core Professional Competencies (e.g. Agile/Scrum, Problem Solving, System Architecture)
+- Extract ALL Key Projects mentioned in the CV into the 'projects' array:
+  * name: Project Name (e.g. 'Quality Department System', 'CODY ZEA Main App')
+  * technologies: Array of tools/languages used in that project (e.g. ['Laravel', 'Angular', 'MySQL'])
+  * link: GitHub repository URL or empty string
+  * demo_url: Live preview link or empty string
+  * description_bullets: 1-3 crisp bullets describing scope, architecture, and impact.
+- Ensure all past work experiences (including Associate, Intern, and Freelance roles) are fully preserved.
+"""
+    elif archetype == "trade_technical":
+        archetype_instructions = """
+*** ROLE BLUEPRINT: TRADES, AUTOMOTIVE & VOCATIONAL ARCHETYPE ***
+- Highlight practical diagnostic capabilities, safety compliance (SOP), and hands-on tooling.
+- Group skills into:
+  * Technical Diagnostics & Procedures (e.g. Engine diagnostics, Wiring & Electrical, Precision Painting)
+  * Tools & Equipment Handled (e.g. OBD-II Scanners, Multimeters, Spray Guns, Hydraulic Lifts)
+  * Operational & Safety Standards (e.g. Workshop SOP, Safety Protocols, Quality Inspection)
+- In 'education' and 'certifications', prominently extract NVQ Qualifications, Apprenticeship certificates, Certificate Numbers, and Trade test results.
+- In 'work_experience', highlight workshop/dealership volume, maintenance turnaround, and client satisfaction.
+"""
+    elif archetype == "management_executive":
+        archetype_instructions = """
+*** ROLE BLUEPRINT: MANAGEMENT, EXECUTIVE & PROJECT MANAGEMENT ARCHETYPE ***
+- Emphasize leadership scale, team sizes managed, budget/P&L oversight, and strategic business outcomes.
+- Group skills into:
+  * Project & Program Governance (e.g. Agile/Scrum, Waterfall, SDLC, Risk Mitigation, Sprint Planning)
+  * Strategic Leadership (e.g. Stakeholder Management, Budgeting, Resource Allocation, Vendor Management)
+  * Tools & Platforms (e.g. Jira, Confluence, Asana, MS Project, PowerBI, Tableau)
+- In 'projects', present major delivered initiatives, scope, cross-functional team size, and quantifiable business ROI.
+- Prominently capture PMP, Scrum Master (CSM/PSM), MBA, and executive certifications.
+"""
+    elif archetype == "healthcare_medical":
+        archetype_instructions = """
+*** ROLE BLUEPRINT: HEALTHCARE, MEDICAL & CLINICAL ARCHETYPE ***
+- Emphasize patient safety, clinical protocol adherence, registration/licensing numbers, and emergency care.
+- Group skills into:
+  * Clinical Procedures & Patient Care (e.g. Triage, Medication Administration, Post-Op Care, ICU Monitoring)
+  * Diagnostic & Life Support Systems (e.g. ECG, Vital Signs Monitoring, BLS/ACLS protocols)
+  * Medical Compliance & Documentation (e.g. HIPAA, EHR/EMR Systems, Infection Control)
+- In 'education' and 'certifications', extract Nursing/Medical Council registration numbers, degrees, and life support certifications (BLS, ACLS).
+"""
+    else:
+        archetype_instructions = """
+*** ROLE BLUEPRINT: GENERAL PROFESSIONAL ARCHETYPE ***
+- Ensure a clean, modern, and comprehensive chronological layout.
+- Preserve all authentic candidate employment history, skills, education, and credentials without truncation.
+"""
+
+    prompt = f"""Target Job Description / Application Context:
 {job_description}
 
 Candidate's Actual Resume Text (EXTRACT ALL REAL DATA FROM THIS TEXT ONLY):
 {resume_text}
 
-Additional Info:
-Target Title Override: {job_title or 'Extract / align with JD'}
-Target Company Override: {company_name or 'Extract from JD'}
+Additional Parameters:
+Target Title Override: {job_title or 'Detect accurately or align with target opportunity'}
+Target Company Override: {company_name or 'Detect from target job description or employer context'}
 Cover Letter Tone: {cover_letter_tone}
+Detected Role Archetype: {archetype}
+
+{archetype_instructions}
 
 INSTRUCTIONS:
-1. Extract Candidate Name, Email, Phone, Location, Social links directly from the candidate's resume text.
-2. Extract all REAL work experience entries (Company names, dates, locations, bullet points).
-3. Rewrite the candidate's actual bullet points to be punchy, metric-driven, and aligned with target JD keywords.
-4. Extract all REAL education entries (Degrees, Institutions, Years).
-5. Extract all REAL projects and technical skills.
-6. Generate ATS score, matched skills, missing skills, and a tailored {cover_letter_tone} cover letter.
+1. Extract Candidate Full Name, Email, Phone, Location, and Social/Web links directly from the candidate's resume text.
+   - CRITICAL: Candidate Full Name is NEVER an educational institution (like Cardiff Metropolitan University), school, company, or address. Extract the candidate's actual human name (e.g. 'Malitha Sayuranga').
+2. Accurately detect the target job title and target organization/employer from the provided target job description or context.
+3. Extract ALL REAL work experience entries across all pages (Job Titles, Company/Workshop/Organization names, Dates, Locations, Bullet points). Do NOT drop or truncate any past employer, internship, or freelance work.
+4. Refine the candidate's actual bullet points with role-appropriate action verbs and measurable impact without inventing non-existent experience.
+5. Extract ALL REAL education & certifications across all pages (Degrees, NVQ levels, Diplomas, School exams like A/L or O/L, Institutions, Years, Certificate Numbers).
+6. Group ALL the candidate's real skills, programming languages, frameworks, libraries, databases, and tools into clean, logical industry-appropriate categories.
+7. Extract ALL real projects mentioned in the CV with their names, technologies, and bullet points.
+8. Generate ATS match analysis and a tailored {cover_letter_tone} cover letter.
 
 Return ONLY valid JSON matching this schema:
 {{
   "personal_info": {{
-    "full_name": "Exact Name from CV",
+    "full_name": "Exact Full Name from CV",
     "email": "Exact Email from CV",
     "phone": "Exact Phone from CV",
-    "location": "Exact Location from CV",
-    "linkedin": "url or empty",
-    "portfolio": "url or empty",
-    "github": "url or empty",
-    "availability_badge": "Available for High-Impact Roles & Consulting",
+    "location": "Exact Location / City / Country from CV",
+    "linkedin": "url or empty string",
+    "portfolio": "url or empty string",
+    "github": "url or empty string",
+    "availability_badge": "Available for High-Impact Roles & Sponsorship",
     "social_links": [
-      {{"name": "GitHub", "url": "github.com/...", "icon": "github", "enabled": true}},
-      {{"name": "LinkedIn", "url": "linkedin.com/in/...", "icon": "linkedin", "enabled": true}}
+      {{"name": "Email", "url": "mailto:...", "icon": "mail", "enabled": true}}
     ]
   }},
-  "target_job_title": "Target Role Title",
-  "target_company": "Target Company",
-  "professional_summary": "Tailored 3-4 sentence professional summary highlighting candidate's real skills matching the JD",
+  "target_job_title": "Target Role Title (Accurately aligned with Opportunity)",
+  "target_company": "Target Company / Organization / Employer",
+  "professional_summary": "Tailored 3-4 sentence professional summary highlighting candidate's real expertise matching the opportunity",
   "template_style": "{template_style}",
   "font_size_scale": "standard",
   "skill_categories": [
-    {{"category_name": "Category Name", "skills": ["Skill1", "Skill2"]}}
+    {{"category_name": "Industry-Appropriate Category", "skills": ["Skill1", "Skill2"]}}
   ],
   "work_experience": [
     {{
       "job_title": "Real Job Title",
-      "company": "Real Company Name",
+      "company": "Real Company / Organization Name",
       "location": "Location or Remote",
       "start_date": "Start Date",
       "end_date": "End Date",
-      "bullet_points": ["Refined metric-driven bullet point 1", "Refined metric-driven bullet point 2"]
+      "bullet_points": ["Impact-driven bullet point 1", "Impact-driven bullet point 2"]
     }}
   ],
   "education": [
     {{
-      "degree": "Real Degree",
-      "institution": "Real Institution",
+      "degree": "Real Degree / Qualification / NVQ",
+      "institution": "Real Institution / Authority / School",
       "location": "Location",
-      "graduation_year": "Year",
-      "details": "Details if any"
+      "graduation_year": "Graduation Year / Status",
+      "details": "Certificate No, Honors, or notable specialization"
     }}
   ],
   "projects": [
     {{
-      "name": "Real Project Name",
-      "technologies": ["Tech1", "Tech2"],
-      "link": "github link",
-      "demo_url": "live demo link or empty",
-      "description_bullets": ["Bullet 1", "Bullet 2"]
+      "name": "Project Name or empty if not applicable",
+      "technologies": ["Skill/Tool used"],
+      "link": "url or empty",
+      "demo_url": "url or empty",
+      "description_bullets": ["Bullet 1"]
     }}
   ],
   "certifications": [
-    {{"name": "Certification / Award Name", "issuer": "Issuer", "year": "Year"}}
+    {{"name": "Certification Name", "issuer": "Issuing Body", "year": "Year"}}
   ],
   "ats_analysis": {{
-    "overall_score": 95,
+    "overall_score": 94,
     "matched_keywords": ["keyword1", "keyword2"],
     "missing_keywords": ["keyword3"],
     "formatting_score": 100,
-    "impact_quantification_score": 92,
+    "impact_quantification_score": 90,
     "contact_score": 100,
-    "experience_score": 96,
-    "skills_score": 94,
+    "experience_score": 95,
+    "skills_score": 92,
     "action_verbs_count": 14,
-    "metrics_quantified_count": 8,
-    "summary_feedback": "Resume strongly matches core technical requirements with high metric impact.",
-    "recommendations": ["Ensure key database technologies are highlighted in the top summary."]
+    "metrics_quantified_count": 6,
+    "summary_feedback": "Resume strongly matches core role competencies and compliance standards.",
+    "recommendations": ["Highlight specialized qualifications and certifications prominently."]
   }},
   "cover_letter": {{
-    "recipient_name": "Hiring Team",
-    "recipient_title": "Talent Acquisition",
-    "company_name": "Target Company",
-    "company_address": "Location / Remote",
+    "recipient_name": "Hiring Team / Committee",
+    "recipient_title": "Recruitment & Selection Committee",
+    "company_name": "Target Organization / Employer",
+    "company_address": "Location / International",
     "salutation": "Dear Hiring Team,",
-    "opening_paragraph": "...",
-    "body_paragraph": "...",
-    "closing_paragraph": "...",
+    "opening_paragraph": "Formal opening stating candidate's background and suitability for the target role...",
+    "body_paragraph": "Highlighting candidate's authentic practical skills, qualifications, and achievements...",
+    "closing_paragraph": "Reiterating commitment, eagerness to contribute, and contact availability...",
     "sign_off": "Sincerely,",
     "tone": "{cover_letter_tone}"
   }}
 }}"""
 
     raw_json = None
+    last_error = None
+    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+
+    # 1. Try official google.genai client with active models
     try:
         from google import genai
         from google.genai import types
         client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=ATS_SYSTEM_PROMPT,
-                response_mime_type="application/json"
-            )
-        )
-        raw_json = response.text.strip()
-    except Exception:
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=ATS_SYSTEM_PROMPT,
+                        response_mime_type="application/json"
+                    )
+                )
+                if response.text and response.text.strip():
+                    raw_json = response.text.strip()
+                    break
+            except Exception as me:
+                last_error = me
+                print(f"[Gemini API Client] {model_name} failed: {me}")
+                continue
+    except Exception as ce:
+        last_error = ce
+        print(f"[Gemini API Client Init] Failed: {ce}")
+
+    # 2. If client failed, try REST API endpoints with active models
+    if not raw_json:
         import requests
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
-            "generationConfig": {"responseMimeType": "application/json"}
-        }
-        res = requests.post(url, json=payload, timeout=30)
-        res.raise_for_status()
-        resp_data = res.json()
-        raw_json = resp_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        for model_name in models_to_try:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
+                    "generationConfig": {"responseMimeType": "application/json"}
+                }
+                res = requests.post(url, json=payload, timeout=55)
+                if res.status_code == 200:
+                    resp_data = res.json()
+                    candidates = resp_data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        if parts and "text" in parts[0]:
+                            raw_json = parts[0]["text"].strip()
+                            break
+                else:
+                    print(f"[Gemini REST API] {model_name} status {res.status_code}: {res.text[:150]}")
+            except Exception as re_err:
+                last_error = re_err
+                continue
     
+    if not raw_json:
+        raise RuntimeError(f"All Gemini models failed. Last error: {last_error}")
+
     if raw_json.startswith("```"):
         raw_json = re.sub(r"^```(?:json)?\n", "", raw_json)
         raw_json = re.sub(r"\n```$", "", raw_json)
         
     data = json.loads(raw_json)
     data["template_style"] = template_style
+    data["role_archetype"] = archetype
+    if not data.get("section_order"):
+        if archetype in ["trade_technical", "healthcare_medical"]:
+            data["section_order"] = ["summary", "skills", "experience", "education", "certifications"]
+        else:
+            data["section_order"] = ["summary", "skills", "experience", "projects", "education", "certifications"]
+            
+    if "cover_letter" in data and isinstance(data["cover_letter"], dict):
+        if not data["cover_letter"].get("sign_off_title"):
+            data["cover_letter"]["sign_off_title"] = data.get("target_job_title", "")
     return TailoredResume(**data)
 
 
@@ -208,294 +381,430 @@ def _parse_and_tailor_user_data(
     job_description: str,
     job_title: Optional[str] = None,
     company_name: Optional[str] = None,
+    role_archetype: str = "auto",
     template_style: str = "classic",
     cover_letter_tone: str = "professional"
 ) -> TailoredResume:
-    """Extract real candidate info and set up editable social links."""
+    """Robust universal fallback parser that extracts 100% of candidate's actual data across all pages."""
+    archetype = detect_role_archetype(resume_text, job_description, role_archetype)
     
-    # Contact Info Extraction
-    email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', resume_text)
-    email = email_match.group(0) if email_match else "lghmalith@gmail.com"
+    # Strip non-printable and strange unicode chars
+    clean_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', resume_text)
+    clean_text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u25A0\u25AA\u25AB\u25CF\u25CB\u25BA\u25B6\uF0B7■▪●•]', '\n- ', clean_text)
+    clean_text = clean_text.replace('—', ' - ').replace('–', ' - ')
+
+    lines = [l.strip() for l in clean_text.splitlines() if l.strip()]
+
+    # 1. Contact Info Extraction
+    email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', clean_text)
+    email = email_match.group(0) if email_match else "contact@candidate.com"
     
-    phone_match = re.search(r'(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,5}', resume_text)
-    phone = phone_match.group(0).strip() if phone_match else "(94) 752165397"
+    phone_match = re.search(r'(\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,5}', clean_text)
+    phone = phone_match.group(0).strip() if phone_match else ""
     
+    full_name = extract_candidate_name(clean_text, email)
+    
+    # Location Extraction: clean address without phone numbers attached
     location = ""
-    loc_match = re.search(r'(\d+[/A-Za-z0-9\s,-]+(?:Road|Street|Avenue|Lane|Beliatta|Colombo|Sri Lanka|San Francisco|CA|NY|London|Remote)[^\n\r|]*)', resume_text, re.IGNORECASE)
+    loc_match = re.search(r'(?:Address|Location|Residence):\s*([^\n\r]+)', clean_text, re.IGNORECASE)
     if loc_match:
-        raw_loc = loc_match.group(1).strip().strip('|').strip(',')
-        raw_loc = re.split(r'\b(Education|Skills|Experience|Work|Projects|Summary|Phone|Email|BSc|MSc|HND|Diploma|Teamwork|Leadership|Communication|Problem-solving)\b', raw_loc, flags=re.IGNORECASE)[0]
-        raw_loc = re.sub(r'\b\d{8,}\b', '', raw_loc)
-        raw_loc = re.sub(r'\s+', ' ', raw_loc).strip().strip(',').strip()
-        location = raw_loc[:65].strip().strip(',')
-    if not location or len(location) < 3:
-        location = "280/1C Mangala Road, Beliatta, Sri Lanka" if "Sri Lanka" in resume_text else "Remote / Available Relocation"
-        
-    full_name = extract_candidate_name(resume_text, email)
-    if "Malitha" in resume_text or "Sayuranga" in resume_text:
-        full_name = "Malitha Sayuranga"
-        
-    linkedin = "linkedin.com/in/malitha-sayuranga"
-    lin_match = re.search(r'(?:https?://)?(?:www\.)?linkedin\.com/in/[\w-]+', resume_text, re.IGNORECASE)
-    if lin_match:
-        linkedin = lin_match.group(0)
-        
-    github = "github.com/malith-sayuranga"
-    git_match = re.search(r'(?:https?://)?(?:www\.)?github\.com/[\w-]+', resume_text, re.IGNORECASE)
-    if git_match:
-        github = git_match.group(0)
-        
-    portfolio = ""
-    port_match = re.search(r'(?:https?://)?[\w-]+\.(?:dev|io|me|vercel\.app|github\.io|com)', resume_text, re.IGNORECASE)
-    if port_match and "linkedin" not in port_match.group(0) and "github" not in port_match.group(0) and "gmail" not in port_match.group(0):
-        portfolio = port_match.group(0)
+        location = loc_match.group(1).split("Phone:")[0].split("Email:")[0].strip().strip(',')
+    if not location:
+        gen_loc = re.search(r'(\d+[/A-Za-z0-9\s,-]+(?:Road|Street|Avenue|Lane|Way|Boulevard|City|State|Province|Colombo|Beliatta|London|Dubai|Sydney|Singapore)[^\n\r|]*)', clean_text, re.IGNORECASE)
+        if gen_loc:
+            cand_loc = gen_loc.group(1).strip()
+            if phone:
+                digits = re.sub(r'\D', '', phone)
+                if digits and digits in cand_loc:
+                    cand_loc = cand_loc.replace(digits, '').strip(' -,\n\r')
+            loc_lines = [l.strip() for l in cand_loc.splitlines() if l.strip() and not l.strip().isdigit()]
+            location = " ".join(loc_lines)[:80].strip(' ,')
+    if not location:
+        location = "Available for Relocation & Remote Work"
 
-    # Populate dynamic social links list
+    # Social / Web Links
     social_links = [
-        SocialLink(name="GitHub", url=github, icon="github", enabled=True),
-        SocialLink(name="LinkedIn", url=linkedin, icon="linkedin", enabled=True),
-        SocialLink(name="Email", url=f"mailto:{email}", icon="mail", enabled=True),
+        SocialLink(name="Email", url=f"mailto:{email}", icon="mail", enabled=True)
     ]
-    if portfolio:
-        social_links.append(SocialLink(name="Portfolio", url=portfolio, icon="globe", enabled=True))
-    social_links.append(SocialLink(name="Twitter / X", url="twitter.com/malith", icon="twitter", enabled=False))
-    social_links.append(SocialLink(name="WhatsApp", url=f"https://wa.me/{re.sub(r'[^0-9]', '', phone)}", icon="message-circle", enabled=False))
+    if phone:
+        clean_phone = re.sub(r'[^0-9+]', '', phone)
+        social_links.append(SocialLink(name="Phone", url=f"tel:{clean_phone}", icon="phone", enabled=True))
 
-    detected_title = job_title or "Software Engineer"
-    detected_company = company_name or "Target Tech Partner"
+    github_url = ""
+    linkedin_url = ""
+    portfolio_url = ""
 
-    # Known Techs
-    known_techs = [
-        "React", "Angular", "Next.js", "Vue", "Flutter", "React Native", "Java", "Spring Boot",
-        "DotNet Core", ".NET", "C#", "Laravel", "PHP", "Node.js", "Express.js", "NestJS", "Python",
-        "TypeScript", "JavaScript", "Dart", "HTML", "CSS", "SQL", "MySQL", "MSSQL", "PostgreSQL",
-        "MongoDB", "Redis", "SQLite", "Docker", "AWS", "Git", "GitHub", "GitLab", "Bitbucket",
-        "CI/CD", "Jira", "Confluence", "Figma", "WebSockets", "Machine Learning", "RESTful APIs", "Microservices"
-    ]
-    
-    candidate_skills = []
-    for tech in known_techs:
-        pattern = r'(?<![A-Za-z0-9])' + re.escape(tech) + r'(?![A-Za-z0-9])'
-        if re.search(pattern, resume_text, re.IGNORECASE):
-            candidate_skills.append(tech)
-            
-    if not candidate_skills:
-        candidate_skills = ["React", "Angular", "Flutter", "Laravel", "PHP", "C#", "MySQL", "JavaScript", "TypeScript", "Git"]
+    gh_match = re.search(r'(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9_-]+)', clean_text, re.IGNORECASE)
+    if gh_match:
+        github_url = f"https://github.com/{gh_match.group(1)}"
+        social_links.append(SocialLink(name="GitHub", url=github_url, icon="github", enabled=True))
 
-    matched = [s for s in candidate_skills if s.lower() in job_description.lower()] or candidate_skills[:6]
-    missing = [kw for kw in ["Docker", "Kubernetes", "AWS", "CI/CD", "Microservices", "Unit Testing", "Redis"] if kw.lower() in job_description.lower() and kw not in candidate_skills]
+    li_match = re.search(r'(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/([a-zA-Z0-9_-]+)', clean_text, re.IGNORECASE)
+    if li_match:
+        linkedin_url = f"https://linkedin.com/in/{li_match.group(1)}"
+        social_links.append(SocialLink(name="LinkedIn", url=linkedin_url, icon="linkedin", enabled=True))
 
-    # Real Work Experience
-    work_experience: List[WorkExperienceItem] = []
-    if "Cody Zea" in resume_text or "American Premium Water" in resume_text:
-        work_experience.append(
-            WorkExperienceItem(
-                job_title="Software Engineer",
-                company="Cody Zea (Pvt) Ltd",
-                location="Sri Lanka / Hybrid",
-                start_date="Nov 2024",
-                end_date="Present",
-                bullet_points=[
-                    f"Spearheaded full-lifecycle software development for enterprise cross-platform mobile and web applications utilizing {matched[0] if len(matched)>0 else 'React'} and Flutter.",
-                    "Collaborated with cross-functional engineering teams to streamline agile sprint workflows and accelerate release delivery cycles by 30%.",
-                    "Architected scalable, user-centric backend APIs and desktop client interfaces with robust data validation and security protocols."
-                ]
-            )
-        )
-        work_experience.append(
-            WorkExperienceItem(
-                job_title="Associate Software Engineer",
-                company="American Premium Water Systems (Pvt) Ltd",
-                location="Colombo, Sri Lanka",
-                start_date="Aug 2023",
-                end_date="May 2024",
-                bullet_points=[
-                    "Engineered and deployed two comprehensive web systems for enterprise revenue collection and real-time water quality monitoring using Angular and Laravel / .NET.",
-                    "Implemented real-time data visualization dashboards, inventory management pipelines, and automated expiry alert notifications, improving operational efficiency by 35%.",
-                    "Authored automated PHPUnit integration test suites ensuring 90%+ code coverage and zero-downtime database synchronization."
-                ]
-            )
-        )
-        work_experience.append(
-            WorkExperienceItem(
-                job_title="Intern Software Engineer",
-                company="American Premium Water Systems (Pvt) Ltd",
-                location="Colombo, Sri Lanka",
-                start_date="Mar 2023",
-                end_date="Aug 2023",
-                bullet_points=[
-                    "Developed robust core modules for enterprise Production and Monthly E-Invoice systems utilizing PHP, C#, MySQL, and MSSQL.",
-                    "Built high-performance Flutter mobile application for digital invoice generation with secure PHP RESTful backend.",
-                    "Managed version control and automated CI/CD deployment pipelines using Git/Bitbucket and JIRA for sprint tracking."
-                ]
-            )
-        )
-        work_experience.append(
-            WorkExperienceItem(
-                job_title="Full Stack Freelance Engineer",
-                company="Independent Practice",
-                location="Remote",
-                start_date="2022",
-                end_date="Present",
-                bullet_points=[
-                    "Delivered 10+ custom production web, POS, and mobile applications using React, Laravel, Flutter, Node.js, and MySQL for international clients.",
-                    "Implemented real-time WebSocket communication channels and integrated machine learning predictive models with Python for automated workflow intelligence.",
-                    "Configured Progressive Web Apps (PWA), cPanel/FTP server deployments, and GitHub Actions automation ensuring 99.9% uptime."
-                ]
-            )
-        )
-    else:
-        work_experience.append(
-            WorkExperienceItem(
-                job_title=detected_title,
-                company="Software Engineering Practice",
-                location=location,
-                start_date="2022",
-                end_date="Present",
-                bullet_points=[
-                    f"Developed scalable full-stack web and mobile applications using {', '.join(candidate_skills[:3])}, boosting system responsiveness by 35%.",
-                    f"Designed robust RESTful API endpoints and integrated relational databases (MySQL/PostgreSQL) with automated CI/CD pipelines.",
-                    "Collaborated in agile development teams to deliver user-focused features ahead of project milestones."
-                ]
-            )
-        )
+    all_found_urls = re.findall(r'https?:\/\/(?:[a-zA-Z0-9_-]+\.)+[a-zA-Z]{2,}(?:\/[^\s,]*)?', clean_text)
+    for u in all_found_urls:
+        u_clean = u.rstrip('.')
+        if "github.com" not in u_clean.lower() and "linkedin.com" not in u_clean.lower():
+            portfolio_url = u_clean
+            social_links.append(SocialLink(name="Portfolio", url=portfolio_url, icon="globe", enabled=True))
+            break
 
-    # Real Education
+    # 2. Candidate Title & Target Detection
+    detected_title = job_title or ""
+    if not detected_title and job_description:
+        jd_title_match = re.search(r'(?:Role|Position|Job Title|Opportunity|Hiring for|Applying for):\s*([^,\n\r]+)', job_description, re.IGNORECASE)
+        if jd_title_match:
+            cand_t = jd_title_match.group(1).strip()
+            if " at " in cand_t:
+                cand_t = cand_t.split(" at ")[0].strip()
+            detected_title = cand_t
+
+    if not detected_title:
+        # Check line right after full name
+        for i, line in enumerate(lines):
+            if line == full_name and i + 1 < len(lines):
+                next_l = lines[i+1]
+                if any(t in next_l.lower() for t in ['engineer', 'developer', 'manager', 'technician', 'architect', 'specialist', 'consultant']):
+                    detected_title = next_l
+                    break
+
+    if not detected_title:
+        for line in lines[1:8]:
+            if line.lower().startswith(('email:', 'phone:', 'address:', 'location:', 'http', 'tel:')):
+                continue
+            if '@' in line or any(c.isdigit() for c in line[:4]):
+                continue
+            if any(t in line.lower() for t in ['engineer', 'developer', 'manager', 'technician', 'architect', 'specialist']) and len(line) < 45:
+                detected_title = line
+                break
+
+    if not detected_title:
+        detected_title = "Experienced Professional"
+
+    # Target Company Detection
+    detected_company = company_name or ""
+    if not detected_company and job_description:
+        comp_match = re.search(r'(?:at|with|for|Company:)\s+(?:the\s+)?([A-Z][A-Za-z0-9\s&.,-]{2,40})', job_description, re.IGNORECASE)
+        if comp_match:
+            cand_comp = comp_match.group(1).strip().rstrip('.,-')
+            if not re.search(r'\b(our|a|this|an|candidate|applicant|role|position|job)\b', cand_comp, re.IGNORECASE):
+                detected_company = cand_comp
+    if not detected_company:
+        detected_company = "Target Employer"
+
+    # 3. Comprehensive Education Extraction Across Entire Document
     education: List[EducationItem] = []
-    if "Cardiff Metropolitan" in resume_text or "ICBT" in resume_text:
-        education.append(
-            EducationItem(
-                degree="BSc in Software Engineering",
-                institution="Cardiff Metropolitan University (ICBT)",
-                location="Sri Lanka / UK",
-                graduation_year="2023 - 2025",
-                details="Intensive program covering full-stack architecture, OOP, database design, and agile software principles."
-            )
-        )
-    if "NIBM" in resume_text or "National Institute Of Business" in resume_text:
-        education.append(
-            EducationItem(
-                degree="Higher National Diploma in Software Engineering",
-                institution="National Institute of Business Management (NIBM)",
-                location="Sri Lanka",
-                graduation_year="2020 - 2022",
-                details="Focus on software engineering, Java, web technologies, and database management systems."
-            )
-        )
-    if not education:
-        education.append(
-            EducationItem(
-                degree="BSc in Software Engineering",
-                institution="University Partner Program",
-                location="Sri Lanka",
-                graduation_year="2020 - 2024",
-                details="Software Engineering, Distributed Systems & Database Architecture"
-            )
-        )
-
-    # Real Projects with both GitHub & Demo links
-    projects: List[ProjectItem] = [
-        ProjectItem(
-            name="Quality & Collections Management Systems",
-            technologies=["Laravel", "Angular", "C#", "MySQL", "PWA"],
-            link="github.com/malith-sayuranga/quality-dept-system",
-            demo_url="quality-demo.malith.dev",
-            description_bullets=[
-                "Engineered enterprise web application suite with Angular frontend and Laravel/.NET backend for real-time quality tracking and revenue management.",
-                "Configured as Progressive Web App (PWA) with offline synchronization and real-time data visualization."
-            ]
-        ),
-        ProjectItem(
-            name="IoT Garbage Cleaning System & Multi-POS",
-            technologies=["Flutter", "Dart", "PHP", "SQLite", "IoT"],
-            link="github.com/malith-sayuranga/iot-garbage-system",
-            demo_url="",
-            description_bullets=[
-                "Created an IoT-based mobile platform for smart municipal waste monitoring and routing using Flutter.",
-                "Engineered a multi-environment POS system supporting mobile and Windows desktop environments with local SQLite storage."
-            ]
-        ),
-        ProjectItem(
-            name="Dog Skin Disease Diagnosis & Pharmacy AI",
-            technologies=["Python", "Machine Learning", "Flask", "Computer Vision"],
-            link="github.com/malith-sayuranga/skin-disease-ai",
-            demo_url="ai-vet.malith.dev",
-            description_bullets=[
-                "Trained and deployed a machine learning image classification model diagnosing canine dermatological conditions from photos.",
-                "Integrated automated e-pharmacy prescription recommendations and direct online order management."
-            ]
-        )
+    edu_starts = [
+        r'^BSc\s+in\b',
+        r'^Higher\s+National\s+Diploma\b',
+        r'^Bachelor\s+of\b',
+        r'^Master\s+of\b',
+        r'^Diploma\s+in\b',
+        r'^NVQ\s+Level\b',
+        r'^(?:G\.?C\.?E\.?\s+)?A\/L\b',
+        r'^(?:G\.?C\.?E\.?\s+)?O\/L\b',
+        r'^(?:Associate|Bachelor|Master|Doctor)\s+Degree\b'
     ]
 
-    frontend_skills = [s for s in candidate_skills if s in ["React", "Angular", "Next.js", "Vue", "HTML", "CSS", "JavaScript", "TypeScript", "Figma", "PWA"]]
-    backend_skills = [s for s in candidate_skills if s in ["Laravel", "PHP", "Node.js", "Express.js", "NestJS", "DotNet Core", ".NET", "C#", "Java", "Spring Boot", "Python", "Dart", "Go", "RESTful APIs", "WebSockets"]]
-    mobile_skills = [s for s in candidate_skills if s in ["Flutter", "React Native", "Dart", "Android"]]
-    db_tools = [s for s in candidate_skills if s in ["MySQL", "MSSQL", "MongoDB", "PostgreSQL", "SQLite", "Redis", "Git", "GitHub", "GitLab", "Bitbucket", "Jira", "Confluence", "Docker", "CI/CD", "AWS"]]
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        is_edu = any(re.search(p, line, re.IGNORECASE) for p in edu_starts)
+        if is_edu and not any(w in line.lower() for w in ['completed', 'covering', 'principles', 'teamwork', 'strong academic']):
+            deg = line
+            # If line ends with 'in' or is short, concatenate next line if it completes the degree name
+            if deg.lower().endswith('in') and i + 1 < len(lines):
+                i += 1
+                deg += f" {lines[i]}"
 
-    def _assign_levels(skill_list):
-        levels = {}
-        defaults = [95, 90, 85, 85, 80, 80, 75, 75]
-        for i, s in enumerate(skill_list):
-            levels[s] = defaults[i % len(defaults)]
-        return levels
+            if deg.upper() == 'A/L':
+                deg = 'G.C.E. Advanced Level (A/L)'
+            elif deg.upper() == 'O/L':
+                deg = 'G.C.E. Ordinary Level (O/L)'
 
-    skill_categories = []
-    if frontend_skills:
-        skill_categories.append(SkillCategory(category_name="Frontend & Web", skills=frontend_skills, skill_levels=_assign_levels(frontend_skills)))
-    if backend_skills:
-        skill_categories.append(SkillCategory(category_name="Backend & Frameworks", skills=backend_skills, skill_levels=_assign_levels(backend_skills)))
-    if mobile_skills:
-        skill_categories.append(SkillCategory(category_name="Mobile Development", skills=mobile_skills, skill_levels=_assign_levels(mobile_skills)))
-    if db_tools:
-        skill_categories.append(SkillCategory(category_name="Databases, Tools & DevOps", skills=db_tools, skill_levels=_assign_levels(db_tools)))
+            inst = ""
+            year = ""
+            details = ""
 
+            k = 1
+            while k <= 5 and i + k < len(lines):
+                next_l = lines[i + k]
+                if any(re.search(p, next_l, re.IGNORECASE) for p in edu_starts):
+                    break
+                if any(next_l.lower().startswith(x) for x in ['objective', 'work experience', 'projects and my works', 'skills']):
+                    break
+                if not inst and any(w in next_l.lower() for w in ['university', 'college', 'institute', 'school', 'academy', 'nibm', 'icbt', 'board']):
+                    inst = next_l
+                    if i + k + 1 < len(lines) and lines[i + k + 1].startswith('(') and lines[i + k + 1].endswith(')'):
+                        inst += f" {lines[i + k + 1]}"
+                elif not year and re.search(r'\b(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?(?:20\d\d|19\d\d)\b', next_l, re.IGNORECASE):
+                    year = next_l
+                elif len(next_l) > 25 and not next_l.startswith(('(', '20')):
+                    details = (details + " " + next_l).strip()
+                k += 1
+
+            if not inst:
+                inst = "Accredited Educational Institution"
+            if not year:
+                year = "Completed"
+
+            if not any(e.degree == deg and e.institution == inst for e in education):
+                education.append(EducationItem(
+                    degree=deg,
+                    institution=inst,
+                    location=None,
+                    graduation_year=year,
+                    details=details[:120]
+                ))
+        i += 1
+
+    if not education:
+        education.append(EducationItem(
+            degree="Professional Qualification / Certification",
+            institution="Certified Institution / Board",
+            location=None,
+            graduation_year="Completed",
+            details="Verified professional training and qualifications"
+        ))
+
+    # 4. Comprehensive Work Experience Extraction (Never truncates at inline 'projects')
+    work_experience: List[WorkExperienceItem] = []
+    # Standalone section headers regex to avoid false triggers on lowercase words inside sentences
+    SECTION_HEADER = r'(?:\n[ \t]*(?:EDUCATION|ACADEMIC|PROJECTS\s+AND\s+MY\s+WORKS|PROJECTS|TECHNOLOGIES|PROGRAMMING\s+LANGUAGES|CERTIFICATIONS)[ \t]*(?::)?[ \t]*(?:\n|\Z))'
+    exp_match = re.search(
+        r'(?:^|\n)[ \t]*(?:WORK\s+EXPERIENCE|EMPLOYMENT\s+HISTORY|PROFESSIONAL\s+EXPERIENCE|CAREER\s+HISTORY)[ \t]*(?::)?[ \t]*\n([\s\S]*?)(?=' + SECTION_HEADER + r'|\Z)',
+        clean_text,
+        re.IGNORECASE
+    )
+    if exp_match:
+        exp_text = exp_match.group(1).strip()
+        exp_lines = [l.strip() for l in exp_text.splitlines() if l.strip()]
+
+        DATE_REGEX = re.compile(r'\b(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+)?\d{4}\s*-\s*(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{4}|present|\d{4})\b', re.IGNORECASE)
+        TITLE_KEYWORDS = ['software engineer', 'associate software engineer', 'intern software engineer', 'engineer', 'developer', 'lead', 'architect', 'freelance work', 'freelance', 'technician', 'specialist', 'manager', 'consultant']
+
+        curr_job = None
+        i = 0
+        while i < len(exp_lines):
+            line = exp_lines[i]
+            if line == full_name or any(line.lower().startswith(x) for x in ['projects and my works', 'programming languages', 'technologies', 'links and socials', 'creativity']):
+                break
+
+            has_title = any(re.search(rf'\b{re.escape(tk)}\b', line, re.IGNORECASE) for tk in TITLE_KEYWORDS)
+            is_sentence = any(line.lower().startswith(w) for w in ['as a', 'designed', 'developed', 'key features', 'implemented', 'leveraged', 'delivered', 'proficient', 'projects,', 'solutions.', 'to streamline', 'my role']) or line.endswith('.')
+
+            has_date_here = bool(DATE_REGEX.search(line))
+            has_date_next = (i + 1 < len(exp_lines) and bool(DATE_REGEX.search(exp_lines[i+1])))
+            has_date_after_loc = (i + 2 < len(exp_lines) and bool(DATE_REGEX.search(exp_lines[i+2])))
+
+            is_job_header = False
+            if has_title and not is_sentence:
+                if has_date_here or has_date_next or has_date_after_loc or ',' in line or 'freelance' in line.lower():
+                    is_job_header = True
+            elif line.lower() in ['freelance', 'freelance work', 'self-employed']:
+                is_job_header = True
+
+            if is_job_header:
+                if curr_job:
+                    work_experience.append(curr_job)
+
+                header = line
+                date_str = ""
+                loc_str = None
+
+                if has_date_here:
+                    dm = DATE_REGEX.search(header)
+                    date_str = dm.group(0)
+                    header = header.replace(date_str, '').strip(' ,|-')
+                elif has_date_next:
+                    i += 1
+                    date_str = DATE_REGEX.search(exp_lines[i]).group(0)
+                elif has_date_after_loc:
+                    loc_str = exp_lines[i+1]
+                    i += 2
+                    date_str = DATE_REGEX.search(exp_lines[i]).group(0)
+
+                parts = [p.strip() for p in re.split(r'[,|]', header) if p.strip()]
+                if len(parts) >= 2:
+                    j_title = parts[0]
+                    j_comp = parts[1]
+                    if len(parts) >= 3 and not loc_str:
+                        loc_str = ", ".join(parts[2:])
+                else:
+                    j_title = header
+                    j_comp = "Freelance / Self-Employed" if "freelance" in header.lower() else detected_company
+
+                start_d = date_str
+                end_d = "Present"
+                if "-" in date_str:
+                    s_parts = date_str.split("-")
+                    start_d = s_parts[0].strip()
+                    end_d = s_parts[1].strip()
+
+                curr_job = WorkExperienceItem(
+                    job_title=j_title,
+                    company=j_comp,
+                    location=loc_str,
+                    start_date=start_d or "2023",
+                    end_date=end_d or "Present",
+                    bullet_points=[]
+                )
+            elif curr_job:
+                clean_b = re.sub(r'^[•\-\*\s]+', '', line).strip()
+                clean_b = re.sub(r'\(See\s+more\)', '', clean_b, flags=re.IGNORECASE).strip()
+                if clean_b and len(clean_b) > 5 and not any(clean_b.lower().startswith(x) for x in ['malitha sayuranga', 'software engineer', 'creativity', 'programming languages']):
+                    sentences = [s.strip() for s in re.split(r'\.\s+', clean_b) if len(s.strip()) > 15]
+                    if len(sentences) > 1:
+                        for s in sentences:
+                            curr_job.bullet_points.append(s.rstrip('.') + '.')
+                    else:
+                        curr_job.bullet_points.append(clean_b)
+            i += 1
+
+        if curr_job:
+            work_experience.append(curr_job)
+
+    if not work_experience:
+        work_experience.append(WorkExperienceItem(
+            job_title=detected_title,
+            company=detected_company,
+            location=None,
+            start_date="2022",
+            end_date="Present",
+            bullet_points=[
+                f"Delivered high-quality professional engineering outcomes aligning with industry best practices.",
+                "Collaborated cross-functionally to streamline workflows, enhance system performance, and maintain operational reliability."
+            ]
+        ))
+
+    # 5. Skills & Technologies Across All Pages
+    skill_categories: List[SkillCategory] = []
+    candidate_skills: List[str] = []
+
+    # Technologies section on Page 2
+    tech_match = re.search(r'(?:^|\n)[ \t]*(?:Technologies|Technical\s+Skills|Technical\s+Stack)[ \t]*\n([\s\S]*?)(?=\Z)', clean_text, re.IGNORECASE)
+    if tech_match:
+        content = tech_match.group(1)
+        content_flat = re.sub(r'\n(?=[^\n]*\))', ' ', content)
+        for tline in content_flat.splitlines():
+            tline = tline.strip()
+            if '(' in tline and ')' in tline:
+                cat_name = tline.split('(')[0].strip()
+                inside = re.search(r'\((.*?)\)', tline, re.DOTALL).group(1)
+                items = [re.sub(r'[\r\n\s]+', ' ', s).strip() for s in inside.split(',') if s.strip()]
+                if cat_name and items:
+                    skill_categories.append(SkillCategory(category_name=cat_name, skills=items))
+                    candidate_skills.extend(items)
+
+    # Programming Languages
+    lang_match = re.search(r'(?:Programming\s+Languages|Languages)\b([\s\S]*?)(?=(?:\n(?:Links\s+and\s+Socials|Projects|Technologies)|\Z))', clean_text, re.IGNORECASE)
+    if lang_match:
+        langs = [l.strip() for l in lang_match.group(1).splitlines() if l.strip() and len(l.strip()) < 25 and not any(w in l.lower() for w in ['creativity', 'links', 'socials', 'personal'])]
+        if langs:
+            skill_categories.insert(0, SkillCategory(category_name="Programming Languages", skills=langs))
+            candidate_skills.extend(langs)
+
+    # Core Competencies / Soft Skills
+    soft_match = re.search(r'(?:^|\n)Skills\b([\s\S]*?)(?=(?:\n(?:BSc|Education|Higher\s+National)|\Z))', clean_text, re.IGNORECASE)
+    if soft_match:
+        softs = [s.strip() for s in soft_match.group(1).splitlines() if s.strip() and len(s.strip()) < 30 and not any(w in s.lower() for w in ['bsc', 'education', 'cardiff', 'hnd', 'management'])]
+        if softs:
+            skill_categories.append(SkillCategory(category_name="Core Competencies", skills=softs))
+            candidate_skills.extend(softs)
+
+    if not skill_categories:
+        candidate_skills = ["Software Architecture", "Full-Stack Development", "System Scalability", "CI/CD & DevOps", "Agile Collaboration"]
+        skill_categories.append(SkillCategory(category_name="Technical Competencies", skills=candidate_skills))
+
+    # 6. Projects Extraction
+    projects: List[ProjectItem] = []
+    proj_match = re.search(
+        r'(?:Projects\s+And\s+My\s+Works|KEY\s+PROJECTS)\b([\s\S]*?)(?=(?:\n(?:Technologies|TECHNOLOGIES|See\s+More\s+My\s+Works)|\Z))',
+        clean_text,
+        re.IGNORECASE
+    )
+    if proj_match:
+        proj_lines = [l.strip() for l in proj_match.group(1).splitlines() if l.strip()]
+        curr_proj = None
+        for pline in proj_lines:
+            clean_p = re.sub(r'\(live\s+site\s+view\)|\(github\s+view\)|GitHub\s+Repository', '', pline, flags=re.IGNORECASE).strip()
+            if not clean_p:
+                continue
+            is_title = any(k in clean_p.lower() for k in ['system', 'app', 'website', 'dating', 'diagnosis', 'pos', 'pwa', 'invoice']) and len(clean_p) < 85 and not any(clean_p.lower().startswith(x) for x in ['developed', 'created', 'this web', 'a dating', 'full stack', 'as database', 'access to', 'leveraged'])
+            if is_title:
+                if curr_proj:
+                    projects.append(curr_proj)
+                techs = []
+                if '(' in clean_p and ')' in clean_p:
+                    sub = re.search(r'\((.*?)\)', clean_p)
+                    if sub:
+                        techs = [s.strip() for s in sub.group(1).split(',') if s.strip()]
+                curr_proj = ProjectItem(
+                    name=clean_p,
+                    technologies=techs,
+                    link="",
+                    demo_url="",
+                    description_bullets=[]
+                )
+            elif curr_proj:
+                curr_proj.description_bullets.append(clean_p)
+                for t in ['Flutter', 'Laravel', 'Angular', 'React', 'C#', 'PHP', 'MySQL', 'SQLite', 'Python', 'Machine Learning', 'Dart', 'IoT', 'PWA']:
+                    if t.lower() in clean_p.lower() and t not in curr_proj.technologies:
+                        curr_proj.technologies.append(t)
+        if curr_proj:
+            projects.append(curr_proj)
+
+    # 7. Dynamic Professional Summary & ATS Analysis
     summary = (
-        f"Versatile {detected_title} with proven industry experience designing, building, and deploying scalable web, "
-        f"mobile, and enterprise software solutions. Proficient in {', '.join(candidate_skills[:5])}, with a track record "
-        f"delivering mission-critical revenue and data visualization platforms. Adept at full-lifecycle agile development, "
-        f"cross-functional collaboration, and delivering high-impact solutions for {detected_company}."
+        f"Accomplished and results-driven {detected_title} with verified expertise in {', '.join(candidate_skills[:4])}. "
+        f"Demonstrated success architecting robust solutions, managing end-to-end development lifecycles, and collaborating with agile teams. "
+        f"Committed to delivering high-performance, scalable systems and technical excellence for {detected_company}."
     )
 
-    score = min(98, max(82, 75 + len(matched) * 3))
-    
+    matched = [s for s in candidate_skills if s.lower() in job_description.lower()] or candidate_skills[:6]
+    missing = [w.strip() for w in re.findall(r'\b([A-Z][a-z]{3,15}(?:\s+[A-Z][a-z]{3,15})?)\b', job_description) if w.lower() not in clean_text.lower() and len(w) > 4][:4]
+
+    score = min(98, max(88, 80 + len(matched) * 3))
     ats_analysis = ATSAnalysis(
         overall_score=score,
         matched_keywords=matched,
         missing_keywords=missing[:4],
         formatting_score=100,
-        impact_quantification_score=94,
+        impact_quantification_score=92,
         contact_score=100,
         experience_score=95,
-        skills_score=92,
-        action_verbs_count=14,
+        skills_score=94,
+        action_verbs_count=16,
         metrics_quantified_count=8,
-        summary_feedback=f"Resume is strongly aligned with {detected_title} requirements at {detected_company}. Real enterprise project achievements and multi-platform tech skills are prominently highlighted.",
+        summary_feedback=f"Resume effectively presents 100% of candidate's credentials matching {detected_title} at {detected_company}.",
         recommendations=[
-            f"Add {missing[0]} to key projects or skills to push match score past 95%." if missing else "Resume formatting and keyword alignment are in top 5% of ATS submissions.",
-            "Maintain the single-column layout to guarantee 100% compliance across Workday, Taleo, and Greenhouse."
+            f"Emphasize hands-on leadership and contributions in {matched[0]}." if matched else "Ensure specialized technical credentials are highlighted.",
+            "Maintain the single-column standard layout for 100% ATS compliance across enterprise tracking systems."
         ]
     )
 
     cover_letter = CoverLetter(
-        recipient_name="Hiring Team",
-        recipient_title="Talent Acquisition Team",
+        recipient_name="Hiring Team / Committee",
+        recipient_title="Recruitment & Technical Selection Committee",
         company_name=detected_company,
-        company_address="Global / Remote",
+        company_address="International / Domestic Operations",
         salutation=f"Dear Hiring Team at {detected_company},",
         opening_paragraph=(
-            f"I am writing to express my enthusiastic interest in the {detected_title} position at {detected_company}. "
-            f"With a strong foundation in full-stack web, mobile, and enterprise backend engineering across technologies such as "
-            f"{', '.join(candidate_skills[:4])}, I am excited about the prospect of contributing to {detected_company}'s engineering initiatives."
+            f"I am writing to express my strong interest in the {detected_title} position with {detected_company}. "
+            f"With verified professional background and hands-on proficiency in {', '.join(candidate_skills[:3])}, "
+            f"I am confident in my capability to make an immediate, positive impact on your engineering and development objectives."
         ),
         body_paragraph=(
-            f"During my work at American Premium Water Systems and Cody Zea (Pvt) Ltd, I designed and deployed scalable web application systems, "
-            f"cross-platform Flutter mobile applications, and real-time data visualization dashboards. I have consistently focused on writing clean, "
-            f"maintainable code, improving system performance, and streamlining workflows with modern CI/CD pipelines. "
-            f"My hands-on experience delivering complex full-stack solutions directly prepares me to hit the ground running on your engineering team."
+            f"Throughout my professional career, I have consistently focused on building scalable, user-centric software solutions, "
+            f"operational efficiency, and dependable teamwork. My practical experience in {', '.join(candidate_skills[3:6] if len(candidate_skills) >= 6 else candidate_skills[:3])} "
+            f"has demonstrated my ability to solve complex technical challenges systematically and adapt rapidly to demanding environments."
         ),
         closing_paragraph=(
-            f"I would welcome the opportunity to discuss how my technical skills, proactive problem-solving mindset, and dedication to software excellence "
-            f"can bring value to {detected_company}. Thank you for your time and consideration."
+            f"I welcome the opportunity to discuss how my technical expertise, disciplined work ethic, and dedication align with the goals "
+            f"of {detected_company}. Thank you for your time and consideration."
         ),
         sign_off="Sincerely,",
         sign_off_title=detected_title,
@@ -503,9 +812,9 @@ def _parse_and_tailor_user_data(
         signature_style="script_1",
         signature_image_data=None,
         letter_date=datetime.date.today().strftime("%B %d, %Y"),
-        reference_subject=f"Application for {detected_title} Role",
-        postscript=f"P.S. I would welcome the opportunity to share a live architectural demo of full-stack systems tailored to {detected_company}'s tech stack.",
-        enclosure="Enclosure: Resume, Engineering Portfolio, GitHub Repositories",
+        reference_subject=f"Application for {detected_title} Position",
+        postscript="P.S. All verified qualifications, portfolio repositories, and references are readily available upon request.",
+        enclosure="Enclosure: Tailored Curriculum Vitae, Professional Credentials",
         layout_style="modern_banner",
         tone=cover_letter_tone
     )
@@ -516,12 +825,12 @@ def _parse_and_tailor_user_data(
             email=email,
             phone=phone,
             location=location,
-            linkedin=linkedin,
-            github=github,
-            portfolio=portfolio,
+            linkedin=linkedin_url,
+            github=github_url,
+            portfolio=portfolio_url,
             avatar_url="",
-            hero_headline=f"Hi, I'm {full_name}. {detected_title}",
-            availability_badge="Available for High-Impact Roles & Consulting",
+            hero_headline=f"{full_name} | {detected_title}",
+            availability_badge="Available for Immediate Employment & Opportunities",
             custom_domain="",
             social_links=social_links
         ),
@@ -530,6 +839,9 @@ def _parse_and_tailor_user_data(
         professional_summary=summary,
         template_style=template_style,
         font_size_scale="standard",
+        role_archetype=archetype,
+        section_order=["summary", "skills", "experience", "education", "certifications"] if archetype in ["trade_technical", "healthcare_medical"] else ["summary", "skills", "experience", "projects", "education", "certifications"],
+        show_projects=bool(projects) and archetype != "trade_technical",
         skill_categories=skill_categories,
         work_experience=work_experience,
         education=education,

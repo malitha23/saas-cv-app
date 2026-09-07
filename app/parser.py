@@ -39,8 +39,10 @@ def clean_extracted_text(text: str) -> str:
     """Normalize whitespace, remove non-printable chars, and standardize bullets."""
     if not text:
         return ""
+    # Strip unprintable or odd control chars like \x7f and unicode squares
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
     # Replace weird unicode bullets with standard dashes
-    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u25AA\u25AB\u25CF\u25CB\u25BA\u25B6]', '\n- ', text)
+    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u25A0\u25AA\u25AB\u25CF\u25CB\u25BA\u25B6\uF0B7■▪●•]', '\n- ', text)
     # Standardize multiple newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
     # Remove excessive horizontal whitespace
@@ -69,47 +71,87 @@ def detect_sections(text: str) -> List[str]:
     return detected
 
 
+NAME_BLACKLIST = set([
+    'university', 'college', 'institute', 'academy', 'school', 'polytechnic', 'campus', 'faculty', 'department',
+    'pvt', 'ltd', 'inc', 'llc', 'corp', 'corporation', 'company', 'systems', 'technologies', 'services', 'solutions',
+    'road', 'street', 'avenue', 'lane', 'drive', 'boulevard', 'city', 'state', 'country', 'sri lanka', 'colombo', 'beliatta',
+    'resume', 'curriculum', 'vitae', 'cv', 'page', 'objective', 'summary', 'profile', 'education', 'experience', 'skills',
+    'personal', 'contact', 'nationality', 'gender', 'dob', 'date', 'birth', 'passport', 'nic', 'qualifications', 'references',
+    'projects', 'works', 'portfolio', 'languages', 'frameworks', 'database', 'certifications', 'awards', 'links', 'socials',
+    'engineer', 'developer', 'manager', 'analyst', 'designer', 'architect', 'consultant', 'technician', 'electrician',
+    'painter', 'specialist', 'executive', 'officer', 'director', 'intern', 'associate', 'lead', 'founder', 'freelance',
+    'bsc', 'bachelor', 'master', 'msc', 'phd', 'diploma', 'hnd', 'nvq', 'degree', 'cardiff', 'metropolitan', 'nibm',
+    'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+    'present', 'year', 'years', 'month', 'months', 'repository', 'website', 'application', 'applications', 'tools', 'database'
+])
+
+
 def extract_candidate_name(text: str, email: str = "") -> str:
-    """Intelligently extract the candidate's actual full name from text."""
+    """Intelligently extract the candidate's actual full name from text with confidence scoring."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    
-    # Look for name near title or standalone line
+    if not lines:
+        return "Candidate Name"
+
+    email_user = email.split('@')[0].lower() if email else ''
     candidates = []
-    for line in lines:
-        # Ignore lines with email, phone numbers, urls, dates, or standard headings
-        if "@" in line or "http" in line or "linkedin" in line or "github" in line:
+
+    for i, line in enumerate(lines):
+        # Ignore lines with obvious non-name symbols
+        if any(c in line for c in [':', '|', '@', '/', '\\', '=', '+', ';', '#', '(', ')', '{', '}', '[', ']']):
             continue
-        if re.search(r'\b(resume|curriculum vitae|cv|page \d|objective|summary|education|experience|skills)\b', line, re.IGNORECASE):
+        if re.search(r'\d', line):
             continue
-        if re.search(r'\d{4}', line) or re.search(r'\+\d+', line):
+
+        cleaned = re.sub(r'[^a-zA-Z\s]', '', line).strip()
+        words = cleaned.split()
+        if not (2 <= len(words) <= 4):
             continue
-        
-        # Check if line looks like a proper name (2 to 4 capitalized words)
-        words = line.split()
-        if 2 <= len(words) <= 4 and all(w[0].isupper() for w in words if w.isalpha()):
-            # Filter out generic titles like "Software Engineer"
-            if not re.search(r'\b(Engineer|Developer|Manager|Analyst|Designer|Architect|Consultant)\b', line, re.IGNORECASE):
-                candidates.append(line)
-            elif len(words) >= 3 and not words[0] in ["Senior", "Lead", "Associate", "Staff", "Principal", "Junior"]:
-                candidates.append(line)
-                
+        # Each word must start with an uppercase letter and consist only of letters
+        if not all(w.isalpha() and w[0].isupper() for w in words):
+            continue
+
+        line_lower = line.lower()
+        # Strictly reject if any blacklisted keyword exists as a word or substring
+        if any(re.search(rf'\b{re.escape(b)}\b', line_lower) for b in NAME_BLACKLIST):
+            continue
+        if any(b in line_lower for b in ['university', 'college', 'institute', 'school', 'cardiff', 'nibm', 'pvt', 'ltd', 'road']):
+            continue
+
+        score = 10
+        # Positional priority
+        if i < 5:
+            score += 25
+        elif i < 15:
+            score += 15
+        elif i < 80:
+            score += 5
+
+        # Adjacent title boost (e.g. line right after is 'Software Engineer' or 'Full Stack Developer')
+        if i + 1 < len(lines):
+            next_line = lines[i+1].lower()
+            if any(t in next_line for t in ['engineer', 'developer', 'manager', 'specialist', 'consultant', 'technician', 'lead', 'architect']):
+                score += 70
+
+        # Email match boost (e.g. 'malith' in 'lghmalith@gmail.com')
+        for w in words:
+            w_low = w.lower()
+            if len(w_low) >= 3 and (w_low in email_user or email_user in w_low or (len(w_low) >= 4 and w_low[:4] in email_user)):
+                score += 90
+
+        candidates.append((score, cleaned, i))
+
     if candidates:
-        return candidates[0]
-        
-    # Fallback to first non-empty line
-    for line in lines[:5]:
-        if "@" not in line and not re.search(r'\b(resume|cv|objective)\b', line, re.IGNORECASE):
-            cleaned = re.sub(r'[^a-zA-Z\s]', '', line).strip()
-            if len(cleaned.split()) >= 2:
-                return cleaned
-                
-    # If all else fails, use email username nicely formatted
-    if email and "@" in email:
-        username = email.split("@")[0]
-        name_parts = re.findall(r'[A-Za-z]+', username)
-        if name_parts:
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return candidates[0][1]
+
+    # Email username fallback
+    if email_user:
+        name_parts = re.findall(r'[A-Za-z]+', email_user)
+        if name_parts and len(name_parts) >= 2:
             return " ".join([p.capitalize() for p in name_parts])
-            
+        elif name_parts and len(name_parts[0]) >= 3:
+            return name_parts[0].capitalize()
+
     return "Candidate Name"
 
 

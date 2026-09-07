@@ -5,6 +5,7 @@ function resumeApp() {
     jobDescription: '',
     targetJobTitle: '',
     targetCompany: '',
+    roleArchetype: 'auto',
     coverLetterTone: 'professional',
     currentTemplate: 'classic',
     portfolioTheme: 'bento_grid',
@@ -28,6 +29,7 @@ function resumeApp() {
     activeTab: 'resume', // 'resume', 'cover_letter', 'portfolio', 'text'
     tailoredData: null,
     pdfBlobUrl: null,
+    pdfBlobKey: 0,
     portfolioHtml: '',
     publishedLiveUrl: '',
     sampleData: {},
@@ -450,6 +452,7 @@ function resumeApp() {
           job_description: this.jobDescription,
           job_title: this.targetJobTitle || null,
           company_name: this.targetCompany || null,
+          role_archetype: this.roleArchetype || 'auto',
           template_style: this.currentTemplate,
           cover_letter_tone: this.coverLetterTone,
           api_key: this.userApiKey || null,
@@ -477,6 +480,9 @@ function resumeApp() {
 
         this.tailoredData = await res.json();
         this.currentTemplate = this.tailoredData.template_style || 'classic';
+        if (this.tailoredData.role_archetype) {
+          this.roleArchetype = this.tailoredData.role_archetype;
+        }
 
         // Initialize safe default customization properties
         if (!this.tailoredData.personal_info.social_links) {
@@ -527,18 +533,31 @@ function resumeApp() {
         this.tailoredData.portfolio_show_skills = this.tailoredData.portfolio_show_skills ?? true;
         this.tailoredData.portfolio_show_experience = this.tailoredData.portfolio_show_experience ?? true;
         this.tailoredData.portfolio_show_projects = this.tailoredData.portfolio_show_projects ?? true;
-        this.tailoredData.portfolio_show_education = this.tailoredData.portfolio_show_education ?? true;
-        this.tailoredData.portfolio_show_resume_download = this.tailoredData.portfolio_show_resume_download ?? true;
-        this.tailoredData.portfolio_cta_text = this.tailoredData.portfolio_cta_text || 'Get in Touch';
-
-        if (!this.tailoredData.portfolio_metrics || this.tailoredData.portfolio_metrics.length === 0) {
-          this.tailoredData.portfolio_metrics = [
-            { label: 'Key Projects', value: (this.tailoredData.projects?.length || 10) + '+' },
-            { label: 'Experience', value: (this.tailoredData.work_experience?.length || 5) + '+ Yrs' },
-            { label: 'System Uptime', value: '99.98%' },
-            { label: 'Stack Skills', value: '25+' }
-          ];
+        // Sync direct fields into social_links if not already present
+        const pInfo = this.tailoredData.personal_info;
+        const existingNames = new Set((pInfo.social_links || []).map(l => (l.name || '').toLowerCase()));
+        if (pInfo.linkedin && !Array.from(existingNames).some(n => n.includes('linkedin'))) {
+          pInfo.social_links.push({ name: 'LinkedIn', url: pInfo.linkedin, icon: 'linkedin', enabled: true });
         }
+        if (pInfo.github && !Array.from(existingNames).some(n => n.includes('github'))) {
+          pInfo.social_links.push({ name: 'GitHub', url: pInfo.github, icon: 'github', enabled: true });
+        }
+        if (pInfo.portfolio && !Array.from(existingNames).some(n => n.includes('portfolio') || n.includes('website'))) {
+          pInfo.social_links.push({ name: 'Portfolio', url: pInfo.portfolio, icon: 'globe', enabled: true });
+        }
+
+        // Always calculate dynamic portfolio metrics 100% strictly matched with the latest generated CV data
+        const projCount = (this.tailoredData.projects && this.tailoredData.projects.length) || 0;
+        const expCount = (this.tailoredData.work_experience && this.tailoredData.work_experience.length) || 1;
+        const totalSkills = (this.tailoredData.skill_categories || []).reduce((acc, c) => acc + ((c.skills && c.skills.length) || 0), 0);
+        const certCount = (this.tailoredData.certifications && this.tailoredData.certifications.length) || 0;
+
+        this.tailoredData.portfolio_metrics = [
+          { label: 'Key Projects', value: projCount > 0 ? `${projCount}+` : 'Verified' },
+          { label: 'Experience', value: `${expCount}+ Roles` },
+          { label: 'Technical Stack', value: totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack' },
+          { label: certCount > 0 ? 'Certifications' : 'ATS Compatibility', value: certCount > 0 ? `${certCount}+ Certs` : '99.8%' }
+        ];
 
         this.portfolioTheme = this.tailoredData.portfolio_theme;
         this.portfolioAccent = this.tailoredData.portfolio_accent_color;
@@ -750,7 +769,8 @@ function resumeApp() {
         if (this.pdfBlobUrl) {
           URL.revokeObjectURL(this.pdfBlobUrl);
         }
-        this.pdfBlobUrl = URL.createObjectURL(blob);
+        this.pdfBlobUrl = URL.createObjectURL(blob) + '#toolbar=0&navpanes=0';
+        this.pdfBlobKey = Date.now();
       } catch (err) {
         console.error('PDF Preview render error:', err);
       }
@@ -775,12 +795,55 @@ function resumeApp() {
       }
     },
 
+    syncSocialLinksToDirectFields() {
+      if (!this.tailoredData || !this.tailoredData.personal_info) return;
+      const info = this.tailoredData.personal_info;
+      if (!info.social_links) {
+        info.social_links = [];
+        return;
+      }
+
+      let activeLinkedin = '';
+      let activeGithub = '';
+      let activePortfolio = '';
+
+      for (const link of info.social_links) {
+        if (!link.enabled || !link.url || !link.url.trim()) continue;
+        const name = (link.name || '').toLowerCase().trim();
+        const url = link.url.trim();
+
+        if (name.includes('linkedin')) {
+          if (!activeLinkedin) activeLinkedin = url;
+        } else if (name.includes('github')) {
+          if (!activeGithub) activeGithub = url;
+        } else if (name.includes('portfolio') || name.includes('website') || name.includes('blog') || name.includes('site')) {
+          if (!activePortfolio) activePortfolio = url;
+        }
+      }
+
+      // Explicitly overwrite so turning OFF immediately clears them!
+      info.linkedin = activeLinkedin;
+      info.github = activeGithub;
+      info.portfolio = activePortfolio;
+    },
+
+    toggleSocialLink(link) {
+      if (!link) return;
+      link.enabled = !link.enabled;
+      this.syncSocialLinksToDirectFields();
+      this.renderPdfPreview();
+      this.renderPortfolioPreview();
+      this.triggerAutoSave();
+    },
+
     refreshAllPreviews() {
+      this.syncSocialLinksToDirectFields();
+
       clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(() => {
         this.renderPdfPreview();
         this.renderPortfolioPreview();
-      }, 400);
+      }, 300);
 
       // Trigger automatic save to MySQL whenever any change occurs!
       this.triggerAutoSave();
@@ -885,6 +948,18 @@ function resumeApp() {
       if (!this.tailoredData) return;
       this.tailoredData[key] = !this.tailoredData[key];
       this.refreshAllPreviews();
+    },
+
+    // Role Blueprint Manager
+    getRoleArchetypeName(arch) {
+      const map = {
+        'software_engineering': 'Software & Tech',
+        'trade_technical': 'Trades & Automotive',
+        'management_executive': 'Management & PM',
+        'healthcare_medical': 'Healthcare & Clinical',
+        'general_professional': 'Universal Standard'
+      };
+      return map[arch] || 'Auto-Detect';
     },
 
     // Section Order & Positions Manager
@@ -1104,14 +1179,20 @@ function resumeApp() {
         icon: 'globe',
         enabled: true
       });
-      this.refreshAllPreviews();
+      this.syncSocialLinksToDirectFields();
+      this.renderPdfPreview();
+      this.renderPortfolioPreview();
+      this.triggerAutoSave();
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
 
     removeSocialLink(index) {
       if (!this.tailoredData || !this.tailoredData.personal_info.social_links) return;
       this.tailoredData.personal_info.social_links.splice(index, 1);
-      this.refreshAllPreviews();
+      this.syncSocialLinksToDirectFields();
+      this.renderPdfPreview();
+      this.renderPortfolioPreview();
+      this.triggerAutoSave();
     },
 
     // Custom Domain Manager

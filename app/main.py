@@ -8,7 +8,7 @@ from collections import defaultdict
 from typing import Optional, Dict, List
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
@@ -279,6 +279,7 @@ async def tailor_resume(
             api_key=payload.api_key,
             job_title=payload.job_title,
             company_name=payload.company_name,
+            role_archetype=payload.role_archetype or "auto",
             template_style=payload.template_style or "classic",
             cover_letter_tone=payload.cover_letter_tone or "professional"
         )
@@ -1580,10 +1581,10 @@ async def serve_refund_policy(request: Request):
     return templates.TemplateResponse(request=request, name="legal/refund.html", context={"active_page": "refund"})
 
 
-@app.get("/security", response_class=HTMLResponse)
+@app.get("/security")
 async def serve_security_whitepaper(request: Request):
-    """Serve official Security & Compliance Architecture document."""
-    return templates.TemplateResponse(request=request, name="legal/security.html", context={"active_page": "security"})
+    """Hidden for now - redirect to home page."""
+    return RedirectResponse(url="/", status_code=302)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

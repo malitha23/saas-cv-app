@@ -273,7 +273,7 @@
           <!-- Tab 1: Live PDF Embed (Supports ATS + Visual Designer Formats) -->
           <template x-if="tailoredData && activeTab === 'resume'">
             <div class="w-full h-full min-h-[580px] flex flex-col">
-              <iframe :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
+              <iframe :key="pdfBlobKey" :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
                 type="application/pdf"></iframe>
             </div>
           </template>
