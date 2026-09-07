@@ -75,6 +75,41 @@
                     <p class="text-[10px] text-slate-400">Supports PNG, JPG, JPEG, WEBP files or direct image web URLs.</p>
                   </div>
                 </div>
+
+                <!-- Social Media & Contact Endpoints (Integrated in CV Editor) -->
+                <div class="col-span-2 pt-2 border-t border-slate-800/80 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                      <i data-lucide="share-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+                      <span>Social Media, Portfolio & Contact Links</span>
+                    </label>
+                    <button type="button" @click="addSocialLink()"
+                      class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                      <i data-lucide="plus" class="w-3 h-3"></i> Add Link
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-slate-400">Add or edit your LinkedIn, GitHub, Portfolio or other links. Updates both CV PDF and online Portfolio automatically.</p>
+
+                  <!-- List of Editable Social Links -->
+                  <template x-for="(link, lIdx) in tailoredData.personal_info.social_links" :key="lIdx">
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-xs">
+                      <input type="text" x-model="link.name" @input="refreshAllPreviews()"
+                        class="w-24 bg-slate-950 border border-slate-800 rounded p-1 text-slate-200 font-semibold text-[11px]"
+                        placeholder="Platform (e.g. LinkedIn)">
+                      <input type="text" x-model="link.url" @input="refreshAllPreviews()"
+                        class="flex-1 bg-slate-950 border border-slate-800 rounded p-1 text-slate-300 text-[11px]"
+                        placeholder="https://...">
+                      <button type="button" @click="toggleSocialLink(link)"
+                        :class="link.enabled ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30' : 'text-slate-500 bg-slate-800 border border-slate-700'"
+                        class="p-1 rounded text-[10px] font-bold px-2 cursor-pointer transition" title="Toggle visibility in CV and Portfolio">
+                        <span x-text="link.enabled ? 'ON' : 'OFF'"></span>
+                      </button>
+                      <button type="button" @click="removeSocialLink(lIdx)" class="text-slate-500 hover:text-red-400 p-1" title="Delete link">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
               </div>
             </div>
 

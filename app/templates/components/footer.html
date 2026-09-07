@@ -1,161 +1,86 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- COMPREHENSIVE ENTERPRISE SAAS FOOTER COMPONENT -->
+<!-- CLEAN RESUMATCH FOOTER COMPONENT -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<footer class="border-t border-slate-800/80 bg-slate-950 text-slate-400 text-xs mt-12 transition-colors">
-  
-  <!-- Main Footer Content Grid -->
+<footer class="border-t border-slate-800/80 bg-slate-950 text-slate-400 text-xs transition-colors mt-auto">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
       
-      <!-- Column 1: Brand, Mission & Trust (Spans 2 cols on lg) -->
-      <div class="lg:col-span-2 space-y-4">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg shrink-0">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <span class="font-extrabold text-lg tracking-tight text-slate-100">ResuMatch<span class="text-indigo-400">.ai</span></span>
-            <span class="ml-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">SaaS</span>
-          </div>
-        </div>
-
+      <!-- Brand & Tagline -->
+      <div class="md:col-span-2 space-y-3">
+        <a href="/" class="inline-flex items-center space-x-2 group">
+          <svg class="w-6 h-6 text-purple-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span class="font-bold text-base sm:text-lg tracking-tight text-slate-100">
+            ResuMatch<span class="text-purple-500">AI</span>
+          </span>
+        </a>
         <p class="text-xs text-slate-400 leading-relaxed max-w-sm">
-          The AI-Powered Career Operating System. Tailor ATS resumes to job descriptions in seconds, design executive visual photo CVs, generate tailored cover letters, and host modern live portfolios with custom domains.
+          AI-powered resume customization to help you land your dream job. Tailor your application in seconds.
         </p>
-
-        <!-- Trust Badges -->
-        <div class="pt-1 flex flex-wrap items-center gap-2 text-[10.5px]">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-            <span>GDPR & CCPA Ready</span>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
-            <i data-lucide="lock" class="w-3.5 h-3.5 text-indigo-400"></i>
-            <span>256-Bit TLS Security</span>
-          </span>
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-medium">
-            <i data-lucide="cpu" class="w-3.5 h-3.5 text-violet-400"></i>
-            <span>Zero AI Model Retention</span>
-          </span>
-        </div>
-
-        <!-- System Operational Status -->
-        <div class="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>All SaaS Systems Operational</span>
-          <span class="text-slate-600">•</span>
-          <span class="text-slate-400">v1.3.0 Production</span>
-        </div>
       </div>
 
-      <!-- Column 2: Product Suite -->
+      <!-- Product -->
       <div class="space-y-3">
-        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Product Studio</h4>
-        <ul class="space-y-2 text-xs">
+        <h4 class="text-xs font-semibold text-slate-200">Product</h4>
+        <ul class="space-y-2.5 text-xs">
           <li>
-            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'ats'; scrollToPreview(); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
-              <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span>Classic ATS Resume</span>
+            <a href="/#features" 
+               @click="if (window.location.pathname === '/' || window.location.pathname === '') { const el = document.getElementById('features'); if (el) { $event.preventDefault(); el.scrollIntoView({behavior: 'smooth'}); } }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Features
             </a>
           </li>
           <li>
-            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'visual'; scrollToPreview(); }" class="hover:text-pink-400 text-left transition flex items-center gap-1.5">
-              <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-400"></i>
-              <span>Visual Photo CV</span>
+            <a href="/#pricing" 
+               @click="if (typeof showPricingModal !== 'undefined') { $event.preventDefault(); showPricingModal = true; } else if (window.location.pathname === '/' || window.location.pathname === '') { const el = document.getElementById('pricing'); if (el) { $event.preventDefault(); el.scrollIntoView({behavior: 'smooth'}); } }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Pricing
             </a>
           </li>
           <li>
-            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'cover_letter'; scrollToPreview(); }" class="hover:text-violet-400 text-left transition flex items-center gap-1.5">
-              <i data-lucide="mail" class="w-3.5 h-3.5 text-violet-400"></i>
-              <span>AI Cover Letter Builder</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app" @click="if (typeof scrollToPreview === 'function') { $event.preventDefault(); activePreviewTab = 'portfolio'; scrollToPreview(); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
-              <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
-              <span>Web Portfolio Studio</span>
-            </a>
-          </li>
-          <li>
-            <a href="/app" @click="if (typeof showPricingModal !== 'undefined') { $event.preventDefault(); showPricingModal = true; }" class="hover:text-amber-400 text-left transition flex items-center gap-1.5 font-semibold text-amber-300">
-              <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Subscription Pricing</span>
+            <a href="/app" 
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Template Gallery
             </a>
           </li>
         </ul>
       </div>
 
-      <!-- Column 3: Resources & Cloud -->
+      <!-- Company -->
       <div class="space-y-3">
-        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Platform & Tools</h4>
-        <ul class="space-y-2 text-xs">
+        <h4 class="text-xs font-semibold text-slate-200">Company</h4>
+        <ul class="space-y-2.5 text-xs">
           <li>
-            <a href="/app" @click="if (typeof openSavedResumesModal === 'function') { $event.preventDefault(); openSavedResumesModal(); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
-              <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i>
-              <span>MySQL Saved Resumes</span>
+            <a href="/#how-it-works" 
+               @click="if (window.location.pathname === '/' || window.location.pathname === '') { const el = document.getElementById('how-it-works'); if (el) { $event.preventDefault(); el.scrollIntoView({behavior: 'smooth'}); } }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              About
             </a>
           </li>
           <li>
-            <a href="/app" @click="if (typeof loadSample === 'function') { $event.preventDefault(); loadSample('software_engineer'); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
-              <i data-lucide="code-2" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Full Stack Sample</span>
+            <a href="/#faq" 
+               @click="if (window.location.pathname === '/' || window.location.pathname === '') { const el = document.getElementById('faq'); if (el) { $event.preventDefault(); el.scrollIntoView({behavior: 'smooth'}); } }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Help Center
             </a>
           </li>
           <li>
-            <a href="/app" @click="if (typeof loadSample === 'function') { $event.preventDefault(); loadSample('product_manager'); }" class="hover:text-slate-200 text-left transition flex items-center gap-1.5">
-              <i data-lucide="briefcase" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Product Mgr Sample</span>
-            </a>
-          </li>
-          <template x-if="typeof currentUser !== 'undefined' && currentUser && currentUser.is_admin">
-            <li>
-              <a href="/paneladmin" class="text-purple-400 hover:text-purple-300 transition flex items-center gap-1.5 font-bold">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-                <span>Admin Control Center</span>
-              </a>
-            </li>
-          </template>
-          <li>
-            <a href="mailto:support@resumatch.ai" class="hover:text-slate-200 transition flex items-center gap-1.5">
-              <i data-lucide="headphones" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Candidate Support</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 4: Legal & Governance -->
-      <div class="space-y-3">
-        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-200">Legal & Governance</h4>
-        <ul class="space-y-2 text-xs">
-          <li>
-            <a href="/privacy" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('privacy'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Privacy Policy</span>
+            <a href="/terms" 
+               @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('terms'); }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Terms & Conditions
             </a>
           </li>
           <li>
-            <a href="/terms" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('terms'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
-              <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Terms of Service</span>
-            </a>
-          </li>
-          <li>
-            <a href="/refund" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('refund'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
-              <i data-lucide="credit-card" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Refund & Cancellation</span>
-            </a>
-          </li>
-          <li>
-            <a href="/security" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('security'); }" class="hover:text-indigo-400 transition flex items-center gap-1.5">
-              <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Security & Sub-processors</span>
-            </a>
-          </li>
-          <li>
-            <a href="/privacy#cookies" @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('cookies'); }" class="hover:text-indigo-400 text-left transition flex items-center gap-1.5">
-              <i data-lucide="cookie" class="w-3.5 h-3.5 text-slate-400"></i>
-              <span>Cookie Preferences</span>
+            <a href="/privacy" 
+               @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('privacy'); }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Privacy Policy
             </a>
           </li>
         </ul>
@@ -163,43 +88,11 @@
 
     </div>
 
-    <!-- Divider -->
-    <div class="border-t border-slate-800/80 my-8"></div>
-
-    <!-- Bottom Bar: Copyright, PPP Currency & Theme Toggle -->
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-      
-      <!-- Copyright & AI Transparency Statement -->
-      <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2.5 text-slate-500 text-center sm:text-left">
-        <span>© 2026 ResuMatch AI Technology Solutions. All rights reserved.</span>
-        <span class="hidden sm:inline text-slate-700">•</span>
-        <span class="text-[11px] text-slate-400">Users retain 100% intellectual property ownership of all generated documents.</span>
-      </div>
-
-      <!-- Currency, Language & Theme Indicators -->
-      <div class="flex items-center space-x-3 shrink-0">
-        <!-- Active Currency Badge -->
-        <a href="/#pricing"
-          @click="if (typeof showPricingModal !== 'undefined') { $event.preventDefault(); showPricingModal = true; }"
-          class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold transition shadow-sm shrink-0 whitespace-nowrap"
-          title="Pricing Plans & Currency">
-          <span class="text-indigo-400 font-mono font-bold" x-text="(typeof activeCurrencySymbol !== 'undefined' && activeCurrencySymbol) ? activeCurrencySymbol : 'Rs.'">Rs.</span>
-          <span class="text-slate-200 font-bold" x-text="(typeof activeCurrency !== 'undefined' && activeCurrency) ? activeCurrency : 'LKR'">LKR</span>
-          <span class="text-slate-600">•</span>
-          <span class="text-slate-400 font-medium">Pricing</span>
-        </a>
-
-        <!-- Theme Toggle Button in Footer (Rendered only when toggleDarkMode is available) -->
-        <template x-if="typeof toggleDarkMode === 'function'">
-          <button @click="toggleDarkMode()"
-            class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition shrink-0"
-            :title="(typeof darkMode !== 'undefined' && darkMode) ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-            <i x-show="typeof darkMode !== 'undefined' && darkMode" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
-            <i x-show="typeof darkMode !== 'undefined' && !darkMode" data-lucide="moon" class="w-4 h-4 text-indigo-400"></i>
-          </button>
-        </template>
-      </div>
-
+    <!-- Divider & Bottom Centered Copyright -->
+    <div class="border-t border-slate-800/80 mt-10 pt-6 text-center">
+      <p class="text-xs text-slate-500">
+        &copy; 2026 ResuMatch AI. All rights reserved.
+      </p>
     </div>
 
   </div>

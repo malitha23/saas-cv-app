@@ -990,6 +990,26 @@
       </select>
     </div>
   </div>
+
+  <!-- Role Blueprint Selector -->
+  <div class="pt-1">
+    <div class="flex items-center justify-between mb-1">
+      <label class="text-[10px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+        <i data-lucide="layout-template" class="w-3 h-3 text-indigo-400"></i>
+        <span>Industry Role Blueprint</span>
+      </label>
+      <span class="text-[9px] text-emerald-400 font-medium" x-show="roleArchetype !== 'auto'" x-text="'Active: ' + getRoleArchetypeName(roleArchetype)"></span>
+    </div>
+    <select x-model="roleArchetype"
+      class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none transition">
+      <option value="auto">✨ Auto-Detect Best Industry Blueprint</option>
+      <option value="software_engineering">💻 Software & Tech (GitHub, Projects, Tech Stack)</option>
+      <option value="trade_technical">🔧 Trades & Automotive (Diagnostics, NVQ, Tooling)</option>
+      <option value="management_executive">📊 Management & Executive (PMP, Agile, Deliverables)</option>
+      <option value="healthcare_medical">🏥 Healthcare & Clinical (Patient Care, Accreditations)</option>
+      <option value="general_professional">🌐 Universal Standard (General Professional)</option>
+    </select>
+  </div>
 </div>
 
 <!-- Action Button: Run Optimization -->
@@ -1135,6 +1155,41 @@
                     </div>
                     <p class="text-[10px] text-slate-400">Supports PNG, JPG, JPEG, WEBP files or direct image web URLs.</p>
                   </div>
+                </div>
+
+                <!-- Social Media & Contact Endpoints (Integrated in CV Editor) -->
+                <div class="col-span-2 pt-2 border-t border-slate-800/80 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                      <i data-lucide="share-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+                      <span>Social Media, Portfolio & Contact Links</span>
+                    </label>
+                    <button type="button" @click="addSocialLink()"
+                      class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                      <i data-lucide="plus" class="w-3 h-3"></i> Add Link
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-slate-400">Add or edit your LinkedIn, GitHub, Portfolio or other links. Updates both CV PDF and online Portfolio automatically.</p>
+
+                  <!-- List of Editable Social Links -->
+                  <template x-for="(link, lIdx) in tailoredData.personal_info.social_links" :key="lIdx">
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-xs">
+                      <input type="text" x-model="link.name" @input="refreshAllPreviews()"
+                        class="w-24 bg-slate-950 border border-slate-800 rounded p-1 text-slate-200 font-semibold text-[11px]"
+                        placeholder="Platform (e.g. LinkedIn)">
+                      <input type="text" x-model="link.url" @input="refreshAllPreviews()"
+                        class="flex-1 bg-slate-950 border border-slate-800 rounded p-1 text-slate-300 text-[11px]"
+                        placeholder="https://...">
+                      <button type="button" @click="toggleSocialLink(link)"
+                        :class="link.enabled ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30' : 'text-slate-500 bg-slate-800 border border-slate-700'"
+                        class="p-1 rounded text-[10px] font-bold px-2 cursor-pointer transition" title="Toggle visibility in CV and Portfolio">
+                        <span x-text="link.enabled ? 'ON' : 'OFF'"></span>
+                      </button>
+                      <button type="button" @click="removeSocialLink(lIdx)" class="text-slate-500 hover:text-red-400 p-1" title="Delete link">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -2439,9 +2494,9 @@
         <input type="text" x-model="link.url" @input="refreshAllPreviews()"
           class="flex-1 bg-slate-950 border border-slate-800 rounded p-1 text-slate-300 text-[11px]"
           placeholder="URL / handle">
-        <button @click="link.enabled = !link.enabled; refreshAllPreviews()"
-          :class="link.enabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'"
-          class="p-1 rounded text-[10px] font-bold px-1.5">
+        <button type="button" @click="toggleSocialLink(link)"
+          :class="link.enabled ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30' : 'text-slate-500 bg-slate-800 border border-slate-700'"
+          class="p-1 rounded text-[10px] font-bold px-2 cursor-pointer transition">
           <span x-text="link.enabled ? 'ON' : 'OFF'"></span>
         </button>
         <button @click="removeSocialLink(lIdx)" class="text-slate-500 hover:text-red-400 p-1">
@@ -2734,7 +2789,7 @@
           <!-- Tab 1: Live PDF Embed (Supports ATS + Visual Designer Formats) -->
           <template x-if="tailoredData && activeTab === 'resume'">
             <div class="w-full h-full min-h-[580px] flex flex-col">
-              <iframe :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
+              <iframe :key="pdfBlobKey" :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
                 type="application/pdf"></iframe>
             </div>
           </template>

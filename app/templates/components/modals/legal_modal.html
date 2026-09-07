@@ -62,13 +62,6 @@
         <span>Refund & Cancellation</span>
       </button>
 
-      <button @click="activeLegalTab = 'security'"
-        :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'security', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'security'}"
-        class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
-        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-        <span>Security & Compliance</span>
-      </button>
-
       <button @click="activeLegalTab = 'cookies'"
         :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20': activeLegalTab === 'cookies', 'text-slate-400 hover:text-slate-200 hover:bg-slate-800': activeLegalTab !== 'cookies'}"
         class="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">

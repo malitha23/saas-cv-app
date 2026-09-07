@@ -272,11 +272,56 @@ def _draw_skill_progress_bar(
     return slot_h
 
 
+def _sync_resume_social_links(resume: TailoredResume):
+    if not resume or not resume.personal_info:
+        return
+    info = resume.personal_info
+    if hasattr(info, "social_links") and info.social_links:
+        has_linkedin = False
+        has_github = False
+        has_portfolio = False
+
+        active_linkedin = ""
+        active_github = ""
+        active_portfolio = ""
+        other_active_links = []
+
+        for sl in info.social_links:
+            name_l = (sl.name or "").lower().strip()
+            url = (sl.url or "").strip()
+            if not url or url.startswith("tel:") or url.startswith("mailto:"):
+                continue
+
+            if "linkedin" in name_l:
+                has_linkedin = True
+                if sl.enabled:
+                    active_linkedin = url
+            elif "github" in name_l:
+                has_github = True
+                if sl.enabled:
+                    active_github = url
+            elif "portfolio" in name_l or "website" in name_l or "site" in name_l or "blog" in name_l:
+                has_portfolio = True
+                if sl.enabled:
+                    active_portfolio = url
+            elif sl.enabled:
+                other_active_links.append(url)
+
+        if has_linkedin:
+            info.linkedin = active_linkedin
+        if has_github:
+            info.github = active_github
+        if has_portfolio:
+            info.portfolio = active_portfolio
+        elif other_active_links and not info.portfolio:
+            info.portfolio = other_active_links[0]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PUBLIC ENTRY POINT
 # ─────────────────────────────────────────────────────────────────────────────
 
 def generate_resume_pdf(resume: TailoredResume) -> bytes:
+    _sync_resume_social_links(resume)
     style = resume.template_style or "classic"
     if style == "visual_sidebar":
         return _visual_sidebar_pdf(resume)
@@ -426,7 +471,32 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     story.append(Paragraph(" | ".join(contacts), S["AtsCntct"]))
     story.append(HRFlowable(width="100%", thickness=1.5, color=primary, spaceBefore=1, spaceAfter=5))
 
-    order = getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"]
+    order = list(getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"])
+    if "skills" not in order:
+        order.insert(1, "skills")
+
+    arch = (getattr(resume, "role_archetype", "general_professional") or "general_professional").lower()
+    skills_hdr = "TECHNICAL SKILLS"
+    if arch == "software_engineering":
+        skills_hdr = "TECHNICAL SKILLS & TECHNOLOGIES"
+    elif arch == "trade_technical":
+        skills_hdr = "CORE COMPETENCIES & DIAGNOSTICS"
+    elif arch == "management_executive":
+        skills_hdr = "LEADERSHIP & CORE COMPETENCIES"
+    elif arch == "healthcare_medical":
+        skills_hdr = "CLINICAL SKILLS & CORE COMPETENCIES"
+
+    proj_hdr = "KEY PROJECTS"
+    if arch == "software_engineering":
+        proj_hdr = "KEY PROJECTS & SYSTEMS"
+    elif arch == "management_executive":
+        proj_hdr = "KEY INITIATIVES & DELIVERABLES"
+
+    edu_hdr = "EDUCATION"
+    if arch == "trade_technical":
+        edu_hdr = "VOCATIONAL QUALIFICATIONS & EDUCATION"
+    elif arch == "healthcare_medical":
+        edu_hdr = "MEDICAL ACCREDITATIONS & EDUCATION"
 
     def add_ats_summary():
         if resume.show_summary and resume.professional_summary:
@@ -441,7 +511,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     def add_ats_skills():
         if resume.show_skills and resume.skill_categories:
             sec_flow = [
-                Paragraph("TECHNICAL SKILLS", S["AtsSecHdr"]),
+                Paragraph(skills_hdr, S["AtsSecHdr"]),
                 HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3)
             ]
             for cat in resume.skill_categories:
@@ -487,7 +557,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
             demo0 = f" | <i>Demo: {first_proj.demo_url}</i>" if getattr(first_proj, "demo_url", None) else ""
             lnk0 = f" | <i>{first_proj.link}</i>" if first_proj.link else ""
             first_flow = [
-                Paragraph("KEY PROJECTS", S["AtsSecHdr"]),
+                Paragraph(proj_hdr, S["AtsSecHdr"]),
                 HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3),
                 Paragraph(f"<b>{first_proj.name}</b>{tech0}{demo0}{lnk0}", S["AtsJob"])
             ]
@@ -513,7 +583,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     def add_ats_education():
         if resume.show_education and resume.education:
             sec_flow = [
-                Paragraph("EDUCATION", S["AtsSecHdr"]),
+                Paragraph(edu_hdr, S["AtsSecHdr"]),
                 HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3)
             ]
             for edu in resume.education:
@@ -1872,6 +1942,7 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def generate_cover_letter_pdf(resume: TailoredResume, is_free_watermarked: bool = False) -> bytes:
+    _sync_resume_social_links(resume)
     buf = io.BytesIO()
     primary = colors.HexColor(resume.custom_accent_color or "#1E3A8A")
     dark = colors.HexColor("#0F172A")
