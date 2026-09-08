@@ -4,22 +4,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Legal & Compliance - ResuMatch AI{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}Official legal agreements, privacy policies, terms of service, and refund terms for ResuMatch AI.{% endblock %}">
-  <link rel="canonical" href="https://resumatch.ai/{{ active_page }}">
+  <title>{% block title %}Legal & Compliance - DreemFolio AI{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Official legal agreements, privacy policies, terms of service, and refund terms for DreemFolio AI.{% endblock %}">
+  <link rel="canonical" href="https://dreemfolio.com/{{ active_page }}">
   <meta name="robots" content="index, follow">
 
   <!-- Favicon & Open Graph -->
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="alternate icon" href="/favicon.ico">
-  <meta property="og:site_name" content="ResuMatch AI">
+  <meta property="og:site_name" content="DreemFolio AI">
   <meta property="og:type" content="article">
-  <meta property="og:title" content="{% block og_title %}Legal & Compliance - ResuMatch AI{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Official privacy policy, terms of service, and refund terms for ResuMatch AI.{% endblock %}">
-  <meta property="og:image" content="https://resumatch.ai/static/og-image.svg">
+  <meta property="og:title" content="{% block og_title %}Legal & Compliance - DreemFolio AI{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Official privacy policy, terms of service, and refund terms for DreemFolio AI.{% endblock %}">
+  <meta property="og:image" content="https://dreemfolio.com/static/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:site" content="@ResuMatchAI">
+  <meta name="twitter:site" content="@DreemFolio">
   <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
+  <link rel="apple-touch-icon" href="/static/images/logo.png?v=2">
 
   <!-- Tailwind CSS CDN with JIT & Inter Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -70,10 +72,10 @@
 
 <body class="min-h-full flex flex-col bg-slate-950 text-slate-200 antialiased selection:bg-indigo-500/30 selection:text-indigo-200"
   x-data="{
-    darkMode: localStorage.getItem('resumatch_theme') !== 'light',
+    darkMode: localStorage.getItem('dreemfolio_theme') !== 'light',
     toggleTheme() {
       this.darkMode = !this.darkMode;
-      localStorage.setItem('resumatch_theme', this.darkMode ? 'dark' : 'light');
+      localStorage.setItem('dreemfolio_theme', this.darkMode ? 'dark' : 'light');
       if (this.darkMode) {
         document.documentElement.classList.remove('light-mode');
         document.documentElement.style.backgroundColor = '#020617';
@@ -86,7 +88,7 @@
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
     init() {
-      if (localStorage.getItem('resumatch_theme') === 'light') {
+      if (localStorage.getItem('dreemfolio_theme') === 'light') {
         this.darkMode = false;
         document.documentElement.classList.add('light-mode');
         document.documentElement.style.backgroundColor = '#f1f5f9';
@@ -102,11 +104,9 @@
       
       <!-- Brand Logo -->
       <a href="/" class="flex items-center space-x-2.5 group">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg group-hover:scale-105 transition-transform">
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
-        </div>
+        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-9 h-9 object-contain filter drop-shadow-sm group-hover:scale-105 transition">
         <div>
-          <span class="font-extrabold text-lg tracking-tight text-slate-100">ResuMatch<span class="text-indigo-400">.ai</span></span>
+          <span class="font-extrabold text-lg tracking-tight text-slate-100">Dreem<span class="text-indigo-400">Folio</span></span>
           <span class="ml-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700 rounded-full">Legal Hub</span>
         </div>
       </a>
@@ -162,7 +162,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-2">
         <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
-        <span>ResuMatch AI Career Operating System • 100% Privacy-First ATS Optimization</span>
+        <span>DreemFolio AI Career Operating System • 100% Privacy-First ATS Optimization</span>
       </div>
       <div class="flex items-center space-x-4">
         <a href="/privacy" class="hover:text-slate-300 transition">Privacy</a>

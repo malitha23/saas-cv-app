@@ -9,7 +9,7 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
     
     print("=" * 60)
-    print("  🚀 Starting ResuMatch AI (ATS Resume & Cover Letter SaaS)")
+    print("  🚀 Starting DreemFolio AI (ATS Resume & Cover Letter SaaS)")
     print(f"  🌐 Application URL: http://{host}:{port}")
     print("  📄 100% Single-Column ATS PDF Engine Ready")
     print("  🤖 Gemini Flash Structured Engine Active")

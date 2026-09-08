@@ -24,22 +24,36 @@ from app.schemas import (
     AdminSettingItem, AdminUpdateSettingsRequest,
     PlanItemConfig, PlansConfigResponse, UpdatePlansConfigRequest,
     CountryPricingConfig, CountryPricingResponse, AdminUpdateCountryPricingRequest,
-    GoogleAuthRequest, GoogleConfigResponse
+    GoogleAuthRequest, GoogleConfigResponse,
+    JobSearchRequest, JobSearchResponse, ApplicationKitRequest, ApplicationKitResponse,
+    TrackedJobCreate, TrackedJobUpdate, TrackedJobResponse,
+    ChatCopilotRequest, ChatCopilotResponse,
+    MockInterviewStartRequest, MockInterviewStartResponse,
+    EvaluateAnswerRequest, AnswerEvaluationResponse,
+    FinalInterviewReportRequest, FinalInterviewReportResponse,
+    ConferenceTurnRequest, ConferenceTurnResponse,
+    ConferenceDebriefRequest, ConferenceDebriefResponse
 )
 from app.parser import parse_resume_file, extract_candidate_name
-from app.ai_engine import generate_with_gemini
+from app.ai_engine import (
+    generate_with_gemini, search_live_jobs, generate_application_kit, chat_with_career_copilot,
+    generate_mock_interview_questions, evaluate_mock_interview_answer, generate_interview_final_report,
+    process_conference_conversation_turn, generate_conference_debrief
+)
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
 from app.portfolio_generator import generate_portfolio_html
 from app.sample_data import SAMPLE_RESUMES
 from app.database import get_db, engine, Base
-from app.models import User, UserResume, SaasSetting
+from app.models import User, UserResume, SaasSetting, UserJobApplication
 from app.auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, get_optional_user,
     check_daily_ai_quota, check_daily_pdf_quota, check_ats_pdf_quota, check_visual_pdf_quota, check_daily_cover_letter_quota, require_tier, require_admin,
     check_and_update_subscription, get_saas_setting, verify_google_credential_token,
+    check_copilot_kit_quota, check_job_tracker_quota, check_chat_copilot_quota, check_voice_interview_quota,
     DEFAULT_FREE_DAILY_AI_LIMIT, DEFAULT_FREE_DAILY_PDF_LIMIT, DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT,
-    DEFAULT_FREE_LIFETIME_ATS_LIMIT, DEFAULT_FREE_LIFETIME_VISUAL_LIMIT, DEFAULT_FREE_LIFETIME_COVER_LETTER_LIMIT
+    DEFAULT_FREE_LIFETIME_ATS_LIMIT, DEFAULT_FREE_LIFETIME_VISUAL_LIMIT, DEFAULT_FREE_LIFETIME_COVER_LETTER_LIMIT,
+    DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
 )
 
 # Load .env variables
@@ -63,7 +77,7 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://resumatch.ai",
+    "https://dreemfolio.com",
 ]
 
 app.add_middleware(
@@ -144,6 +158,7 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     return response
 
 # Configure Jinja2 templates directory for modular component architecture
@@ -463,7 +478,7 @@ async def verify_custom_domain(
             {
                 "type": "CNAME",
                 "name": "@" if domain_clean.count(".") == 1 else domain_clean.split(".")[0],
-                "target": "cname.resumatch.ai",
+                "target": "cname.dreemfolio.com",
                 "ttl": "3600",
                 "status": "Ready to configure"
             },
@@ -601,6 +616,10 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         daily_pdf_downloads_remaining=pdf_remaining,
         daily_cover_letter_downloads_count=cl_count,
         daily_cover_letter_downloads_remaining=cl_remaining,
+        daily_copilot_kits_count=getattr(user, "daily_copilot_kits_count", 0) or 0,
+        daily_copilot_kits_remaining=None if tier in ["pro", "elite"] else max(0, 1 - (getattr(user, "daily_copilot_kits_count", 0) or 0)),
+        daily_chat_count=getattr(user, "daily_chat_count", 0) or 0,
+        daily_chat_remaining=None if tier in ["pro", "elite"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
         lifetime_ats_downloads_count=life_ats_used,
         lifetime_ats_downloads_remaining=life_ats_remaining,
         lifetime_visual_downloads_count=life_visual_used,
@@ -837,7 +856,12 @@ async def get_subscription_status(
         "ai_cover_letter": tier in ["pro", "elite"],
         "portfolio_themes": 8 if tier == "elite" else (1 if tier in ["pro", "sprint"] else 0),
         "custom_domain_support": tier == "elite",
-        "code_export": tier == "elite"
+        "code_export": tier == "elite",
+        "job_hunter": "Unlimited" if tier in ["pro", "elite"] else "Basic (4 vacancies)",
+        "application_copilot": "Unlimited" if tier in ["pro", "elite"] else "1 Free Kit / day",
+        "job_tracker": "Unlimited" if tier in ["pro", "elite"] else "Up to 3 Jobs",
+        "career_copilot_chat": "Unlimited 24/7" if tier in ["pro", "elite"] else "3 Messages / day",
+        "voice_mock_interview": "Unlimited Full Studio" if tier in ["pro", "elite"] else "1 Practice Session / day"
     }
 
     return SubscriptionStatusResponse(
@@ -1004,6 +1028,409 @@ async def delete_user_resume(
     db.delete(resume)
     db.commit()
     return {"success": True, "message": "Resume deleted successfully from MySQL."}
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AI Job Hunter, 1-Click Application Copilot & Tracker Endpoints
+# ═══════════════════════════════════════════════════════════════════
+
+@app.post("/api/jobs/search", response_model=JobSearchResponse)
+async def search_jobs_endpoint(
+    payload: JobSearchRequest,
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Real-time Job Hunter & Aggregator.
+    Searches active remote & global tech job vacancies with direct LinkedIn Easy Apply URLs.
+    Free tier / Guest: capped at 4 vacancies. Pro / Elite: unlimited full search results.
+    """
+    try:
+        user_tier = (current_user.plan_tier or "free").lower() if current_user else "free"
+        effective_limit = payload.limit or 8
+        if user_tier == "free" and effective_limit > 4:
+            effective_limit = 4
+
+        return search_live_jobs(
+            keywords=payload.keywords,
+            location=payload.location or "Remote",
+            work_mode=payload.work_mode or "all",
+            experience_level=payload.experience_level or "all",
+            limit=effective_limit
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Job search failed: {str(e)}")
+
+
+@app.post("/api/jobs/application-kit", response_model=ApplicationKitResponse)
+async def create_application_kit_endpoint(
+    payload: ApplicationKitRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate instant tailored screening question answers, elevator pitch, and salary script
+    for 1-click job application auto-filling.
+    Guarded by check_copilot_kit_quota: Free users get 1 kit/day trial; Pro/Elite get unlimited.
+    """
+    check_copilot_kit_quota(current_user, db)
+    try:
+        return generate_application_kit(
+            job_title=payload.job_title,
+            company_name=payload.company_name,
+            job_description=payload.job_description,
+            work_mode=payload.work_mode,
+            salary_range=payload.salary_range,
+            resume_data=payload.resume_data
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate application kit: {str(e)}")
+
+
+@app.post("/api/chat/copilot", response_model=ChatCopilotResponse)
+async def chat_copilot_endpoint(
+    payload: ChatCopilotRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """
+    AI Career Copilot & Technical Interview Simulator.
+    Provides real-time, context-aware resume critique, interview roleplay, cold outreach, and salary advice.
+    Free users: 3 messages per day. Pro / Elite: Unlimited 24/7 coaching.
+    """
+    is_allowed, remaining, msg = check_chat_copilot_quota(current_user, db)
+    if not is_allowed:
+        return ChatCopilotResponse(
+            reply="🔒 **Daily Free Limit Reached**\n\nYou have reached your **3 free Career Copilot messages** for today. Upgrade to **Pro Career ($9/mo)** or **Executive Elite** for unlimited 24/7 technical mock interviews, resume bullet rewrites, and cold recruiter outreach scripts!",
+            suggested_prompts=["Upgrade to Pro ($9/mo)", "View Subscription Plans"],
+            action_trigger={"type": "upgrade_modal", "plan": "pro"}
+        )
+
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        return chat_with_career_copilot(
+            messages=payload.messages,
+            resume_context=payload.resume_context,
+            target_job_title=payload.target_job_title,
+            company_name=payload.company_name,
+            api_key=api_key
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Career Copilot error: {str(e)}")
+
+
+@app.post("/api/interview/start", response_model=MockInterviewStartResponse)
+async def start_mock_interview_endpoint(
+    payload: MockInterviewStartRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Initiates an interactive AI Voice Mock Interview session.
+    Enforces daily practice session quotas for Free/Guest users (1 session/day, max 3 questions).
+    Pro/Elite users receive unlimited full-length sessions with custom questions.
+    """
+    is_allowed, remaining, msg = check_voice_interview_quota(current_user, db)
+    if not is_allowed:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "quota_exceeded",
+                "message": msg,
+                "upgrade_required": True,
+                "required_tier": "pro"
+            }
+        )
+
+    # Free tier question count capped at 3; Pro/Elite can use requested count up to 8
+    tier = (current_user.plan_tier if current_user else "free").lower()
+    q_count = payload.question_count if tier in ["pro", "elite"] else min(3, payload.question_count)
+
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        res = generate_mock_interview_questions(
+            target_role=payload.target_role,
+            target_company=payload.target_company,
+            interview_type=payload.interview_type,
+            difficulty=payload.difficulty,
+            question_count=q_count,
+            resume_context=payload.resume_context,
+            api_key=api_key
+        )
+        return MockInterviewStartResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start mock interview: {str(e)}")
+
+
+@app.post("/api/interview/evaluate-answer", response_model=AnswerEvaluationResponse)
+async def evaluate_interview_answer_endpoint(
+    payload: EvaluateAnswerRequest,
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Real-time spoken response evaluator.
+    Analyzes candidate's transcribed answer for STAR adherence, filler words,
+    speaking pace (WPM), technical strengths, and an exemplary model response.
+    """
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        res = evaluate_mock_interview_answer(
+            question_text=payload.question_text,
+            candidate_answer=payload.candidate_answer_transcript,
+            duration_seconds=payload.duration_seconds,
+            target_role=payload.target_role,
+            interview_type=payload.interview_type,
+            api_key=api_key
+        )
+        res["question_id"] = payload.question_id
+        return AnswerEvaluationResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to evaluate answer: {str(e)}")
+
+
+@app.post("/api/interview/final-report", response_model=FinalInterviewReportResponse)
+async def final_interview_report_endpoint(
+    payload: FinalInterviewReportRequest,
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Generates an executive-grade Candidate Interview Readiness Dossier and hiring verdict
+    synthesizing performance across all completed questions.
+    """
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        eval_dicts = [e.dict() for e in payload.evaluations]
+        res = generate_interview_final_report(
+            target_role=payload.target_role,
+            interview_type=payload.interview_type,
+            evaluations=eval_dicts,
+            api_key=api_key
+        )
+        res["session_id"] = payload.session_id
+        return FinalInterviewReportResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to compile interview report: {str(e)}")
+
+
+@app.post("/api/conference/turn", response_model=ConferenceTurnResponse)
+async def conference_turn_endpoint(
+    payload: ConferenceTurnRequest,
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Two-way real-time conversational conference turn with live mistake detection ("Waradi Kiyala Denna").
+    Analyzes candidate's spoken speech, flags technical vagueness, pacing, filler words,
+    and returns realistic spoken responses from the AI Interviewer avatar.
+    """
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        res = process_conference_conversation_turn(
+            session_id=payload.session_id,
+            candidate_transcript=payload.candidate_transcript,
+            conversation_history=payload.conversation_history,
+            target_role=payload.target_role,
+            target_company=payload.target_company,
+            speaking_duration_seconds=payload.speaking_duration_seconds,
+            api_key=api_key
+        )
+        return ConferenceTurnResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conference turn failed: {str(e)}")
+
+
+@app.post("/api/conference/debrief", response_model=ConferenceDebriefResponse)
+async def conference_debrief_endpoint(
+    payload: ConferenceDebriefRequest,
+    current_user: Optional[User] = Depends(get_optional_user)
+):
+    """
+    Compiles executive post-conference meeting debrief with full scorecard of mistakes corrected.
+    """
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        res = generate_conference_debrief(
+            session_id=payload.session_id,
+            target_role=payload.target_role,
+            target_company=payload.target_company,
+            turns_history=payload.turns_history,
+            all_mistakes=payload.all_mistakes,
+            api_key=api_key
+        )
+        return ConferenceDebriefResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Conference debrief failed: {str(e)}")
+
+
+
+
+@app.get("/api/user/job-tracker", response_model=List[TrackedJobResponse])
+async def get_user_tracked_jobs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all tracked job applications for the logged-in candidate."""
+    stmt = select(UserJobApplication).where(
+        UserJobApplication.user_id == current_user.id
+    ).order_by(UserJobApplication.updated_at.desc())
+    jobs = db.scalars(stmt).all()
+    
+    out = []
+    for j in jobs:
+        kit_dict = None
+        if j.application_kit_json:
+            try:
+                kit_dict = json.loads(j.application_kit_json)
+            except Exception:
+                pass
+        out.append(
+            TrackedJobResponse(
+                id=j.id,
+                job_title=j.job_title,
+                company_name=j.company_name,
+                location=j.location,
+                work_mode=j.work_mode,
+                salary_range=j.salary_range,
+                match_score=j.match_score,
+                job_url=j.job_url,
+                status=j.status,
+                applied_date=j.applied_date,
+                notes=j.notes,
+                has_application_kit=bool(kit_dict),
+                application_kit=kit_dict,
+                created_at=j.created_at.strftime("%b %d, %Y"),
+                updated_at=j.updated_at.strftime("%b %d, %Y")
+            )
+        )
+    return out
+
+
+@app.post("/api/user/job-tracker", response_model=TrackedJobResponse)
+async def create_user_tracked_job(
+    payload: TrackedJobCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Save a job opportunity to candidate's Tracker. Free users: max 3 tracked jobs."""
+    check_job_tracker_quota(current_user, db)
+    new_job = UserJobApplication(
+        user_id=current_user.id,
+        job_title=payload.job_title,
+        company_name=payload.company_name,
+        location=payload.location,
+        work_mode=payload.work_mode,
+        salary_range=payload.salary_range,
+        match_score=payload.match_score,
+        job_url=payload.job_url,
+        status=payload.status or "wishlist",
+        notes=payload.notes,
+        application_kit_json=payload.application_kit_json,
+        applied_date=datetime.date.today().strftime("%b %d, %Y") if payload.status == "applied" else None
+    )
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
+    
+    kit_dict = None
+    if new_job.application_kit_json:
+        try:
+            kit_dict = json.loads(new_job.application_kit_json)
+        except Exception:
+            pass
+            
+    return TrackedJobResponse(
+        id=new_job.id,
+        job_title=new_job.job_title,
+        company_name=new_job.company_name,
+        location=new_job.location,
+        work_mode=new_job.work_mode,
+        salary_range=new_job.salary_range,
+        match_score=new_job.match_score,
+        job_url=new_job.job_url,
+        status=new_job.status,
+        applied_date=new_job.applied_date,
+        notes=new_job.notes,
+        has_application_kit=bool(kit_dict),
+        application_kit=kit_dict,
+        created_at=new_job.created_at.strftime("%b %d, %Y"),
+        updated_at=new_job.updated_at.strftime("%b %d, %Y")
+    )
+
+
+@app.patch("/api/user/job-tracker/{job_id}", response_model=TrackedJobResponse)
+async def update_user_tracked_job(
+    job_id: int,
+    payload: TrackedJobUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update job application status, applied date, or notes."""
+    stmt = select(UserJobApplication).where(
+        UserJobApplication.id == job_id,
+        UserJobApplication.user_id == current_user.id
+    )
+    job = db.scalars(stmt).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Tracked job not found.")
+        
+    if payload.status is not None:
+        job.status = payload.status
+        if payload.status == "applied" and not job.applied_date:
+            job.applied_date = datetime.date.today().strftime("%b %d, %Y")
+    if payload.notes is not None:
+        job.notes = payload.notes
+    if payload.applied_date is not None:
+        job.applied_date = payload.applied_date
+    if payload.salary_range is not None:
+        job.salary_range = payload.salary_range
+    if payload.application_kit_json is not None:
+        job.application_kit_json = payload.application_kit_json
+        
+    db.commit()
+    db.refresh(job)
+    
+    kit_dict = None
+    if job.application_kit_json:
+        try:
+            kit_dict = json.loads(job.application_kit_json)
+        except Exception:
+            pass
+            
+    return TrackedJobResponse(
+        id=job.id,
+        job_title=job.job_title,
+        company_name=job.company_name,
+        location=job.location,
+        work_mode=job.work_mode,
+        salary_range=job.salary_range,
+        match_score=job.match_score,
+        job_url=job.job_url,
+        status=job.status,
+        applied_date=job.applied_date,
+        notes=job.notes,
+        has_application_kit=bool(kit_dict),
+        application_kit=kit_dict,
+        created_at=job.created_at.strftime("%b %d, %Y"),
+        updated_at=job.updated_at.strftime("%b %d, %Y")
+    )
+
+
+@app.delete("/api/user/job-tracker/{job_id}")
+async def delete_user_tracked_job(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Remove a job from candidate's tracker."""
+    stmt = select(UserJobApplication).where(
+        UserJobApplication.id == job_id,
+        UserJobApplication.user_id == current_user.id
+    )
+    job = db.scalars(stmt).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Tracked job not found.")
+        
+    db.delete(job)
+    db.commit()
+    return {"success": True, "message": "Job removed from tracker."}
 
 
 @app.post("/api/checkout")
@@ -1240,6 +1667,11 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "2 Classic ATS PDF Downloads (Lifetime Free)",
                     "1 Visual Photo CV Download (Lifetime Free)",
                     "3 AI Cover Letters (1st Clean • 2 Watermarked)",
+                    "AI Job Recommendations (Top 3 Roles Preview)",
+                    "AI Job Hunter (Basic Search • 4 Vacancies)",
+                    "1-Click Application Copilot (1 Free Kit/day)",
+                    "Job Application Tracker (Up to 3 Jobs)",
+                    "AI Career Copilot Chat (3 Free Prompts/day)",
                     "Interactive Web Portfolio Studio (Live Preview)",
                     "MySQL Cloud Auto-Save (Restoring requires Pro)"
                 ],
@@ -1259,8 +1691,13 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Unlimited ATS & Visual Photo CV Downloads",
                     "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
                     "Photo & Digital Signature Upload",
-                    "Hosted Live Portfolio Subdomain (.resumatch.ai)",
-                    "MySQL Cloud Auto-Save & Instant Version Restore"
+                    "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
+                    "MySQL Cloud Auto-Save & Instant Version Restore",
+                    "✨ Unlimited AI Job Recommendations & Re-Tailoring",
+                    "⚡ Unlimited AI Job Hunter with LinkedIn Easy Apply",
+                    "🚀 Unlimited 1-Click Application Screening Kits",
+                    "📊 Unlimited Kanban Job Application Tracker",
+                    "💬 Unlimited 24/7 AI Career Copilot Chatbot"
                 ],
                 "is_popular": True,
                 "button_text": "Upgrade to Pro ($9/mo)"
@@ -1275,11 +1712,12 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                 "description": "For Tech Leads, Architects & Executives building an elite digital brand.",
                 "features": [
                     "Everything in Pro Career",
+                    "Priority AI Processing Queue (Ultra-Fast Copilot)",
+                    "Executive Mock Interviews (C-Level & Leadership)",
                     "All 8 Portfolio Web Architectures",
                     "100% Full CRUD Portfolio Studio",
                     "Connect Custom Private Domain & SSL",
-                    "Standalone Website HTML Export",
-                    "Priority AI Processing Queue"
+                    "Standalone Website HTML Export"
                 ],
                 "is_popular": False,
                 "button_text": "Upgrade to Elite ($19/mo)"
@@ -1307,6 +1745,11 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "2 Classic ATS PDF Downloads (Lifetime Free)",
                     "1 Visual Photo CV Download (Lifetime Free)",
                     "3 AI Cover Letters (1st Clean • 2 Watermarked)",
+                    "AI Job Recommendations (Top 3 Roles Preview)",
+                    "AI Job Hunter (Basic Search • 4 Vacancies)",
+                    "1-Click Application Copilot (1 Free Kit/day)",
+                    "Job Application Tracker (Up to 3 Jobs)",
+                    "AI Career Copilot Chat (3 Free Prompts/day)",
                     "Interactive Web Portfolio Studio (Live Preview)",
                     "MySQL Cloud Auto-Save (Restoring requires Pro)"
                 ],
@@ -1326,8 +1769,13 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Unlimited ATS & Visual Photo CV Downloads",
                     "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
                     "Photo & Digital Signature Upload",
-                    "Hosted Live Portfolio Subdomain (.resumatch.ai)",
-                    "MySQL Cloud Auto-Save & Instant Version Restore"
+                    "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
+                    "MySQL Cloud Auto-Save & Instant Version Restore",
+                    "✨ Unlimited AI Job Recommendations & Re-Tailoring",
+                    "⚡ Unlimited AI Job Hunter with LinkedIn Easy Apply",
+                    "🚀 Unlimited 1-Click Application Screening Kits",
+                    "📊 Unlimited Kanban Job Application Tracker",
+                    "💬 Unlimited 24/7 AI Career Copilot Chatbot"
                 ],
                 "is_popular": True,
                 "button_text": "Upgrade to Pro (Rs. 990/mo)"
@@ -1342,11 +1790,12 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                 "description": "For Tech Leads, Architects & Executives building an elite digital brand.",
                 "features": [
                     "Everything in Pro Career",
+                    "Priority AI Processing Queue (Ultra-Fast Copilot)",
+                    "Executive Mock Interviews (C-Level & Leadership)",
                     "All 8 Portfolio Web Architectures",
                     "100% Full CRUD Portfolio Studio",
                     "Connect Custom Private Domain & SSL",
-                    "Standalone Website HTML Export",
-                    "Priority AI Processing Queue"
+                    "Standalone Website HTML Export"
                 ],
                 "is_popular": False,
                 "button_text": "Upgrade to Elite (Rs. 2,490/mo)"
@@ -1607,8 +2056,8 @@ Disallow: /admin
 Disallow: /portfolio/preview/
 
 # Search Engine Sitemaps
-Sitemap: https://resumatch.ai/sitemap.xml
-Host: https://resumatch.ai
+Sitemap: https://dreemfolio.com/sitemap.xml
+Host: https://dreemfolio.com
 """
     return Response(content=content, media_type="text/plain")
 
@@ -1620,37 +2069,37 @@ async def serve_sitemap_xml():
     sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://resumatch.ai/</loc>
+    <loc>https://dreemfolio.com/</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://resumatch.ai/app</loc>
+    <loc>https://dreemfolio.com/app</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://resumatch.ai/privacy</loc>
+    <loc>https://dreemfolio.com/privacy</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://resumatch.ai/terms</loc>
+    <loc>https://dreemfolio.com/terms</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://resumatch.ai/refund</loc>
+    <loc>https://dreemfolio.com/refund</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://resumatch.ai/security</loc>
+    <loc>https://dreemfolio.com/security</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -1666,7 +2115,7 @@ async def serve_manifest():
     if os.path.exists(manifest_path):
         with open(manifest_path, "r", encoding="utf-8") as f:
             return JSONResponse(content=json.load(f))
-    return JSONResponse(content={"name": "ResuMatch AI"})
+    return JSONResponse(content={"name": "DreemFolio AI"})
 
 
 @app.get("/favicon.ico")

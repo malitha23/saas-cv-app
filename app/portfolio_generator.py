@@ -2371,7 +2371,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
           <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap justify-between items-center gap-4">
             <div class="space-y-1">
               <p class="font-bold text-slate-900">© 2026 {full_name}. All rights reserved.</p>
-              <p class="text-[11px] text-slate-400">Crafted with ResuMatch AI · Clean Light Edition</p>
+              <p class="text-[11px] text-slate-400">Crafted with DreemFolio AI · Clean Light Edition</p>
             </div>
             <div class="flex items-center gap-2">{socials_html}</div>
           </div>

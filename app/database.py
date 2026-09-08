@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-logger = logging.getLogger("resumatch.database")
+logger = logging.getLogger("dreemfolio.database")
 
 # MySQL Configuration (Default to XAMPP port 3306)
 MYSQL_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
@@ -57,6 +57,28 @@ def init_engine():
             connect_args={"check_same_thread": False},
             echo=False
         )
+
+    # Auto-migrate missing columns for smooth upgrades
+    try:
+        from sqlalchemy import inspect, text
+        insp = inspect(engine)
+        if insp.has_table("users"):
+            user_cols = {c["name"] for c in insp.get_columns("users")}
+            needed_cols = [
+                ("daily_copilot_kits_count", "INT NOT NULL DEFAULT 0"),
+                ("daily_chat_count", "INT NOT NULL DEFAULT 0"),
+                ("daily_interview_count", "INT NOT NULL DEFAULT 0"),
+                ("google_id", "VARCHAR(255) NULL"),
+                ("avatar_url", "VARCHAR(500) NULL"),
+                ("auth_provider", "VARCHAR(50) NOT NULL DEFAULT 'email'")
+            ]
+            with engine.connect() as mig_conn:
+                for col_name, col_def in needed_cols:
+                    if col_name not in user_cols:
+                        mig_conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
+                mig_conn.commit()
+    except Exception as mig_err:
+        logger.warning("Database schema check warning: %s", mig_err)
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return engine

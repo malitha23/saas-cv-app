@@ -115,6 +115,18 @@ class CoverLetter(BaseModel):
     full_text: Optional[str] = Field(None, description="Complete formatted text representation")
 
 
+class MatchedJobOpportunity(BaseModel):
+    title: str = Field(..., description="Job title of matching role")
+    company_type: str = Field(default="Tech / SaaS / Enterprise", description="Target industry or company tier e.g. 'Cloud SaaS / Global Remote'")
+    match_score: int = Field(default=95, description="Calculated candidate match score (0-100)")
+    match_reason: str = Field(..., description="Why the candidate is a strong fit based on their verified skills & experience")
+    key_skills: List[str] = Field(default_factory=list, description="Key overlapping skills")
+    work_mode: str = Field(default="Remote", description="Work mode: 'Remote', 'Hybrid', or 'On-site'")
+    experience_level: str = Field(default="Mid-Senior", description="Experience level e.g. 'Entry-Level', 'Mid-Level', 'Senior', 'Lead'")
+    estimated_salary: Optional[str] = Field(default=None, description="Market salary estimate e.g. '$95k - $125k / yr'")
+    search_keywords: str = Field(..., description="Concise keywords for live job search queries")
+
+
 class TailoredResume(BaseModel):
     personal_info: PersonalInfo
     target_job_title: str = Field(..., description="Target job title matching the JD")
@@ -151,6 +163,12 @@ class TailoredResume(BaseModel):
     certifications: List[CertificationItem] = Field(default_factory=list)
     ats_analysis: ATSAnalysis
     cover_letter: CoverLetter
+
+    # Recommended Career Opportunities
+    matched_jobs: List[MatchedJobOpportunity] = Field(
+        default_factory=list,
+        description="Similar high-match job opportunities tailored to candidate's profile"
+    )
 
     # Full Portfolio Web Customization Suite
     portfolio_theme: str = Field(default="bento_grid", description="Portfolio layout: 'bento_grid', 'split_sidebar', 'terminal_dev', 'editorial_swiss', 'neon_glass'")
@@ -236,6 +254,11 @@ class UserResponse(BaseModel):
     daily_pdf_downloads_remaining: Optional[int] = None
     daily_cover_letter_downloads_count: int = 0
     daily_cover_letter_downloads_remaining: Optional[int] = None
+    # Career Features Daily Quotas
+    daily_copilot_kits_count: int = 0
+    daily_copilot_kits_remaining: Optional[int] = 1
+    daily_chat_count: int = 0
+    daily_chat_remaining: Optional[int] = 3
     # Strategic Lifetime Quotas
     lifetime_ats_downloads_count: int = 0
     lifetime_ats_downloads_remaining: Optional[int] = 2
@@ -405,5 +428,250 @@ class PlansConfigResponse(BaseModel):
 
 class UpdatePlansConfigRequest(BaseModel):
     plans: List[PlanItemConfig]
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AI Job Hunter, 1-Click Application Copilot & Tracker Schemas
+# ═══════════════════════════════════════════════════════════════════
+
+class JobSearchRequest(BaseModel):
+    keywords: str = Field(..., description="Job role keywords or technology e.g. 'Senior Frontend Engineer'")
+    location: Optional[str] = Field(default="Remote", description="Location or 'Remote'")
+    work_mode: Optional[str] = Field(default="all", description="'all', 'remote', 'hybrid', 'onsite'")
+    experience_level: Optional[str] = Field(default="all", description="'all', 'entry', 'mid', 'senior', 'lead'")
+    limit: int = Field(default=8, ge=1, le=25)
+
+
+class JobSearchResultItem(BaseModel):
+    id: str
+    title: str
+    company: str
+    location: str
+    work_mode: str
+    salary: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+    match_score: int = 95
+    match_reason: str = "High alignment with candidate core technical stack."
+    apply_url: str
+    easy_apply_url: str
+    posted_time: Optional[str] = "Recently active"
+
+
+class JobSearchResponse(BaseModel):
+    query: str
+    location: str
+    total_results: int
+    results: List[JobSearchResultItem]
+
+
+class ApplicationKitRequest(BaseModel):
+    job_title: str
+    company_name: str
+    job_description: Optional[str] = None
+    work_mode: Optional[str] = "Remote"
+    salary_range: Optional[str] = None
+    resume_data: Optional[Dict[str, Any]] = None
+
+
+class ApplicationKitResponse(BaseModel):
+    job_title: str
+    company_name: str
+    elevator_pitch: str = Field(..., description="30-second authentic professional intro")
+    why_company: str = Field(..., description="Compelling, tailored reason for applying to this company & role")
+    key_achievement: str = Field(..., description="Top quantifiable achievement proving candidate's capability")
+    salary_expectation_answer: str = Field(..., description="Tactful, market-rate salary negotiation response")
+    availability_notice_answer: str = Field(..., description="Direct availability and notice period statement")
+    strengths_summary: List[str] = Field(default_factory=list)
+    recommended_custom_qa: List[Dict[str, str]] = Field(default_factory=list)
+
+
+class TrackedJobCreate(BaseModel):
+    job_title: str
+    company_name: str = "Target Company"
+    location: str = "Remote"
+    work_mode: str = "Remote"
+    salary_range: Optional[str] = None
+    match_score: int = 95
+    job_url: Optional[str] = None
+    status: str = "wishlist"
+    notes: Optional[str] = None
+    application_kit_json: Optional[str] = None
+
+
+class TrackedJobUpdate(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    applied_date: Optional[str] = None
+    salary_range: Optional[str] = None
+    application_kit_json: Optional[str] = None
+
+
+class TrackedJobResponse(BaseModel):
+    id: int
+    job_title: str
+    company_name: str
+    location: str
+    work_mode: str
+    salary_range: Optional[str] = None
+    match_score: int
+    job_url: Optional[str] = None
+    status: str
+    applied_date: Optional[str] = None
+    notes: Optional[str] = None
+    has_application_kit: bool = False
+    created_at: str
+    updated_at: str
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AI Career Copilot Chatbot Schemas
+# ═══════════════════════════════════════════════════════════════════
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., description="'user', 'assistant', or 'system'")
+    content: str = Field(..., description="Message text content")
+    timestamp: Optional[str] = None
+
+
+class ChatCopilotRequest(BaseModel):
+    messages: List[ChatMessage] = Field(..., description="Conversation message history")
+    resume_context: Optional[Dict[str, Any]] = Field(default=None, description="Active candidate CV data")
+    target_job_title: Optional[str] = Field(default=None, description="Target job title")
+    company_name: Optional[str] = Field(default=None, description="Target company name")
+
+
+class ChatCopilotResponse(BaseModel):
+    reply: str = Field(..., description="AI Career Copilot assistant response in markdown format")
+    suggested_prompts: List[str] = Field(default_factory=list, description="Follow-up suggested quick actions or questions")
+    action_trigger: Optional[Dict[str, Any]] = Field(default=None, description="Optional interactive action trigger")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# AI Voice Mock Interview Simulator Schemas
+# ═══════════════════════════════════════════════════════════════════
+
+class InterviewQuestion(BaseModel):
+    id: int = Field(..., description="Question index starting at 1")
+    category: str = Field(..., description="Category e.g. 'STAR Behavioral', 'Technical Architecture', 'Conflict Resolution'")
+    question_text: str = Field(..., description="The spoken interview question")
+    interviewer_cue: str = Field(default="Focus on your specific role and measurable impact.", description="Tip/cue for candidate")
+    expected_competencies: List[str] = Field(default_factory=list, description="Key skills and criteria evaluated")
+
+
+class MockInterviewStartRequest(BaseModel):
+    target_role: str = Field(default="Professional", description="Target job title")
+    target_company: Optional[str] = Field(default=None, description="Target company or organization")
+    interview_type: str = Field(default="behavioral", description="'behavioral', 'technical', or 'situational'")
+    difficulty: str = Field(default="standard", description="'friendly', 'standard', or 'executive'")
+    question_count: int = Field(default=3, ge=1, le=8, description="Number of questions in session")
+    resume_context: Optional[Dict[str, Any]] = Field(default=None, description="Active candidate CV data")
+
+
+class MockInterviewStartResponse(BaseModel):
+    session_id: str
+    target_role: str
+    target_company: Optional[str] = None
+    interview_type: str
+    difficulty: str
+    questions: List[InterviewQuestion]
+
+
+class EvaluateAnswerRequest(BaseModel):
+    session_id: str
+    question_id: int
+    question_text: str
+    candidate_answer_transcript: str
+    duration_seconds: int = Field(default=45, ge=1, description="Time in seconds taken to answer")
+    target_role: str = "Professional"
+    interview_type: str = "behavioral"
+
+
+class AnswerEvaluationResponse(BaseModel):
+    question_id: int
+    score: int = Field(..., ge=0, le=100, description="Readiness score for this question")
+    star_breakdown: Dict[str, str] = Field(default_factory=dict, description="Evaluation of Situation, Task, Action, Result")
+    filler_words_detected: List[str] = Field(default_factory=list)
+    filler_words_count: int = 0
+    words_per_minute: float = 0.0
+    pacing_feedback: str = "Good speaking pace"
+    strengths: List[str] = Field(default_factory=list)
+    improvements: List[str] = Field(default_factory=list)
+    exemplary_answer: str = Field(..., description="High-impact model answer script")
+
+
+class FinalInterviewReportRequest(BaseModel):
+    session_id: str
+    target_role: str
+    interview_type: str
+    evaluations: List[AnswerEvaluationResponse]
+
+
+class FinalInterviewReportResponse(BaseModel):
+    session_id: str
+    overall_score: int = Field(..., ge=0, le=100)
+    hiring_verdict: str = Field(..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'")
+    verdict_color: str = "emerald"
+    competency_scores: Dict[str, int] = Field(default_factory=dict)
+    total_filler_words: int = 0
+    average_wpm: float = 0.0
+    top_strengths: List[str] = Field(default_factory=list)
+    critical_gaps: List[str] = Field(default_factory=list)
+    actionable_recommendations: List[str] = Field(default_factory=list)
+    executive_summary: str
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Real-Time AI Video Conference & Live Mistake Coaching Schemas
+# ═══════════════════════════════════════════════════════════════════
+
+class MistakeItem(BaseModel):
+    type: str = Field(default="technical_vagueness", description="'technical_vagueness', 'filler_words', 'pacing', 'structure_star', or 'grammar'")
+    severity: str = Field(default="warning", description="'tip', 'warning', or 'critical'")
+    label: str = Field(..., description="Short mistake headline (e.g. 'Missing Diagnostic Tool Name')")
+    explanation: str = Field(..., description="Why this weakens the interview response")
+    suggestion: str = Field(..., description="How to rephrase or correct it")
+
+
+class ConferenceTurnRequest(BaseModel):
+    session_id: str
+    candidate_transcript: str = Field(..., description="Spoken speech transcribed live from candidate")
+    conversation_history: List[Dict[str, Any]] = Field(default_factory=list)
+    target_role: str = "Automotive Technician"
+    target_company: Optional[str] = None
+    speaking_duration_seconds: int = 15
+
+
+class ConferenceTurnResponse(BaseModel):
+    interviewer_reply: str = Field(..., description="Spoken verbal reply from AI interviewer")
+    live_coaching_nudge: Optional[str] = Field(default=None, description="Floating HUD coaching alert on video")
+    mistakes_detected: List[MistakeItem] = Field(default_factory=list)
+    words_per_minute: float = 0.0
+    filler_words_count: int = 0
+    filler_words: List[str] = Field(default_factory=list)
+    turn_score: int = Field(default=80, ge=0, le=100)
+    is_interview_complete: bool = False
+
+
+class ConferenceDebriefRequest(BaseModel):
+    session_id: str
+    target_role: str = "Professional"
+    target_company: Optional[str] = None
+    turns_history: List[Dict[str, Any]] = Field(default_factory=list)
+    all_mistakes: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class ConferenceDebriefResponse(BaseModel):
+    session_id: str
+    overall_score: int = Field(..., ge=0, le=100)
+    hiring_verdict: str = Field(..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'")
+    verdict_color: str = "emerald"
+    total_turns: int = 0
+    total_mistakes_count: int = 0
+    top_mistakes_corrected: List[MistakeItem] = Field(default_factory=list)
+    key_strengths: List[str] = Field(default_factory=list)
+    action_plan: List[str] = Field(default_factory=list)
+    executive_summary: str
+
+
 
 

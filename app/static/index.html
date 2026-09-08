@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ResuMatch AI - 100% ATS Resume, Visual Designer CV & Live Portfolio</title>
+  <title>DreemFolio AI - 100% ATS Resume, Visual Designer CV & Live Portfolio</title>
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
+  <link rel="apple-touch-icon" href="/static/images/logo.png?v=2">
 
   <!-- Tailwind CSS CDN with JIT & Inter Font -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +21,9 @@
 
   <!-- Alpine.js -->
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Google Identity Services (GIS) SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <script>
     tailwind.config = {
@@ -299,15 +304,12 @@
   <div class="max-w-8xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
 
     <!-- 1. BRAND LOGO & TITLE -->
-    <div class="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
-      <div
-        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg sm:text-xl shrink-0">
-        <i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-      </div>
+    <a href="/" class="flex items-center space-x-2.5 sm:space-x-3 shrink-0 hover:opacity-90 transition group" title="Return to Home">
+      <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] object-contain shrink-0 group-hover:scale-105 transition filter drop-shadow-sm">
       <div class="flex flex-col">
         <div class="flex items-center space-x-1.5 sm:space-x-2">
-          <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-100">ResuMatch<span
-              class="text-indigo-400">.ai</span></span>
+          <span class="font-extrabold text-base sm:text-lg tracking-tight text-slate-100">Dreem<span
+              class="text-indigo-400">Folio</span></span>
           <span
             class="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -585,11 +587,9 @@
       <!-- Drawer Header & Close Button -->
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-500 flex items-center justify-center text-white font-bold text-base shadow-md shadow-indigo-500/20">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-          </div>
+          <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-9 h-9 object-contain filter drop-shadow-sm shrink-0">
           <div>
-            <h3 class="font-extrabold text-base tracking-tight text-slate-100">ResuMatch<span class="text-indigo-400">.ai</span></h3>
+            <h3 class="font-extrabold text-base tracking-tight text-slate-100">Dreem<span class="text-indigo-400">Folio</span></h3>
             <p class="text-[10px] text-slate-400">SaaS Navigation Menu</p>
           </div>
         </div>
@@ -778,6 +778,16 @@
               <span x-show="activeTab === 'cover_letter'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
             </button>
 
+            <button @click="activeTab = 'jobs'; mobileMenuOpen = false; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+              :class="activeTab === 'jobs' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'"
+              class="w-full p-2.5 rounded-xl flex items-center justify-between text-xs transition">
+              <span class="flex items-center gap-2.5">
+                <i data-lucide="crosshair" class="w-4 h-4 text-emerald-400"></i>
+                <span>Matched Career Opportunities</span>
+              </span>
+              <span x-show="activeTab === 'jobs'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </button>
+
           </div>
         </div>
       </template>
@@ -833,7 +843,7 @@
         <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
         <span>Encrypted Session & MySQL Auto-Save</span>
       </div>
-      <p class="text-[10px] text-slate-500">ResuMatch.ai SaaS Engine · Mobile & Tablet Edition</p>
+      <p class="text-[10px] text-slate-500">DreemFolio.com SaaS Engine · Mobile & Tablet Edition</p>
     </div>
 
   </div>
@@ -1492,7 +1502,7 @@
             <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  <i data-lucide="paint-brush" class="w-3.5 h-3.5 text-indigo-400"></i> Primary Accent Color
+                  <i data-lucide="paintbrush" class="w-3.5 h-3.5 text-indigo-400"></i> Primary Accent Color
                 </span>
                 <span class="text-[10px] font-mono text-indigo-300" x-text="tailoredData.custom_accent_color || 'Default'"></span>
               </div>
@@ -2605,6 +2615,15 @@
               <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
               <span>Plain Text</span>
             </button>
+            <button @click="activeTab = 'jobs'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+              :class="{'bg-emerald-600 text-white font-semibold shadow': activeTab === 'jobs', 'text-slate-400 hover:text-slate-200': activeTab !== 'jobs'}"
+              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-300"></i>
+              <span>Matched Jobs</span>
+              <template x-if="tailoredData && tailoredData.matched_jobs && tailoredData.matched_jobs.length > 0">
+                <span class="px-1.5 py-0.2 bg-emerald-400/20 text-emerald-300 text-[9px] font-bold rounded-full" x-text="tailoredData.matched_jobs.length"></span>
+              </template>
+            </button>
           </div>
 
           <!-- Template Switcher (Both ATS & Visual Graphic Designer Styles) -->
@@ -2724,6 +2743,15 @@
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 <span x-text="copied ? 'Copied!' : 'Copy Plain Text'"></span>
               </button>
+            </template>
+
+            <template x-if="activeTab === 'jobs'">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-500/30">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>AI Career Recommendations</span>
+                </span>
+              </div>
             </template>
           </div>
 
@@ -2930,7 +2958,7 @@
                   class="bg-slate-950 px-6 py-1 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 flex items-center gap-2">
                   <i data-lucide="lock" class="w-3 h-3 text-emerald-400"></i>
                   <span>https://<span
-                      x-text="tailoredData.personal_info.custom_domain || ('resumatch.ai/p/' + (tailoredData.personal_info.full_name || 'developer').toLowerCase().replace(/\s+/g, '-'))"></span></span>
+                      x-text="tailoredData.personal_info.custom_domain || ('dreemfolio.com/p/' + (tailoredData.personal_info.full_name || 'developer').toLowerCase().replace(/\s+/g, '-'))"></span></span>
                 </div>
                 <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
                   <i data-lucide="check-circle" class="w-3 h-3"></i> Live Customizer
@@ -2947,6 +2975,511 @@
               <textarea readonly
                 class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-300 leading-relaxed focus:outline-none select-all"
                 x-text="getFormattedPlainText()"></textarea>
+            </div>
+          </template>
+
+                    <!-- Tab 5: AI MATCHED JOBS, LIVE HUNTER & APPLICATION COPILOT -->
+          <template x-if="tailoredData && activeTab === 'jobs'">
+            <div class="w-full h-full min-h-[580px] p-4 flex flex-col space-y-4 overflow-y-auto">
+              
+              <!-- Top Header Banner -->
+              <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-indigo-950/40 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                    <i data-lucide="crosshair" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                      AI Job Hunter & Application Copilot
+                      <span class="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-300 rounded-full font-semibold border border-emerald-500/30">1-Click Apply Ready</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Explore verified career matches, search active global vacancies, and auto-fill applications with AI.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-xs text-slate-400">Target Role:</span>
+                  <span class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-emerald-300" x-text="tailoredData.target_job_title"></span>
+                </div>
+              </div>
+
+              <!-- Sub-Tab Navigation Switcher -->
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2 flex-wrap gap-2">
+                <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                  <button @click="jobSubTab = 'recommendations'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                    :class="jobSubTab === 'recommendations' ? 'bg-emerald-600 text-white font-semibold shadow' : 'text-slate-400 hover:text-slate-200'"
+                    class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>AI Matches</span>
+                    <template x-if="tailoredData && tailoredData.matched_jobs && tailoredData.matched_jobs.length">
+                      <span class="px-1.5 py-0.2 bg-emerald-400/20 text-emerald-300 text-[10px] font-bold rounded-full" x-text="tailoredData.matched_jobs.length"></span>
+                    </template>
+                  </button>
+
+                  <button @click="jobSubTab = 'hunter'; if (jobSearchResults.length === 0) performLiveJobSearch(); $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                    :class="jobSubTab === 'hunter' ? 'bg-indigo-600 text-white font-semibold shadow' : 'text-slate-400 hover:text-slate-200'"
+                    class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                    <span>Live Job Hunter</span>
+                    <span class="px-1.5 py-0.2 text-[9px] bg-indigo-400/20 text-indigo-300 font-bold rounded">Live</span>
+                  </button>
+
+                  <button @click="jobSubTab = 'tracker'; loadUserTrackedJobs(); $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                    :class="jobSubTab === 'tracker' ? 'bg-purple-600 text-white font-semibold shadow' : 'text-slate-400 hover:text-slate-200'"
+                    class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i data-lucide="kanban" class="w-3.5 h-3.5"></i>
+                    <span>Application Tracker</span>
+                    <template x-if="userTrackedJobs.length > 0">
+                      <span class="px-1.5 py-0.2 text-[9px] bg-purple-400/20 text-purple-300 font-bold rounded-full" x-text="userTrackedJobs.length"></span>
+                    </template>
+                  </button>
+                </div>
+
+                <div class="text-[11px] text-slate-400 hidden sm:flex items-center gap-1.5">
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="text-slate-300 font-medium">Auto-Fill Application Copilot Enabled</span>
+                </div>
+              </div>
+
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <!-- SUB-VIEW 1: AI MATCHED RECOMMENDATIONS                             -->
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <template x-if="jobSubTab === 'recommendations'">
+                <div class="space-y-3">
+                  <div class="grid grid-cols-1 gap-4">
+                    <template x-for="(job, index) in ((tailoredData.matched_jobs || []).slice(0, (currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? undefined : 3))" :key="index">
+                      <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition shadow-lg group relative flex flex-col justify-between gap-3">
+                        
+                        <!-- Header: Title, Match Score & Key Meta -->
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                          <div class="space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                              <h4 class="text-base font-bold text-white group-hover:text-emerald-300 transition" x-text="job.title"></h4>
+                              <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                <i data-lucide="zap" class="w-3 h-3 text-emerald-400"></i>
+                                <span x-text="job.match_score + '% Match'"></span>
+                              </span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                              <span class="flex items-center gap-1 text-slate-300">
+                                <i data-lucide="building" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span x-text="job.company_type"></span>
+                              </span>
+                              <span class="flex items-center gap-1">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span x-text="job.work_mode"></span>
+                              </span>
+                              <span class="flex items-center gap-1">
+                                <i data-lucide="briefcase" class="w-3.5 h-3.5 text-slate-400"></i>
+                                <span x-text="job.experience_level"></span>
+                              </span>
+                              <template x-if="job.estimated_salary">
+                                <span class="flex items-center gap-1 text-amber-300 font-medium">
+                                  <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-amber-400"></i>
+                                  <span x-text="job.estimated_salary"></span>
+                                </span>
+                              </template>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Match Reason -->
+                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
+                          <span class="font-semibold text-emerald-400 mr-1">Why You Match:</span>
+                          <span x-text="job.match_reason"></span>
+                        </div>
+
+                        <!-- Key Skills Overlap -->
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <span class="text-[11px] font-semibold text-slate-400 mr-1">Core Competencies:</span>
+                          <template x-for="skill in (job.key_skills || [])" :key="skill">
+                            <span class="px-2 py-0.5 rounded-md text-[11px] bg-slate-800 border border-slate-700 text-slate-200" x-text="skill"></span>
+                          </template>
+                        </div>
+
+                        <!-- Action Bar with Copilot & Track Buttons -->
+                        <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <!-- 1-Click Application Copilot -->
+                            <button @click="openApplicationCopilot(job)"
+                              class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition">
+                              <i data-lucide="bot" class="w-3.5 h-3.5 text-yellow-300"></i>
+                              <span>⚡ 1-Click Copilot & Auto-Fill</span>
+                            </button>
+
+                            <!-- Save to Tracker -->
+                            <button @click="saveJobToTracker(job, 'wishlist')"
+                              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                              <i data-lucide="bookmark-plus" class="w-3.5 h-3.5 text-purple-400"></i>
+                              <span>Save to Tracker</span>
+                            </button>
+
+                            <!-- Quick Tailor Button -->
+                            <button @click="selectJobToTailor(job)"
+                              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+                              <i data-lucide="wand-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+                              <span>Re-Tailor CV</span>
+                            </button>
+                          </div>
+
+                          <!-- External Search & Easy Apply Links -->
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <a :href="job.easy_apply_url || ('https://www.linkedin.com/jobs/search/?keywords=' + encodeURIComponent(job.search_keywords || job.title) + '&f_LF=f_AL')"
+                              target="_blank" rel="noopener noreferrer"
+                              class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 shadow transition">
+                              <i data-lucide="zap" class="w-3 h-3 text-yellow-300"></i>
+                              <span>LinkedIn Easy Apply</span>
+                            </a>
+                            <a :href="getJobSearchUrl('google', job)" target="_blank" rel="noopener noreferrer"
+                              class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition">
+                              <i data-lucide="search" class="w-3 h-3"></i>
+                              <span>Google</span>
+                            </a>
+                          </div>
+                        </div>
+
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Free Tier Upgrade Teaser Card for More Matches -->
+                  <template x-if="(!currentUser || currentUser.plan_tier === 'free') && (tailoredData.matched_jobs || []).length > 3">
+                    <div class="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                          <i data-lucide="lock" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                          <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>Unlock 5+ More High-Match Opportunities</span>
+                            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-indigo-500 text-white">PRO</span>
+                          </h4>
+                          <p class="text-xs text-slate-300 mt-0.5">
+                            Upgrade to Pro Career to unlock all curated vacancies and 1-click tailored resume regeneration.
+                          </p>
+                        </div>
+                      </div>
+                      <button @click="showPricingModal = true"
+                        class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition shrink-0 flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Unlock with Pro</span>
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- Fallback if empty -->
+                  <template x-if="!tailoredData || !tailoredData.matched_jobs || tailoredData.matched_jobs.length === 0">
+                    <div class="p-8 text-center bg-slate-900 rounded-xl border border-slate-800">
+                      <i data-lucide="search" class="w-8 h-8 text-slate-500 mx-auto mb-2"></i>
+                      <p class="text-sm text-slate-400">Tailoring matches for your profile...</p>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <!-- SUB-VIEW 2: LIVE JOB HUNTER (SEARCH & FILTERS)                     -->
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <template x-if="jobSubTab === 'hunter'">
+                <div class="space-y-4">
+                  <!-- Search Filter Bar -->
+                  <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Keywords / Role</label>
+                        <input type="text" x-model="jobSearchQuery.keywords"
+                          :placeholder="tailoredData?.target_job_title || 'e.g. Senior Frontend Engineer'"
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                      </div>
+
+                      <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location / Market</label>
+                        <input type="text" x-model="jobSearchQuery.location"
+                          placeholder="e.g. Remote, United States, UK"
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                      </div>
+
+                      <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work Mode</label>
+                        <select x-model="jobSearchQuery.work_mode"
+                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                          <option value="all">Any Work Mode</option>
+                          <option value="remote">Remote Only</option>
+                          <option value="hybrid">Hybrid</option>
+                          <option value="onsite">On-site</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                      <span class="text-[11px] text-slate-500">Searches live active openings across global tech feeds & LinkedIn</span>
+                      <button @click="performLiveJobSearch()" :disabled="isSearchingJobs"
+                        class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-2 shadow transition">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        <span x-text="isSearchingJobs ? 'Hunting Openings...' : 'Hunt Jobs Now'"></span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tier Indicator Notice -->
+                  <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs border"
+                    :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'bg-indigo-950/40 border-indigo-500/30 text-indigo-200' : 'bg-slate-900/90 border-slate-800 text-slate-400'">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+                      <span x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') 
+                        ? '✨ Pro Unlimited: Live Job Hunter Active with direct LinkedIn Easy Apply' 
+                        : 'Free Starter Tier: Showing top 4 job vacancies. Upgrade to Pro for unlimited results & automated CV re-tailoring.'"></span>
+                    </div>
+                    <button x-show="!currentUser || currentUser.plan_tier === 'free'" @click="showPricingModal = true"
+                      class="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold underline shrink-0 ml-2">
+                      Upgrade to Pro
+                    </button>
+                  </div>
+
+                  <!-- Results List -->
+                  <div class="space-y-3">
+                    <template x-if="isSearchingJobs">
+                      <div class="p-12 text-center bg-slate-900/50 rounded-xl border border-slate-800 space-y-2">
+                        <div class="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p class="text-xs text-slate-400">Scraping and analyzing active vacancies...</p>
+                      </div>
+                    </template>
+
+                    <template x-if="!isSearchingJobs && jobSearchResults.length > 0">
+                      <div class="grid grid-cols-1 gap-3">
+                        <template x-for="item in jobSearchResults" :key="item.id">
+                          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 transition shadow-lg flex flex-col justify-between gap-3">
+                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                              <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                  <h4 class="text-base font-bold text-white" x-text="item.title"></h4>
+                                  <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                    x-text="item.match_score + '% Match'"></span>
+                                  <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
+                                    x-text="item.posted_time || 'Active'"></span>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                                  <span class="font-semibold text-slate-200" x-text="item.company"></span>
+                                  <span>•</span>
+                                  <span x-text="item.location"></span>
+                                  <span>•</span>
+                                  <span class="text-indigo-300 font-medium" x-text="item.work_mode"></span>
+                                  <template x-if="item.salary">
+                                    <span class="text-amber-300 font-medium" x-text="item.salary"></span>
+                                  </template>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p class="text-xs text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80 leading-relaxed"
+                              x-text="item.match_reason"></p>
+
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                              <template x-for="tag in (item.tags || [])" :key="tag">
+                                <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300" x-text="tag"></span>
+                              </template>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                              <div class="flex items-center gap-2">
+                                <button @click="openApplicationCopilot(item)"
+                                  class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow transition">
+                                  <i data-lucide="bot" class="w-3.5 h-3.5 text-yellow-300"></i>
+                                  <span>⚡ Copilot Auto-Fill</span>
+                                </button>
+                                <button @click="saveJobToTracker(item, 'wishlist')"
+                                  class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                                  <i data-lucide="bookmark-plus" class="w-3.5 h-3.5 text-purple-400"></i>
+                                  <span>Save to Tracker</span>
+                                </button>
+                              </div>
+
+                              <div class="flex items-center gap-2">
+                                <a :href="item.easy_apply_url" target="_blank" rel="noopener noreferrer"
+                                  class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 shadow transition">
+                                  <i data-lucide="zap" class="w-3 h-3 text-yellow-300"></i>
+                                  <span>LinkedIn Easy Apply</span>
+                                </a>
+                                <a :href="item.apply_url" target="_blank" rel="noopener noreferrer"
+                                  class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition">
+                                  <i data-lucide="external-link" class="w-3 h-3"></i>
+                                  <span>View</span>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <!-- SUB-VIEW 3: APPLICATION TRACKER (KANBAN BOARD)                     -->
+              <!-- ═══════════════════════════════════════════════════════════════════ -->
+              <template x-if="jobSubTab === 'tracker'">
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h4 class="text-sm font-bold text-white">My Job Applications Pipeline</h4>
+                      <p class="text-xs text-slate-400">Track and advance your job submissions stored in MySQL</p>
+                    </div>
+                    <button @click="loadUserTrackedJobs()"
+                      class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 flex items-center gap-1 transition">
+                      <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+
+                  <!-- Empty State -->
+                  <template x-if="!isLoadingTrackedJobs && userTrackedJobs.length === 0">
+                    <div class="p-10 text-center bg-slate-950 rounded-xl border border-dashed border-slate-800 space-y-2">
+                      <i data-lucide="kanban" class="w-8 h-8 text-slate-600 mx-auto"></i>
+                      <p class="text-xs font-semibold text-slate-300">No tracked job applications yet.</p>
+                      <p class="text-[11px] text-slate-500">
+                        Go to the <b>"AI Matches"</b> or <b>"Live Job Hunter"</b> tabs and click <b>"Save to Tracker"</b> or <b>"Mark as Applied"</b>!
+                      </p>
+                    </div>
+                  </template>
+
+                  <!-- Kanban Columns Grid -->
+                  <template x-if="userTrackedJobs.length > 0">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      
+                      <!-- Column 1: Wishlist -->
+                      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            <span>Wishlist</span>
+                          </span>
+                          <span class="text-[10px] px-1.5 py-0.2 bg-slate-800 text-slate-400 rounded-full font-bold"
+                            x-text="userTrackedJobs.filter(j => j.status === 'wishlist').length"></span>
+                        </div>
+                        <div class="space-y-2 flex-1 overflow-y-auto max-h-[420px]">
+                          <template x-for="j in userTrackedJobs.filter(j => j.status === 'wishlist')" :key="j.id">
+                            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+                              <div class="font-bold text-xs text-white" x-text="j.job_title"></div>
+                              <div class="text-[11px] text-slate-400" x-text="j.company_name + ' • ' + j.location"></div>
+                              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                <button @click="updateTrackedJobStatus(j.id, 'applied')"
+                                  class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded hover:bg-emerald-500/30 transition">
+                                  Mark Applied ➔
+                                </button>
+                                <button @click="deleteTrackedJob(j.id)" class="text-slate-500 hover:text-red-400 p-1">
+                                  <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+
+                      <!-- Column 2: Applied -->
+                      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span class="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                            <span>Applied</span>
+                          </span>
+                          <span class="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded-full font-bold"
+                            x-text="userTrackedJobs.filter(j => j.status === 'applied').length"></span>
+                        </div>
+                        <div class="space-y-2 flex-1 overflow-y-auto max-h-[420px]">
+                          <template x-for="j in userTrackedJobs.filter(j => j.status === 'applied')" :key="j.id">
+                            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+                              <div class="font-bold text-xs text-white" x-text="j.job_title"></div>
+                              <div class="text-[11px] text-slate-400" x-text="j.company_name"></div>
+                              <div class="text-[10px] text-slate-500" x-text="'Applied: ' + (j.applied_date || j.created_at)"></div>
+                              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                <button @click="updateTrackedJobStatus(j.id, 'interviewing')"
+                                  class="text-[10px] px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded hover:bg-purple-500/30 transition">
+                                  Interviewing ➔
+                                </button>
+                                <button @click="deleteTrackedJob(j.id)" class="text-slate-500 hover:text-red-400 p-1">
+                                  <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+
+                      <!-- Column 3: Interviewing -->
+                      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span class="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                            <span>Interviewing</span>
+                          </span>
+                          <span class="text-[10px] px-1.5 py-0.2 bg-purple-500/20 text-purple-300 rounded-full font-bold"
+                            x-text="userTrackedJobs.filter(j => j.status === 'interviewing').length"></span>
+                        </div>
+                        <div class="space-y-2 flex-1 overflow-y-auto max-h-[420px]">
+                          <template x-for="j in userTrackedJobs.filter(j => j.status === 'interviewing')" :key="j.id">
+                            <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+                              <div class="font-bold text-xs text-white" x-text="j.job_title"></div>
+                              <div class="text-[11px] text-slate-400" x-text="j.company_name"></div>
+                              <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                <button @click="updateTrackedJobStatus(j.id, 'offered')"
+                                  class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded hover:bg-emerald-500/30 transition">
+                                  Offered 🎉
+                                </button>
+                                <button @click="deleteTrackedJob(j.id)" class="text-slate-500 hover:text-red-400 p-1">
+                                  <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+
+                      <!-- Column 4: Offered -->
+                      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 flex flex-col">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span>Offered 🎉</span>
+                          </span>
+                          <span class="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded-full font-bold"
+                            x-text="userTrackedJobs.filter(j => j.status === 'offered').length"></span>
+                        </div>
+                        <div class="space-y-2 flex-1 overflow-y-auto max-h-[420px]">
+                          <template x-for="j in userTrackedJobs.filter(j => j.status === 'offered')" :key="j.id">
+                            <div class="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+                              <div class="font-bold text-xs text-emerald-300" x-text="j.job_title"></div>
+                              <div class="text-[11px] text-slate-300 font-semibold" x-text="j.company_name"></div>
+                              <div class="flex items-center justify-between pt-1 border-t border-emerald-500/20">
+                                <span class="text-[10px] text-emerald-400 font-bold">Offer Secured!</span>
+                                <button @click="deleteTrackedJob(j.id)" class="text-slate-500 hover:text-red-400 p-1">
+                                  <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+            </div>
+          </template>
+              </div>
+
+              <!-- Fallback if empty -->
+              <template x-if="!tailoredData || !tailoredData.matched_jobs || tailoredData.matched_jobs.length === 0">
+                <div class="p-8 text-center bg-slate-900 rounded-xl border border-slate-800">
+                  <i data-lucide="search" class="w-8 h-8 text-slate-500 mx-auto mb-2"></i>
+                  <p class="text-sm text-slate-400">Tailoring matches for your profile...</p>
+                </div>
+              </template>
+
             </div>
           </template>
 
@@ -2975,18 +3508,18 @@
         <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white mb-2">
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-100" x-text="authMode === 'login' ? 'Welcome Back to ResuMatch' : 'Create Your SaaS Account'"></h3>
+        <h3 class="text-lg font-bold text-slate-100" x-text="authMode === 'login' ? 'Welcome Back to DreemFolio' : 'Create Your SaaS Account'"></h3>
         <p class="text-xs text-slate-400" x-text="authMode === 'login' ? 'Sign in to access all templates, downloads & MySQL saved resumes' : 'Register in seconds to unlock unlimited tailoring & cloud persistence'"></p>
       </div>
 
       <!-- Mode Switcher Tabs -->
       <div class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
-        <button @click="authMode = 'login'; authError = ''"
+        <button @click="authMode = 'login'; authError = ''; renderGoogleButton()"
           :class="{'bg-indigo-600 text-white font-bold shadow': authMode === 'login', 'text-slate-400 hover:text-slate-200': authMode !== 'login'}"
           class="py-1.5 rounded-lg transition text-center">
           Sign In
         </button>
-        <button @click="authMode = 'register'; authError = ''"
+        <button @click="authMode = 'register'; authError = ''; renderGoogleButton()"
           :class="{'bg-indigo-600 text-white font-bold shadow': authMode === 'register', 'text-slate-400 hover:text-slate-200': authMode !== 'register'}"
           class="py-1.5 rounded-lg transition text-center">
           Register
@@ -3008,6 +3541,36 @@
           <span x-text="authError"></span>
         </div>
       </template>
+
+      <!-- Google Sign-In / Registration Action with Native Popup -->
+      <div class="pt-1">
+        <!-- 1-Click Direct Google Popup Trigger Button -->
+        <button type="button" @click="triggerGoogleSignIn()" :disabled="isSubmittingGoogleAuth"
+          class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800/80 text-slate-200 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.99] disabled:opacity-50">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24Z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+          </svg>
+          <template x-if="!isSubmittingGoogleAuth">
+            <span x-text="authMode === 'login' ? 'Continue with Google' : 'Sign up with Google'"></span>
+          </template>
+          <template x-if="isSubmittingGoogleAuth">
+            <span class="flex items-center gap-2 text-indigo-400">
+              <span class="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></span>
+              <span>Opening Google Popup...</span>
+            </span>
+          </template>
+        </button>
+      </div>
+
+      <!-- Divider: OR -->
+      <div class="relative flex items-center py-1">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-3 text-[10px] uppercase font-extrabold tracking-widest text-slate-500">or with email</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
 
       <!-- Auth Form -->
       <form @submit.prevent="submitAuth()" class="space-y-3 pt-1 text-xs">
@@ -3173,7 +3736,7 @@
           <div class="flex justify-between bg-slate-900 p-2 rounded border border-slate-800">
             <span class="text-slate-400">Type: <b class="text-slate-200">CNAME</b></span>
             <span class="text-slate-400">Host: <b class="text-slate-200">@ or www</b></span>
-            <span class="text-slate-400">Target: <b class="text-pink-400">cname.resumatch.ai</b></span>
+            <span class="text-slate-400">Target: <b class="text-pink-400">cname.dreemfolio.com</b></span>
           </div>
         </div>
         <p class="text-[10px] text-slate-500">SSL is auto-provisioned within 60 seconds after DNS propagation.</p>
@@ -3462,9 +4025,1603 @@
     </div>
   </div>
 
+  
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- AI APPLICATION COPILOT & 1-CLICK FORM AUTO-FILL MODAL                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showCopilotModal" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+  <div
+    class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+    
+    <!-- Modal Header -->
+    <div class="flex items-start justify-between border-b border-slate-800 pb-3 gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-bold text-slate-100 text-base">AI Application Copilot</h3>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+              :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+              x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? '✨ Unlimited Pro Copilot' : '1 Free Kit / Day Trial'"></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Pre-generated tailored answers for <span class="text-emerald-400 font-semibold" x-text="currentCopilotJob?.title || 'Target Role'"></span> at <span class="text-slate-200 font-semibold" x-text="currentCopilotJob?.company_type || currentCopilotJob?.company || 'Company'"></span>
+          </p>
+        </div>
+      </div>
+      <button @click="showCopilotModal = false" class="text-slate-400 hover:text-white p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition shrink-0">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+
+      <!-- Loading State -->
+      <template x-if="isLoadingCopilot">
+        <div class="flex flex-col items-center justify-center p-12 space-y-3 text-slate-400">
+          <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-medium text-slate-300">AI Copilot is analyzing your verified achievements and crafting tailored responses...</span>
+        </div>
+      </template>
+
+      <!-- Loaded Content -->
+      <template x-if="!isLoadingCopilot && copilotKit">
+        <div class="space-y-4">
+          
+          <!-- Instructions Tip -->
+          <div class="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 flex items-start gap-2.5 text-indigo-200">
+            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+            <span class="text-[11px] leading-relaxed">
+              Use these copy-paste ready responses to quickly fill out LinkedIn Easy Apply forms, employer questionnaires, and screening portals.
+            </span>
+          </div>
+
+          <!-- 1. Elevator Pitch -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Tell Me About Yourself (Elevator Pitch)</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.elevator_pitch, 'pitch')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'pitch' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'pitch' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.elevator_pitch"></p>
+          </div>
+
+          <!-- 2. Why this Company & Role -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Why Do You Want to Work Here?</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.why_company, 'why')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'why' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'why' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.why_company"></p>
+          </div>
+
+          <!-- 3. Key Proven Achievement -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Top Accomplishment / Biggest Win</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.key_achievement, 'achievement')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'achievement' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'achievement' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.key_achievement"></p>
+          </div>
+
+          <!-- 4. Salary & Availability Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Salary -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-200 flex items-center gap-1 text-[11px]">
+                  <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Expected Salary Script</span>
+                </span>
+                <button @click="copyCopilotAnswer(copilotKit.salary_expectation_answer, 'salary')"
+                  class="p-1 text-slate-400 hover:text-white rounded"
+                  :class="{'text-emerald-400': copiedKey === 'salary'}">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="copilotKit.salary_expectation_answer"></p>
+            </div>
+
+            <!-- Notice Period -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-200 flex items-center gap-1 text-[11px]">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                  <span>Notice Period / Start Date</span>
+                </span>
+                <button @click="copyCopilotAnswer(copilotKit.availability_notice_answer, 'notice')"
+                  class="p-1 text-slate-400 hover:text-white rounded"
+                  :class="{'text-emerald-400': copiedKey === 'notice'}">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="copilotKit.availability_notice_answer"></p>
+            </div>
+          </div>
+
+          <!-- 5. Additional Common Q&A -->
+          <template x-if="copilotKit.recommended_custom_qa && copilotKit.recommended_custom_qa.length > 0">
+            <div class="space-y-2 pt-2">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Screening Behavioral Q&A</span>
+              <template x-for="(qa, idx) in copilotKit.recommended_custom_qa" :key="idx">
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-medium text-slate-200 text-xs" x-text="qa.question"></span>
+                    <button @click="copyCopilotAnswer(qa.answer, 'qa_' + idx)"
+                      class="px-2 py-0.5 rounded text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                      <span x-text="copiedKey === ('qa_' + idx) ? 'Copied!' : 'Copy'"></span>
+                    </button>
+                  </div>
+                  <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="qa.answer"></p>
+                </div>
+              </template>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+    </div>
+
+    <!-- Free Tier Upgrade Bar -->
+    <template x-if="!currentUser || currentUser.plan_tier === 'free'">
+      <div class="px-3 py-2 rounded-xl bg-indigo-950/40 border border-indigo-500/20 flex items-center justify-between text-xs text-indigo-300">
+        <span>Free tier: 1 tailored screening kit per day. Upgrade to Pro for unlimited application kits.</span>
+        <button @click="showPricingModal = true" class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2">Upgrade ($9/mo)</button>
+      </div>
+    </template>
+
+    <!-- Modal Footer Actions -->
+    <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2">
+        <!-- Save to tracker -->
+        <button @click="saveJobToTracker(currentCopilotJob, 'applied')"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          <span>Mark as Applied & Track</span>
+        </button>
+        <button @click="saveJobToTracker(currentCopilotJob, 'wishlist')"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+          <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+          <span>Save to Wishlist</span>
+        </button>
+      </div>
+
+      <!-- Launch Easy Apply / External Link -->
+      <a :href="currentCopilotJob?.easy_apply_url || currentCopilotJob?.apply_url || getJobSearchUrl('linkedin', currentCopilotJob)"
+        target="_blank" rel="noopener noreferrer"
+        class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition">
+        <span>🚀 Open Easy Apply Application</span>
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- AI Career Copilot Chatbot Widget & Floating Bubble Launcher        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<!-- Floating Bubble Launcher Button (Fixed Bottom-Right) -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
+  
+  <!-- Floating Launch Button -->
+  <button @click="toggleChatBot()"
+    id="copilot-launcher-btn"
+    class="relative group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 backdrop-blur-md">
+    
+    <!-- Pulsing ambient glow ring -->
+    <span class="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 opacity-40 blur-md group-hover:opacity-75 transition duration-500 animate-pulse"></span>
+    
+    <!-- Bot Icon / Close Icon based on state -->
+    <div class="relative flex items-center justify-center">
+      <template x-if="!showChatBot">
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <i data-lucide="bot" class="w-5 h-5 text-white"></i>
+            <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-indigo-700 animate-pulse"></span>
+          </div>
+          <span class="hidden sm:inline-block font-bold text-xs tracking-wide">Career Copilot</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white/20 text-white">AI</span>
+        </div>
+      </template>
+
+      <template x-if="showChatBot">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="chevron-down" class="w-5 h-5 text-white"></i>
+          <span class="text-xs font-semibold">Minimize</span>
+        </div>
+      </template>
+    </div>
+  </button>
+</div>
+
+<!-- Expandable Glassmorphic Chatbot Window -->
+<div x-show="showChatBot"
+  x-transition:enter="transition ease-out duration-300 transform"
+  x-transition:enter-start="opacity-0 translate-y-6 scale-95"
+  x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+  x-transition:leave="transition ease-in duration-200 transform"
+  x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+  x-transition:leave-end="opacity-0 translate-y-6 scale-95"
+  x-cloak
+  class="fixed bottom-24 right-4 sm:right-6 z-50 w-[94vw] sm:w-[450px] max-w-[460px] h-[580px] max-h-[82vh] bg-slate-900/95 backdrop-blur-2xl border border-indigo-500/30 rounded-3xl shadow-2xl shadow-indigo-950/80 flex flex-col overflow-hidden">
+
+  <!-- Chat Header -->
+  <div class="px-4 py-3.5 bg-gradient-to-r from-slate-950/90 via-indigo-950/40 to-slate-950/90 border-b border-slate-800 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <!-- Bot Avatar with Status Ring -->
+      <div class="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-600 p-0.5 shadow-md shadow-indigo-500/20 flex-shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 animate-spin-slow"></i>
+        </div>
+        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950"></span>
+      </div>
+
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-white text-xs truncate">DreemFolio Career Copilot</h3>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Gemini 2.5</span>
+        </div>
+        <p class="text-[10px] text-slate-400 truncate flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+          <span x-text="tailoredData?.personal_info?.full_name ? ('Live with ' + tailoredData.personal_info.full_name + '\'s CV') : 'Resume & Interview Coach'"></span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-1">
+      <!-- Clear Chat History -->
+      <button @click="clearChat()"
+        title="Clear conversation"
+        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 rounded-xl transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Minimize Window -->
+      <button @click="toggleChatBot()"
+        title="Minimize"
+        class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages Scrollable Body -->
+  <div id="copilot-messages-container"
+    class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs scroll-smooth">
+
+    <!-- Welcome Card (Shown if no user messages yet) -->
+    <template x-if="chatMessages.length === 0">
+      <div class="space-y-4 my-2">
+        <div class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
+          <div class="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
+            <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
+            <span>Executive Career Coach & Technical Partner</span>
+          </div>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            Hello! I am your 24/7 Career Copilot. I analyze your uploaded CV, target job descriptions, and interview goals in real-time.
+          </p>
+          <div class="text-[11px] text-slate-400 pt-1">
+            Pick a quick question below or ask me anything:
+          </div>
+        </div>
+
+        <!-- Initial Quick Starter Pills -->
+        <div class="grid grid-cols-1 gap-2">
+          <button @click="sendChatMessage('Conduct a realistic technical mock interview for my profile. Ask me 1 question at a time!')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🎯</span>
+              <span class="font-medium text-[11px]">Start Interactive Mock Interview</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Critique my current resume bullet points using the Google XYZ formula and suggest quantified metric improvements.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">✨</span>
+              <span class="font-medium text-[11px]">Polish My Resume Bullets (XYZ Formula)</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Write a personalized, high-converting LinkedIn DM to send to a Hiring Manager or Technical Recruiter.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">✉️</span>
+              <span class="font-medium text-[11px]">Draft Cold LinkedIn / Email Outreach</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Give me a strategic salary negotiation script and counter-offer framework for my senior role.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">💰</span>
+              <span class="font-medium text-[11px]">Salary Negotiation Scripts</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Message Bubble Loop -->
+    <template x-for="(msg, idx) in chatMessages" :key="idx">
+      <div class="flex flex-col space-y-1"
+        :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+
+        <!-- Bubble -->
+        <div class="p-3.5 rounded-2xl max-w-[88%] shadow-md leading-relaxed transition-all"
+          :class="msg.role === 'user' 
+            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-xs' 
+            : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-xs'">
+          
+          <!-- Message text with formatting -->
+          <div class="prose prose-invert prose-xs max-w-none break-words leading-relaxed text-[12px]"
+            x-html="formatChatMessage(msg.content)"></div>
+
+          <!-- Message timestamp -->
+          <div class="mt-1 text-[9px] opacity-60 text-right"
+            x-text="msg.timestamp || 'Just now'"></div>
+
+          <!-- Interactive Action Trigger (e.g. Upgrade Modal) -->
+          <template x-if="msg.action_trigger && msg.action_trigger.type === 'upgrade_modal'">
+            <div class="mt-2.5 pt-2 border-t border-indigo-500/30">
+              <button @click="showPricingModal = true"
+                class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
+                <span>Upgrade to Pro ($9/mo)</span>
+              </button>
+            </div>
+          </template>
+        </div>
+
+        <!-- Assistant Quick Action / Copy Button -->
+        <template x-if="msg.role === 'assistant'">
+          <div class="flex items-center gap-2 pl-1 pt-0.5">
+            <button @click="copyTextToClipboard(msg.content)"
+              class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1 transition">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- Loading Indicator / Typing animation -->
+    <div x-show="isChatLoading" class="flex items-center gap-2 p-3 rounded-2xl bg-slate-800/60 border border-slate-700/50 max-w-[70%]">
+      <div class="flex space-x-1">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: 0ms"></span>
+        <span class="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style="animation-delay: 150ms"></span>
+        <span class="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style="animation-delay: 300ms"></span>
+      </div>
+      <span class="text-[11px] text-slate-400 font-medium">Copilot is analyzing...</span>
+    </div>
+
+  </div>
+
+  <!-- Dynamic Suggested Next-Step Chips -->
+  <template x-if="suggestedPrompts && suggestedPrompts.length > 0 && !isChatLoading">
+    <div class="px-3 py-2 border-t border-slate-800/80 bg-slate-950/70 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
+      <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider flex-shrink-0 flex items-center gap-1">
+        <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i>
+        <span>Try:</span>
+      </span>
+      <template x-for="(prompt, pIdx) in suggestedPrompts" :key="pIdx">
+        <button @click="sendChatMessage(prompt)"
+          class="flex-shrink-0 px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700/70 transition-all truncate max-w-[240px]">
+          <span x-text="prompt"></span>
+        </button>
+      </template>
+    </div>
+  </template>
+
+  <!-- Input Form -->
+  <form @submit.prevent="sendChatMessage()"
+    class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+    
+    <input type="text"
+      x-model="chatInput"
+      :disabled="isChatLoading"
+      placeholder="Ask CV advice, interview questions, salary..."
+      class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-50">
+
+    <button type="submit"
+      :disabled="isChatLoading || !chatInput.trim()"
+      class="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition shadow-md shadow-indigo-600/20 flex-shrink-0">
+      <i data-lucide="send" class="w-4 h-4"></i>
+    </button>
+  </form>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- AI Voice Mock Interview Studio Interactive Modal                    -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div x-show="voiceInterviewModalOpen"
+     x-transition:enter="transition ease-out duration-300 transform"
+     x-transition:enter-start="opacity-0 scale-95"
+     x-transition:enter-end="opacity-100 scale-100"
+     x-transition:leave="transition ease-in duration-200 transform"
+     x-transition:leave-start="opacity-100 scale-100"
+     x-transition:leave-end="opacity-0 scale-95"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6"
+     @keydown.escape.window="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()">
+
+  <!-- Main Container -->
+  <div class="relative w-full max-w-4xl bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl shadow-violet-950/80 overflow-hidden flex flex-col max-h-[92vh]">
+    
+    <!-- 1. STUDIO HEADER -->
+    <div class="px-6 py-4 bg-gradient-to-r from-slate-950 via-violet-950/40 to-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 p-0.5 shadow-lg shadow-violet-500/25 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+            <i data-lucide="mic" class="w-5 h-5 text-violet-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">AI Voice Mock Interview Studio</h2>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">Live Spoken Audio</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Simulating oral interview for: <span class="text-violet-300 font-semibold" x-text="interviewTargetRole || 'Target Role'"></span>
+            <span x-show="interviewTargetCompany" class="text-slate-500 font-normal">at <span class="text-slate-300" x-text="interviewTargetCompany"></span></span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Close Button -->
+      <button @click="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()"
+              class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- 2. SCROLLABLE BODY CONTENT -->
+    <div class="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 text-slate-200">
+
+      <!-- VIEW A: SETUP SCREEN -->
+      <div x-show="interviewStep === 'setup'" class="space-y-6">
+        
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/40 border border-violet-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-violet-300 font-bold text-sm">
+              <i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i>
+              <span>Real-Time Browser Speech Practice</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed max-w-xl">
+              The AI interviewer asks questions out loud via your browser speakers. Speak your answers into your microphone—DreemFolio transcribes your speech in real time, scores your <strong>STAR framework</strong>, detects <strong>filler words</strong>, and gauges your <strong>WPM speaking pace</strong>.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 text-xs bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-slate-300">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>Mic & Audio Enabled</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target Job Title *</label>
+            <input type="text"
+                   x-model="interviewTargetRole"
+                   placeholder="e.g. Automotive Technician or Senior Software Engineer"
+                   class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target Company (Optional)</label>
+            <input type="text"
+                   x-model="interviewTargetCompany"
+                   placeholder="e.g. Apex Precision Dealership or Stripe"
+                   class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">Interview Format</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <button type="button"
+                    @click="interviewType = 'behavioral'"
+                    :class="interviewType === 'behavioral' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="users" class="w-5 h-5 text-violet-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'behavioral' ? 'bg-violet-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Behavioral & STAR</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Handling conflict, teamwork, deadlines, and personal impact.</p>
+              </div>
+            </button>
+
+            <button type="button"
+                    @click="interviewType = 'technical'"
+                    :class="interviewType === 'technical' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="wrench" class="w-5 h-5 text-indigo-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'technical' ? 'bg-indigo-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Technical Domain</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Role-authentic diagnostics, equipment, tools, and best practices.</p>
+              </div>
+            </button>
+
+            <button type="button"
+                    @click="interviewType = 'situational'"
+                    :class="interviewType === 'situational' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="flame" class="w-5 h-5 text-rose-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'situational' ? 'bg-rose-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">High-Stakes Crisis</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Emergency troubleshooting, safety hazards, and urgent deliverables.</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Interviewer Persona</label>
+            <select x-model="interviewDifficulty"
+                    class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition">
+              <option value="friendly">🤝 Supportive Coach (Friendly, Constructive)</option>
+              <option value="standard" selected>👔 Senior Hiring Manager (Standard Professional)</option>
+              <option value="executive">🎯 Executive Director (Challenging & Direct)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Session Length</label>
+            <div class="flex items-center gap-2">
+              <select x-model="interviewQuestionCount"
+                      class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition">
+                <option value="3">3 Questions (Standard Practice - ~6 mins)</option>
+                <option value="5">5 Questions (Comprehensive Mock - ~12 mins)</option>
+              </select>
+              <span class="text-[11px] text-slate-400 px-2 py-1 bg-slate-800 rounded-lg">Adaptive AI</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+          <button @click="closeVoiceInterviewModal()"
+                  class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white text-xs font-semibold transition">
+            Cancel
+          </button>
+
+          <button @click="startVoiceInterviewSession()"
+                  :disabled="isStartingInterview"
+                  class="relative px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 text-white text-xs font-bold shadow-lg shadow-violet-600/30 hover:scale-[1.02] active:scale-[0.98] transition flex items-center gap-2 disabled:opacity-50">
+            <template x-if="!isStartingInterview">
+              <div class="flex items-center gap-2">
+                <i data-lucide="mic" class="w-4 h-4"></i>
+                <span>Start Voice Interview Now</span>
+              </div>
+            </template>
+            <template x-if="isStartingInterview">
+              <div class="flex items-center gap-2">
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                <span>Preparing Questions...</span>
+              </div>
+            </template>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- VIEW B: LIVE STAGE -->
+      <div x-show="interviewStep === 'interviewing'" class="space-y-6">
+
+        <div class="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 font-bold border border-violet-500/30"
+                  x-text="`Question ${currentQuestionIndex + 1} of ${interviewQuestions.length}`"></span>
+            <span class="text-slate-400" x-text="currentQuestion?.category"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 font-mono">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-violet-400"></i>
+              <span x-text="formatSeconds(recordingDurationSeconds)">00:00</span>
+            </div>
+            <span x-show="isRecordingAnswer" class="flex items-center gap-1 text-[11px] text-rose-400 font-bold animate-pulse">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> Recording
+            </span>
+          </div>
+        </div>
+
+        <!-- Spoken Question Section -->
+        <div class="p-6 rounded-3xl bg-slate-950/70 border border-indigo-500/30 relative overflow-hidden flex flex-col items-center text-center space-y-4">
+          
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <span x-show="isInterviewerSpeaking" class="absolute inset-0 rounded-full bg-violet-500/30 animate-ping"></span>
+            <span x-show="isInterviewerSpeaking" class="absolute -inset-2 rounded-full bg-indigo-500/20 animate-pulse"></span>
+            
+            <div class="relative w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 p-0.5 shadow-xl shadow-violet-600/30 flex items-center justify-center">
+              <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center">
+                <div x-show="isInterviewerSpeaking" class="flex items-center justify-center">
+                  <svg class="w-7 h-7 text-violet-400 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  </svg>
+                </div>
+                <div x-show="!isInterviewerSpeaking" class="flex items-center justify-center">
+                  <svg class="w-7 h-7 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 8V4H8"></path>
+                    <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                    <path d="M2 14h2"></path>
+                    <path d="M20 14h2"></path>
+                    <path d="M15 13v2"></path>
+                    <path d="M9 13v2"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 max-w-2xl">
+            <h3 class="text-base sm:text-lg font-bold text-white leading-relaxed"
+                x-text="currentQuestion?.question_text"></h3>
+            
+            <p class="text-xs text-violet-300/80 italic flex items-center justify-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
+              <span x-text="currentQuestion?.interviewer_cue"></span>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button @click="speakCurrentQuestion()"
+                    :disabled="isInterviewerSpeaking"
+                    class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 disabled:opacity-50">
+              <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+              <span x-text="isInterviewerSpeaking ? 'Speaking Question...' : '🔊 Replay Voice Question'"></span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Candidate Live Spoken Response -->
+        <div class="space-y-3">
+          
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <div class="flex items-center gap-2">
+              <i data-lucide="mic" class="w-4 h-4 text-violet-400"></i>
+              <span>Your Spoken Response (Live Voice Transcript)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] text-slate-400" x-text="`${candidateAnswerTranscript.split(/\s+/).filter(Boolean).length} words spoken`"></span>
+              <button @click="showManualTextInput = !showManualTextInput"
+                      class="text-[11px] text-violet-400 hover:underline">
+                <span x-text="showManualTextInput ? 'Hide Text Editor' : '✏️ Edit Spoken Text'"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative min-h-[140px] p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-200 text-xs sm:text-sm leading-relaxed flex flex-col justify-between">
+            
+            <div class="space-y-2">
+              <template x-if="!showManualTextInput">
+                <p x-show="candidateAnswerTranscript" class="text-white whitespace-pre-wrap" x-text="candidateAnswerTranscript"></p>
+              </template>
+              <template x-if="!showManualTextInput">
+                <p x-show="!candidateAnswerTranscript" class="text-slate-500 italic flex items-center gap-2">
+                  <i data-lucide="mic-off" class="w-4 h-4 text-slate-600"></i>
+                  <span>Click &quot;Start Speaking&quot; and answer out loud using the STAR method (Situation, Task, Action, Result)...</span>
+                </p>
+              </template>
+
+              <textarea x-show="showManualTextInput"
+                        x-model="candidateAnswerTranscript"
+                        rows="5"
+                        placeholder="Speak into mic or type your answer here..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-violet-500 transition"></textarea>
+            </div>
+
+            <div x-show="isRecordingAnswer" class="flex items-center justify-center gap-1 pt-3">
+              <span class="w-1 bg-violet-500 rounded-full animate-pulse h-4"></span>
+              <span class="w-1 bg-indigo-500 rounded-full animate-pulse h-7"></span>
+              <span class="w-1 bg-pink-500 rounded-full animate-pulse h-9"></span>
+              <span class="w-1 bg-violet-400 rounded-full animate-pulse h-6"></span>
+              <span class="w-1 bg-indigo-400 rounded-full animate-pulse h-3"></span>
+            </div>
+
+          </div>
+
+          <!-- Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            
+            <div class="flex items-center gap-2">
+              <template x-if="!isRecordingAnswer">
+                <button @click="startCandidateRecording()"
+                        class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
+                  <i data-lucide="mic" class="w-4 h-4"></i>
+                  <span>🎙️ Start Speaking</span>
+                </button>
+              </template>
+
+              <template x-if="isRecordingAnswer">
+                <button @click="stopCandidateRecording()"
+                        class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition flex items-center gap-2 animate-pulse">
+                  <i data-lucide="square" class="w-4 h-4"></i>
+                  <span>⏹️ Stop Recording</span>
+                </button>
+              </template>
+
+              <button @click="candidateAnswerTranscript = ''; recordingDurationSeconds = 0"
+                      class="px-3 py-2 text-slate-400 hover:text-slate-200 text-xs rounded-xl hover:bg-slate-800 transition">
+                Reset
+              </button>
+            </div>
+
+            <button @click="submitAnswerForCritique()"
+                    :disabled="!candidateAnswerTranscript || candidateAnswerTranscript.trim().length < 5 || isEvaluatingAnswer"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition flex items-center gap-2 disabled:opacity-40 disabled:pointer-events-none">
+              <template x-if="!isEvaluatingAnswer">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                  <span>⚡ Submit Answer &amp; Get Critique</span>
+                </div>
+              </template>
+              <template x-if="isEvaluatingAnswer">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                  <span>Evaluating STAR &amp; Speech...</span>
+                </div>
+              </template>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- VIEW C: CRITIQUE -->
+      <div x-show="interviewStep === 'critique'" class="space-y-6">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          <div class="p-4 rounded-2xl bg-slate-950 border border-violet-500/30 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-black text-lg">
+              <span x-text="currentEvaluation?.score">85</span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Answer Score</p>
+              <p class="text-xs font-bold text-white" x-text="currentEvaluation?.score >= 80 ? 'Strong Candidate Response' : 'Solid Base - Refine STAR'"></p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-black text-sm">
+              <span x-text="`${currentEvaluation?.words_per_minute || 0}`"></span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Speaking Pacing</p>
+              <p class="text-xs font-bold text-slate-200" x-text="currentEvaluation?.pacing_feedback"></p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-600/20 border border-pink-500/30 flex items-center justify-center text-pink-300 font-black text-base">
+              <span x-text="currentEvaluation?.filler_words_count || 0"></span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Filler Words</p>
+              <template x-if="!currentEvaluation?.filler_words_detected?.length">
+                <p class="text-xs font-bold text-emerald-400">Zero fillers detected! ✨</p>
+              </template>
+              <template x-if="currentEvaluation?.filler_words_detected?.length">
+                <div class="flex flex-wrap gap-1 mt-0.5">
+                  <template x-for="fw in currentEvaluation.filler_words_detected" :key="fw">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-pink-500/20 text-pink-300 font-mono" x-text="`&ldquo;${fw}&rdquo;`"></span>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- STAR Breakdown -->
+        <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+            <span>STAR Technique Architecture Breakdown</span>
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-violet-400">S — Situation</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.situation"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">T — Task</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.task"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-teal-400">A — Action</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.action"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400">R — Result</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.result"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-1.5">
+              <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Key Strengths
+              </span>
+              <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                <template x-for="st in currentEvaluation?.strengths || []" :key="st">
+                  <li x-text="st"></li>
+                </template>
+              </ul>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/20 space-y-1.5">
+              <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-amber-400"></i> High-Impact Improvement
+              </span>
+              <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                <template x-for="imp in currentEvaluation?.improvements || []" :key="imp">
+                  <li x-text="imp"></li>
+                </template>
+              </ul>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-gradient-to-r from-violet-950/30 to-indigo-950/30 border border-violet-500/30 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-violet-300 font-bold text-xs">
+                <i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i>
+                <span>How an Elite Candidate Answers This:</span>
+              </div>
+              <button @click="navigator.clipboard.writeText(currentEvaluation?.exemplary_answer || '')"
+                      class="text-[11px] text-violet-400 hover:text-white flex items-center gap-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Script
+              </button>
+            </div>
+            <p class="text-xs text-slate-200 leading-relaxed italic bg-slate-950/60 p-3 rounded-xl border border-slate-800"
+               x-text="currentEvaluation?.exemplary_answer"></p>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+          <span class="text-xs text-slate-400"
+                x-text="`${interviewQuestions.length - (currentQuestionIndex + 1)} questions remaining`"></span>
+
+          <button @click="proceedToNextQuestionOrReport()"
+                  class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
+            <span x-text="currentQuestionIndex + 1 < interviewQuestions.length ? 'Next Question ➡️' : '🏆 Compile Final Readiness Dossier'"></span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- VIEW D: FINAL DOSSIER -->
+      <div x-show="interviewStep === 'final_report'" class="space-y-6">
+
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-violet-950/50 via-slate-900 to-indigo-950/50 border border-violet-500/40 text-center space-y-3 relative overflow-hidden">
+          
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border"
+               :class="{
+                 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': finalReport?.verdict_color === 'emerald',
+                 'bg-teal-500/20 text-teal-300 border-teal-500/30': finalReport?.verdict_color === 'teal',
+                 'bg-amber-500/20 text-amber-300 border-amber-500/30': finalReport?.verdict_color === 'amber',
+                 'bg-rose-500/20 text-rose-300 border-rose-500/30': finalReport?.verdict_color === 'rose'
+               }">
+            <i data-lucide="award" class="w-4 h-4"></i>
+            <span>Hiring Committee Verdict: <strong x-text="finalReport?.hiring_verdict"></strong></span>
+          </div>
+
+          <div class="flex items-center justify-center gap-4 py-2">
+            <div class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-pink-400"
+                 x-text="`${finalReport?.overall_score || 0}%`"></div>
+            <div class="text-left">
+              <p class="text-xs font-bold text-white">Interview Readiness Score</p>
+              <p class="text-[11px] text-slate-400">Benchmarked against top applicants</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed"
+             x-text="finalReport?.executive_summary"></p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Domain Acumen</p>
+            <p class="text-lg font-black text-violet-400" x-text="`${finalReport?.competency_scores?.domain_expertise || 85}%`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-violet-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.domain_expertise || 85}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">STAR Structure</p>
+            <p class="text-lg font-black text-indigo-400" x-text="`${finalReport?.competency_scores?.star_structure || 82}%`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.star_structure || 82}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pacing (WPM)</p>
+            <p class="text-lg font-black text-teal-400" x-text="`${finalReport?.average_wpm || 135} wpm`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-teal-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.pacing_clarity || 88}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Filler Words</p>
+            <p class="text-lg font-black text-pink-400" x-text="`${finalReport?.total_filler_words || 0}`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-pink-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.executive_presence || 90}%`"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          
+          <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
+            <h4 class="font-bold text-emerald-300 flex items-center gap-1.5">
+              <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Demonstrated Competitive Strengths</span>
+            </h4>
+            <ul class="space-y-1.5 text-slate-300">
+              <template x-for="st in finalReport?.top_strengths || []" :key="st">
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">•</span>
+                  <span x-text="st"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-violet-950/20 border border-violet-500/20 space-y-2">
+            <h4 class="font-bold text-violet-300 flex items-center gap-1.5">
+              <i data-lucide="list-checks" class="w-4 h-4 text-violet-400"></i>
+              <span>Action Plan for the Real Interview</span>
+            </h4>
+            <ul class="space-y-1.5 text-slate-300">
+              <template x-for="rec in finalReport?.actionable_recommendations || []" :key="rec">
+                <li class="flex items-start gap-2">
+                  <span class="text-violet-400 font-bold">•</span>
+                  <span x-text="rec"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <button @click="window.print()"
+                  class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Save / Print Report</span>
+          </button>
+
+          <div class="flex items-center gap-3">
+            <button @click="interviewStep = 'setup'"
+                    class="px-4 py-2.5 rounded-xl border border-violet-500/40 text-violet-300 hover:bg-violet-950/40 text-xs font-semibold transition flex items-center gap-1.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Practice Another Session</span>
+            </button>
+
+            <button @click="closeVoiceInterviewModal()"
+                    class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition">
+              Done / Return to Workspace
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+
+<!-- ══════════════════════════════════════════════════════════════
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Real-Time AI Video Conference Interview Studio (Meet / Zoom Style)  -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div x-show="realtimeConferenceOpen"
+     x-transition:enter="transition ease-out duration-300 transform"
+     x-transition:enter-start="opacity-0 scale-98"
+     x-transition:enter-end="opacity-100 scale-100"
+     x-transition:leave="transition ease-in duration-200 transform"
+     x-transition:leave-start="opacity-100 scale-100"
+     x-transition:leave-end="opacity-0 scale-98"
+     x-cloak
+     class="fixed inset-0 z-50 bg-slate-950 flex flex-col overflow-hidden text-white font-sans select-none">
+
+  <!-- 1. TOP CONFERENCE HEADER -->
+  <div class="h-14 px-4 sm:px-6 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0 backdrop-blur-md">
+    
+    <!-- Meeting Title & Recording Status -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold animate-pulse">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span class="font-mono" x-text="`REC ${formatConferenceDuration(conferenceDurationSeconds)}`">REC 00:00</span>
+      </div>
+
+      <div class="hidden sm:flex items-center gap-2 text-xs">
+        <span class="font-bold text-slate-200" x-text="`${conferenceTargetRole} • Live Technical Round`"></span>
+        <span class="text-slate-500">•</span>
+        <span class="text-slate-400" x-text="conferenceTargetCompany || 'Global Employer'"></span>
+      </div>
+    </div>
+
+    <!-- Security & Live Coaching Indicators -->
+    <div class="flex items-center gap-3">
+      <template x-if="liveCoachingEnabled">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 text-[11px] font-semibold border border-violet-500/30">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-400"></i>
+          <span>Live Mistake Interventions (Waradi) ON</span>
+        </div>
+      </template>
+
+      <!-- Toggle Sidebar / Mistake Log -->
+      <button @click="conferenceSidebarOpen = !conferenceSidebarOpen"
+              class="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <i data-lucide="message-square" class="w-4 h-4"></i>
+        <span x-show="conferenceMistakes.length > 0"
+              class="absolute -top-0.5 -right-0.5 px-1.5 py-0.2 rounded-full bg-rose-500 text-[9px] font-bold text-white"
+              x-text="conferenceMistakes.length"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. MAIN VIDEO CONFERENCE STAGE -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Active Video Tiles Container -->
+    <div class="flex-1 p-3 sm:p-5 flex flex-col justify-between overflow-hidden relative">
+
+      <!-- DUAL VIDEO STAGE GRID -->
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-h-full">
+        
+        <!-- TILE 1: AI INTERVIEWER (ALEX) -->
+        <div class="relative bg-slate-900 rounded-3xl border border-indigo-500/30 overflow-hidden shadow-2xl flex flex-col items-center justify-center min-h-[220px]">
+          
+          <!-- Background Ambient Gradient -->
+          <div class="absolute inset-0 bg-gradient-to-tr from-slate-950 via-indigo-950/40 to-slate-950"></div>
+
+          <!-- Pulsing Soundwave Waveform when AI speaks -->
+          <div class="relative z-10 flex flex-col items-center text-center space-y-4 p-4">
+            
+            <div class="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center">
+              <!-- Pulsing Waves -->
+              <span x-show="isAiSpeakingTurn" class="absolute inset-0 rounded-full bg-indigo-500/25 animate-ping"></span>
+              <span x-show="isAiSpeakingTurn" class="absolute -inset-3 rounded-full bg-violet-500/20 animate-pulse"></span>
+
+              <div class="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-500 p-1 shadow-2xl flex items-center justify-center">
+                <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center overflow-hidden">
+                  <!-- Animated Soundbars when AI is speaking -->
+                  <div x-show="isAiSpeakingTurn" class="flex items-center gap-1">
+                    <span class="w-1.5 h-6 bg-indigo-400 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-10 bg-violet-400 rounded-full animate-bounce delay-75"></span>
+                    <span class="w-1.5 h-8 bg-pink-400 rounded-full animate-bounce delay-150"></span>
+                    <span class="w-1.5 h-5 bg-indigo-300 rounded-full animate-bounce delay-100"></span>
+                  </div>
+                  <!-- Static Clean Bot Icon when AI is waiting/listening -->
+                  <div x-show="!isAiSpeakingTurn" class="flex items-center justify-center">
+                    <svg class="w-12 h-12 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 8V4H8"></path>
+                      <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                      <path d="M2 14h2"></path>
+                      <path d="M20 14h2"></path>
+                      <path d="M15 13v2"></path>
+                      <path d="M9 13v2"></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-sm sm:text-base text-white">Alex (Lead Interviewer)</h3>
+              <p class="text-xs font-medium"
+                 :class="isAiThinking ? 'text-amber-300 animate-pulse' : 'text-indigo-300'"
+                 x-text="isAiSpeakingTurn ? '🎙️ Speaking to you...' : (isAiThinking ? '⚡ Analyzing your response...' : (isCandidateSpeaking ? '👂 Listening to your response...' : 'Waiting for you to speak...'))"></p>
+            </div>
+
+          </div>
+
+          <!-- Tile Bottom Status Badge -->
+          <div class="absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-xs">
+            <span class="w-2 h-2 rounded-full" :class="isAiSpeakingTurn ? 'bg-indigo-400 animate-pulse' : 'bg-emerald-400'"></span>
+            <span class="font-semibold text-slate-200">Alex • AI Interviewer</span>
+          </div>
+
+          <!-- Company Watermark -->
+          <div class="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-lg bg-slate-950/60 border border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider"
+               x-text="conferenceTargetCompany || 'Apex Systems'"></div>
+
+        </div>
+
+        <!-- TILE 2: CANDIDATE VIDEO FEED (WEBCAM) -->
+        <div class="relative bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center min-h-[220px]">
+          
+          <!-- Live HTML5 Webcam Stream -->
+          <video id="candidate-webcam-video"
+                 autoplay playsinline muted
+                 class="w-full h-full object-cover transform -scale-x-100"
+                 x-show="isCameraOn"></video>
+
+          <!-- Fallback Avatar if Camera Off -->
+          <div x-show="!isCameraOn"
+               class="flex flex-col items-center justify-center space-y-3">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-300 text-2xl font-bold">
+              <span x-text="currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'U'"></span>
+            </div>
+            <p class="text-xs text-slate-400">Camera is turned off</p>
+          </div>
+
+          <!-- Tile Bottom Status Badge -->
+          <div class="absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-950/80 backdrop-blur-md border border-slate-800 text-xs">
+            <div x-show="!isMicMuted" class="flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
+              <span class="font-semibold text-white" x-text="currentUser?.full_name || 'You (Candidate)'"></span>
+            </div>
+            <div x-show="isMicMuted" class="flex items-center gap-1.5 text-rose-400">
+              <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2" x2="22" y1="2" y2="22"></line>
+                <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path>
+                <path d="M5 10v2a7 7 0 0 0 12 5"></path>
+                <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path>
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
+              <span class="font-semibold">Muted</span>
+            </div>
+          </div>
+
+          <!-- Live Mic Volume / Waveform Meter in top-right of candidate tile -->
+          <div class="absolute top-3 right-3 z-10 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800">
+            <span x-show="isCandidateSpeaking" class="flex items-center gap-1 text-[10px] text-emerald-400 font-bold animate-pulse">
+              <span class="w-1 h-3 bg-emerald-400 rounded-full animate-bounce"></span>
+              <span class="w-1 h-4 bg-emerald-400 rounded-full animate-bounce delay-75"></span>
+              <span class="w-1 h-2 bg-emerald-400 rounded-full animate-bounce delay-150"></span>
+              <span>Transcribing...</span>
+            </span>
+            <span x-show="!isCandidateSpeaking" class="text-[10px] text-slate-500">Mic Ready</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- FLOATING HUD: LIVE MISTAKE NOTIFICATION ("WARADI KIYALA DENNA")     -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <div x-show="liveCoachingEnabled && activeCoachingNudge"
+           x-transition:enter="transition ease-out duration-300 transform"
+           x-transition:enter-start="opacity-0 -translate-y-4"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           x-transition:leave="transition ease-in duration-200 transform"
+           x-transition:leave-start="opacity-100 translate-y-0"
+           x-transition:leave-end="opacity-0 -translate-y-4"
+           class="absolute top-8 left-1/2 -translate-x-1/2 z-30 max-w-lg w-[90%]">
+        
+        <div class="px-4 py-3 rounded-2xl bg-slate-950/95 border border-violet-500/50 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-violet-600/30 border border-violet-500/40 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-violet-300"></i>
+            </div>
+            <div>
+              <p class="font-bold text-white text-[11.5px]" x-text="activeCoachingNudge"></p>
+              <p class="text-[10px] text-slate-400">Live AI Interviewer Coach</p>
+            </div>
+          </div>
+          <button @click="activeCoachingNudge = null" class="text-slate-500 hover:text-white p-1">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- LIVE CLOSED CAPTIONS / SUBTITLES BAR                                -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <div class="mt-3 py-2 px-4 rounded-2xl bg-slate-950/90 border border-slate-800 flex items-center justify-between max-w-3xl mx-auto w-full min-h-[44px] gap-3">
+        <div class="flex-1 text-center sm:text-left overflow-hidden">
+          <template x-if="liveSubtitleSpeaker && liveSubtitleText">
+            <p class="text-xs sm:text-sm text-slate-200 truncate sm:whitespace-normal">
+              <strong class="text-indigo-400 font-bold" x-text="`${liveSubtitleSpeaker}: `"></strong>
+              <span x-text="liveSubtitleText"></span>
+            </p>
+          </template>
+          <template x-if="!liveSubtitleText">
+            <p class="text-xs text-slate-500 italic">
+              Closed captions will appear here live as Alex or you speak...
+            </p>
+          </template>
+        </div>
+
+        <!-- Quick 0-delay button: instantly finalize and send answer -->
+        <button x-show="isCandidateSpeaking"
+                @click="forceFinishCandidateSpeaking()"
+                title="Send answer immediately without waiting for auto-silence"
+                class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition animate-pulse cursor-pointer">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Done Speaking</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- COLLAPSIBLE SIDEBAR: LIVE TRANSCRIPT & MISTAKE COACHING FEED        -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div x-show="conferenceSidebarOpen"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="translate-x-full"
+         class="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col z-20">
+      
+      <!-- Sidebar Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="message-square" class="w-4 h-4 text-violet-400"></i>
+          <h4 class="font-bold text-xs text-white">Live Meeting Transcript &amp; Mistakes</h4>
+        </div>
+        <button @click="conferenceSidebarOpen = false" class="p-1 text-slate-400 hover:text-white rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Mistake Summary Pills -->
+      <div class="p-3 bg-slate-950/60 border-b border-slate-800/80 flex items-center justify-between text-xs">
+        <span class="text-[11px] text-slate-400">Mistakes Flagged:</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+              :class="conferenceMistakes.length === 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'"
+              x-text="`${conferenceMistakes.length} issues`"></span>
+      </div>
+
+      <!-- Scrollable Message & Mistake Feed -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
+        
+        <template x-for="(msg, mIdx) in conferenceConversationHistory" :key="mIdx">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-[10px] text-slate-500">
+              <span class="font-bold uppercase tracking-wider"
+                    :class="msg.speaker === 'interviewer' ? 'text-indigo-400' : 'text-emerald-400'"
+                    x-text="msg.speaker === 'interviewer' ? 'Alex (Interviewer)' : 'You (Candidate)'"></span>
+              <span x-text="msg.timestamp"></span>
+            </div>
+            <div class="p-3 rounded-2xl leading-relaxed"
+                 :class="msg.speaker === 'interviewer' ? 'bg-indigo-950/40 border border-indigo-500/20 text-slate-200' : 'bg-slate-950 border border-slate-800 text-white'"
+                 x-text="msg.text"></div>
+
+            <!-- Mistakes flagged for this candidate response -->
+            <template x-if="msg.mistakes && msg.mistakes.length > 0">
+              <div class="space-y-1.5 pt-1 pl-2">
+                <template x-for="(mistake, misIdx) in msg.mistakes" :key="misIdx">
+                  <div class="p-2.5 rounded-xl bg-rose-950/20 border border-rose-500/30 text-[11px] space-y-1">
+                    <div class="flex items-center gap-1.5 text-rose-300 font-bold">
+                      <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                      <span x-text="mistake.label"></span>
+                    </div>
+                    <p class="text-slate-300" x-text="mistake.explanation"></p>
+                    <p class="text-violet-300 font-semibold" x-text="`💡 Fix: ${mistake.suggestion}`"></p>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 3. CONFERENCE CONTROLS BAR (BOTTOM) -->
+  <div class="h-18 px-6 bg-slate-900 border-t border-slate-800 flex items-center justify-between flex-shrink-0">
+    
+    <!-- Left: Meeting info -->
+    <div class="hidden sm:block text-xs text-slate-400">
+      <span class="text-white font-semibold" x-text="`Target: ${conferenceTargetRole}`"></span>
+    </div>
+
+    <!-- Center: Primary Conference Controls -->
+    <div class="flex items-center gap-3 mx-auto">
+      
+      <!-- Mic Toggle Button -->
+      <button @click="toggleConferenceMic()"
+              :class="isMicMuted ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
+              class="w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg"
+              :title="isMicMuted ? 'Unmute Microphone' : 'Mute Microphone'">
+        <svg x-show="!isMicMuted" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" x2="12" y1="19" y2="22"></line>
+        </svg>
+        <svg x-show="isMicMuted" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="2" x2="22" y1="2" y2="22"></line>
+          <path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"></path>
+          <path d="M5 10v2a7 7 0 0 0 12 5"></path>
+          <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"></path>
+          <path d="M9 9v3a3 3 0 0 0 5.12 2.12"></path>
+          <line x1="12" x2="12" y1="19" y2="22"></line>
+        </svg>
+      </button>
+
+      <!-- Camera Toggle Button -->
+      <button @click="toggleConferenceCamera()"
+              :class="!isCameraOn ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'"
+              class="w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg"
+              :title="isCameraOn ? 'Turn Camera Off' : 'Turn Camera On'">
+        <svg x-show="isCameraOn" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 8-6 4 6 4V8Z"></path>
+          <rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect>
+        </svg>
+        <svg x-show="!isCameraOn" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 8-6 4 6 4V8Z"></path>
+          <rect width="14" height="12" x="2" y="6" rx="2" ry="2"></rect>
+          <line x1="2" x2="22" y1="2" y2="22"></line>
+        </svg>
+      </button>
+
+      <!-- Toggle Live Mistake Coaching (Waradi) HUD -->
+      <button @click="liveCoachingEnabled = !liveCoachingEnabled"
+              :class="liveCoachingEnabled ? 'bg-violet-600 text-white shadow-violet-600/30' : 'bg-slate-800 text-slate-400'"
+              title="Toggle Live Mistake Intervention HUD"
+              class="w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+          <path d="M5 3v4"></path>
+          <path d="M19 17v4"></path>
+          <path d="M3 5h4"></path>
+          <path d="M17 19h4"></path>
+        </svg>
+      </button>
+
+      <!-- End Call / Leave Conference Button -->
+      <button @click="endRealtimeConference()"
+              class="px-5 h-12 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold flex items-center gap-2 transition shadow-lg shadow-rose-600/30">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path>
+          <line x1="2" x2="22" y1="2" y2="22"></line>
+        </svg>
+        <span>End Meeting</span>
+      </button>
+
+    </div>
+
+    <!-- Right: Drawer Toggle -->
+    <div class="hidden sm:block">
+      <button @click="conferenceSidebarOpen = !conferenceSidebarOpen"
+              class="px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition">
+        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+        <span>Meeting Notes</span>
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- POST-CONFERENCE EXECUTIVE DEBRIEF MODAL                             -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div x-show="conferenceDebriefModalOpen"
+     x-transition:enter="transition ease-out duration-300 transform"
+     x-transition:enter-start="opacity-0 scale-95"
+     x-transition:enter-end="opacity-100 scale-100"
+     x-transition:leave="transition ease-in duration-200 transform"
+     x-transition:leave-start="opacity-100 scale-100"
+     x-transition:leave-end="opacity-0 scale-95"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4">
+
+  <div class="relative w-full max-w-3xl bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    
+    <!-- Header -->
+    <div class="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
+          <i data-lucide="award" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Conference Performance Debrief</h3>
+          <p class="text-xs text-slate-400" x-text="`Executive evaluation for ${conferenceTargetRole}`"></p>
+        </div>
+      </div>
+      <button @click="conferenceDebriefModalOpen = false" class="p-1.5 text-slate-400 hover:text-white rounded-xl">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-200">
+      
+      <!-- Verdict & Score -->
+      <div class="p-6 rounded-2xl bg-gradient-to-r from-violet-950/40 via-slate-950 to-indigo-950/40 border border-violet-500/30 text-center space-y-2">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
+             :class="conferenceDebriefData?.verdict_color === 'emerald' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-teal-500/20 text-teal-300 border-teal-500/30'">
+          <span>Verdict: <strong x-text="conferenceDebriefData?.hiring_verdict"></strong></span>
+        </div>
+        <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-pink-400"
+             x-text="`${conferenceDebriefData?.overall_score || 0}%`"></div>
+        <p class="text-slate-300 max-w-xl mx-auto leading-relaxed"
+           x-text="conferenceDebriefData?.executive_summary"></p>
+      </div>
+
+      <!-- Identified Mistakes & Corrective Actions (Waradi Kiyala Dima) -->
+      <div class="space-y-3">
+        <h4 class="font-bold text-sm text-white flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+          <span>Mistakes Flagged During Conference &amp; How to Fix Them</span>
+        </h4>
+
+        <template x-if="!conferenceDebriefData?.top_mistakes_corrected?.length">
+          <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-emerald-300">
+            Zero critical mistakes flagged! Excellent technical delivery and composure.
+          </div>
+        </template>
+
+        <div class="space-y-2.5">
+          <template x-for="(mistake, idx) in (conferenceDebriefData?.top_mistakes_corrected || [])" :key="idx">
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-rose-400 text-xs flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                  <span x-text="mistake.label"></span>
+                </span>
+                <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400" x-text="mistake.type"></span>
+              </div>
+              <p class="text-slate-300" x-text="mistake.explanation"></p>
+              <div class="p-2.5 rounded-xl bg-violet-950/30 border border-violet-500/30 text-violet-200">
+                <strong class="text-violet-300">💡 Suggested Correction:</strong>
+                <span x-text="mistake.suggestion"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Action Plan -->
+      <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+        <h4 class="font-bold text-xs text-white">Action Plan for Real Interviews</h4>
+        <ul class="space-y-1.5 text-slate-300">
+          <template x-for="(item, iIdx) in (conferenceDebriefData?.action_plan || [])" :key="iIdx">
+            <li class="flex items-start gap-2">
+              <span class="text-violet-400 font-bold">•</span>
+              <span x-text="item"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+      <button @click="window.print()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:text-white font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+        <span>Print Debrief</span>
+      </button>
+
+      <button @click="conferenceDebriefModalOpen = false"
+              class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold transition">
+        Done / Return to App
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+  <!-- Footer -->
+    <div class="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+      <button @click="window.print()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:text-white font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+        <span>Print Debrief</span>
+      </button>
+
+      <button @click="conferenceDebriefModalOpen = false"
+              class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold transition">
+        Done / Return to App
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+  <!-- Footer -->
+    <div class="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+      <button @click="window.print()" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:text-white font-semibold transition flex items-center gap-1.5">
+        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+        <span>Print Debrief</span>
+      </button>
+
+      <button @click="conferenceDebriefModalOpen = false"
+              class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold transition">
+        Done / Return to App
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
   <!-- Footer -->
   <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600">
-    <p>ResuMatch AI • Production-Ready ATS Resume, Visual Photo CV & Custom Portfolio SaaS</p>
+    <p>DreemFolio AI • Production-Ready ATS Resume, Visual Photo CV & Custom Portfolio SaaS</p>
   </footer>
 
   <!-- App Script -->

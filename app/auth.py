@@ -6,10 +6,10 @@ import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.database import get_db
-from app.models import User, SaasSetting
+from app.models import User, SaasSetting, UserJobApplication
 
 # Cryptographic Secret Configuration
 _env_secret = os.getenv("JWT_SECRET")
@@ -156,6 +156,10 @@ TIER_RANKS = {
 DEFAULT_FREE_DAILY_AI_LIMIT = 2
 DEFAULT_FREE_DAILY_PDF_LIMIT = 1
 DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT = 3
+DEFAULT_FREE_DAILY_COPILOT_KITS_LIMIT = 1
+DEFAULT_FREE_MAX_TRACKED_JOBS = 3
+DEFAULT_FREE_DAILY_CHAT_LIMIT = 3
+DEFAULT_FREE_DAILY_INTERVIEW_LIMIT = 1
 
 
 def get_saas_setting(db: Session, key: str, default: str) -> str:
@@ -168,6 +172,22 @@ def get_saas_setting(db: Session, key: str, default: str) -> str:
     except Exception:
         pass
     return default
+
+
+def ensure_daily_counters_reset(user: User, db: Session):
+    """Safely reset all 5 daily counters on a new calendar day."""
+    today_str = datetime.date.today().isoformat()
+    if user.last_generation_date != today_str:
+        user.daily_ai_generations_count = 0
+        user.daily_pdf_downloads_count = 0
+        user.daily_cover_letter_downloads_count = 0
+        user.daily_copilot_kits_count = 0
+        user.daily_chat_count = 0
+        if hasattr(user, "daily_interview_count"):
+            user.daily_interview_count = 0
+        user.last_generation_date = today_str
+        db.commit()
+        db.refresh(user)
 
 
 def check_and_update_subscription(user: User, db: Session) -> User:
@@ -201,14 +221,7 @@ def check_daily_ai_quota(
     - Raises HTTP 402 (Payment Required) when quota exceeded.
     """
     check_and_update_subscription(current_user, db)
-    today_str = datetime.date.today().isoformat()
-
-    # Reset daily counters on a new calendar day
-    if current_user.last_generation_date != today_str:
-        current_user.daily_ai_generations_count = 0
-        current_user.daily_pdf_downloads_count = 0
-        current_user.daily_cover_letter_downloads_count = 0
-        current_user.last_generation_date = today_str
+    ensure_daily_counters_reset(current_user, db)
 
     # Quota check for free tier
     if current_user.plan_tier == "free":
@@ -369,6 +382,165 @@ def check_daily_cover_letter_quota(
     return current_user
 
 
+def check_copilot_kit_quota(
+    current_user: Optional[User],
+    db: Session
+) -> Optional[User]:
+    """
+    Quota guard for 1-Click Application Copilot screening kit generation.
+    - Free tier / Guest: 1 kit per day.
+    - Pro / Elite: Unlimited kits.
+    """
+    if not current_user:
+        return None
+
+    check_and_update_subscription(current_user, db)
+    ensure_daily_counters_reset(current_user, db)
+
+    tier = (current_user.plan_tier or "free").lower()
+    if tier == "free":
+        limit_str = get_saas_setting(db, "free_daily_copilot_kits_limit", str(DEFAULT_FREE_DAILY_COPILOT_KITS_LIMIT))
+        try:
+            limit = int(limit_str)
+        except ValueError:
+            limit = DEFAULT_FREE_DAILY_COPILOT_KITS_LIMIT
+
+        if (current_user.daily_copilot_kits_count or 0) >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "copilot_kit_quota_exceeded",
+                    "error_code": "copilot_kit_quota_exceeded",
+                    "plan": "free",
+                    "daily_limit": limit,
+                    "kits_used": current_user.daily_copilot_kits_count,
+                    "message": f"Daily free Application Kit limit ({limit} kit) reached. Upgrade to Pro ($9/mo) for unlimited 1-click tailored screening kits!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+
+        current_user.daily_copilot_kits_count = (current_user.daily_copilot_kits_count or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+
+    return current_user
+
+
+def check_job_tracker_quota(
+    current_user: User,
+    db: Session
+) -> User:
+    """
+    Enforces maximum active tracked jobs limit for Free users (Max 3 tracked jobs).
+    Pro / Elite users have unlimited tracking with cloud sync.
+    """
+    check_and_update_subscription(current_user, db)
+    tier = (current_user.plan_tier or "free").lower()
+
+    if tier == "free":
+        stmt = select(func.count(UserJobApplication.id)).where(UserJobApplication.user_id == current_user.id)
+        current_tracked = db.scalar(stmt) or 0
+        limit_str = get_saas_setting(db, "free_max_tracked_jobs", str(DEFAULT_FREE_MAX_TRACKED_JOBS))
+        try:
+            limit = int(limit_str)
+        except ValueError:
+            limit = DEFAULT_FREE_MAX_TRACKED_JOBS
+
+        if current_tracked >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "tracker_quota_exceeded",
+                    "error_code": "tracker_quota_exceeded",
+                    "plan": "free",
+                    "limit": limit,
+                    "tracked_count": current_tracked,
+                    "message": f"Free Starter tier allows tracking up to {limit} jobs. Upgrade to Pro ($9/mo) for unlimited Kanban pipeline job tracking!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+
+    return current_user
+
+
+def check_chat_copilot_quota(
+    current_user: Optional[User],
+    db: Session
+) -> tuple[bool, int, str]:
+    """
+    Checks message allowance for the AI Career Copilot Chatbot.
+    - Pro / Elite: Unlimited 24/7 coaching & mock interviews.
+    - Free registered user: 3 messages per day.
+    - Guest: 3 messages per day.
+    Returns: (is_allowed, remaining_count, message)
+    """
+    if not current_user:
+        return True, 2, "2 trial messages remaining"
+
+    check_and_update_subscription(current_user, db)
+    ensure_daily_counters_reset(current_user, db)
+
+    tier = (current_user.plan_tier or "free").lower()
+    if tier in ["pro", "elite"]:
+        return True, 9999, "Unlimited Pro Coach"
+
+    limit_str = get_saas_setting(db, "free_daily_chat_limit", str(DEFAULT_FREE_DAILY_CHAT_LIMIT))
+    try:
+        limit = int(limit_str)
+    except ValueError:
+        limit = DEFAULT_FREE_DAILY_CHAT_LIMIT
+
+    used = current_user.daily_chat_count or 0
+    if used >= limit:
+        return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached."
+
+    current_user.daily_chat_count = used + 1
+    db.commit()
+    db.refresh(current_user)
+    remaining = max(0, limit - (used + 1))
+    return True, remaining, f"{remaining} free messages remaining today"
+
+
+def check_voice_interview_quota(
+    current_user: Optional[User],
+    db: Session
+) -> tuple[bool, int, str]:
+    """
+    Checks session allowance for the AI Voice Mock Interview Simulator.
+    - Pro / Elite: Unlimited full-length voice mock interviews.
+    - Free / Guest: 1 interactive practice session per day (3 questions).
+    Returns: (is_allowed, remaining_count, message)
+    """
+    if not current_user:
+        return True, 1, "1 trial session remaining"
+
+    check_and_update_subscription(current_user, db)
+    ensure_daily_counters_reset(current_user, db)
+
+    tier = (current_user.plan_tier or "free").lower()
+    if tier in ["pro", "elite"]:
+        return True, 9999, "Unlimited Voice Interviews (Pro Access)"
+
+    limit_str = get_saas_setting(db, "free_daily_interview_limit", str(DEFAULT_FREE_DAILY_INTERVIEW_LIMIT))
+    try:
+        limit = int(limit_str)
+    except ValueError:
+        limit = DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
+
+    used = getattr(current_user, "daily_interview_count", 0) or 0
+    if used >= limit:
+        return False, 0, f"Daily free Voice Mock Interview limit ({limit} session) reached."
+
+    if hasattr(current_user, "daily_interview_count"):
+        current_user.daily_interview_count = used + 1
+        db.commit()
+        db.refresh(current_user)
+
+    remaining = max(0, limit - (used + 1))
+    return True, remaining, f"{remaining} free practice sessions remaining today"
+
+
+
 def require_tier(minimum_tier: str):
 
     """
@@ -453,17 +625,38 @@ def verify_google_credential_token(credential: str, expected_client_id: Optional
             "email_verified": True
         }
 
-    # 2. Query Google's tokeninfo endpoint
+    # 2. Query Google's tokeninfo endpoint (ID token or OAuth2 access token)
+    payload = None
+    is_access_token = False
     try:
         url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
-        req = urllib.request.Request(url, headers={"User-Agent": "ResuMatch-OAuth/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
         with urllib.request.urlopen(req, timeout=8) as response:
             payload = json.loads(response.read().decode("utf-8"))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Google token verification failed: {str(e)}"
-        )
+    except Exception:
+        # Check if credential is an OAuth2 access token from popup flow
+        try:
+            url = f"https://oauth2.googleapis.com/tokeninfo?access_token={credential}"
+            req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
+            with urllib.request.urlopen(req, timeout=8) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                is_access_token = True
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Google token verification failed: {str(e)}"
+            )
+
+    # If access token was supplied, fetch user profile for name and avatar
+    if is_access_token:
+        try:
+            u_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+            u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {credential}", "User-Agent": "DreemFolio-OAuth/1.0"})
+            with urllib.request.urlopen(u_req, timeout=8) as u_res:
+                u_data = json.loads(u_res.read().decode("utf-8"))
+                payload.update(u_data)
+        except Exception:
+            pass
 
     # 3. Check for error in payload
     if "error" in payload or "error_description" in payload:
@@ -472,13 +665,14 @@ def verify_google_credential_token(credential: str, expected_client_id: Optional
             detail=payload.get("error_description", "Invalid or expired Google token.")
         )
 
-    # 4. Verify Issuer
-    iss = payload.get("iss", "")
-    if iss not in ["accounts.google.com", "https://accounts.google.com"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Untrusted Google token issuer: {iss}"
-        )
+    # 4. Verify Issuer if ID token
+    if not is_access_token:
+        iss = payload.get("iss", "")
+        if iss not in ["accounts.google.com", "https://accounts.google.com"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Untrusted Google token issuer: {iss}"
+            )
 
     # 5. Verify Audience if expected_client_id is provided
     if expected_client_id:
