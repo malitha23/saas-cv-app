@@ -21,6 +21,9 @@ class User(Base):
     daily_ai_generations_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_pdf_downloads_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_cover_letter_downloads_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    daily_copilot_kits_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    daily_chat_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    daily_interview_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     lifetime_ats_downloads_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     lifetime_visual_downloads_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     lifetime_cover_letter_downloads_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -36,6 +39,10 @@ class User(Base):
     # Relationship to user's saved resumes
     resumes: Mapped[List["UserResume"]] = relationship(
         "UserResume", back_populates="user", cascade="all, delete-orphan"
+    )
+    # Relationship to user's tracked job applications
+    job_applications: Mapped[List["UserJobApplication"]] = relationship(
+        "UserJobApplication", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -80,3 +87,34 @@ class UserResume(Base):
 
     def __repr__(self) -> str:
         return f"<UserResume(id={self.id}, user_id={self.user_id}, title='{self.title}')>"
+
+
+class UserJobApplication(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for tracking job opportunities, applications,
+    and generated AI application kits per user.
+    """
+    __tablename__ = "user_job_applications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    job_title: Mapped[str] = mapped_column(String(255), nullable=False)
+    company_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Target Company")
+    location: Mapped[str] = mapped_column(String(255), default="Remote", nullable=False)
+    work_mode: Mapped[str] = mapped_column(String(50), default="Remote", nullable=False)
+    salary_range: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    match_score: Mapped[int] = mapped_column(Integer, default=95, nullable=False)
+    job_url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="wishlist", nullable=False)  # wishlist, ready_to_apply, applied, interviewing, offered, rejected
+    applied_date: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    application_kit_json: Mapped[Optional[str]] = mapped_column(Text(length=4294967295), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationship to parent User
+    user: Mapped["User"] = relationship("User", back_populates="job_applications")
+
+    def __repr__(self) -> str:
+        return f"<UserJobApplication(id={self.id}, user_id={self.user_id}, role='{self.job_title}', company='{self.company_name}', status='{self.status}')>"
+

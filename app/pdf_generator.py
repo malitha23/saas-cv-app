@@ -113,7 +113,7 @@ def _load_avatar_image(avatar_url: Optional[str]) -> Optional[io.BytesIO]:
             ctx = ssl.create_default_context()
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "ResuMatch-Avatar-Validator/1.0"}
+                headers={"User-Agent": "DreemFolio-Avatar-Validator/1.0"}
             )
             with urllib.request.urlopen(req, timeout=3.0, context=ctx) as resp:
                 data = resp.read(MAX_AVATAR_BYTES + 1)
@@ -136,7 +136,7 @@ def _get_font_names(family: Optional[str]):
     return ("Helvetica", "Helvetica-Bold", "Helvetica-Oblique")
 
 
-def _draw_diagonal_watermark(canvas, page_w: float, page_h: float, brand_title: str = "ResuMatch AI", subtitle: str = "FREE STARTER TIER • UPGRADE TO PRO"):
+def _draw_diagonal_watermark(canvas, page_w: float, page_h: float, brand_title: str = "DreemFolio AI", subtitle: str = "FREE STARTER TIER • UPGRADE TO PRO"):
     """
     Draw an elegant, semi-transparent diagonal watermark badge centered across the page text.
     Designed with vector geometry and subtle transparency so content remains legible while cleanly branded.
@@ -2023,7 +2023,7 @@ def generate_cover_letter_pdf(resume: TailoredResume, is_free_watermarked: bool 
             # 1. Semi-transparent diagonal branding badge right across middle of text
             _draw_diagonal_watermark(
                 canvas, PAGE_W, PAGE_H,
-                brand_title="ResuMatch AI",
+                brand_title="DreemFolio AI",
                 subtitle="FREE STARTER TIER  •  UPGRADE TO PRO ($9/MO) FOR UNBRANDED"
             )
 
@@ -2035,7 +2035,7 @@ def generate_cover_letter_pdf(resume: TailoredResume, is_free_watermarked: bool 
 
             canvas.setFont(f_bold, 7.5)
             canvas.setFillColor(colors.HexColor("#64748B"))
-            watermark_text = "Generated via ResuMatch AI (Free Starter Tier)  •  Upgrade to Pro ($9/mo) for Unbranded & Unlimited Downloads"
+            watermark_text = "Generated via DreemFolio AI (Free Starter Tier)  •  Upgrade to Pro ($9/mo) for Unbranded & Unlimited Downloads"
             canvas.drawCentredString(PAGE_W / 2.0, 16, watermark_text)
             canvas.restoreState()
 

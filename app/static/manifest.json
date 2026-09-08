@@ -1,6 +1,6 @@
 {
-  "name": "ResuMatch AI - ATS Resume & Portfolio Builder",
-  "short_name": "ResuMatch AI",
+  "name": "DreemFolio AI - ATS Resume & Portfolio Builder",
+  "short_name": "DreemFolio AI",
   "description": "Optimize resumes, generate ATS-friendly PDFs, design visual CVs, and publish modern custom web portfolios.",
   "start_url": "/",
   "display": "standalone",

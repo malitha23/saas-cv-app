@@ -1,0 +1,261 @@
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- AI Career Copilot Chatbot Widget & Floating Bubble Launcher        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<!-- Floating Bubble Launcher Button (Fixed Bottom-Right) -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
+  
+  <!-- Floating Launch Button -->
+  <button @click="toggleChatBot()"
+    id="copilot-launcher-btn"
+    class="relative group flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 text-white font-semibold text-sm shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-105 active:scale-95 transition-all duration-300 border border-white/20 backdrop-blur-md">
+    
+    <!-- Pulsing ambient glow ring -->
+    <span class="absolute -inset-1 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 opacity-40 blur-md group-hover:opacity-75 transition duration-500 animate-pulse"></span>
+    
+    <!-- Bot Icon / Close Icon based on state -->
+    <div class="relative flex items-center justify-center">
+      <template x-if="!showChatBot">
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <i data-lucide="bot" class="w-5 h-5 text-white"></i>
+            <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-indigo-700 animate-pulse"></span>
+          </div>
+          <span class="hidden sm:inline-block font-bold text-xs tracking-wide">Career Copilot</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-white/20 text-white">AI</span>
+        </div>
+      </template>
+
+      <template x-if="showChatBot">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="chevron-down" class="w-5 h-5 text-white"></i>
+          <span class="text-xs font-semibold">Minimize</span>
+        </div>
+      </template>
+    </div>
+  </button>
+</div>
+
+<!-- Expandable Glassmorphic Chatbot Window -->
+<div x-show="showChatBot"
+  x-transition:enter="transition ease-out duration-300 transform"
+  x-transition:enter-start="opacity-0 translate-y-6 scale-95"
+  x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+  x-transition:leave="transition ease-in duration-200 transform"
+  x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+  x-transition:leave-end="opacity-0 translate-y-6 scale-95"
+  x-cloak
+  class="fixed bottom-24 right-4 sm:right-6 z-50 w-[94vw] sm:w-[450px] max-w-[460px] h-[580px] max-h-[82vh] bg-slate-900/95 backdrop-blur-2xl border border-indigo-500/30 rounded-3xl shadow-2xl shadow-indigo-950/80 flex flex-col overflow-hidden">
+
+  <!-- Chat Header -->
+  <div class="px-4 py-3.5 bg-gradient-to-r from-slate-950/90 via-indigo-950/40 to-slate-950/90 border-b border-slate-800 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <!-- Bot Avatar with Status Ring -->
+      <div class="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-600 p-0.5 shadow-md shadow-indigo-500/20 flex-shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 animate-spin-slow"></i>
+        </div>
+        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950"></span>
+      </div>
+
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h3 class="font-bold text-white text-xs truncate">DreemFolio Career Copilot</h3>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Gemini 2.5</span>
+        </div>
+        <p class="text-[10px] text-slate-400 truncate flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+          <span x-text="tailoredData?.personal_info?.full_name ? ('Live with ' + tailoredData.personal_info.full_name + '\'s CV') : 'Resume & Interview Coach'"></span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-1">
+      <!-- Clear Chat History -->
+      <button @click="clearChat()"
+        title="Clear conversation"
+        class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 rounded-xl transition">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+
+      <!-- Minimize Window -->
+      <button @click="toggleChatBot()"
+        title="Minimize"
+        class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages Scrollable Body -->
+  <div id="copilot-messages-container"
+    class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs scroll-smooth">
+
+    <!-- Welcome Card (Shown if no user messages yet) -->
+    <template x-if="chatMessages.length === 0">
+      <div class="space-y-4 my-2">
+        <div class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
+          <div class="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
+            <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
+            <span>Executive Career Coach & Technical Partner</span>
+          </div>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            Hello! I am your 24/7 Career Copilot. I analyze your uploaded CV, target job descriptions, and interview goals in real-time.
+          </p>
+          <div class="text-[11px] text-slate-400 pt-1">
+            Pick a quick question below or ask me anything:
+          </div>
+        </div>
+
+        <!-- Initial Quick Starter Pills -->
+        <div class="grid grid-cols-1 gap-2">
+          <!-- Voice Mock Interview Launcher -->
+          <button @click="openVoiceInterviewModal()"
+            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-violet-950/80 via-indigo-950/70 to-purple-950/80 hover:from-violet-900/70 hover:to-indigo-900/70 border border-violet-500/40 hover:border-violet-400 text-white transition flex items-center justify-between group shadow-sm">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🎙️</span>
+              <span class="font-bold text-[11px] text-violet-200 group-hover:text-white">AI Voice Mock Interview Studio</span>
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-violet-500/30 text-violet-300 border border-violet-500/40">Live Audio</span>
+          </button>
+
+          <!-- Real-Time AI Video Conference Launcher -->
+          <button @click="startRealtimeConference('Technical & Behavioral Interview', 'Target Company')"
+            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/80 via-pink-950/70 to-indigo-950/80 hover:from-rose-900/70 hover:to-pink-900/70 border border-rose-500/40 hover:border-rose-400 text-white transition flex items-center justify-between group shadow-sm">
+            <span class="flex items-center gap-2">
+              <span class="text-base">📹</span>
+              <span class="font-bold text-[11px] text-rose-200 group-hover:text-white">AI Video Conference & Live Coaching</span>
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-500/30 text-rose-300 border border-rose-500/40">HUD Coach</span>
+          </button>
+
+          <button @click="sendChatMessage('Conduct a realistic technical mock interview for my profile. Ask me 1 question at a time!')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🎯</span>
+              <span class="font-medium text-[11px]">Start Interactive Mock Interview</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Critique my current resume bullet points using the Google XYZ formula and suggest quantified metric improvements.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">✨</span>
+              <span class="font-medium text-[11px]">Polish My Resume Bullets (XYZ Formula)</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Write a personalized, high-converting LinkedIn DM to send to a Hiring Manager or Technical Recruiter.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">✉️</span>
+              <span class="font-medium text-[11px]">Draft Cold LinkedIn / Email Outreach</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+
+          <button @click="sendChatMessage('Give me a strategic salary negotiation script and counter-offer framework for my senior role.')"
+            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            <span class="flex items-center gap-2">
+              <span class="text-base">💰</span>
+              <span class="font-medium text-[11px]">Salary Negotiation Scripts</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-400 transition"></i>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Message Bubble Loop -->
+    <template x-for="(msg, idx) in chatMessages" :key="idx">
+      <div class="flex flex-col space-y-1"
+        :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+
+        <!-- Bubble -->
+        <div class="p-3.5 rounded-2xl max-w-[88%] shadow-md leading-relaxed transition-all"
+          :class="msg.role === 'user' 
+            ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-xs' 
+            : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-xs'">
+          
+          <!-- Message text with formatting -->
+          <div class="prose prose-invert prose-xs max-w-none break-words leading-relaxed text-[12px]"
+            x-html="formatChatMessage(msg.content)"></div>
+
+          <!-- Message timestamp -->
+          <div class="mt-1 text-[9px] opacity-60 text-right"
+            x-text="msg.timestamp || 'Just now'"></div>
+
+          <!-- Interactive Action Trigger (e.g. Upgrade Modal) -->
+          <template x-if="msg.action_trigger && msg.action_trigger.type === 'upgrade_modal'">
+            <div class="mt-2.5 pt-2 border-t border-indigo-500/30">
+              <button @click="showPricingModal = true"
+                class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-1.5">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
+                <span>Upgrade to Pro ($9/mo)</span>
+              </button>
+            </div>
+          </template>
+        </div>
+
+        <!-- Assistant Quick Action / Copy Button -->
+        <template x-if="msg.role === 'assistant'">
+          <div class="flex items-center gap-2 pl-1 pt-0.5">
+            <button @click="copyTextToClipboard(msg.content)"
+              class="text-[10px] text-slate-500 hover:text-slate-300 flex items-center gap-1 transition">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- Loading Indicator / Typing animation -->
+    <div x-show="isChatLoading" class="flex items-center gap-2 p-3 rounded-2xl bg-slate-800/60 border border-slate-700/50 max-w-[70%]">
+      <div class="flex space-x-1">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: 0ms"></span>
+        <span class="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style="animation-delay: 150ms"></span>
+        <span class="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style="animation-delay: 300ms"></span>
+      </div>
+      <span class="text-[11px] text-slate-400 font-medium">Copilot is analyzing...</span>
+    </div>
+
+  </div>
+
+  <!-- Dynamic Suggested Next-Step Chips -->
+  <template x-if="suggestedPrompts && suggestedPrompts.length > 0 && !isChatLoading">
+    <div class="px-3 py-2 border-t border-slate-800/80 bg-slate-950/70 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
+      <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider flex-shrink-0 flex items-center gap-1">
+        <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i>
+        <span>Try:</span>
+      </span>
+      <template x-for="(prompt, pIdx) in suggestedPrompts" :key="pIdx">
+        <button @click="sendChatMessage(prompt)"
+          class="flex-shrink-0 px-2.5 py-1 rounded-full text-[10.5px] font-medium bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white border border-slate-700/70 transition-all truncate max-w-[240px]">
+          <span x-text="prompt"></span>
+        </button>
+      </template>
+    </div>
+  </template>
+
+  <!-- Input Form -->
+  <form @submit.prevent="sendChatMessage()"
+    class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+    
+    <input type="text"
+      x-model="chatInput"
+      :disabled="isChatLoading"
+      placeholder="Ask CV advice, interview questions, salary..."
+      class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-50">
+
+    <button type="submit"
+      :disabled="isChatLoading || !chatInput.trim()"
+      class="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition shadow-md shadow-indigo-600/20 flex-shrink-0">
+      <i data-lucide="send" class="w-4 h-4"></i>
+    </button>
+  </form>
+
+</div>

@@ -82,7 +82,10 @@ NAME_BLACKLIST = set([
     'painter', 'specialist', 'executive', 'officer', 'director', 'intern', 'associate', 'lead', 'founder', 'freelance',
     'bsc', 'bachelor', 'master', 'msc', 'phd', 'diploma', 'hnd', 'nvq', 'degree', 'cardiff', 'metropolitan', 'nibm',
     'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
-    'present', 'year', 'years', 'month', 'months', 'repository', 'website', 'application', 'applications', 'tools', 'database'
+    'present', 'year', 'years', 'month', 'months', 'repository', 'website', 'application', 'applications', 'tools', 'database',
+    'surface', 'preparation', 'sanding', 'coating', 'primer', 'polishing', 'diagnostics', 'inspection', 'wiring', 'repairs',
+    'assembly', 'welding', 'fabrication', 'finishes', 'harnesses', 'lighting', 'alternator', 'testing', 'sensor', 'charging',
+    'technical', 'competencies', 'responsibilities', 'duties', 'achievements', 'hardware', 'troubleshooting', 'safety'
 ])
 
 
@@ -104,7 +107,7 @@ def extract_candidate_name(text: str, email: str = "") -> str:
 
         cleaned = re.sub(r'[^a-zA-Z\s]', '', line).strip()
         words = cleaned.split()
-        if not (2 <= len(words) <= 4):
+        if not (2 <= len(words) <= 6):
             continue
         # Each word must start with an uppercase letter and consist only of letters
         if not all(w.isalpha() and w[0].isupper() for w in words):
@@ -114,25 +117,29 @@ def extract_candidate_name(text: str, email: str = "") -> str:
         # Strictly reject if any blacklisted keyword exists as a word or substring
         if any(re.search(rf'\b{re.escape(b)}\b', line_lower) for b in NAME_BLACKLIST):
             continue
-        if any(b in line_lower for b in ['university', 'college', 'institute', 'school', 'cardiff', 'nibm', 'pvt', 'ltd', 'road']):
+        if any(b in line_lower for b in ['university', 'college', 'institute', 'school', 'cardiff', 'nibm', 'pvt', 'ltd', 'road', 'street']):
             continue
 
         score = 10
-        # Positional priority
-        if i < 5:
+        # Positional priority - first 3 lines are overwhelmingly candidate names
+        if i == 0:
+            score += 60
+        elif i == 1:
+            score += 45
+        elif i < 5:
             score += 25
         elif i < 15:
             score += 15
         elif i < 80:
             score += 5
 
-        # Adjacent title boost (e.g. line right after is 'Software Engineer' or 'Full Stack Developer')
+        # Adjacent title boost (e.g. line right after is 'Automotive Technician' or 'Software Engineer')
         if i + 1 < len(lines):
             next_line = lines[i+1].lower()
-            if any(t in next_line for t in ['engineer', 'developer', 'manager', 'specialist', 'consultant', 'technician', 'lead', 'architect']):
-                score += 70
+            if any(t in next_line for t in ['engineer', 'developer', 'manager', 'specialist', 'consultant', 'technician', 'lead', 'architect', 'painter', 'electrician', 'mechanic', 'officer']):
+                score += 80
 
-        # Email match boost (e.g. 'malith' in 'lghmalith@gmail.com')
+        # Email match boost (e.g. 'isuranga' in 'lghisuranga@gmail.com')
         for w in words:
             w_low = w.lower()
             if len(w_low) >= 3 and (w_low in email_user or email_user in w_low or (len(w_low) >= 4 and w_low[:4] in email_user)):

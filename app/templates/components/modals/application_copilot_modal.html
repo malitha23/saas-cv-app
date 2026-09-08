@@ -1,0 +1,202 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- AI APPLICATION COPILOT & 1-CLICK FORM AUTO-FILL MODAL                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showCopilotModal" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+  <div
+    class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+    
+    <!-- Modal Header -->
+    <div class="flex items-start justify-between border-b border-slate-800 pb-3 gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-bold text-slate-100 text-base">AI Application Copilot</h3>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+              :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+              x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? '✨ Unlimited Pro Copilot' : '1 Free Kit / Day Trial'"></span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Pre-generated tailored answers for <span class="text-emerald-400 font-semibold" x-text="currentCopilotJob?.title || 'Target Role'"></span> at <span class="text-slate-200 font-semibold" x-text="currentCopilotJob?.company_type || currentCopilotJob?.company || 'Company'"></span>
+          </p>
+        </div>
+      </div>
+      <button @click="showCopilotModal = false" class="text-slate-400 hover:text-white p-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition shrink-0">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+
+      <!-- Loading State -->
+      <template x-if="isLoadingCopilot">
+        <div class="flex flex-col items-center justify-center p-12 space-y-3 text-slate-400">
+          <div class="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-medium text-slate-300">AI Copilot is analyzing your verified achievements and crafting tailored responses...</span>
+        </div>
+      </template>
+
+      <!-- Loaded Content -->
+      <template x-if="!isLoadingCopilot && copilotKit">
+        <div class="space-y-4">
+          
+          <!-- Instructions Tip -->
+          <div class="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 flex items-start gap-2.5 text-indigo-200">
+            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+            <span class="text-[11px] leading-relaxed">
+              Use these copy-paste ready responses to quickly fill out LinkedIn Easy Apply forms, employer questionnaires, and screening portals.
+            </span>
+          </div>
+
+          <!-- 1. Elevator Pitch -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Tell Me About Yourself (Elevator Pitch)</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.elevator_pitch, 'pitch')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'pitch' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'pitch' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.elevator_pitch"></p>
+          </div>
+
+          <!-- 2. Why this Company & Role -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Why Do You Want to Work Here?</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.why_company, 'why')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'why' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'why' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.why_company"></p>
+          </div>
+
+          <!-- 3. Key Proven Achievement -->
+          <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-semibold text-slate-200">
+                <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Top Accomplishment / Biggest Win</span>
+              </div>
+              <button @click="copyCopilotAnswer(copilotKit.key_achievement, 'achievement')"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1"
+                :class="copiedKey === 'achievement' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span x-text="copiedKey === 'achievement' ? 'Copied!' : 'Copy'"></span>
+              </button>
+            </div>
+            <p class="text-slate-300 text-xs leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60 font-sans select-all"
+              x-text="copilotKit.key_achievement"></p>
+          </div>
+
+          <!-- 4. Salary & Availability Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Salary -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-200 flex items-center gap-1 text-[11px]">
+                  <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Expected Salary Script</span>
+                </span>
+                <button @click="copyCopilotAnswer(copilotKit.salary_expectation_answer, 'salary')"
+                  class="p-1 text-slate-400 hover:text-white rounded"
+                  :class="{'text-emerald-400': copiedKey === 'salary'}">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="copilotKit.salary_expectation_answer"></p>
+            </div>
+
+            <!-- Notice Period -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-slate-200 flex items-center gap-1 text-[11px]">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-400"></i>
+                  <span>Notice Period / Start Date</span>
+                </span>
+                <button @click="copyCopilotAnswer(copilotKit.availability_notice_answer, 'notice')"
+                  class="p-1 text-slate-400 hover:text-white rounded"
+                  :class="{'text-emerald-400': copiedKey === 'notice'}">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+              <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="copilotKit.availability_notice_answer"></p>
+            </div>
+          </div>
+
+          <!-- 5. Additional Common Q&A -->
+          <template x-if="copilotKit.recommended_custom_qa && copilotKit.recommended_custom_qa.length > 0">
+            <div class="space-y-2 pt-2">
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Screening Behavioral Q&A</span>
+              <template x-for="(qa, idx) in copilotKit.recommended_custom_qa" :key="idx">
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="font-medium text-slate-200 text-xs" x-text="qa.question"></span>
+                    <button @click="copyCopilotAnswer(qa.answer, 'qa_' + idx)"
+                      class="px-2 py-0.5 rounded text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+                      <span x-text="copiedKey === ('qa_' + idx) ? 'Copied!' : 'Copy'"></span>
+                    </button>
+                  </div>
+                  <p class="text-slate-400 text-[11px] leading-relaxed select-all" x-text="qa.answer"></p>
+                </div>
+              </template>
+            </div>
+          </template>
+
+        </div>
+      </template>
+
+    </div>
+
+    <!-- Free Tier Upgrade Bar -->
+    <template x-if="!currentUser || currentUser.plan_tier === 'free'">
+      <div class="px-3 py-2 rounded-xl bg-indigo-950/40 border border-indigo-500/20 flex items-center justify-between text-xs text-indigo-300">
+        <span>Free tier: 1 tailored screening kit per day. Upgrade to Pro for unlimited application kits.</span>
+        <button @click="showPricingModal = true" class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2">Upgrade ($9/mo)</button>
+      </div>
+    </template>
+
+    <!-- Modal Footer Actions -->
+    <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2">
+        <!-- Save to tracker -->
+        <button @click="saveJobToTracker(currentCopilotJob, 'applied')"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          <span>Mark as Applied & Track</span>
+        </button>
+        <button @click="saveJobToTracker(currentCopilotJob, 'wishlist')"
+          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+          <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+          <span>Save to Wishlist</span>
+        </button>
+      </div>
+
+      <!-- Launch Easy Apply / External Link -->
+      <a :href="currentCopilotJob?.easy_apply_url || currentCopilotJob?.apply_url || getJobSearchUrl('linkedin', currentCopilotJob)"
+        target="_blank" rel="noopener noreferrer"
+        class="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition">
+        <span>🚀 Open Easy Apply Application</span>
+        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,602 @@
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- AI Voice Mock Interview Studio Interactive Modal                    -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div x-show="voiceInterviewModalOpen"
+     x-transition:enter="transition ease-out duration-300 transform"
+     x-transition:enter-start="opacity-0 scale-95"
+     x-transition:enter-end="opacity-100 scale-100"
+     x-transition:leave="transition ease-in duration-200 transform"
+     x-transition:leave-start="opacity-100 scale-100"
+     x-transition:leave-end="opacity-0 scale-95"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6"
+     @keydown.escape.window="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()">
+
+  <!-- Main Container -->
+  <div class="relative w-full max-w-4xl bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl shadow-violet-950/80 overflow-hidden flex flex-col max-h-[92vh]">
+    
+    <!-- 1. STUDIO HEADER -->
+    <div class="px-6 py-4 bg-gradient-to-r from-slate-950 via-violet-950/40 to-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 p-0.5 shadow-lg shadow-violet-500/25 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+            <i data-lucide="mic" class="w-5 h-5 text-violet-400"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">AI Voice Mock Interview Studio</h2>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">Live Spoken Audio</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Simulating oral interview for: <span class="text-violet-300 font-semibold" x-text="interviewTargetRole || 'Target Role'"></span>
+            <span x-show="interviewTargetCompany" class="text-slate-500 font-normal">at <span class="text-slate-300" x-text="interviewTargetCompany"></span></span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Close Button -->
+      <button @click="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()"
+              class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- 2. SCROLLABLE BODY CONTENT -->
+    <div class="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6 text-slate-200">
+
+      <!-- VIEW A: SETUP SCREEN -->
+      <div x-show="interviewStep === 'setup'" class="space-y-6">
+        
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/40 border border-violet-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-violet-300 font-bold text-sm">
+              <i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i>
+              <span>Real-Time Browser Speech Practice</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed max-w-xl">
+              The AI interviewer asks questions out loud via your browser speakers. Speak your answers into your microphone—DreemFolio transcribes your speech in real time, scores your <strong>STAR framework</strong>, detects <strong>filler words</strong>, and gauges your <strong>WPM speaking pace</strong>.
+            </p>
+          </div>
+          <div class="flex items-center gap-2 text-xs bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60 text-slate-300">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>Mic & Audio Enabled</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target Job Title *</label>
+            <input type="text"
+                   x-model="interviewTargetRole"
+                   placeholder="e.g. Automotive Technician or Senior Software Engineer"
+                   class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Target Company (Optional)</label>
+            <input type="text"
+                   x-model="interviewTargetCompany"
+                   placeholder="e.g. Apex Precision Dealership or Stripe"
+                   class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">Interview Format</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            
+            <button type="button"
+                    @click="interviewType = 'behavioral'"
+                    :class="interviewType === 'behavioral' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="users" class="w-5 h-5 text-violet-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'behavioral' ? 'bg-violet-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Behavioral & STAR</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Handling conflict, teamwork, deadlines, and personal impact.</p>
+              </div>
+            </button>
+
+            <button type="button"
+                    @click="interviewType = 'technical'"
+                    :class="interviewType === 'technical' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="wrench" class="w-5 h-5 text-indigo-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'technical' ? 'bg-indigo-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Technical Domain</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Role-authentic diagnostics, equipment, tools, and best practices.</p>
+              </div>
+            </button>
+
+            <button type="button"
+                    @click="interviewType = 'situational'"
+                    :class="interviewType === 'situational' ? 'border-violet-500 bg-violet-950/30 text-white' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700'"
+                    class="p-4 rounded-2xl border text-left transition flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <i data-lucide="flame" class="w-5 h-5 text-rose-400"></i>
+                <span class="w-2.5 h-2.5 rounded-full" :class="interviewType === 'situational' ? 'bg-rose-400' : 'bg-slate-700'"></span>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">High-Stakes Crisis</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Emergency troubleshooting, safety hazards, and urgent deliverables.</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Interviewer Persona</label>
+            <select x-model="interviewDifficulty"
+                    class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition">
+              <option value="friendly">🤝 Supportive Coach (Friendly, Constructive)</option>
+              <option value="standard" selected>👔 Senior Hiring Manager (Standard Professional)</option>
+              <option value="executive">🎯 Executive Director (Challenging & Direct)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Session Length</label>
+            <div class="flex items-center gap-2">
+              <select x-model="interviewQuestionCount"
+                      class="flex-1 px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-violet-500 transition">
+                <option value="3">3 Questions (Standard Practice - ~6 mins)</option>
+                <option value="5">5 Questions (Comprehensive Mock - ~12 mins)</option>
+              </select>
+              <span class="text-[11px] text-slate-400 px-2 py-1 bg-slate-800 rounded-lg">Adaptive AI</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+          <button @click="closeVoiceInterviewModal()"
+                  class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-400 hover:text-white text-xs font-semibold transition">
+            Cancel
+          </button>
+
+          <button @click="startVoiceInterviewSession()"
+                  :disabled="isStartingInterview"
+                  class="relative px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 text-white text-xs font-bold shadow-lg shadow-violet-600/30 hover:scale-[1.02] active:scale-[0.98] transition flex items-center gap-2 disabled:opacity-50">
+            <template x-if="!isStartingInterview">
+              <div class="flex items-center gap-2">
+                <i data-lucide="mic" class="w-4 h-4"></i>
+                <span>Start Voice Interview Now</span>
+              </div>
+            </template>
+            <template x-if="isStartingInterview">
+              <div class="flex items-center gap-2">
+                <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                <span>Preparing Questions...</span>
+              </div>
+            </template>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- VIEW B: LIVE STAGE -->
+      <div x-show="interviewStep === 'interviewing'" class="space-y-6">
+
+        <div class="flex items-center justify-between text-xs pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-violet-500/20 text-violet-300 font-bold border border-violet-500/30"
+                  x-text="`Question ${currentQuestionIndex + 1} of ${interviewQuestions.length}`"></span>
+            <span class="text-slate-400" x-text="currentQuestion?.category"></span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 font-mono">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-violet-400"></i>
+              <span x-text="formatSeconds(recordingDurationSeconds)">00:00</span>
+            </div>
+            <span x-show="isRecordingAnswer" class="flex items-center gap-1 text-[11px] text-rose-400 font-bold animate-pulse">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> Recording
+            </span>
+          </div>
+        </div>
+
+        <!-- Spoken Question Section -->
+        <div class="p-6 rounded-3xl bg-slate-950/70 border border-indigo-500/30 relative overflow-hidden flex flex-col items-center text-center space-y-4">
+          
+          <div class="relative w-20 h-20 flex items-center justify-center">
+            <span x-show="isInterviewerSpeaking" class="absolute inset-0 rounded-full bg-violet-500/30 animate-ping"></span>
+            <span x-show="isInterviewerSpeaking" class="absolute -inset-2 rounded-full bg-indigo-500/20 animate-pulse"></span>
+            
+            <div class="relative w-16 h-16 rounded-full bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 p-0.5 shadow-xl shadow-violet-600/30 flex items-center justify-center">
+              <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center">
+                <div x-show="isInterviewerSpeaking" class="flex items-center justify-center">
+                  <svg class="w-7 h-7 text-violet-400 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                  </svg>
+                </div>
+                <div x-show="!isInterviewerSpeaking" class="flex items-center justify-center">
+                  <svg class="w-7 h-7 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 8V4H8"></path>
+                    <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                    <path d="M2 14h2"></path>
+                    <path d="M20 14h2"></path>
+                    <path d="M15 13v2"></path>
+                    <path d="M9 13v2"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 max-w-2xl">
+            <h3 class="text-base sm:text-lg font-bold text-white leading-relaxed"
+                x-text="currentQuestion?.question_text"></h3>
+            
+            <p class="text-xs text-violet-300/80 italic flex items-center justify-center gap-1.5">
+              <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
+              <span x-text="currentQuestion?.interviewer_cue"></span>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2">
+            <button @click="speakCurrentQuestion()"
+                    :disabled="isInterviewerSpeaking"
+                    class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 disabled:opacity-50">
+              <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+              <span x-text="isInterviewerSpeaking ? 'Speaking Question...' : '🔊 Replay Voice Question'"></span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Candidate Live Spoken Response -->
+        <div class="space-y-3">
+          
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <div class="flex items-center gap-2">
+              <i data-lucide="mic" class="w-4 h-4 text-violet-400"></i>
+              <span>Your Spoken Response (Live Voice Transcript)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] text-slate-400" x-text="`${candidateAnswerTranscript.split(/\s+/).filter(Boolean).length} words spoken`"></span>
+              <button @click="showManualTextInput = !showManualTextInput"
+                      class="text-[11px] text-violet-400 hover:underline">
+                <span x-text="showManualTextInput ? 'Hide Text Editor' : '✏️ Edit Spoken Text'"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative min-h-[140px] p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-200 text-xs sm:text-sm leading-relaxed flex flex-col justify-between">
+            
+            <div class="space-y-2">
+              <template x-if="!showManualTextInput">
+                <p x-show="candidateAnswerTranscript" class="text-white whitespace-pre-wrap" x-text="candidateAnswerTranscript"></p>
+              </template>
+              <template x-if="!showManualTextInput">
+                <p x-show="!candidateAnswerTranscript" class="text-slate-500 italic flex items-center gap-2">
+                  <i data-lucide="mic-off" class="w-4 h-4 text-slate-600"></i>
+                  <span>Click &quot;Start Speaking&quot; and answer out loud using the STAR method (Situation, Task, Action, Result)...</span>
+                </p>
+              </template>
+
+              <textarea x-show="showManualTextInput"
+                        x-model="candidateAnswerTranscript"
+                        rows="5"
+                        placeholder="Speak into mic or type your answer here..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-violet-500 transition"></textarea>
+            </div>
+
+            <div x-show="isRecordingAnswer" class="flex items-center justify-center gap-1 pt-3">
+              <span class="w-1 bg-violet-500 rounded-full animate-pulse h-4"></span>
+              <span class="w-1 bg-indigo-500 rounded-full animate-pulse h-7"></span>
+              <span class="w-1 bg-pink-500 rounded-full animate-pulse h-9"></span>
+              <span class="w-1 bg-violet-400 rounded-full animate-pulse h-6"></span>
+              <span class="w-1 bg-indigo-400 rounded-full animate-pulse h-3"></span>
+            </div>
+
+          </div>
+
+          <!-- Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            
+            <div class="flex items-center gap-2">
+              <template x-if="!isRecordingAnswer">
+                <button @click="startCandidateRecording()"
+                        class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
+                  <i data-lucide="mic" class="w-4 h-4"></i>
+                  <span>🎙️ Start Speaking</span>
+                </button>
+              </template>
+
+              <template x-if="isRecordingAnswer">
+                <button @click="stopCandidateRecording()"
+                        class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition flex items-center gap-2 animate-pulse">
+                  <i data-lucide="square" class="w-4 h-4"></i>
+                  <span>⏹️ Stop Recording</span>
+                </button>
+              </template>
+
+              <button @click="candidateAnswerTranscript = ''; recordingDurationSeconds = 0"
+                      class="px-3 py-2 text-slate-400 hover:text-slate-200 text-xs rounded-xl hover:bg-slate-800 transition">
+                Reset
+              </button>
+            </div>
+
+            <button @click="submitAnswerForCritique()"
+                    :disabled="!candidateAnswerTranscript || candidateAnswerTranscript.trim().length < 5 || isEvaluatingAnswer"
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition flex items-center gap-2 disabled:opacity-40 disabled:pointer-events-none">
+              <template x-if="!isEvaluatingAnswer">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                  <span>⚡ Submit Answer &amp; Get Critique</span>
+                </div>
+              </template>
+              <template x-if="isEvaluatingAnswer">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                  <span>Evaluating STAR &amp; Speech...</span>
+                </div>
+              </template>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- VIEW C: CRITIQUE -->
+      <div x-show="interviewStep === 'critique'" class="space-y-6">
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          
+          <div class="p-4 rounded-2xl bg-slate-950 border border-violet-500/30 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-300 font-black text-lg">
+              <span x-text="currentEvaluation?.score">85</span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Answer Score</p>
+              <p class="text-xs font-bold text-white" x-text="currentEvaluation?.score >= 80 ? 'Strong Candidate Response' : 'Solid Base - Refine STAR'"></p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 font-black text-sm">
+              <span x-text="`${currentEvaluation?.words_per_minute || 0}`"></span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Speaking Pacing</p>
+              <p class="text-xs font-bold text-slate-200" x-text="currentEvaluation?.pacing_feedback"></p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-600/20 border border-pink-500/30 flex items-center justify-center text-pink-300 font-black text-base">
+              <span x-text="currentEvaluation?.filler_words_count || 0"></span>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Filler Words</p>
+              <template x-if="!currentEvaluation?.filler_words_detected?.length">
+                <p class="text-xs font-bold text-emerald-400">Zero fillers detected! ✨</p>
+              </template>
+              <template x-if="currentEvaluation?.filler_words_detected?.length">
+                <div class="flex flex-wrap gap-1 mt-0.5">
+                  <template x-for="fw in currentEvaluation.filler_words_detected" :key="fw">
+                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-pink-500/20 text-pink-300 font-mono" x-text="`&ldquo;${fw}&rdquo;`"></span>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- STAR Breakdown -->
+        <div class="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+          <h4 class="text-xs font-bold text-slate-300 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+            <span>STAR Technique Architecture Breakdown</span>
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-violet-400">S — Situation</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.situation"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">T — Task</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.task"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-teal-400">A — Action</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.action"></p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+              <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400">R — Result</span>
+              <p class="text-slate-300 mt-1" x-text="currentEvaluation?.star_breakdown?.result"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-1.5">
+              <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Key Strengths
+              </span>
+              <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                <template x-for="st in currentEvaluation?.strengths || []" :key="st">
+                  <li x-text="st"></li>
+                </template>
+              </ul>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/20 space-y-1.5">
+              <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-amber-400"></i> High-Impact Improvement
+              </span>
+              <ul class="space-y-1 text-slate-300 list-disc list-inside">
+                <template x-for="imp in currentEvaluation?.improvements || []" :key="imp">
+                  <li x-text="imp"></li>
+                </template>
+              </ul>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-gradient-to-r from-violet-950/30 to-indigo-950/30 border border-violet-500/30 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-violet-300 font-bold text-xs">
+                <i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i>
+                <span>How an Elite Candidate Answers This:</span>
+              </div>
+              <button @click="navigator.clipboard.writeText(currentEvaluation?.exemplary_answer || '')"
+                      class="text-[11px] text-violet-400 hover:text-white flex items-center gap-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Script
+              </button>
+            </div>
+            <p class="text-xs text-slate-200 leading-relaxed italic bg-slate-950/60 p-3 rounded-xl border border-slate-800"
+               x-text="currentEvaluation?.exemplary_answer"></p>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+          <span class="text-xs text-slate-400"
+                x-text="`${interviewQuestions.length - (currentQuestionIndex + 1)} questions remaining`"></span>
+
+          <button @click="proceedToNextQuestionOrReport()"
+                  class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition flex items-center gap-2">
+            <span x-text="currentQuestionIndex + 1 < interviewQuestions.length ? 'Next Question ➡️' : '🏆 Compile Final Readiness Dossier'"></span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- VIEW D: FINAL DOSSIER -->
+      <div x-show="interviewStep === 'final_report'" class="space-y-6">
+
+        <div class="p-6 rounded-3xl bg-gradient-to-r from-violet-950/50 via-slate-900 to-indigo-950/50 border border-violet-500/40 text-center space-y-3 relative overflow-hidden">
+          
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border"
+               :class="{
+                 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': finalReport?.verdict_color === 'emerald',
+                 'bg-teal-500/20 text-teal-300 border-teal-500/30': finalReport?.verdict_color === 'teal',
+                 'bg-amber-500/20 text-amber-300 border-amber-500/30': finalReport?.verdict_color === 'amber',
+                 'bg-rose-500/20 text-rose-300 border-rose-500/30': finalReport?.verdict_color === 'rose'
+               }">
+            <i data-lucide="award" class="w-4 h-4"></i>
+            <span>Hiring Committee Verdict: <strong x-text="finalReport?.hiring_verdict"></strong></span>
+          </div>
+
+          <div class="flex items-center justify-center gap-4 py-2">
+            <div class="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-pink-400"
+                 x-text="`${finalReport?.overall_score || 0}%`"></div>
+            <div class="text-left">
+              <p class="text-xs font-bold text-white">Interview Readiness Score</p>
+              <p class="text-[11px] text-slate-400">Benchmarked against top applicants</p>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-300 max-w-xl mx-auto leading-relaxed"
+             x-text="finalReport?.executive_summary"></p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Domain Acumen</p>
+            <p class="text-lg font-black text-violet-400" x-text="`${finalReport?.competency_scores?.domain_expertise || 85}%`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-violet-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.domain_expertise || 85}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">STAR Structure</p>
+            <p class="text-lg font-black text-indigo-400" x-text="`${finalReport?.competency_scores?.star_structure || 82}%`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.star_structure || 82}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pacing (WPM)</p>
+            <p class="text-lg font-black text-teal-400" x-text="`${finalReport?.average_wpm || 135} wpm`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-teal-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.pacing_clarity || 88}%`"></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Filler Words</p>
+            <p class="text-lg font-black text-pink-400" x-text="`${finalReport?.total_filler_words || 0}`"></p>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-pink-500 h-full rounded-full" :style="`width: ${finalReport?.competency_scores?.executive_presence || 90}%`"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          
+          <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
+            <h4 class="font-bold text-emerald-300 flex items-center gap-1.5">
+              <i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Demonstrated Competitive Strengths</span>
+            </h4>
+            <ul class="space-y-1.5 text-slate-300">
+              <template x-for="st in finalReport?.top_strengths || []" :key="st">
+                <li class="flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">•</span>
+                  <span x-text="st"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-violet-950/20 border border-violet-500/20 space-y-2">
+            <h4 class="font-bold text-violet-300 flex items-center gap-1.5">
+              <i data-lucide="list-checks" class="w-4 h-4 text-violet-400"></i>
+              <span>Action Plan for the Real Interview</span>
+            </h4>
+            <ul class="space-y-1.5 text-slate-300">
+              <template x-for="rec in finalReport?.actionable_recommendations || []" :key="rec">
+                <li class="flex items-start gap-2">
+                  <span class="text-violet-400 font-bold">•</span>
+                  <span x-text="rec"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <button @click="window.print()"
+                  class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Save / Print Report</span>
+          </button>
+
+          <div class="flex items-center gap-3">
+            <button @click="interviewStep = 'setup'"
+                    class="px-4 py-2.5 rounded-xl border border-violet-500/40 text-violet-300 hover:bg-violet-950/40 text-xs font-semibold transition flex items-center gap-1.5">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Practice Another Session</span>
+            </button>
+
+            <button @click="closeVoiceInterviewModal()"
+                    class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition">
+              Done / Return to Workspace
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
