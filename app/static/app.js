@@ -134,6 +134,23 @@ function resumeApp() {
     conferenceDebriefModalOpen: false,
     conferenceDebriefData: null,
 
+    // High-Security QR Smart Card & Interactive Proof-of-Work State
+    showQrCardModal: false,
+    activeQrTab: 'card',
+    publishedSlug: '',
+    qrPinInput: '',
+    isPinProtected: false,
+    watermarkEnabled: true,
+    newProof: {
+      title: '',
+      category: 'Automotive & Trade',
+      tools_used: '',
+      description: '',
+      before_image_url: '',
+      after_image_url: '',
+      metrics_label: ''
+    },
+
     // Pro Restore Modal State (Replacing browser alert)
     showProRestoreModal: false,
     pendingRestoreResume: null,
@@ -1396,6 +1413,7 @@ function resumeApp() {
 
         const data = await res.json();
         this.publishedLiveUrl = data.live_url;
+        this.publishedSlug = data.slug;
         alert(`🎉 Awesome! Your portfolio is now published live at:\n${window.location.origin}${data.live_url}`);
       } catch (err) {
         alert('Publish Error: ' + err.message);
@@ -3479,6 +3497,164 @@ function resumeApp() {
       } catch (err) {
         console.error('Failed to generate conference debrief:', err);
       }
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // HIGH-SECURITY QR SMART CARD & INTERACTIVE PROOF-OF-WORK METHODS
+    // ═══════════════════════════════════════════════════════════════════
+
+    openQrCardModal() {
+      if (!this.tailoredData) {
+        alert('Please tailor or load a resume first.');
+        return;
+      }
+
+      if (!this.tailoredData.proof_of_work) {
+        this.tailoredData.proof_of_work = [];
+      }
+
+      if (!this.tailoredData.security_config) {
+        this.tailoredData.security_config = {
+          is_pin_protected: false,
+          access_pin: '',
+          watermark_enabled: true,
+          verification_hash: null
+        };
+      }
+
+      this.isPinProtected = !!this.tailoredData.security_config.is_pin_protected;
+      this.qrPinInput = this.tailoredData.security_config.access_pin || '';
+      this.watermarkEnabled = this.tailoredData.security_config.watermark_enabled !== false;
+
+      if (!this.publishedSlug) {
+        const rawName = this.tailoredData.personal_info?.full_name || 'candidate';
+        const cleanName = rawName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/^-+|-+$/g, '');
+        this.publishedSlug = cleanName || 'developer';
+      }
+
+      this.showQrCardModal = true;
+      this.$nextTick(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      // Synchronize in background with backend so QR code & vCard are immediately ready
+      this.syncSecurityWithBackend();
+    },
+
+    saveSecuritySettings() {
+      if (!this.tailoredData) return;
+      if (!this.tailoredData.security_config) this.tailoredData.security_config = {};
+      this.tailoredData.security_config.is_pin_protected = this.isPinProtected;
+      this.tailoredData.security_config.access_pin = (this.qrPinInput || '').trim();
+      this.tailoredData.security_config.watermark_enabled = this.watermarkEnabled;
+      this.syncSecurityWithBackend();
+    },
+
+    addProofItem() {
+      if (!this.newProof.title.trim()) {
+        alert('Please enter a work or project title.');
+        return;
+      }
+      if (!this.tailoredData) return;
+      if (!this.tailoredData.proof_of_work) this.tailoredData.proof_of_work = [];
+
+      const newItem = {
+        id: 'pow_' + Date.now().toString(36),
+        title: this.newProof.title.trim(),
+        category: this.newProof.category || 'Automotive & Trade',
+        tools_used: this.newProof.tools_used.trim(),
+        description: this.newProof.description.trim(),
+        before_image_url: this.newProof.before_image_url.trim(),
+        after_image_url: this.newProof.after_image_url.trim(),
+        metrics_label: this.newProof.metrics_label.trim(),
+        verified: true
+      };
+
+      this.tailoredData.proof_of_work.push(newItem);
+
+      // Reset form
+      this.newProof = {
+        title: '',
+        category: 'Automotive & Trade',
+        tools_used: '',
+        description: '',
+        before_image_url: '',
+        after_image_url: '',
+        metrics_label: ''
+      };
+
+      this.syncSecurityWithBackend();
+      this.$nextTick(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+    },
+
+    removeProofItem(index) {
+      if (this.tailoredData && this.tailoredData.proof_of_work) {
+        this.tailoredData.proof_of_work.splice(index, 1);
+        this.syncSecurityWithBackend();
+      }
+    },
+
+    loadTradeSampleProof() {
+      if (!this.tailoredData) return;
+      if (!this.tailoredData.proof_of_work) this.tailoredData.proof_of_work = [];
+      this.tailoredData.proof_of_work.push({
+        id: 'pow_demo_' + Date.now().toString(36),
+        title: 'Mercedes Benz E-Class 3-Stage Clear Coat & Color Blend',
+        category: 'Automotive & Trade',
+        tools_used: 'SATAjet X 5500, 3M Perfect-It EX, Spectrophotometer',
+        description: 'Repaired deep side-quarter collision damage, performed precision computerized laser color matching and applied OEM 3-stage clear coat with zero orange peel.',
+        before_image_url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+        after_image_url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80',
+        metrics_label: '100% OEM Color Match • 0.04mm Finish Tolerance',
+        verified: true
+      });
+      this.syncSecurityWithBackend();
+      this.$nextTick(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+    },
+
+    async syncSecurityWithBackend() {
+      if (!this.tailoredData) return;
+      try {
+        const token = localStorage.getItem('saas_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`/api/publish-portfolio?theme=${this.portfolioTheme}`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(this.tailoredData),
+        });
+        if (res.ok) {
+          const d = await res.json();
+          this.publishedSlug = d.slug;
+          this.publishedLiveUrl = d.live_url;
+        }
+      } catch (e) {
+        // Non-blocking sync
+      }
+    },
+
+    downloadVCard() {
+      const slug = this.publishedSlug || 'candidate';
+      window.open(`/api/portfolio/vcard/${slug}`, '_blank');
+    },
+
+    downloadQrSvg() {
+      const slug = this.publishedSlug || 'candidate';
+      window.open(`/api/portfolio/qr/${slug}`, '_blank');
+    },
+
+    copySmartCardUrl() {
+      const slug = this.publishedSlug || 'candidate';
+      const url = `${window.location.origin}/p/${slug}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert(`Copied Smart Card Portfolio link:\n${url}`);
+      }).catch(() => {
+        prompt('Copy your link:', url);
+      });
     }
   };
 }

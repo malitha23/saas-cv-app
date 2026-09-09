@@ -3,6 +3,21 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div x-show="editorTab === 'portfolio'" class="space-y-4 max-h-[700px] overflow-y-auto pr-1">
 
+  <!-- 0. Smart Card & Proof-of-Work Showcase Launcher -->
+  <div class="bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-indigo-500/10 p-3.5 rounded-xl border border-amber-500/30 flex items-center justify-between gap-3 shadow-md">
+    <div class="space-y-0.5">
+      <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+        <i data-lucide="qr-code" class="w-4 h-4 text-amber-400"></i>
+        <span>QR Smart Card & Proof-of-Work</span>
+      </span>
+      <p class="text-[10px] text-slate-400">Generate mobile vCard 3.0, vector QR, 4-digit PIN lock & Before/After work sliders.</p>
+    </div>
+    <button @click="openQrCardModal()"
+      class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg shadow transition whitespace-nowrap">
+      Open Studio
+    </button>
+  </div>
+
   <!-- 1. Architectural Template Style Selector -->
   <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
     <div class="flex items-center justify-between">

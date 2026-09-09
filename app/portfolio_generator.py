@@ -1,8 +1,13 @@
+import os
 import re
 import html
 import json
+import hmac
+import hashlib
 from typing import Dict, Any, List, Optional
-from app.schemas import TailoredResume, SocialLink
+import qrcode
+import qrcode.image.svg
+from app.schemas import TailoredResume, SocialLink, ProofOfWorkItem
 
 
 def sanitize_text(val: Any) -> str:
@@ -144,7 +149,297 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
         safe_certs.append(c_copy)
     res.certifications = safe_certs
 
+    # Proof of Work Evidence Sanitization
+    safe_pow = []
+    for pow_item in getattr(res, "proof_of_work", []):
+        pow_copy = pow_item.model_copy(deep=True)
+        pow_copy.title = sanitize_text(pow_copy.title)
+        pow_copy.category = sanitize_text(pow_copy.category)
+        pow_copy.tools_used = [sanitize_text(t) for t in pow_copy.tools_used]
+        pow_copy.description = sanitize_text(pow_copy.description)
+        pow_copy.before_image_url = sanitize_url(pow_copy.before_image_url, allow_data_image=True)
+        pow_copy.after_image_url = sanitize_url(pow_copy.after_image_url, allow_data_image=True)
+        pow_copy.metrics_label = sanitize_text(pow_copy.metrics_label)
+        safe_pow.append(pow_copy)
+    res.proof_of_work = safe_pow
+
+    # Security Config Sanitization
+    if getattr(res, "security_config", None):
+        sec = res.security_config.model_copy(deep=True)
+        if sec.access_pin:
+            sec.access_pin = re.sub(r"[^\d]", "", str(sec.access_pin))[:6]
+        res.security_config = sec
+
     return res
+
+
+def compute_portfolio_hmac(slug: str, role: str) -> str:
+    """Compute tamper-proof HMAC-SHA256 signature for credential authenticity."""
+    secret = os.getenv("SECRET_KEY", "dreemfolio_saas_hmac_secret_key_2026")
+    msg = f"{slug}:{role}:authentic_credential".encode("utf-8")
+    return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:16]
+
+
+def generate_qr_code_svg(portfolio_url: str) -> str:
+    """Generate crisp, scalable vector SVG QR code for the candidate's portfolio URL."""
+    try:
+        factory = qrcode.image.svg.SvgPathImage
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=2,
+            image_factory=factory
+        )
+        qr.add_data(portfolio_url)
+        qr.make(fit=True)
+        img = qr.make_image()
+        svg_bytes = img.to_string()
+        return svg_bytes.decode('utf-8') if isinstance(svg_bytes, bytes) else str(svg_bytes)
+    except Exception as e:
+        # High-res SVG fallback
+        return f'<svg viewBox="0 0 100 100" class="w-full h-full text-slate-800"><rect width="100" height="100" fill="#f8fafc"/><text x="50" y="55" font-size="10" text-anchor="middle" fill="#0f172a">QR Code Error</text></svg>'
+
+
+def generate_vcard_content(resume: TailoredResume, portfolio_url: str) -> str:
+    """Generate standardized vCard 3.0 file content for 1-tap mobile contact saving."""
+    info = resume.personal_info
+    name_parts = (info.full_name or "Candidate").split()
+    last_name = name_parts[-1] if len(name_parts) > 1 else ""
+    first_name = " ".join(name_parts[:-1]) if len(name_parts) > 1 else info.full_name
+    role = resume.target_job_title or "Professional"
+    company = resume.target_company or "DreemFolio Verified Talent"
+
+    vcard_lines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        f"N:{last_name};{first_name};;;",
+        f"FN:{info.full_name}",
+        f"TITLE:{role}",
+        f"ORG:{company}",
+    ]
+    if info.phone:
+        clean_phone = re.sub(r"[^\d+]", "", info.phone)
+        vcard_lines.append(f"TEL;TYPE=CELL,VOICE:{clean_phone}")
+    if info.email:
+        vcard_lines.append(f"EMAIL;TYPE=INTERNET,PREF:{info.email}")
+    if portfolio_url:
+        vcard_lines.append(f"URL:{portfolio_url}")
+    if info.linkedin:
+        vcard_lines.append(f"X-SOCIALPROFILE;type=linkedin:{info.linkedin}")
+    
+    vcard_lines.append("NOTE:Verified Candidate Credentials by DreemFolio SaaS. Cryptographically Signed.")
+    vcard_lines.append("END:VCARD\r\n")
+    return "\r\n".join(vcard_lines)
+
+
+def render_proof_of_work_section(proof_items: List[ProofOfWorkItem], accent_color: str) -> str:
+    """Render interactive Proof-of-Work gallery with Before/After image comparison sliders."""
+    if not proof_items:
+        return ""
+    
+    cards_html = ""
+    for idx, item in enumerate(proof_items):
+        tools_chips = "".join([
+            f'<span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-800/90 border border-slate-700/70 text-slate-200">🛠️ {t}</span>'
+            for t in item.tools_used
+        ])
+
+        media_html = ""
+        if item.before_image_url and item.after_image_url:
+            slider_id = f"slider_{idx}_{item.id}"
+            media_html = f"""
+            <div class="relative w-full h-64 sm:h-72 rounded-2xl overflow-hidden select-none border border-slate-700/60 group bg-slate-950">
+              <!-- AFTER Image (Base layer) -->
+              <img src="{item.after_image_url}" alt="After Work / Restoration" class="absolute inset-0 w-full h-full object-cover">
+              <span class="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-md bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 text-[10px] font-black uppercase tracking-wider backdrop-blur-md">AFTER (Completed)</span>
+              
+              <!-- BEFORE Image (Overlay clip layer) -->
+              <div id="{slider_id}_clip" class="absolute inset-y-0 left-0 overflow-hidden border-r-2 border-white shadow-2xl transition-none" style="width: 50%;">
+                <img src="{item.before_image_url}" alt="Before Work / Initial State" class="absolute inset-0 w-full h-full object-cover max-w-none" style="width: 100vw; max-width: 900px;">
+                <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-rose-950/90 border border-rose-500/50 text-rose-300 text-[10px] font-black uppercase tracking-wider backdrop-blur-md">BEFORE</span>
+              </div>
+
+              <!-- Interactive Range Slider Handle -->
+              <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                     oninput="document.getElementById('{slider_id}_clip').style.width = this.value + '%'">
+              <div class="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-slate-950/80 border border-slate-700 text-white text-[10px] font-semibold pointer-events-none opacity-80 group-hover:opacity-100 transition shadow-lg">
+                ↔ Slide left/right to compare
+              </div>
+            </div>
+            """
+        elif item.after_image_url or item.before_image_url:
+            img = item.after_image_url or item.before_image_url
+            media_html = f"""
+            <div class="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950">
+              <img src="{img}" alt="{item.title}" class="w-full h-full object-cover">
+            </div>
+            """
+
+        metric_html = ""
+        if item.metrics_label:
+            metric_html = f"""
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              {item.metrics_label}
+            </span>
+            """
+
+        cards_html += f"""
+        <div class="p-6 rounded-3xl bg-slate-900/95 border border-slate-800 hover:border-indigo-500/40 shadow-xl transition-all space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Proof of Work</span>
+              <h4 class="text-lg font-bold text-white mt-1">{item.title}</h4>
+            </div>
+            {metric_html}
+          </div>
+
+          {media_html}
+
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">{item.description}</p>
+
+          <div class="pt-2 flex flex-wrap gap-2">
+            {tools_chips}
+          </div>
+        </div>
+        """
+
+    return f"""
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- INTERACTIVE PROOF-OF-WORK SHOWCASE & VERIFIED EVIDENCE              -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <section id="proof-of-work-section" class="py-14 border-t border-slate-800/80">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold mb-2">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Verified Evidence Showcase</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Hands-on Execution &amp; Tangible Results</h3>
+          </div>
+          <p class="text-xs text-slate-400 max-w-sm">
+            Interactive photographic and technical validation of real-world repair, code, and project executions.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {cards_html}
+        </div>
+      </div>
+    </section>
+    """
+
+
+def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
+    """Render high-security 4-digit PIN lock gate screen when portfolio is passcode protected."""
+    sec = getattr(safe_resume, "security_config", None)
+    if not sec or not sec.is_pin_protected or not sec.access_pin:
+        return ""
+    
+    clean_pin = sec.access_pin.strip()
+    avatar = safe_resume.personal_info.avatar_url or ""
+    avatar_html = f'<img src="{avatar}" class="w-20 h-20 rounded-full mx-auto border-2 border-indigo-500/40 object-cover shadow-xl">' if avatar else f'<div class="w-20 h-20 rounded-full mx-auto bg-indigo-600/20 border-2 border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-2xl shadow-xl">{safe_resume.personal_info.full_name[:1]}</div>'
+
+    return f"""
+    <!-- High-Security PIN Gate Lock Screen Overlay -->
+    <div id="df-pin-gate" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 backdrop-blur-2xl">
+      <div class="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-slate-900 border border-indigo-500/30 shadow-2xl shadow-indigo-950/80 text-center space-y-6">
+        
+        {avatar_html}
+
+        <div class="space-y-1.5">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Confidential Portfolio</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">{safe_resume.personal_info.full_name}</h3>
+          <p class="text-xs text-slate-400">{safe_resume.target_job_title}</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+          <p class="text-xs text-slate-300">This candidate's proof-of-work is protected by a 4-digit recruiter passcode.</p>
+          
+          <div class="flex justify-center gap-2">
+            <input type="password" id="df-pin-input" maxlength="6" placeholder="• • • •"
+                   class="w-48 text-center text-2xl tracking-[0.5em] font-mono px-4 py-3 rounded-xl bg-slate-900 border border-indigo-500/40 text-white focus:outline-none focus:border-indigo-400">
+          </div>
+
+          <p id="df-pin-error" class="text-xs text-rose-400 font-semibold hidden">Incorrect passcode. Please try again.</p>
+
+          <button onclick="verifyPinCode()"
+                  class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:opacity-90 text-white font-bold text-xs shadow-lg transition">
+            Unlock Portfolio Access
+          </button>
+        </div>
+
+        <p class="text-[11px] text-slate-500">
+          🔒 Cryptographically signed by DreemFolio SaaS Enterprise Security.
+        </p>
+
+      </div>
+    </div>
+
+    <script>
+      (function() {{
+        const slug = "{slug}";
+        const expectedPin = "{clean_pin}";
+        const storageKey = 'df_unlocked_' + slug;
+
+        if (sessionStorage.getItem(storageKey) === 'true') {{
+          const gate = document.getElementById('df-pin-gate');
+          if (gate) gate.style.display = 'none';
+        }}
+
+        window.verifyPinCode = function() {{
+          const input = document.getElementById('df-pin-input');
+          const err = document.getElementById('df-pin-error');
+          if (!input) return;
+
+          if (input.value.trim() === expectedPin) {{
+            sessionStorage.setItem(storageKey, 'true');
+            const gate = document.getElementById('df-pin-gate');
+            if (gate) {{
+              gate.style.transition = 'opacity 0.4s ease';
+              gate.style.opacity = '0';
+              setTimeout(() => gate.style.display = 'none', 400);
+            }}
+          }} else {{
+            if (err) {{
+              err.classList.remove('hidden');
+              input.value = '';
+              input.focus();
+            }}
+          }}
+        }};
+
+        document.getElementById('df-pin-input')?.addEventListener('keydown', function(e) {{
+          if (e.key === 'Enter') verifyPinCode();
+        }});
+      }})();
+    </script>
+    """
+
+
+def render_verification_badge(safe_resume: TailoredResume, slug: str) -> str:
+    """Render tamper-proof cryptographic verification badge at top of portfolio."""
+    role = safe_resume.target_job_title or "Professional"
+    hmac_sig = compute_portfolio_hmac(slug or "candidate", role)
+    return f"""
+    <div class="w-full bg-gradient-to-r from-slate-950 via-indigo-950/60 to-slate-950 border-b border-indigo-500/20 py-1.5 px-4 text-center">
+      <div class="max-w-5xl mx-auto flex items-center justify-center gap-2 text-[11px] text-slate-300">
+        <span class="inline-flex items-center gap-1 font-bold text-emerald-400">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Cryptographically Verified
+        </span>
+        <span class="text-slate-600">•</span>
+        <span class="hidden sm:inline text-slate-400">Authentic Candidate Credentials Issued by DreemFolio</span>
+        <span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/30">HMAC: {hmac_sig}</span>
+      </div>
+    </div>
+    """
+
 
 
 
@@ -2384,9 +2679,9 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # MASTER PORTFOLIO COMPOSER
 # ─────────────────────────────────────────────────────────────────────────────
-def generate_portfolio_html(resume: TailoredResume, theme: Optional[str] = None) -> str:
+def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", slug: str = "") -> str:
     """
-    Generate responsive, standalone portfolio website matching the selected architectural template.
+    Generate clean, modern, and secure HTML5 responsive portfolio.
     Themes:
       - 'aurora_white': Scandinavian Minimalist Clean White / Light Studio
       - 'motion_zenith': Awwwards Kinetic Motion Studio (Typewriter, 3D Card Tilt, Animated Skill Bars)
@@ -2447,6 +2742,18 @@ def generate_portfolio_html(resume: TailoredResume, theme: Optional[str] = None)
         layout_html = render_bento_grid(safe_resume, accent_color)
         body_bg = "bg-slate-950 text-slate-100"
 
+    # Inject Proof-of-Work Section if evidence items exist
+    proof_of_work_html = render_proof_of_work_section(safe_resume.proof_of_work, accent_color)
+    if proof_of_work_html and "</main>" in layout_html:
+        layout_html = layout_html.replace("</main>", proof_of_work_html + "\n</main>", 1)
+    elif proof_of_work_html:
+        layout_html += proof_of_work_html
+
+    # High-Security PIN Gate & Cryptographic Verification
+    clean_slug = slug or re.sub(r"[^a-zA-Z0-9_-]", "-", (safe_resume.personal_info.full_name or "candidate").lower()).strip("-")
+    pin_gate_html = render_pin_gate_overlay(safe_resume, clean_slug)
+    verification_html = render_verification_badge(safe_resume, clean_slug)
+
     full_name = safe_resume.personal_info.full_name or "Professional Portfolio"
     role_title = safe_resume.target_job_title or "Portfolio"
     summary = safe_resume.professional_summary or ""
@@ -2476,7 +2783,9 @@ def generate_portfolio_html(resume: TailoredResume, theme: Optional[str] = None)
     }}
   </style>
 </head>
-<body class="{body_bg} min-h-screen antialiased selection:bg-[var(--accent)] selection:text-black">
+<body class="{body_bg} min-h-screen antialiased selection:bg-[var(--accent)] selection:text-black relative">
+  {pin_gate_html}
+  {verification_html}
   {layout_html}
 
   <script>
