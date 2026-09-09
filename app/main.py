@@ -32,7 +32,8 @@ from app.schemas import (
     EvaluateAnswerRequest, AnswerEvaluationResponse,
     FinalInterviewReportRequest, FinalInterviewReportResponse,
     ConferenceTurnRequest, ConferenceTurnResponse,
-    ConferenceDebriefRequest, ConferenceDebriefResponse
+    ConferenceDebriefRequest, ConferenceDebriefResponse,
+    VerifyPinRequest, VerifyPinResponse
 )
 from app.parser import parse_resume_file, extract_candidate_name
 from app.ai_engine import (
@@ -41,7 +42,7 @@ from app.ai_engine import (
     process_conference_conversation_turn, generate_conference_debrief
 )
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
-from app.portfolio_generator import generate_portfolio_html
+from app.portfolio_generator import generate_portfolio_html, generate_qr_code_svg, generate_vcard_content
 from app.sample_data import SAMPLE_RESUMES
 from app.database import get_db, engine, Base
 from app.models import User, UserResume, SaasSetting, UserJobApplication
@@ -67,6 +68,7 @@ app = FastAPI(
 
 # In-memory published portfolios and custom domain maps
 PUBLISHED_PORTFOLIOS: Dict[str, str] = {}
+PUBLISHED_RESUMES: Dict[str, TailoredResume] = {}
 CUSTOM_DOMAINS: Dict[str, str] = {}  # domain -> slug
 
 # Hardened CORS configuration (rejects wildcards with credentials to prevent cross-origin hijacking)
@@ -393,8 +395,10 @@ async def create_cover_letter_pdf(
 async def create_portfolio_preview(resume: TailoredResume, theme: str = "neon_dark"):
     """Generate customizable standalone responsive HTML portfolio."""
     try:
-        html_code = generate_portfolio_html(resume, theme=theme)
-        return {"success": True, "html": html_code, "theme": theme}
+        clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
+        slug = clean_name or "developer"
+        html_code = generate_portfolio_html(resume, theme=theme, slug=slug)
+        return {"success": True, "html": html_code, "theme": theme, "slug": slug}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Portfolio generation error: {str(e)}")
 
@@ -403,7 +407,9 @@ async def create_portfolio_preview(resume: TailoredResume, theme: str = "neon_da
 async def download_portfolio(resume: TailoredResume, theme: str = "neon_dark"):
     """Download standalone index.html portfolio file ready for hosting."""
     try:
-        html_code = generate_portfolio_html(resume, theme=theme)
+        clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
+        slug = clean_name or "developer"
+        html_code = generate_portfolio_html(resume, theme=theme, slug=slug)
         safe_name = resume.personal_info.full_name.replace(" ", "_").lower()
         filename = f"{safe_name}_portfolio.html"
         
@@ -427,11 +433,12 @@ async def publish_portfolio(
 ):
     """Publish live portfolio to a public URL e.g. /p/malith-sayuranga. Gated to Pro & Elite tiers."""
     try:
-        html_code = generate_portfolio_html(resume, theme=theme)
         clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
         slug = clean_name or "developer"
         
+        html_code = generate_portfolio_html(resume, theme=theme, slug=slug)
         PUBLISHED_PORTFOLIOS[slug] = html_code
+        PUBLISHED_RESUMES[slug] = resume
         
         # If custom domain attached
         if resume.personal_info.custom_domain:
@@ -445,13 +452,63 @@ async def publish_portfolio(
             "slug": slug,
             "live_url": live_url,
             "custom_domain": resume.personal_info.custom_domain,
+            "qr_url": f"/api/portfolio/qr/{slug}",
+            "vcard_url": f"/api/portfolio/vcard/{slug}",
             "message": f"Portfolio published live at {live_url}"
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Publish error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Publish error: {str(e)}")
+
+
+@app.get("/api/portfolio/qr/{slug}")
+async def get_portfolio_qr(slug: str, request: Request):
+    """Generate dynamic scalable SVG QR code for the portfolio or digital business card."""
+    base_url = str(request.base_url).rstrip('/')
+    portfolio_url = f"{base_url}/p/{slug}"
+    svg_data = generate_qr_code_svg(portfolio_url)
+    return Response(
+        content=svg_data,
+        media_type="image/svg+xml",
+        headers={
+            "Cache-Control": "public, max-age=3600",
+            "Content-Disposition": f'inline; filename="{slug}-smart-card-qr.svg"'
+        }
+    )
+
+
+@app.get("/api/portfolio/vcard/{slug}")
+async def get_portfolio_vcard(slug: str, request: Request):
+    """Generate and download mobile-compatible vCard 3.0 file (.vcf) for instant contact saving."""
+    if slug not in PUBLISHED_RESUMES:
+        raise HTTPException(status_code=404, detail="Portfolio not found for vCard generation.")
+    resume = PUBLISHED_RESUMES[slug]
+    base_url = str(request.base_url).rstrip('/')
+    portfolio_url = f"{base_url}/p/{slug}"
+    vcard_str = generate_vcard_content(resume, portfolio_url)
+    clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', resume.personal_info.full_name) or slug
+    return Response(
+        content=vcard_str,
+        media_type="text/vcard; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{clean_filename}.vcf"'}
+    )
+
+
+@app.post("/api/portfolio/verify-pin", response_model=VerifyPinResponse)
+async def verify_portfolio_pin(req: VerifyPinRequest):
+    """Verify recruiter PIN code against protected portfolio."""
+    if req.slug not in PUBLISHED_RESUMES:
+        raise HTTPException(status_code=404, detail="Portfolio not found.")
+    resume = PUBLISHED_RESUMES[req.slug]
+    sec = resume.security_config
+    if not sec or not sec.is_pin_protected:
+        return VerifyPinResponse(success=True, message="No PIN required for this portfolio.")
+    
+    if sec.access_pin and sec.access_pin.strip() == req.pin.strip():
+        return VerifyPinResponse(success=True, message="Access granted.")
+    else:
+        raise HTTPException(status_code=403, detail="Invalid 4-digit security PIN. Access denied.")
 
 
 @app.post("/api/domain/verify")

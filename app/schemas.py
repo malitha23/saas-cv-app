@@ -1,3 +1,5 @@
+import os
+import uuid
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
@@ -127,6 +129,36 @@ class MatchedJobOpportunity(BaseModel):
     search_keywords: str = Field(..., description="Concise keywords for live job search queries")
 
 
+class ProofOfWorkItem(BaseModel):
+    id: str = Field(default_factory=lambda: "pow_" + uuid.uuid4().hex[:8])
+    title: str = Field(..., description="E.g. 'CAN-Bus Diagnostics & Repair' or 'High-Load Microservice'")
+    category: str = Field(default="trade_repair", description="'trade_repair', 'technical_project', 'design', 'general'")
+    tools_used: List[str] = Field(default_factory=list, description="Tools/Tech used, e.g. ['Fluke 88V', 'OBD-II Scanner']")
+    description: str = Field(..., description="Concise description of the task and verified resolution")
+    before_image_url: Optional[str] = Field(default=None, description="Optional photo URL before repair/project")
+    after_image_url: Optional[str] = Field(default=None, description="Optional photo URL after repair/project")
+    metrics_label: Optional[str] = Field(default=None, description="Key result metric e.g. '0 Rework' or '100% Signal Integrity'")
+    verified: bool = Field(default=True)
+
+
+class PortfolioSecurityConfig(BaseModel):
+    is_pin_protected: bool = Field(default=False, description="Require 4-digit PIN to access live portfolio")
+    access_pin: Optional[str] = Field(default=None, description="4-digit secret PIN (e.g. '1234')")
+    watermark_enabled: bool = Field(default=True, description="Subtle security watermark on proof images")
+    verification_hash: Optional[str] = Field(default=None, description="HMAC SHA-256 verification signature")
+
+
+class VerifyPinRequest(BaseModel):
+    slug: str = Field(..., description="Portfolio slug")
+    pin: str = Field(..., description="4-digit PIN entered by visitor")
+
+
+class VerifyPinResponse(BaseModel):
+    success: bool
+    message: str
+    access_token: Optional[str] = None
+
+
 class TailoredResume(BaseModel):
     personal_info: PersonalInfo
     target_job_title: str = Field(..., description="Target job title matching the JD")
@@ -183,6 +215,16 @@ class TailoredResume(BaseModel):
     portfolio_cta_text: str = Field(default="Get in Touch", description="Primary call-to-action button text")
     portfolio_cta_url: Optional[str] = Field(default=None, description="Primary call-to-action URL or mailto")
     portfolio_metrics: List[Dict[str, str]] = Field(default_factory=list, description="Custom stat counter highlights (label & value)")
+
+    # Interactive Proof-of-Work & High-Security Smart Card Suite
+    proof_of_work: List[ProofOfWorkItem] = Field(
+        default_factory=list,
+        description="Verified tangible evidence of actual work (Before/After repair photos, diagnostic reports, live code/demos)"
+    )
+    security_config: PortfolioSecurityConfig = Field(
+        default_factory=PortfolioSecurityConfig,
+        description="High security PIN gate, HMAC verification badge, and anti-scraping settings"
+    )
 
 
 class TailorRequest(BaseModel):

@@ -198,6 +198,11 @@
 
             <template x-if="activeTab === 'portfolio'">
               <div class="flex items-center space-x-2">
+                <button @click="openQrCardModal()" :disabled="!tailoredData"
+                  class="px-3 py-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg flex items-center gap-1.5 transition">
+                  <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>📱 Smart Card & Proof</span>
+                </button>
                 <button @click="publishLivePortfolio()" :disabled="!tailoredData || isPublishing"
                   class="px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-pink-600/20 flex items-center gap-1.5 transition">
                   <i data-lucide="send" class="w-3.5 h-3.5"></i>
