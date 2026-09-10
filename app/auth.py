@@ -383,16 +383,20 @@ def check_daily_cover_letter_quota(
 
 
 def check_copilot_kit_quota(
-    current_user: Optional[User],
+    current_user: User,
     db: Session
-) -> Optional[User]:
+) -> User:
     """
     Quota guard for 1-Click Application Copilot screening kit generation.
-    - Free tier / Guest: 1 kit per day.
+    - Free tier: 1 kit per day.
     - Pro / Elite: Unlimited kits.
+    - Requires authenticated user account.
     """
     if not current_user:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please sign in or create an account to generate tailored application kits."
+        )
 
     check_and_update_subscription(current_user, db)
     ensure_daily_counters_reset(current_user, db)
@@ -464,18 +468,21 @@ def check_job_tracker_quota(
 
 
 def check_chat_copilot_quota(
-    current_user: Optional[User],
+    current_user: User,
     db: Session
 ) -> tuple[bool, int, str]:
     """
     Checks message allowance for the AI Career Copilot Chatbot.
     - Pro / Elite: Unlimited 24/7 coaching & mock interviews.
     - Free registered user: 3 messages per day.
-    - Guest: 3 messages per day.
+    - Requires authenticated user account.
     Returns: (is_allowed, remaining_count, message)
     """
     if not current_user:
-        return True, 2, "2 trial messages remaining"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please sign in or create a free account to chat with your AI Career Copilot."
+        )
 
     check_and_update_subscription(current_user, db)
     ensure_daily_counters_reset(current_user, db)
@@ -492,7 +499,7 @@ def check_chat_copilot_quota(
 
     used = current_user.daily_chat_count or 0
     if used >= limit:
-        return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached."
+        return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached. Upgrade to Pro ($9/mo) for unlimited 24/7 coaching!"
 
     current_user.daily_chat_count = used + 1
     db.commit()
@@ -502,17 +509,21 @@ def check_chat_copilot_quota(
 
 
 def check_voice_interview_quota(
-    current_user: Optional[User],
+    current_user: User,
     db: Session
 ) -> tuple[bool, int, str]:
     """
     Checks session allowance for the AI Voice Mock Interview Simulator.
     - Pro / Elite: Unlimited full-length voice mock interviews.
-    - Free / Guest: 1 interactive practice session per day (3 questions).
+    - Free registered user: 1 interactive practice session per day (3 questions).
+    - Requires authenticated user account.
     Returns: (is_allowed, remaining_count, message)
     """
     if not current_user:
-        return True, 1, "1 trial session remaining"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please sign in or create a free account to start an AI Voice Mock Interview."
+        )
 
     check_and_update_subscription(current_user, db)
     ensure_daily_counters_reset(current_user, db)
@@ -529,7 +540,7 @@ def check_voice_interview_quota(
 
     used = getattr(current_user, "daily_interview_count", 0) or 0
     if used >= limit:
-        return False, 0, f"Daily free Voice Mock Interview limit ({limit} session) reached."
+        return False, 0, f"Daily free Voice Mock Interview limit ({limit} session) reached. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited practice!"
 
     if hasattr(current_user, "daily_interview_count"):
         current_user.daily_interview_count = used + 1
@@ -538,6 +549,43 @@ def check_voice_interview_quota(
 
     remaining = max(0, limit - (used + 1))
     return True, remaining, f"{remaining} free practice sessions remaining today"
+
+
+def check_conference_quota(
+    current_user: User,
+    db: Session
+) -> tuple[bool, int, str]:
+    """
+    Checks session allowance for Real-Time AI Video Conference & Live Mistake Coaching ("Waradi Kiyala Denna").
+    - Pro / Elite: Unlimited live video conference sessions with real-time HUD error coaching.
+    - Free registered user: 1 conference practice session per day.
+    - Requires authenticated user account.
+    Returns: (is_allowed, remaining_count, message)
+    """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Please sign in or create an account to enter the Real-Time AI Video Conference Studio."
+        )
+
+    check_and_update_subscription(current_user, db)
+    ensure_daily_counters_reset(current_user, db)
+
+    tier = (current_user.plan_tier or "free").lower()
+    if tier in ["pro", "elite"]:
+        return True, 9999, "Unlimited Video Conferences (Pro Access)"
+
+    limit_str = get_saas_setting(db, "free_daily_interview_limit", str(DEFAULT_FREE_DAILY_INTERVIEW_LIMIT))
+    try:
+        limit = int(limit_str)
+    except ValueError:
+        limit = DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
+
+    used = getattr(current_user, "daily_interview_count", 0) or 0
+    if used >= limit:
+        return False, 0, f"Daily free Video Conference Coaching limit ({limit} session) reached. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited sessions!"
+
+    return True, max(0, limit - used), f"{max(0, limit - used)} free sessions remaining today"
 
 
 

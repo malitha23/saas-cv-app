@@ -45,11 +45,42 @@
 
     <!-- TAB 1: QR SMART CARD (Digital NFC / QR Business Card) -->
     <div x-show="activeQrTab === 'card'" class="space-y-4">
+      <!-- QR Mode Selector (Phone Contact vs Web Link) -->
+      <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
+        <button type="button" @click="qrCodeMode = 'vcard'"
+          :class="qrCodeMode === 'vcard' ? 'bg-gradient-to-r from-amber-500 to-pink-500 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+          class="flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5">
+          <i data-lucide="contact" class="w-3.5 h-3.5"></i>
+          <span>📇 Phone Contact Card (vCard)</span>
+        </button>
+        <button type="button" @click="qrCodeMode = 'url'"
+          :class="qrCodeMode === 'url' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+          class="flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>🌐 Web Portfolio Link</span>
+        </button>
+      </div>
+
+      <!-- Scan Mode Explanation Banner -->
+      <div class="p-2.5 rounded-xl text-[11px] leading-relaxed flex items-center gap-2.5 border transition"
+        :class="qrCodeMode === 'vcard' ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-200'">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 text-amber-400"></i>
+        <div x-show="qrCodeMode === 'vcard'">
+          <strong>📇 Phone Contact Card Mode:</strong> Phone camera එකෙන් scan කළ සැණින් ඔබගේ නම, දුරකථන අංකය, ඊමේල් හා Portfolio Link එක Phone Contacts වලට save වේ (100% Offline!).
+        </div>
+        <div x-show="qrCodeMode === 'url'">
+          <strong>🌐 Web Link Mode:</strong> Phone camera එකෙන් scan කළ විට ඔබගේ live interactive Web Portfolio එක browser එකෙන් විවෘත වේ.
+        </div>
+      </div>
+
       <!-- Digital Card Preview (Clean Luxury Card) -->
       <div class="p-4 rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-700/80 shadow-inner flex flex-col sm:flex-row items-center gap-4">
         <!-- Live SVG QR Code -->
-        <div class="flex-shrink-0 bg-white p-2 rounded-xl shadow-md flex items-center justify-center">
-          <img :src="'/api/portfolio/qr/' + (publishedSlug || 'candidate')" alt="Smart QR Code" class="w-24 h-24 object-contain">
+        <div class="flex-shrink-0 bg-white p-2.5 rounded-xl shadow-md flex flex-col items-center justify-center">
+          <img :src="'/api/portfolio/qr/' + (publishedSlug || 'candidate') + '?mode=' + qrCodeMode"
+            alt="Smart QR Code" class="w-28 h-28 object-contain">
+          <span class="text-[9px] font-extrabold text-slate-800 mt-1 uppercase tracking-wider"
+            x-text="qrCodeMode === 'vcard' ? 'Phone Contact' : 'Web Link'">Phone Contact</span>
         </div>
         
         <!-- Candidate Card Info -->
@@ -66,21 +97,26 @@
       </div>
 
       <!-- Quick Action Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <button @click="downloadVCard()"
-          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="contact" class="w-3.5 h-3.5 text-pink-400"></i>
+          class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="user-plus" class="w-3.5 h-3.5 text-pink-400"></i>
           <span>Save Contact (.vcf)</span>
         </button>
+        <button @click="downloadQrPng()"
+          class="px-2.5 py-2 bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 text-amber-200 border border-amber-500/30 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition shadow-sm">
+          <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Download PNG</span>
+        </button>
         <button @click="downloadQrSvg()"
-          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="download" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Download SVG QR</span>
+          class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Download SVG</span>
         </button>
         <button @click="copySmartCardUrl()"
-          class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow transition">
+          class="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow transition">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-          <span>Copy Card Link</span>
+          <span>Copy Link</span>
         </button>
       </div>
 

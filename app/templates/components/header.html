@@ -31,6 +31,14 @@
         <i data-lucide="home" class="w-3.5 h-3.5 text-indigo-400"></i>
         <span>Home</span>
       </a>
+
+      <!-- Quick Tour Button -->
+      <button @click="startOnboardingTour()"
+        class="px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm"
+        title="Interactive Platform Quick Tour">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 animate-pulse"></i>
+        <span>✨ Quick Tour</span>
+      </button>
       
       <!-- Sample Loaders -->
       <div class="flex items-center space-x-1.5 text-xs bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
@@ -829,6 +837,18 @@
           </div>
         </div>
       </template>
+
+      <!-- Interactive Platform Tour (Mobile) -->
+      <div class="space-y-1">
+        <button @click="startOnboardingTour(); mobileMenuOpen = false;"
+          class="w-full p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/80 to-pink-950/80 hover:from-indigo-900/80 hover:to-pink-900/80 border border-indigo-500/40 text-left transition flex items-center justify-between text-xs text-white shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="text-base">✨</span>
+            <span class="font-bold text-indigo-200">Interactive Platform Tour</span>
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">5 Steps</span>
+        </button>
+      </div>
 
       <!-- Quick Demo Profiles -->
       <div class="space-y-2">
