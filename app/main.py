@@ -6,7 +6,7 @@ import time
 import datetime
 from collections import defaultdict
 from typing import Optional, Dict, List
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,7 +42,7 @@ from app.ai_engine import (
     process_conference_conversation_turn, generate_conference_debrief
 )
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
-from app.portfolio_generator import generate_portfolio_html, generate_qr_code_svg, generate_vcard_content
+from app.portfolio_generator import generate_portfolio_html, generate_qr_code_svg, generate_vcard_content, generate_qr_code_png
 from app.sample_data import SAMPLE_RESUMES
 from app.database import get_db, engine, Base
 from app.models import User, UserResume, SaasSetting, UserJobApplication
@@ -52,6 +52,7 @@ from app.auth import (
     check_daily_ai_quota, check_daily_pdf_quota, check_ats_pdf_quota, check_visual_pdf_quota, check_daily_cover_letter_quota, require_tier, require_admin,
     check_and_update_subscription, get_saas_setting, verify_google_credential_token,
     check_copilot_kit_quota, check_job_tracker_quota, check_chat_copilot_quota, check_voice_interview_quota,
+    check_conference_quota,
     DEFAULT_FREE_DAILY_AI_LIMIT, DEFAULT_FREE_DAILY_PDF_LIMIT, DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT,
     DEFAULT_FREE_LIFETIME_ATS_LIMIT, DEFAULT_FREE_LIFETIME_VISUAL_LIMIT, DEFAULT_FREE_LIFETIME_COVER_LETTER_LIMIT,
     DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
@@ -95,12 +96,18 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 # Sensitive endpoints rate limits: (max_requests, window_seconds)
 RATE_LIMIT_RULES: Dict[str, tuple[int, int]] = {
-    "/api/auth/login": (10, 60),      # Max 10 attempts per minute
-    "/api/auth/register": (5, 60),    # Max 5 registrations per minute
-    "/api/auth/google": (15, 60),     # Max 15 Google auth requests per minute
-    "/api/tailor": (10, 60),          # Max 10 AI generation requests per minute
+    "/api/auth/login": (10, 60),               # Max 10 attempts per minute
+    "/api/auth/register": (5, 60),             # Max 5 registrations per minute
+    "/api/auth/google": (15, 60),              # Max 15 Google auth requests per minute
+    "/api/tailor": (10, 60),                   # Max 10 AI generation requests per minute
+    "/api/portfolio/verify-pin": (10, 60),     # Max 10 PIN attempts per minute (Anti-Bruteforce)
+    "/api/upload": (10, 60),                   # Max 10 resume file uploads per minute
+    "/api/conference/turn": (30, 60),          # Max 30 live conference turns per minute
+    "/api/interview/evaluate-answer": (20, 60),# Max 20 interview evaluations per minute
+    "/api/chat/copilot": (20, 60),             # Max 20 Career Copilot chat requests per minute
 }
 RATE_LIMIT_STORE: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
+PIN_ATTEMPT_STORE: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"failed_count": 0, "lockout_until": 0.0})
 
 
 def _get_client_ip(request: Request) -> str:
@@ -118,6 +125,7 @@ async def rate_limiting_middleware(request: Request, call_next):
     """
     Sliding window in-memory rate limiter per IP.
     Thwarts credential stuffing, brute-forcing, and resource exhaustion DoS.
+    Includes automated memory garbage collection to prevent RAM leakage under sustained load.
     """
     path = request.url.path
     rule = RATE_LIMIT_RULES.get(path)
@@ -130,6 +138,12 @@ async def rate_limiting_middleware(request: Request, call_next):
         # Evict timestamps older than current window
         valid_timestamps = [t for t in timestamps if (now - t) < window_secs]
         RATE_LIMIT_STORE[client_ip][path] = valid_timestamps
+
+        # Memory garbage collection: Prune empty IPs if store grows beyond 3000 entries
+        if len(RATE_LIMIT_STORE) > 3000:
+            stale_ips = [ip for ip, paths in list(RATE_LIMIT_STORE.items()) if not any(paths.values())]
+            for ip in stale_ips:
+                RATE_LIMIT_STORE.pop(ip, None)
 
         if len(valid_timestamps) >= max_reqs:
             return JSONResponse(
@@ -329,7 +343,12 @@ async def create_resume_pdf(
                 )
             # Free users get 1 Lifetime Visual CV download
             check_visual_pdf_quota(current_user, db)
-        elif (not is_visual) and tier == "free" and current_user:
+        elif (not is_visual) and tier == "free":
+            if not current_user:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Please sign in or create a free account to download your ATS resume PDF."
+                )
             # Free users get 2 Lifetime ATS PDF downloads
             check_ats_pdf_quota(current_user, db)
 
@@ -398,14 +417,31 @@ async def create_portfolio_preview(resume: TailoredResume, theme: str = "neon_da
         clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
         slug = clean_name or "developer"
         html_code = generate_portfolio_html(resume, theme=theme, slug=slug)
+        PUBLISHED_RESUMES[slug] = resume
         return {"success": True, "html": html_code, "theme": theme, "slug": slug}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Portfolio generation error: {str(e)}")
 
 
+@app.post("/api/portfolio/sync-preview")
+async def sync_portfolio_preview(resume: TailoredResume):
+    """Sync candidate resume into memory cache so QR Smart Card & vCard can render immediately."""
+    try:
+        clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
+        slug = clean_name or "developer"
+        PUBLISHED_RESUMES[slug] = resume
+        return {"success": True, "slug": slug}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @app.post("/api/download-portfolio")
-async def download_portfolio(resume: TailoredResume, theme: str = "neon_dark"):
-    """Download standalone index.html portfolio file ready for hosting."""
+async def download_portfolio(
+    resume: TailoredResume,
+    theme: str = "neon_dark",
+    current_user: User = Depends(get_current_user)
+):
+    """Download standalone index.html portfolio file ready for hosting. Requires authenticated account."""
     try:
         clean_name = re.sub(r'[^a-zA-Z0-9]', '-', resume.personal_info.full_name.lower()).strip('-')
         slug = clean_name or "developer"
@@ -463,31 +499,87 @@ async def publish_portfolio(
 
 
 @app.get("/api/portfolio/qr/{slug}")
-async def get_portfolio_qr(slug: str, request: Request):
-    """Generate dynamic scalable SVG QR code for the portfolio or digital business card."""
+async def get_portfolio_qr(
+    slug: str,
+    request: Request,
+    mode: str = "vcard",
+    format: str = "svg",
+    download: bool = False
+):
+    """
+    Generate dynamic scalable QR code for the portfolio or digital business card.
+    - mode='vcard': Direct phone contact card (scans directly into iOS/Android contacts with 1 tap, 100% offline).
+    - mode='url': Direct portfolio web link.
+    - format='svg': Scalable vector for graphic design & printing.
+    - format='png': High-res raster image for phone wallpapers, gallery, and WhatsApp.
+    - download=True: Sets Content-Disposition: attachment for direct file download.
+    """
     base_url = str(request.base_url).rstrip('/')
     portfolio_url = f"{base_url}/p/{slug}"
-    svg_data = generate_qr_code_svg(portfolio_url)
-    return Response(
-        content=svg_data,
-        media_type="image/svg+xml",
-        headers={
-            "Cache-Control": "public, max-age=3600",
-            "Content-Disposition": f'inline; filename="{slug}-smart-card-qr.svg"'
-        }
-    )
+
+    if mode == "vcard":
+        if slug in PUBLISHED_RESUMES:
+            resume = PUBLISHED_RESUMES[slug]
+            qr_data = generate_vcard_content(resume, portfolio_url)
+        else:
+            candidate_name = slug.replace('-', ' ').title()
+            qr_data = f"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:{candidate_name}\r\nURL:{portfolio_url}\r\nNOTE:Verified Candidate Credentials by DreemFolio\r\nEND:VCARD\r\n"
+    else:
+        qr_data = portfolio_url
+
+    disp = "attachment" if download else "inline"
+
+    if format.lower() == "png":
+        png_data = generate_qr_code_png(qr_data)
+        return Response(
+            content=png_data,
+            media_type="image/png",
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Content-Disposition": f'{disp}; filename="{slug}-smart-card-qr.png"'
+            }
+        )
+    else:
+        svg_data = generate_qr_code_svg(qr_data)
+        return Response(
+            content=svg_data,
+            media_type="image/svg+xml",
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Content-Disposition": f'{disp}; filename="{slug}-smart-card-qr.svg"'
+            }
+        )
 
 
 @app.get("/api/portfolio/vcard/{slug}")
-async def get_portfolio_vcard(slug: str, request: Request):
-    """Generate and download mobile-compatible vCard 3.0 file (.vcf) for instant contact saving."""
-    if slug not in PUBLISHED_RESUMES:
-        raise HTTPException(status_code=404, detail="Portfolio not found for vCard generation.")
-    resume = PUBLISHED_RESUMES[slug]
+async def get_portfolio_vcard(slug: str, request: Request, pin: Optional[str] = Query(None)):
+    """
+    Generate and download mobile-compatible vCard 3.0 file (.vcf) for instant contact saving.
+    Security Gate: If portfolio is PIN-protected, personal phone & email are redacted
+    unless verified against the access PIN to prevent scraper harvesting.
+    """
     base_url = str(request.base_url).rstrip('/')
     portfolio_url = f"{base_url}/p/{slug}"
-    vcard_str = generate_vcard_content(resume, portfolio_url)
-    clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', resume.personal_info.full_name) or slug
+
+    if slug in PUBLISHED_RESUMES:
+        resume = PUBLISHED_RESUMES[slug]
+        sec = getattr(resume, "security_config", None)
+        
+        include_private = True
+        if sec and sec.is_pin_protected and sec.access_pin:
+            expected = sec.access_pin.strip()
+            provided = (pin or "").strip()
+            import hmac
+            if not provided or not hmac.compare_digest(expected.encode("utf-8"), provided.encode("utf-8")):
+                include_private = False
+
+        vcard_str = generate_vcard_content(resume, portfolio_url, include_private=include_private)
+        clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', resume.personal_info.full_name) or slug
+    else:
+        clean_name = slug.replace('-', ' ').title()
+        vcard_str = f"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:{clean_name}\r\nURL:{portfolio_url}\r\nNOTE:Verified Candidate by DreemFolio SaaS\r\nEND:VCARD\r\n"
+        clean_filename = slug
+
     return Response(
         content=vcard_str,
         media_type="text/vcard; charset=utf-8",
@@ -496,8 +588,24 @@ async def get_portfolio_vcard(slug: str, request: Request):
 
 
 @app.post("/api/portfolio/verify-pin", response_model=VerifyPinResponse)
-async def verify_portfolio_pin(req: VerifyPinRequest):
-    """Verify recruiter PIN code against protected portfolio."""
+async def verify_portfolio_pin(req: VerifyPinRequest, request: Request):
+    """
+    Verify recruiter PIN code against protected portfolio.
+    Security: Constant-time comparison, per-IP rate limiting, and 5-minute lockout after 5 failed attempts.
+    """
+    client_ip = _get_client_ip(request)
+    store_key = f"{client_ip}:{req.slug}"
+    attempt_info = PIN_ATTEMPT_STORE[store_key]
+    now = time.time()
+
+    # Check active lockout
+    if now < attempt_info["lockout_until"]:
+        cooldown_left = int(attempt_info["lockout_until"] - now)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed PIN attempts. PIN verification is locked out for {cooldown_left} more seconds."
+        )
+
     if req.slug not in PUBLISHED_RESUMES:
         raise HTTPException(status_code=404, detail="Portfolio not found.")
     resume = PUBLISHED_RESUMES[req.slug]
@@ -505,10 +613,32 @@ async def verify_portfolio_pin(req: VerifyPinRequest):
     if not sec or not sec.is_pin_protected:
         return VerifyPinResponse(success=True, message="No PIN required for this portfolio.")
     
-    if sec.access_pin and sec.access_pin.strip() == req.pin.strip():
+    # Constant-time comparison to eliminate timing side-channel attacks
+    expected_pin = (sec.access_pin or "").strip()
+    provided_pin = (req.pin or "").strip()
+
+    import hmac
+    is_correct = bool(expected_pin and hmac.compare_digest(expected_pin.encode("utf-8"), provided_pin.encode("utf-8")))
+
+    if is_correct:
+        # Reset failed attempts counter on success
+        attempt_info["failed_count"] = 0
+        attempt_info["lockout_until"] = 0.0
         return VerifyPinResponse(success=True, message="Access granted.")
     else:
-        raise HTTPException(status_code=403, detail="Invalid 4-digit security PIN. Access denied.")
+        attempt_info["failed_count"] += 1
+        if attempt_info["failed_count"] >= 5:
+            attempt_info["lockout_until"] = now + 300  # 5-minute lockout
+            attempt_info["failed_count"] = 0
+            raise HTTPException(
+                status_code=429,
+                detail="Too many failed PIN attempts. PIN verification has been locked out for 5 minutes."
+            )
+        attempts_left = 5 - attempt_info["failed_count"]
+        raise HTTPException(
+            status_code=403,
+            detail=f"Invalid 4-digit security PIN. Access denied. ({attempts_left} attempts remaining before lockout)"
+        )
 
 
 @app.post("/api/domain/verify")
@@ -677,6 +807,8 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         daily_copilot_kits_remaining=None if tier in ["pro", "elite"] else max(0, 1 - (getattr(user, "daily_copilot_kits_count", 0) or 0)),
         daily_chat_count=getattr(user, "daily_chat_count", 0) or 0,
         daily_chat_remaining=None if tier in ["pro", "elite"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
+        daily_interview_count=getattr(user, "daily_interview_count", 0) or 0,
+        daily_interview_remaining=None if tier in ["pro", "elite"] else max(0, 1 - (getattr(user, "daily_interview_count", 0) or 0)),
         lifetime_ats_downloads_count=life_ats_used,
         lifetime_ats_downloads_remaining=life_ats_remaining,
         lifetime_visual_downloads_count=life_visual_used,
@@ -1121,13 +1253,14 @@ async def search_jobs_endpoint(
 @app.post("/api/jobs/application-kit", response_model=ApplicationKitResponse)
 async def create_application_kit_endpoint(
     payload: ApplicationKitRequest,
-    current_user: Optional[User] = Depends(get_optional_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Generate instant tailored screening question answers, elevator pitch, and salary script
     for 1-click job application auto-filling.
     Guarded by check_copilot_kit_quota: Free users get 1 kit/day trial; Pro/Elite get unlimited.
+    Requires authenticated user account.
     """
     check_copilot_kit_quota(current_user, db)
     try:
@@ -1146,13 +1279,14 @@ async def create_application_kit_endpoint(
 @app.post("/api/chat/copilot", response_model=ChatCopilotResponse)
 async def chat_copilot_endpoint(
     payload: ChatCopilotRequest,
-    current_user: Optional[User] = Depends(get_optional_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     AI Career Copilot & Technical Interview Simulator.
     Provides real-time, context-aware resume critique, interview roleplay, cold outreach, and salary advice.
     Free users: 3 messages per day. Pro / Elite: Unlimited 24/7 coaching.
+    Requires authenticated user account.
     """
     is_allowed, remaining, msg = check_chat_copilot_quota(current_user, db)
     if not is_allowed:
@@ -1178,13 +1312,14 @@ async def chat_copilot_endpoint(
 @app.post("/api/interview/start", response_model=MockInterviewStartResponse)
 async def start_mock_interview_endpoint(
     payload: MockInterviewStartRequest,
-    current_user: Optional[User] = Depends(get_optional_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Initiates an interactive AI Voice Mock Interview session.
-    Enforces daily practice session quotas for Free/Guest users (1 session/day, max 3 questions).
+    Enforces daily practice session quotas for Free users (1 session/day, max 3 questions).
     Pro/Elite users receive unlimited full-length sessions with custom questions.
+    Requires authenticated user account.
     """
     is_allowed, remaining, msg = check_voice_interview_quota(current_user, db)
     if not is_allowed:
@@ -1213,6 +1348,8 @@ async def start_mock_interview_endpoint(
             resume_context=payload.resume_context,
             api_key=api_key
         )
+        if isinstance(res, MockInterviewStartResponse):
+            return res
         return MockInterviewStartResponse(**res)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start mock interview: {str(e)}")
@@ -1221,12 +1358,13 @@ async def start_mock_interview_endpoint(
 @app.post("/api/interview/evaluate-answer", response_model=AnswerEvaluationResponse)
 async def evaluate_interview_answer_endpoint(
     payload: EvaluateAnswerRequest,
-    current_user: Optional[User] = Depends(get_optional_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Real-time spoken response evaluator.
     Analyzes candidate's transcribed answer for STAR adherence, filler words,
     speaking pace (WPM), technical strengths, and an exemplary model response.
+    Requires authenticated user account.
     """
     try:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -1247,11 +1385,12 @@ async def evaluate_interview_answer_endpoint(
 @app.post("/api/interview/final-report", response_model=FinalInterviewReportResponse)
 async def final_interview_report_endpoint(
     payload: FinalInterviewReportRequest,
-    current_user: Optional[User] = Depends(get_optional_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Generates an executive-grade Candidate Interview Readiness Dossier and hiring verdict
     synthesizing performance across all completed questions.
+    Requires authenticated user account.
     """
     try:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -1268,16 +1407,59 @@ async def final_interview_report_endpoint(
         raise HTTPException(status_code=500, detail=f"Failed to compile interview report: {str(e)}")
 
 
+MAX_FREE_CONFERENCE_TURNS = 5
+CONFERENCE_SESSION_TURNS: Dict[str, int] = defaultdict(int)
+
+
 @app.post("/api/conference/turn", response_model=ConferenceTurnResponse)
 async def conference_turn_endpoint(
     payload: ConferenceTurnRequest,
-    current_user: Optional[User] = Depends(get_optional_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Two-way real-time conversational conference turn with live mistake detection ("Waradi Kiyala Denna").
     Analyzes candidate's spoken speech, flags technical vagueness, pacing, filler words,
     and returns realistic spoken responses from the AI Interviewer avatar.
+    Guarded by check_conference_quota: requires authenticated user.
+    Security: Enforces turn limit (max 5 turns) on Free tier to protect Gemini API quota.
     """
+    tier = (current_user.plan_tier or "free").lower()
+    session_turns = CONFERENCE_SESSION_TURNS[payload.session_id]
+
+    if tier == "free":
+        if session_turns >= MAX_FREE_CONFERENCE_TURNS:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "free_turn_limit_reached",
+                    "message": f"Free Starter practice session is limited to {MAX_FREE_CONFERENCE_TURNS} conversational turns. Please complete your session with 'End & Debrief' or upgrade to Pro ($9/mo) for unlimited live practice!",
+                    "upgrade_required": True,
+                    "required_tier": "pro"
+                }
+            )
+
+    is_allowed, remaining, msg = check_conference_quota(current_user, db)
+    if not is_allowed and session_turns == 0:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "quota_exceeded",
+                "message": msg,
+                "upgrade_required": True,
+                "required_tier": "pro"
+            }
+        )
+
+    # Consume daily session quota upon starting first turn
+    if tier == "free" and session_turns == 0 and hasattr(current_user, "daily_interview_count"):
+        if (current_user.daily_interview_count or 0) < 1:
+            current_user.daily_interview_count = 1
+            db.commit()
+            db.refresh(current_user)
+
+    CONFERENCE_SESSION_TURNS[payload.session_id] = session_turns + 1
+
     try:
         api_key = os.getenv("GEMINI_API_KEY")
         res = process_conference_conversation_turn(
@@ -1297,12 +1479,21 @@ async def conference_turn_endpoint(
 @app.post("/api/conference/debrief", response_model=ConferenceDebriefResponse)
 async def conference_debrief_endpoint(
     payload: ConferenceDebriefRequest,
-    current_user: Optional[User] = Depends(get_optional_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Compiles executive post-conference meeting debrief with full scorecard of mistakes corrected.
+    Requires authenticated user account.
     """
     try:
+        tier = (current_user.plan_tier or "free").lower()
+        if tier == "free" and hasattr(current_user, "daily_interview_count"):
+            if (current_user.daily_interview_count or 0) < 1:
+                current_user.daily_interview_count = 1
+                db.commit()
+                db.refresh(current_user)
+
         api_key = os.getenv("GEMINI_API_KEY")
         res = generate_conference_debrief(
             session_id=payload.session_id,

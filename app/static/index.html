@@ -322,6 +322,14 @@
 
     <!-- 2. DESKTOP HEADER ACTIONS (Visible on lg/xl screens) -->
     <div class="hidden lg:flex items-center space-x-3 xl:space-x-4">
+
+      <!-- Quick Tour Button -->
+      <button @click="startOnboardingTour()"
+        class="px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm"
+        title="Interactive Platform Quick Tour">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 animate-pulse"></i>
+        <span>✨ Quick Tour</span>
+      </button>
       
       <!-- Sample Loaders -->
       <div class="flex items-center space-x-1.5 text-xs bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
@@ -791,6 +799,18 @@
           </div>
         </div>
       </template>
+
+            <!-- Interactive Platform Tour (Mobile) -->
+      <div class="space-y-1">
+        <button @click="startOnboardingTour(); mobileMenuOpen = false;"
+          class="w-full p-2.5 rounded-xl bg-gradient-to-r from-indigo-950/80 to-pink-950/80 hover:from-indigo-900/80 hover:to-pink-900/80 border border-indigo-500/40 text-left transition flex items-center justify-between text-xs text-white shadow-sm">
+          <span class="flex items-center gap-2">
+            <span class="text-base">✨</span>
+            <span class="font-bold text-indigo-200">Interactive Platform Tour</span>
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">5 Steps</span>
+        </button>
+      </div>
 
       <!-- Quick Demo Profiles -->
       <div class="space-y-2">
@@ -3053,7 +3073,7 @@
               <template x-if="jobSubTab === 'recommendations'">
                 <div class="space-y-3">
                   <div class="grid grid-cols-1 gap-4">
-                    <template x-for="(job, index) in ((tailoredData.matched_jobs || []).slice(0, (currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? undefined : 3))" :key="index">
+                    <template x-for="(job, index) in ((tailoredData?.matched_jobs || []).slice(0, (currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? undefined : 3))" :key="index">
                       <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition shadow-lg group relative flex flex-col justify-between gap-3">
                         
                         <!-- Header: Title, Match Score & Key Meta -->
@@ -3149,7 +3169,7 @@
                   </div>
 
                   <!-- Free Tier Upgrade Teaser Card for More Matches -->
-                  <template x-if="(!currentUser || currentUser.plan_tier === 'free') && (tailoredData.matched_jobs || []).length > 3">
+                  <template x-if="(!currentUser || currentUser.plan_tier === 'free') && (tailoredData?.matched_jobs || []).length > 3">
                     <div class="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
@@ -4236,7 +4256,383 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
-<!-- AI Career Copilot Chatbot Widget & Floating Bubble Launcher        -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- INTERACTIVE FIRST-TIME ONBOARDING TOUR & FEATURE DISCOVERY MODAL        -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+<div x-show="showOnboardingTour" x-cloak
+  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
+  x-transition:enter="transition ease-out duration-250"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  @keydown.escape.window="closeOnboardingTour(false)">
+
+  <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8 relative overflow-hidden text-slate-200"
+    @click.outside="closeOnboardingTour(false)"
+    x-transition:enter="transition ease-out duration-250"
+    x-transition:enter-start="scale-95 opacity-0"
+    x-transition:enter-end="scale-100 opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="scale-100 opacity-100"
+    x-transition:leave-end="scale-95 opacity-0">
+
+    <!-- Ambient Glow Effect dynamically shifting with active step -->
+    <div class="absolute -top-24 -right-24 w-60 h-60 rounded-full blur-3xl pointer-events-none transition-all duration-500"
+      :class="{
+        'bg-indigo-500/20': currentTourStep === 1,
+        'bg-cyan-500/20': currentTourStep === 2,
+        'bg-violet-500/20': currentTourStep === 3,
+        'bg-rose-500/25': currentTourStep === 4,
+        'bg-amber-500/25': currentTourStep === 5
+      }"></div>
+    <div class="absolute -bottom-24 -left-24 w-60 h-60 rounded-full blur-3xl pointer-events-none transition-all duration-500"
+      :class="{
+        'bg-pink-500/15': currentTourStep === 1,
+        'bg-indigo-500/15': currentTourStep === 2,
+        'bg-fuchsia-500/15': currentTourStep === 3,
+        'bg-indigo-500/20': currentTourStep === 4,
+        'bg-pink-500/20': currentTourStep === 5
+      }"></div>
+
+    <!-- Header: Tour Title & Step Indicator -->
+    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-lg transition-all duration-300"
+          :class="{
+            'bg-gradient-to-tr from-indigo-500 to-cyan-400 shadow-indigo-500/30': currentTourStep === 1,
+            'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/30': currentTourStep === 2,
+            'bg-gradient-to-tr from-violet-600 to-indigo-500 shadow-violet-500/30': currentTourStep === 3,
+            'bg-gradient-to-tr from-rose-600 to-pink-500 shadow-rose-500/30': currentTourStep === 4,
+            'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/30': currentTourStep === 5
+          }">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-extrabold text-slate-100 text-sm sm:text-base">Platform Quick Tour</h3>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-800 text-indigo-300 border border-slate-700 font-mono"
+              x-text="'Step ' + currentTourStep + ' of ' + totalTourSteps">Step 1 of 5</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Discover essential tools & powerhouse features</p>
+        </div>
+      </div>
+      <button @click="closeOnboardingTour(false)"
+        class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
+        title="Skip Tour">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- 5 Step Dots / Progress Indicator -->
+    <div class="flex items-center justify-center gap-2 pt-1 pb-1 relative z-10">
+      <template x-for="step in [1, 2, 3, 4, 5]" :key="step">
+        <button type="button" @click="goToTourStep(step)"
+          class="h-1.5 rounded-full transition-all duration-300"
+          :class="currentTourStep === step ? 'w-8 bg-gradient-to-r from-indigo-500 to-pink-500' : (currentTourStep > step ? 'w-3 bg-indigo-400/60' : 'w-3 bg-slate-700 hover:bg-slate-600')"
+          :title="'Go to Step ' + step"></button>
+      </template>
+    </div>
+
+    <!-- STEP CONTENT AREA -->
+    <div class="min-h-[260px] flex flex-col justify-between relative z-10 py-1">
+
+      <!-- STEP 1: AI Resume Architect -->
+      <div x-show="currentTourStep === 1" class="space-y-3.5"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-x-4"
+        x-transition:enter-end="opacity-100 translate-x-0">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📄</span>
+          <div>
+            <h4 class="text-base font-bold text-white">1. AI Resume Architect & Tailor</h4>
+            <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">Left Panel • Smart Optimization</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Upload your existing resume (PDF, Word, or Text) or select one of our pre-built industry samples. Paste your target Job Description, choose a tone, and click <strong>"Tailor Resume"</strong>.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="file-check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">ATS Keyword Match</span>
+              <span class="text-[10px] text-slate-400">95%+ alignment with recruiter screening bots.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Google XYZ Bullets</span>
+              <span class="text-[10px] text-slate-400">Accomplished [X] as measured by [Y] by doing [Z].</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="mail" class="w-4 h-4 text-pink-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Cover Letter Kit</span>
+              <span class="text-[10px] text-slate-400">Persuasive tailored cover letter generated automatically.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button @click="launchTourFeature(1)"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Load Demo Resume & Explore Left Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Interactive Workspace & ATS Scoring -->
+      <div x-show="currentTourStep === 2" class="space-y-3.5"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-x-4"
+        x-transition:enter-end="opacity-100 translate-x-0">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">👁️</span>
+          <div>
+            <h4 class="text-base font-bold text-white">2. Live Interactive Workspace & ATS Audit</h4>
+            <span class="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Center & Right • 8 Luxury Themes</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Switch effortlessly between <strong>Resume View</strong>, <strong>Cover Letter</strong>, and <strong>Interactive Web Portfolio</strong>. Test all 8 designer formats (Visual Sidebar, Creative Gradient, Classic ATS, Tech Noir) on-screen in real time!
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Live ATS Score</span>
+              <span class="text-[10px] text-slate-400">Real-time keyword analysis & formatting checklist.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="palette" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Visual & Classic PDF</span>
+              <span class="text-[10px] text-slate-400">Download high-res PDF ready for submission.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="globe" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Live Web Portfolio</span>
+              <span class="text-[10px] text-slate-400">Publish your interactive web page with custom domain.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button @click="launchTourFeature(2)"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-cyan-600/80 hover:bg-cyan-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="layout" class="w-3.5 h-3.5"></i>
+            <span>View Workspace & Formats</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: AI Voice Mock Interview Studio -->
+      <div x-show="currentTourStep === 3" class="space-y-3.5"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-x-4"
+        x-transition:enter-end="opacity-100 translate-x-0">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🎙️</span>
+          <div>
+            <h4 class="text-base font-bold text-white">3. AI Voice Mock Interview Studio</h4>
+            <span class="text-[10px] font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">Career Copilot • Real-Time Audio</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Located inside your <strong>24/7 Career Copilot</strong> widget! Practice verbal interview answers with an intelligent conversational recruiter before facing real hiring managers.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="volume-2" class="w-4 h-4 text-violet-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Spoken AI Voice</span>
+              <span class="text-[10px] text-slate-400">Natural voice synthesis reads realistic questions.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-pink-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Speech Pacing (WPM)</span>
+              <span class="text-[10px] text-slate-400">Instant pace check & filler-word ('um', 'like') alerts.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="target" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">STAR Methodology</span>
+              <span class="text-[10px] text-slate-400">Situation, Task, Action, Result breakdown & score.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button @click="launchTourFeature(3)"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-violet-600/90 hover:bg-violet-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="mic" class="w-3.5 h-3.5 text-violet-200"></i>
+            <span>🎙️ Open AI Voice Mock Interview Studio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Real-Time AI Video Conference & Live HUD Coach -->
+      <div x-show="currentTourStep === 4" class="space-y-3.5"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-x-4"
+        x-transition:enter-end="opacity-100 translate-x-0">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📹</span>
+          <div>
+            <h4 class="text-base font-bold text-white">4. AI Video Conference & Live HUD Coach</h4>
+            <span class="text-[10px] font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">Supercharged • Candidate Webcam Feed</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          A true-to-life technical & behavioral video conference interview simulator! Join with your camera and mic to experience live mistake coaching.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="video" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Live Webcam Feed</span>
+              <span class="text-[10px] text-slate-400">Authentic meeting layout with AI recruiter avatar.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Live Floating HUD</span>
+              <span class="text-[10px] text-slate-400">Catches vague answers and mistakes *while you speak*!</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="award" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Debrief Dossier</span>
+              <span class="text-[10px] text-slate-400">Hiring verdict (Strong Hire / Hire) & custom action plan.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button @click="launchTourFeature(4)"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>📹 Launch AI Video Conference Studio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 5: High-Security QR Smart Card & Proof-of-Work -->
+      <div x-show="currentTourStep === 5" class="space-y-3.5"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-x-4"
+        x-transition:enter-end="opacity-100 translate-x-0">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📱</span>
+          <div>
+            <h4 class="text-base font-bold text-white">5. QR Smart Card & Proof-of-Work</h4>
+            <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">Digital Business Card • 100% Offline Contact Save</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Prove your real-world skills with tangible evidence! Ideal for automotive technicians, engineers, developers, and trades.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="qr-code" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Offline Contact QR</span>
+              <span class="text-[10px] text-slate-400">Scans straight into phone contacts (vCard) with 1 tap.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-pink-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">Before/After Slider</span>
+              <span class="text-[10px] text-slate-400">Recruiters drag slider to verify quality of your work.</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
+            <i data-lucide="lock" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+            <div>
+              <span class="font-bold text-slate-200 text-[11px] block">4-Digit PIN Gate</span>
+              <span class="text-[10px] text-slate-400">Protects personal info and contact data from scrapers.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button @click="launchTourFeature(5)"
+            class="w-full sm:w-auto px-4 py-2 rounded-xl bg-amber-600/90 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+            <span>📱 Customize QR Smart Card & Proof-of-Work</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer: Navigation Controls -->
+    <div class="border-t border-slate-800/80 pt-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs relative z-10">
+      <div class="flex items-center gap-2">
+        <button type="button" @click="closeOnboardingTour(true)"
+          class="text-[11px] text-slate-400 hover:text-slate-200 transition underline underline-offset-2">
+          Don't show again
+        </button>
+        <span class="text-slate-600">•</span>
+        <button type="button" @click="closeOnboardingTour(false)"
+          class="text-[11px] text-slate-400 hover:text-slate-200 transition">
+          Skip Tour
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <!-- Back Button -->
+        <button type="button" @click="prevTourStep()"
+          :disabled="currentTourStep === 1"
+          class="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1">
+          <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+          <span>Previous</span>
+        </button>
+
+        <!-- Next / Finish Button -->
+        <button type="button" x-show="currentTourStep < totalTourSteps" @click="nextTourStep()"
+          class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold transition shadow-sm flex items-center gap-1">
+          <span>Next Step</span>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <button type="button" x-show="currentTourStep === totalTourSteps" @click="closeOnboardingTour(true)"
+          class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold transition shadow-sm flex items-center gap-1">
+          <span>Get Started 🚀</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+  <!-- AI Career Copilot Chatbot Widget & Floating Bubble Launcher        -->
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
 <!-- Floating Bubble Launcher Button (Fixed Bottom-Right) -->
@@ -4347,6 +4743,26 @@
 
         <!-- Initial Quick Starter Pills -->
         <div class="grid grid-cols-1 gap-2">
+          <!-- Voice Mock Interview Launcher -->
+          <button @click="openVoiceInterviewModal()"
+            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-violet-950/80 via-indigo-950/70 to-purple-950/80 hover:from-violet-900/70 hover:to-indigo-900/70 border border-violet-500/40 hover:border-violet-400 text-white transition flex items-center justify-between group shadow-sm">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🎙️</span>
+              <span class="font-bold text-[11px] text-violet-200 group-hover:text-white">AI Voice Mock Interview Studio</span>
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-violet-500/30 text-violet-300 border border-violet-500/40">Live Audio</span>
+          </button>
+
+          <!-- Real-Time AI Video Conference Launcher -->
+          <button @click="startRealtimeConference('Technical & Behavioral Interview', 'Target Company')"
+            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/80 via-pink-950/70 to-indigo-950/80 hover:from-rose-900/70 hover:to-pink-900/70 border border-rose-500/40 hover:border-rose-400 text-white transition flex items-center justify-between group shadow-sm">
+            <span class="flex items-center gap-2">
+              <span class="text-base">📹</span>
+              <span class="font-bold text-[11px] text-rose-200 group-hover:text-white">AI Video Conference & Live Coaching</span>
+            </span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-500/30 text-rose-300 border border-rose-500/40">HUD Coach</span>
+          </button>
+
           <button @click="sendChatMessage('Conduct a realistic technical mock interview for my profile. Ask me 1 question at a time!')"
             class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
             <span class="flex items-center gap-2">
@@ -5622,11 +6038,42 @@
 
     <!-- TAB 1: QR SMART CARD (Digital NFC / QR Business Card) -->
     <div x-show="activeQrTab === 'card'" class="space-y-4">
+      <!-- QR Mode Selector (Phone Contact vs Web Link) -->
+      <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
+        <button type="button" @click="qrCodeMode = 'vcard'"
+          :class="qrCodeMode === 'vcard' ? 'bg-gradient-to-r from-amber-500 to-pink-500 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+          class="flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5">
+          <i data-lucide="contact" class="w-3.5 h-3.5"></i>
+          <span>📇 Phone Contact Card (vCard)</span>
+        </button>
+        <button type="button" @click="qrCodeMode = 'url'"
+          :class="qrCodeMode === 'url' ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+          class="flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>🌐 Web Portfolio Link</span>
+        </button>
+      </div>
+
+      <!-- Scan Mode Explanation Banner -->
+      <div class="p-2.5 rounded-xl text-[11px] leading-relaxed flex items-center gap-2.5 border transition"
+        :class="qrCodeMode === 'vcard' ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-200'">
+        <i data-lucide="info" class="w-4 h-4 flex-shrink-0 text-amber-400"></i>
+        <div x-show="qrCodeMode === 'vcard'">
+          <strong>📇 Phone Contact Card Mode:</strong> Phone camera එකෙන් scan කළ සැණින් ඔබගේ නම, දුරකථන අංකය, ඊමේල් හා Portfolio Link එක Phone Contacts වලට save වේ (100% Offline!).
+        </div>
+        <div x-show="qrCodeMode === 'url'">
+          <strong>🌐 Web Link Mode:</strong> Phone camera එකෙන් scan කළ විට ඔබගේ live interactive Web Portfolio එක browser එකෙන් විවෘත වේ.
+        </div>
+      </div>
+
       <!-- Digital Card Preview (Clean Luxury Card) -->
       <div class="p-4 rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-700/80 shadow-inner flex flex-col sm:flex-row items-center gap-4">
         <!-- Live SVG QR Code -->
-        <div class="flex-shrink-0 bg-white p-2 rounded-xl shadow-md flex items-center justify-center">
-          <img :src="'/api/portfolio/qr/' + (publishedSlug || 'candidate')" alt="Smart QR Code" class="w-24 h-24 object-contain">
+        <div class="flex-shrink-0 bg-white p-2.5 rounded-xl shadow-md flex flex-col items-center justify-center">
+          <img :src="'/api/portfolio/qr/' + (publishedSlug || 'candidate') + '?mode=' + qrCodeMode"
+            alt="Smart QR Code" class="w-28 h-28 object-contain">
+          <span class="text-[9px] font-extrabold text-slate-800 mt-1 uppercase tracking-wider"
+            x-text="qrCodeMode === 'vcard' ? 'Phone Contact' : 'Web Link'">Phone Contact</span>
         </div>
         
         <!-- Candidate Card Info -->
@@ -5643,21 +6090,26 @@
       </div>
 
       <!-- Quick Action Buttons -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
         <button @click="downloadVCard()"
-          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="contact" class="w-3.5 h-3.5 text-pink-400"></i>
+          class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="user-plus" class="w-3.5 h-3.5 text-pink-400"></i>
           <span>Save Contact (.vcf)</span>
         </button>
+        <button @click="downloadQrPng()"
+          class="px-2.5 py-2 bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 text-amber-200 border border-amber-500/30 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition shadow-sm">
+          <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Download PNG</span>
+        </button>
         <button @click="downloadQrSvg()"
-          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
-          <i data-lucide="download" class="w-3.5 h-3.5 text-amber-400"></i>
-          <span>Download SVG QR</span>
+          class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl border border-slate-700 font-semibold flex items-center justify-center gap-1.5 transition">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Download SVG</span>
         </button>
         <button @click="copySmartCardUrl()"
-          class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow transition">
+          class="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 shadow transition">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-          <span>Copy Card Link</span>
+          <span>Copy Link</span>
         </button>
       </div>
 

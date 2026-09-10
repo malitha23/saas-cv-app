@@ -527,7 +527,7 @@
               <template x-if="jobSubTab === 'recommendations'">
                 <div class="space-y-3">
                   <div class="grid grid-cols-1 gap-4">
-                    <template x-for="(job, index) in ((tailoredData.matched_jobs || []).slice(0, (currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? undefined : 3))" :key="index">
+                    <template x-for="(job, index) in ((tailoredData?.matched_jobs || []).slice(0, (currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? undefined : 3))" :key="index">
                       <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition shadow-lg group relative flex flex-col justify-between gap-3">
                         
                         <!-- Header: Title, Match Score & Key Meta -->
@@ -637,7 +637,7 @@
                   </div>
 
                   <!-- Free Tier Upgrade Teaser Card for More Matches -->
-                  <template x-if="(!currentUser || currentUser.plan_tier === 'free') && (tailoredData.matched_jobs || []).length > 3">
+                  <template x-if="(!currentUser || currentUser.plan_tier === 'free') && (tailoredData?.matched_jobs || []).length > 3">
                     <div class="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/70 via-purple-950/60 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
                       <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">

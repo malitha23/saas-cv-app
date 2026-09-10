@@ -301,6 +301,8 @@ class UserResponse(BaseModel):
     daily_copilot_kits_remaining: Optional[int] = 1
     daily_chat_count: int = 0
     daily_chat_remaining: Optional[int] = 3
+    daily_interview_count: int = 0
+    daily_interview_remaining: Optional[int] = 1
     # Strategic Lifetime Quotas
     lifetime_ats_downloads_count: int = 0
     lifetime_ats_downloads_remaining: Optional[int] = 2

@@ -1,4 +1,5 @@
 import os
+import io
 import re
 import html
 import json
@@ -175,13 +176,16 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
 
 def compute_portfolio_hmac(slug: str, role: str) -> str:
     """Compute tamper-proof HMAC-SHA256 signature for credential authenticity."""
-    secret = os.getenv("SECRET_KEY", "dreemfolio_saas_hmac_secret_key_2026")
+    secret = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET")
+    if not secret or secret.strip() in ("dreemfolio_saas_hmac_secret_key_2026", ""):
+        # Fallback to persistent machine/workspace secret
+        secret = "df_hmac_" + hashlib.sha256(f"dreemfolio_{os.path.abspath(__file__)}".encode()).hexdigest()
     msg = f"{slug}:{role}:authentic_credential".encode("utf-8")
     return hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:16]
 
 
-def generate_qr_code_svg(portfolio_url: str) -> str:
-    """Generate crisp, scalable vector SVG QR code for the candidate's portfolio URL."""
+def generate_qr_code_svg(data: str) -> str:
+    """Generate crisp, scalable vector SVG QR code for candidate vCards or portfolio URLs."""
     try:
         factory = qrcode.image.svg.SvgPathImage
         qr = qrcode.QRCode(
@@ -191,7 +195,7 @@ def generate_qr_code_svg(portfolio_url: str) -> str:
             border=2,
             image_factory=factory
         )
-        qr.add_data(portfolio_url)
+        qr.add_data(data)
         qr.make(fit=True)
         img = qr.make_image()
         svg_bytes = img.to_string()
@@ -201,8 +205,37 @@ def generate_qr_code_svg(portfolio_url: str) -> str:
         return f'<svg viewBox="0 0 100 100" class="w-full h-full text-slate-800"><rect width="100" height="100" fill="#f8fafc"/><text x="50" y="55" font-size="10" text-anchor="middle" fill="#0f172a">QR Code Error</text></svg>'
 
 
-def generate_vcard_content(resume: TailoredResume, portfolio_url: str) -> str:
-    """Generate standardized vCard 3.0 file content for 1-tap mobile contact saving."""
+def generate_qr_code_png(data: str) -> bytes:
+    """Generate high-resolution PNG QR code for mobile wallpaper, gallery saving, and WhatsApp."""
+    try:
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=12,
+            border=2
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception as e:
+        qr = qrcode.QRCode(version=1, box_size=6, border=1)
+        qr.add_data("Error")
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+
+
+def generate_vcard_content(resume: TailoredResume, portfolio_url: str, include_private: bool = True) -> str:
+    """
+    Generate standardized vCard 3.0 file content for 1-tap mobile contact saving.
+    Security: When include_private=False (e.g. unverified PIN-protected profile),
+    sensitive phone & email are redacted to thwart automated scrapers.
+    """
     info = resume.personal_info
     name_parts = (info.full_name or "Candidate").split()
     last_name = name_parts[-1] if len(name_parts) > 1 else ""
@@ -218,17 +251,23 @@ def generate_vcard_content(resume: TailoredResume, portfolio_url: str) -> str:
         f"TITLE:{role}",
         f"ORG:{company}",
     ]
-    if info.phone:
-        clean_phone = re.sub(r"[^\d+]", "", info.phone)
-        vcard_lines.append(f"TEL;TYPE=CELL,VOICE:{clean_phone}")
-    if info.email:
-        vcard_lines.append(f"EMAIL;TYPE=INTERNET,PREF:{info.email}")
+    if include_private:
+        if info.phone:
+            clean_phone = re.sub(r"[^\d+]", "", info.phone)
+            vcard_lines.append(f"TEL;TYPE=CELL,VOICE:{clean_phone}")
+        if info.email:
+            vcard_lines.append(f"EMAIL;TYPE=INTERNET,PREF:{info.email}")
+        if info.location:
+            vcard_lines.append(f"ADR;TYPE=HOME:;;;{info.location};;;")
+    else:
+        vcard_lines.append("NOTE:Direct contact details are PIN-protected. Unlock verified access at the portfolio URL below.")
+
     if portfolio_url:
         vcard_lines.append(f"URL:{portfolio_url}")
     if info.linkedin:
         vcard_lines.append(f"X-SOCIALPROFILE;type=linkedin:{info.linkedin}")
     
-    vcard_lines.append("NOTE:Verified Candidate Credentials by DreemFolio SaaS. Cryptographically Signed.")
+    vcard_lines.append("NOTE:Verified Candidate Credentials & Proof-of-Work. Cryptographically Signed.")
     vcard_lines.append("END:VCARD\r\n")
     return "\r\n".join(vcard_lines)
 
@@ -333,12 +372,20 @@ def render_proof_of_work_section(proof_items: List[ProofOfWorkItem], accent_colo
 
 
 def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
-    """Render high-security 4-digit PIN lock gate screen when portfolio is passcode protected."""
+    """
+    Render high-security 4-digit PIN lock gate screen when portfolio is passcode protected.
+    Security Hardening: Never outputs plaintext PIN into HTML. Employs asynchronous server-side
+    verification with offline salted SHA-256 cryptographic fallback.
+    """
     sec = getattr(safe_resume, "security_config", None)
     if not sec or not sec.is_pin_protected or not sec.access_pin:
         return ""
     
     clean_pin = sec.access_pin.strip()
+    # Generate deterministic salt and SHA-256 hash so plaintext PIN is NEVER leaked in public HTML
+    pin_salt = hashlib.sha256(f"df_salt_{slug}_{clean_pin}".encode()).hexdigest()[:16]
+    pin_hash = hashlib.sha256(f"{clean_pin}:{pin_salt}".encode()).hexdigest()
+
     avatar = safe_resume.personal_info.avatar_url or ""
     avatar_html = f'<img src="{avatar}" class="w-20 h-20 rounded-full mx-auto border-2 border-indigo-500/40 object-cover shadow-xl">' if avatar else f'<div class="w-20 h-20 rounded-full mx-auto bg-indigo-600/20 border-2 border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-2xl shadow-xl">{safe_resume.personal_info.full_name[:1]}</div>'
 
@@ -384,7 +431,8 @@ def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
     <script>
       (function() {{
         const slug = "{slug}";
-        const expectedPin = "{clean_pin}";
+        const pinSalt = "{pin_salt}";
+        const pinHash = "{pin_hash}";
         const storageKey = 'df_unlocked_' + slug;
 
         if (sessionStorage.getItem(storageKey) === 'true') {{
@@ -392,12 +440,55 @@ def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
           if (gate) gate.style.display = 'none';
         }}
 
-        window.verifyPinCode = function() {{
+        async function computeClientSha256(message) {{
+          try {{
+            const msgUint8 = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          }} catch(e) {{
+            return '';
+          }}
+        }}
+
+        window.verifyPinCode = async function() {{
           const input = document.getElementById('df-pin-input');
           const err = document.getElementById('df-pin-error');
+          const btn = document.querySelector('#df-pin-gate button');
           if (!input) return;
+          const entered = input.value.trim();
+          if (!entered) return;
 
-          if (input.value.trim() === expectedPin) {{
+          if (err) err.classList.add('hidden');
+          if (btn) {{ btn.disabled = true; btn.innerText = 'Verifying...'; }}
+
+          let granted = false;
+          let errorMessage = 'Incorrect passcode. Please try again.';
+
+          // 1. Primary: Verify via secure Server API (enforces Rate Limiting & Anti-Bruteforce Lockout)
+          try {{
+            const res = await fetch('/api/portfolio/verify-pin', {{
+              method: 'POST',
+              headers: {{ 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ slug: slug, pin: entered }})
+            }});
+            const data = await res.json();
+            if (res.ok && data.success) {{
+              granted = true;
+            }} else {{
+              errorMessage = data.detail || errorMessage;
+            }}
+          }} catch(fetchErr) {{
+            // 2. Offline / Standalone HTML Export Fallback: Compare against Salted Cryptographic SHA-256 Hash
+            const computed = await computeClientSha256(entered + ':' + pinSalt);
+            if (computed === pinHash) {{
+              granted = true;
+            }}
+          }}
+
+          if (btn) {{ btn.disabled = false; btn.innerText = 'Unlock Portfolio Access'; }}
+
+          if (granted) {{
             sessionStorage.setItem(storageKey, 'true');
             const gate = document.getElementById('df-pin-gate');
             if (gate) {{
@@ -407,6 +498,7 @@ def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
             }}
           }} else {{
             if (err) {{
+              err.innerText = errorMessage;
               err.classList.remove('hidden');
               input.value = '';
               input.focus();

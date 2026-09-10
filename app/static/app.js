@@ -137,10 +137,16 @@ function resumeApp() {
     // High-Security QR Smart Card & Interactive Proof-of-Work State
     showQrCardModal: false,
     activeQrTab: 'card',
+    qrCodeMode: 'vcard', // 'vcard' (phone contact) or 'url' (web link)
     publishedSlug: '',
     qrPinInput: '',
     isPinProtected: false,
     watermarkEnabled: true,
+
+    // Interactive First-Time Onboarding Tour State
+    showOnboardingTour: false,
+    currentTourStep: 1,
+    totalTourSteps: 5,
     newProof: {
       title: '',
       category: 'Automotive & Trade',
@@ -387,6 +393,14 @@ function resumeApp() {
         }
       } catch (err) {
         console.warn('Could not fetch sample data:', err);
+      }
+
+      // Check first-time visitor tour
+      const tourSeen = localStorage.getItem('df_tour_seen');
+      if (!tourSeen) {
+        setTimeout(() => {
+          this.startOnboardingTour();
+        }, 800);
       }
     },
 
@@ -1423,12 +1437,20 @@ function resumeApp() {
     },
 
     async downloadPortfolioHtml() {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to export your standalone HTML portfolio website!');
+        return;
+      }
       if (!this.tailoredData) return;
 
       try {
+        const token = localStorage.getItem('saas_token');
         const res = await fetch(`/api/download-portfolio?theme=${this.portfolioTheme}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           body: JSON.stringify(this.tailoredData),
         });
 
@@ -2443,7 +2465,12 @@ function resumeApp() {
     async openApplicationCopilot(job) {
       if (!job) return;
 
-      if (this.currentUser && this.currentUser.plan_tier === 'free' && this.currentUser.daily_copilot_kits_remaining === 0) {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to generate 1-click tailored screening answers & elevator pitches!');
+        return;
+      }
+
+      if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_copilot_kits_remaining === 0) {
         this.openQuotaLimitModal({
           title: 'Application Copilot Limit Reached',
           message: 'Free Starter tier includes 1 tailored Application Kit per day. Upgrade to Pro ($9/mo) for unlimited 1-click tailored screening answers & elevator pitches!',
@@ -2724,6 +2751,11 @@ function resumeApp() {
     },
 
     async sendChatMessage(promptText = null) {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or create a free account to chat with your 24/7 AI Career Copilot!');
+        return;
+      }
+
       const query = (promptText || this.chatInput || '').trim();
       if (!query || this.isChatLoading) return;
 
@@ -2803,6 +2835,21 @@ function resumeApp() {
     // ═══════════════════════════════════════════════════════════════════
 
     openVoiceInterviewModal(role = '', company = '') {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to practice with the AI Voice Mock Interview Simulator!');
+        return;
+      }
+
+      if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
+        this.openQuotaLimitModal({
+          title: 'Daily Voice Interview Limit Reached',
+          message: 'Free Starter accounts include 1 interactive AI Voice Mock Interview session per day. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited practice sessions!',
+          feature: 'voice_interview',
+          requiredPlan: 'pro'
+        });
+        return;
+      }
+
       const activeRole = role || this.tailoredData?.target_job_title || this.targetJobTitle || 'Automotive Technician';
       const activeCompany = company || this.targetCompany || '';
 
@@ -3125,6 +3172,21 @@ function resumeApp() {
     // ═══════════════════════════════════════════════════════════════════
 
     startRealtimeConference(role = '', company = '') {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to join the Real-Time AI Video Conference & Live Coaching Studio!');
+        return;
+      }
+
+      if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
+        this.openQuotaLimitModal({
+          title: 'Daily Conference Coaching Limit Reached',
+          message: 'Free Starter accounts include 1 AI Video Conference & Live Coaching session per day. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited video coaching!',
+          feature: 'video_conference',
+          requiredPlan: 'pro'
+        });
+        return;
+      }
+
       // Close other modals if open
       this.closeVoiceInterviewModal();
       this.showCopilotModal = false;
@@ -3504,6 +3566,11 @@ function resumeApp() {
     // ═══════════════════════════════════════════════════════════════════
 
     openQrCardModal() {
+      if (!this.currentUser) {
+        this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to customize your High-Security QR Smart Card & Proof-of-Work portfolio!');
+        return;
+      }
+
       if (!this.tailoredData) {
         alert('Please tailor or load a resume first.');
         return;
@@ -3619,32 +3686,92 @@ function resumeApp() {
     async syncSecurityWithBackend() {
       if (!this.tailoredData) return;
       try {
-        const token = localStorage.getItem('saas_token');
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch(`/api/publish-portfolio?theme=${this.portfolioTheme}`, {
+        // 1. Sync into in-memory cache so QR and vCard are instantly available for all users
+        await fetch('/api/portfolio/sync-preview', {
           method: 'POST',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.tailoredData),
         });
-        if (res.ok) {
-          const d = await res.json();
-          this.publishedSlug = d.slug;
-          this.publishedLiveUrl = d.live_url;
+
+        // 2. Also publish live if user has Pro plan
+        const token = localStorage.getItem('saas_token');
+        if (token && this.currentUser && this.currentUser.plan_tier !== 'free') {
+          const res = await fetch(`/api/publish-portfolio?theme=${this.portfolioTheme}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(this.tailoredData),
+          });
+          if (res.ok) {
+            const d = await res.json();
+            this.publishedSlug = d.slug;
+            this.publishedLiveUrl = d.live_url;
+          }
         }
       } catch (e) {
         // Non-blocking sync
       }
     },
 
-    downloadVCard() {
+    async downloadVCard() {
       const slug = this.publishedSlug || 'candidate';
-      window.open(`/api/portfolio/vcard/${slug}`, '_blank');
+      try {
+        const res = await fetch(`/api/portfolio/vcard/${slug}`);
+        if (!res.ok) throw new Error('vCard generation failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}_contact.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('vCard Download Error: ' + err.message);
+      }
     },
 
-    downloadQrSvg() {
+    async downloadQrPng() {
       const slug = this.publishedSlug || 'candidate';
-      window.open(`/api/portfolio/qr/${slug}`, '_blank');
+      const mode = this.qrCodeMode || 'vcard';
+      try {
+        const res = await fetch(`/api/portfolio/qr/${slug}?mode=${mode}&format=png&download=1`);
+        if (!res.ok) throw new Error('PNG generation failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}_${mode}_qr.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('QR PNG Download Error: ' + err.message);
+      }
+    },
+
+    async downloadQrSvg() {
+      const slug = this.publishedSlug || 'candidate';
+      const mode = this.qrCodeMode || 'vcard';
+      try {
+        const res = await fetch(`/api/portfolio/qr/${slug}?mode=${mode}&format=svg&download=1`);
+        if (!res.ok) throw new Error('SVG generation failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${slug}_${mode}_qr.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('QR SVG Download Error: ' + err.message);
+      }
     },
 
     copySmartCardUrl() {
@@ -3655,6 +3782,85 @@ function resumeApp() {
       }).catch(() => {
         prompt('Copy your link:', url);
       });
+    },
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INTERACTIVE ONBOARDING TOUR & FEATURE DISCOVERY METHODS
+    // ═══════════════════════════════════════════════════════════════════
+
+    startOnboardingTour() {
+      this.currentTourStep = 1;
+      this.showOnboardingTour = true;
+      this.$nextTick(() => {
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+          window.lucide.createIcons();
+        }
+      });
+    },
+
+    nextTourStep() {
+      if (this.currentTourStep < this.totalTourSteps) {
+        this.currentTourStep++;
+        this.$nextTick(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+      }
+    },
+
+    prevTourStep() {
+      if (this.currentTourStep > 1) {
+        this.currentTourStep--;
+        this.$nextTick(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+      }
+    },
+
+    goToTourStep(step) {
+      if (step >= 1 && step <= this.totalTourSteps) {
+        this.currentTourStep = step;
+        this.$nextTick(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+      }
+    },
+
+    closeOnboardingTour(dontShowAgain = false) {
+      this.showOnboardingTour = false;
+      if (dontShowAgain) {
+        localStorage.setItem('df_tour_seen', 'true');
+      }
+    },
+
+    launchTourFeature(step) {
+      this.closeOnboardingTour(false);
+
+      if (step === 1) {
+        // Step 1: Load sample resume and scroll to input section
+        this.loadSample('software_engineer');
+        this.$nextTick(() => {
+          const el = document.getElementById('input-section') || document.querySelector('textarea');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } else if (step === 2) {
+        // Step 2: Open workspace preview
+        this.activeTab = 'resume';
+      } else if (step === 3) {
+        // Step 3: Launch Voice Mock Interview Studio
+        this.openVoiceInterviewModal();
+      } else if (step === 4) {
+        // Step 4: Launch Real-Time Video Conference Studio
+        this.startRealtimeConference('Technical & Behavioral Interview', 'Target Company');
+      } else if (step === 5) {
+        // Step 5: Open QR Smart Card & Proof-of-Work modal
+        this.openQrCardModal();
+      }
     }
   };
 }
