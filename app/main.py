@@ -1,11 +1,16 @@
 import os
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 import io
 import re
 import json
 import time
 import datetime
 from collections import defaultdict
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any, Tuple, Union, Set
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
@@ -186,10 +191,12 @@ templates = Jinja2Templates(directory=templates_dir)
 def on_startup():
     """Ensure database tables are created in MySQL on startup."""
     try:
-        Base.metadata.create_all(bind=engine)
-        print("✅ Database tables (users, user_resumes) successfully initialized in MySQL!")
+        from app.database import get_engine
+        active_engine = get_engine()
+        Base.metadata.create_all(bind=active_engine)
+        print("[DB] Database tables successfully initialized!")
     except Exception as e:
-        print("⚠️ Warning during database table initialization:", e)
+        print("[DB] Warning during database table initialization:", str(e))
 
 
 @app.get("/api/health")
@@ -2383,6 +2390,10 @@ async def serve_landing(request: Request):
 
 
 @app.get("/app", response_class=HTMLResponse)
+@app.get("/app/", response_class=HTMLResponse)
+@app.get("/builder", response_class=HTMLResponse)
+@app.get("/builder/", response_class=HTMLResponse)
+@app.get("/workspace", response_class=HTMLResponse)
 async def serve_app(request: Request):
     """Serve the complete ATS AI Resume Builder, Editor & Portfolio Studio application."""
     return templates.TemplateResponse(request=request, name="index.html")

@@ -17,19 +17,19 @@
             ATS & Visual Designer
           </span>
         </div>
-        <p class="text-[11px] text-slate-400 hidden lg:block tracking-normal">ATS Resumes • Visual Photo Formats • Live Portfolios</p>
+        <p class="text-[11px] text-slate-400 hidden 2xl:block tracking-normal">ATS Resumes • Visual Photo Formats • Live Portfolios</p>
       </div>
     </a>
 
     <!-- 2. DESKTOP HEADER ACTIONS (Visible on lg/xl screens) -->
-    <div class="hidden lg:flex items-center space-x-3 xl:space-x-4">
+    <div class="hidden lg:flex items-center space-x-2 xl:space-x-2.5 2xl:space-x-3 shrink-0 ml-auto min-w-0">
 
       <!-- Return to Home Link -->
       <a href="/"
         class="px-2.5 py-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 hover:bg-slate-700/70 text-slate-300 hover:text-white transition text-xs font-semibold flex items-center gap-1.5"
         title="Return to Landing Page">
         <i data-lucide="home" class="w-3.5 h-3.5 text-indigo-400"></i>
-        <span>Home</span>
+        <span class="hidden xl:inline">Home</span>
       </a>
 
       <!-- Quick Tour Button -->
@@ -37,11 +37,11 @@
         class="px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm"
         title="Interactive Platform Quick Tour">
         <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 animate-pulse"></i>
-        <span>✨ Quick Tour</span>
+        <span class="hidden xl:inline">✨ Quick Tour</span>
       </button>
       
-      <!-- Sample Loaders -->
-      <div class="flex items-center space-x-1.5 text-xs bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
+      <!-- Sample Loaders (Shown on ultra-wide screens or guest users) -->
+      <div x-show="!currentUser" class="hidden 2xl:flex items-center space-x-1.5 text-xs bg-slate-800/60 p-1 rounded-lg border border-slate-700/60">
         <span class="text-slate-400 px-2 font-medium">Demo:</span>
         <button @click="loadSample('software_engineer')"
           class="px-2.5 py-1 rounded hover:bg-slate-700 text-slate-200 transition font-medium flex items-center gap-1">
@@ -79,7 +79,8 @@
       <button @click="showPricingModal = true"
         class="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition flex items-center gap-1.5 shadow-sm">
         <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i>
-        <span>Pricing Plans</span>
+        <span class="hidden xl:inline">Pricing Plans</span>
+        <span class="xl:hidden">Plans</span>
       </button>
 
       <!-- Dark / Light Mode Toggle -->
@@ -146,12 +147,13 @@
 
           <!-- Admin Control Center (Super Admin Only) -->
           <template x-if="currentUser.is_admin">
-            <div class="flex items-center space-x-1.5">
+            <div class="flex items-center space-x-1.5 shrink-0">
               <a href="/paneladmin"
-                class="px-2.5 py-1.5 text-xs font-extrabold rounded-lg border border-purple-500/40 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 transition flex items-center gap-1.5 shadow-sm"
+                class="px-2 xl:px-2.5 py-1.5 text-xs font-extrabold rounded-lg border border-purple-500/40 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 transition flex items-center gap-1.5 shadow-sm"
                 title="Dedicated Enterprise Admin Portal">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-400"></i>
-                <span>Admin Portal</span>
+                <span class="hidden xl:inline">Admin Portal</span>
+                <span class="xl:hidden">Admin</span>
               </a>
               <button @click="openAdminModal()"
                 class="p-1.5 text-xs rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition flex items-center"
@@ -163,18 +165,19 @@
 
           <!-- My Resumes (MySQL Cloud) Button -->
           <button @click="openSavedResumesModal()"
-            class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+            class="px-2 xl:px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 transition shadow-sm shrink-0"
             title="View all resumes saved in your MySQL database">
             <i data-lucide="folder-open" class="w-3.5 h-3.5 text-indigo-400"></i>
-            <span>My Resumes</span>
+            <span class="hidden xl:inline">My Resumes</span>
+            <span class="xl:hidden">Resumes</span>
           </button>
 
           <!-- Interactive User Plan Badge & Strategic Lifetime Quota Popover -->
-          <div class="relative" @click.outside="showQuotaDropdown = false">
+          <div class="relative shrink-0" @click.outside="showQuotaDropdown = false">
             <div class="flex items-center space-x-1.5">
               <!-- Clickable Plan & Quota Pill -->
               <button @click="showQuotaDropdown = !showQuotaDropdown; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
-                class="px-2.5 py-1 text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                class="px-2 xl:px-2.5 py-1 text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm cursor-pointer shrink-0"
                 :class="{
                   'bg-slate-800/90 text-slate-300 border-slate-700 hover:border-slate-600': !currentUser.plan_tier || currentUser.plan_tier === 'free',
                   'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25': currentUser.plan_tier === 'pro',
@@ -185,9 +188,9 @@
                 <span class="font-extrabold uppercase text-[10px] tracking-wider"
                   x-text="(currentUser.plan_tier || 'free').toUpperCase() + ' PLAN'"></span>
                 
-                <!-- Quick Real-Time Quota Counter for Free Tier -->
+                <!-- Quick Real-Time Quota Counter for Free Tier (Compact on 2xl) -->
                 <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                  <div class="flex items-center gap-1 text-[10px] font-mono ml-0.5 pl-1.5 border-l border-slate-700">
+                  <div class="hidden 2xl:flex items-center gap-1 text-[10px] font-mono ml-0.5 pl-1.5 border-l border-slate-700">
                     <span title="AI Tailoring Runs Left Today" class="text-indigo-300 font-semibold">AI:<span x-text="currentUser.daily_generations_remaining !== null ? currentUser.daily_generations_remaining : 2"></span></span>
                     <span class="text-slate-500">•</span>
                     <span title="Lifetime Classic ATS PDF Downloads Remaining" :class="(currentUser.lifetime_ats_downloads_remaining === 0) ? 'text-red-400 font-bold' : 'text-emerald-300 font-semibold'">ATS:<span x-text="currentUser.lifetime_ats_downloads_remaining !== null && currentUser.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 2"></span></span>
@@ -204,8 +207,8 @@
               <!-- Quick Upgrade CTA Button (Free Tier Only) -->
               <button x-show="!currentUser.plan_tier || currentUser.plan_tier === 'free'"
                 @click="showPricingModal = true"
-                class="px-2 py-1 text-[10.5px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg shadow flex items-center gap-1 transition">
-                <i data-lucide="zap" class="w-3 h-3"></i> Upgrade
+                class="px-2 py-1 text-[10.5px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg shadow flex items-center gap-1 transition shrink-0">
+                <i data-lucide="zap" class="w-3 h-3"></i> <span class="hidden sm:inline">Upgrade</span>
               </button>
             </div>
 
@@ -348,11 +351,11 @@
           </div>
 
           <!-- User Profile & Account Menu Dropdown -->
-          <div class="relative" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
-            <div class="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-800 border border-slate-700/90 rounded-xl px-2.5 py-1 text-xs shadow-sm transition">
+          <div id="userProfileDropdown" class="relative shrink-0" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
+            <div class="flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-800 border border-slate-700/90 rounded-xl px-2 xl:px-2.5 py-1 text-xs shadow-sm transition shrink-0">
               <!-- Profile Avatar & Name Trigger -->
-              <button @click="userMenuOpen = !userMenuOpen; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
-                class="flex items-center space-x-2 text-left focus:outline-none group">
+              <button id="userMenuButton" @click="userMenuOpen = !userMenuOpen; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                class="flex items-center space-x-1.5 xl:space-x-2 text-left focus:outline-none group">
                 <!-- Avatar Circle with Bulletproof Error Fallback -->
                 <div class="relative w-6 h-6 rounded-full shrink-0 flex items-center justify-center overflow-hidden ring-1.5 ring-indigo-500/50 shadow-sm bg-slate-900">
                   <img x-show="currentUser.avatar_url && !avatarImgFailed"
@@ -369,7 +372,7 @@
                 </div>
 
                 <!-- User Full Name -->
-                <span class="font-semibold text-slate-200 group-hover:text-white max-w-[105px] truncate tracking-tight transition"
+                <span class="font-semibold text-slate-200 group-hover:text-white max-w-[70px] sm:max-w-[85px] xl:max-w-[110px] truncate tracking-tight transition"
                   x-text="currentUser.full_name || currentUser.email.split('@')[0]"></span>
                 
                 <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 group-hover:text-slate-300 transition-transform duration-150"

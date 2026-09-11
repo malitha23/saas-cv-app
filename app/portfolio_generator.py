@@ -816,6 +816,57 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           </div>
         '''
 
+    bio_html = f'<p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    joined_skills_badges = "".join(skills_badges)
+    skills_card_html = f'''
+          <div class="bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
+              <i data-lucide="cpu" class="w-4 h-4 text-[var(--accent)]"></i>
+              <span>Technical Arsenal</span>
+            </div>
+            <div class="space-y-4">{joined_skills_badges}</div>
+          </div>
+    ''' if resume.portfolio_show_skills else ''
+
+    proj_col = "lg:col-span-2" if resume.portfolio_show_skills else "lg:col-span-3"
+    joined_project_cards = "".join(project_cards)
+    projects_card_html = f'''
+          <div class="{proj_col} bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2 text-sm font-bold text-white">
+                <i data-lucide="layers" class="w-4 h-4 text-[var(--accent)]"></i>
+                <span>Featured Systems & Projects</span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono">{len(resume.projects)} Production Builds</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">{joined_project_cards}</div>
+          </div>
+    ''' if resume.portfolio_show_projects else ''
+
+    exp_col = "lg:col-span-2" if resume.portfolio_show_education else "lg:col-span-3"
+    joined_exp_cards = "".join(exp_cards)
+    exp_card_html = f'''
+          <div class="{exp_col} bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
+            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
+              <i data-lucide="briefcase" class="w-4 h-4 text-[var(--accent)]"></i>
+              <span>Career Trajectory</span>
+            </div>
+            <div class="pt-2 space-y-4">{joined_exp_cards}</div>
+          </div>
+    ''' if resume.portfolio_show_experience else ''
+
+    joined_edu_badges = "".join(edu_badges)
+    edu_card_html = f'''
+          <div class="bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
+              <i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--accent)]"></i>
+              <span>Qualifications</span>
+            </div>
+            <div class="space-y-3">{joined_edu_badges}</div>
+          </div>
+    ''' if resume.portfolio_show_education else ''
+
     return f"""
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-6">
         
@@ -835,7 +886,7 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
                 <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">{full_name}</h1>
                 <p class="text-sm sm:text-base font-semibold text-[var(--accent)] mt-0.5">{role_title}</p>
               </div>
-              {f'<p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">{summary}</p>' if resume.portfolio_show_bio else ''}
+              {bio_html}
               <div class="flex flex-wrap gap-2 pt-2 justify-center sm:justify-start">
                 <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] hover:brightness-110 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] flex items-center gap-1.5 transition">
                   <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -869,29 +920,10 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           <!-- Bento Card 3: Skills Stack (1 Col) -->
-          {f'''
-          <div class="bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
-              <i data-lucide="cpu" class="w-4 h-4 text-[var(--accent)]"></i>
-              <span>Technical Arsenal</span>
-            </div>
-            <div class="space-y-4">{"".join(skills_badges)}</div>
-          </div>
-          ''' if resume.portfolio_show_skills else ''}
+          {skills_card_html}
 
           <!-- Bento Card 4: Featured Projects Spotlight (2 Cols) -->
-          {f'''
-          <div class="{"lg:col-span-2" if resume.portfolio_show_skills else "lg:col-span-3"} bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div class="flex items-center gap-2 text-sm font-bold text-white">
-                <i data-lucide="layers" class="w-4 h-4 text-[var(--accent)]"></i>
-                <span>Featured Systems & Projects</span>
-              </div>
-              <span class="text-[11px] text-slate-400 font-mono">{len(resume.projects)} Production Builds</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">{"".join(project_cards)}</div>
-          </div>
-          ''' if resume.portfolio_show_projects else ''}
+          {projects_card_html}
 
         </div>
 
@@ -899,26 +931,10 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           <!-- Bento Card 5: Experience Timeline (2 Cols) -->
-          {f'''
-          <div class="{"lg:col-span-2" if resume.portfolio_show_education else "lg:col-span-3"} bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
-            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
-              <i data-lucide="briefcase" class="w-4 h-4 text-[var(--accent)]"></i>
-              <span>Career Trajectory</span>
-            </div>
-            <div class="pt-2 space-y-4">{"".join(exp_cards)}</div>
-          </div>
-          ''' if resume.portfolio_show_experience else ''}
+          {exp_card_html}
 
           <!-- Bento Card 6: Education & Credentials (1 Col) -->
-          {f'''
-          <div class="bg-slate-900/70 backdrop-blur border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
-              <i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--accent)]"></i>
-              <span>Qualifications</span>
-            </div>
-            <div class="space-y-3">{"".join(edu_badges)}</div>
-          </div>
-          ''' if resume.portfolio_show_education else ''}
+          {edu_card_html}
 
         </div>
 
@@ -1017,18 +1033,69 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
                 for b in exp.bullet_points
             ]
         )
+        loc_suffix = f"· {exp.location}" if exp.location else ""
         exp_items.append(f"""
           <div class="border-b border-slate-800/80 pb-6 last:border-0 last:pb-0 space-y-2">
             <div class="flex flex-wrap justify-between items-baseline gap-1">
               <div>
                 <h4 class="font-bold text-sm text-white">{exp.job_title}</h4>
-                <p class="text-xs font-semibold text-[var(--accent)]">{exp.company} {f"· {exp.location}" if exp.location else ""}</p>
+                <p class="text-xs font-semibold text-[var(--accent)]">{exp.company} {loc_suffix}</p>
               </div>
               <span class="text-xs font-mono text-slate-400">{exp.start_date} — {exp.end_date}</span>
             </div>
             <ul class="space-y-1.5 pt-1">{bullets}</ul>
           </div>
         """)
+
+    bio_html = f'<p class="text-sm text-slate-300 leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''
+    
+    resume_btn_html = f'''
+                <button onclick="window.parent.postMessage('download_resume', '*')"
+                  class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl font-semibold text-xs flex items-center gap-2 transition">
+                  <i data-lucide="download" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
+                  <span>Resume PDF</span>
+                </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_exp_items = "".join(exp_items)
+    exp_section_html = f'''
+            <section id="experience" class="space-y-6">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Career Milestones & Achievements</h2>
+              </div>
+              <div class="space-y-6">{joined_exp_items}</div>
+            </section>
+    ''' if resume.portfolio_show_experience else ''
+
+    joined_project_items = "".join(project_items)
+    proj_section_html = f'''
+            <section id="projects" class="space-y-6">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Key Systems & Architectures</h2>
+              </div>
+              <div class="space-y-4">{joined_project_items}</div>
+            </section>
+    ''' if resume.portfolio_show_projects else ''
+
+    skill_cards_list = []
+    for c in resume.skill_categories:
+        rendered_skills = "".join([f'<span class="px-2 py-0.5 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded">{s}</span>' for s in c.skills])
+        skill_cards_list.append(f'<div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2"><h4 class="text-xs font-bold text-[var(--accent)] uppercase">{c.category_name}</h4><div class="flex flex-wrap gap-1.5">{rendered_skills}</div></div>')
+    joined_skill_cards = "".join(skill_cards_list)
+
+    skills_section_html = f'''
+            <section id="skills" class="space-y-6">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Core Competencies & Stack</h2>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {joined_skill_cards}
+              </div>
+            </section>
+    ''' if resume.portfolio_show_skills else ''
 
     return f'''
       <div class="max-w-7xl mx-auto px-4 sm:px-8 py-12">
@@ -1045,7 +1112,7 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
                 <span>{info.availability_badge or "Available"}</span>
               </div>
             </div>
-            {f'<p class="text-sm text-slate-300 leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''}
+            {bio_html}
             
             <div class="space-y-3 pt-2">
               <div class="flex items-center gap-3">
@@ -1053,13 +1120,7 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
                   <i data-lucide="send" class="w-3.5 h-3.5"></i>
                   <span>{cta_text}</span>
                 </a>
-                {f'''
-                <button onclick="window.parent.postMessage('download_resume', '*')"
-                  class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl font-semibold text-xs flex items-center gap-2 transition">
-                  <i data-lucide="download" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
-                  <span>Resume PDF</span>
-                </button>
-                ''' if resume.portfolio_show_resume_download else ''}
+                {resume_btn_html}
               </div>
               {socials_bar}
             </div>
@@ -1076,39 +1137,13 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
           <div class="lg:w-7/12 space-y-12">
             
             <!-- Experience -->
-            {f'''
-            <section id="experience" class="space-y-6">
-              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
-                <h2 class="text-lg font-bold text-white">Career Milestones & Achievements</h2>
-              </div>
-              <div class="space-y-6">{"".join(exp_items)}</div>
-            </section>
-            ''' if resume.portfolio_show_experience else ''}
+            {exp_section_html}
 
             <!-- Projects -->
-            {f'''
-            <section id="projects" class="space-y-6">
-              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
-                <h2 class="text-lg font-bold text-white">Key Systems & Architectures</h2>
-              </div>
-              <div class="space-y-4">{"".join(project_items)}</div>
-            </section>
-            ''' if resume.portfolio_show_projects else ''}
+            {proj_section_html}
 
             <!-- Skills -->
-            {f'''
-            <section id="skills" class="space-y-6">
-              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
-                <h2 class="text-lg font-bold text-white">Core Competencies & Stack</h2>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {"".join([f'<div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2"><h4 class="text-xs font-bold text-[var(--accent)] uppercase">{c.category_name}</h4><div class="flex flex-wrap gap-1.5">{"".join([f"<span class=\"px-2 py-0.5 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded\">{s}</span>" for s in c.skills])}</div></div>' for c in resume.skill_categories])}
-              </div>
-            </section>
-            ''' if resume.portfolio_show_skills else ''}
+            {skills_section_html}
 
           </div>
 
@@ -1309,6 +1344,69 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     skills_json_data = json.dumps([s for cat in resume.skill_categories for s in cat.skills])
     exp_json_data = json.dumps([{"title": e.job_title, "company": e.company} for e in resume.work_experience[:3]])
 
+    bio_html = f'<p class="text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''
+    cta_target_url = resume.portfolio_cta_url or f"mailto:{info.email}"
+    cta_target_text = resume.portfolio_cta_text or "Let's Connect"
+
+    resume_btn_html = f'''
+                        <button onclick="window.parent.postMessage('download_resume', '*')"
+                                class="px-6 py-3 bg-slate-800/60 border border-slate-700/50 text-slate-200 font-semibold rounded-xl text-sm hover:border-[var(--accent)] hover:bg-slate-800 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
+                            Download CV
+                        </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects_html = "".join(projects_html)
+    projects_section_html = f'''
+        <section class="mb-12 animate-fade-in-up">
+            <div class="flex items-center justify-between border-b border-slate-800/50 pb-4 mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-3">
+                    <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
+                    Featured Projects
+                </h2>
+                <span class="text-xs text-slate-500 font-mono">{len(resume.projects)} systems</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {joined_projects_html}
+            </div>
+        </section>
+    ''' if resume.portfolio_show_projects else ''
+
+    joined_exp_html = "".join(experience_html)
+    exp_section_html = f'''
+            <div class="lg:col-span-2 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 animate-fade-in-up">
+                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
+                    <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
+                    Career Timeline
+                </h2>
+                <div class="space-y-2">{joined_exp_html}</div>
+            </div>
+    ''' if resume.portfolio_show_experience else ''
+
+    joined_skills_html = "".join(skills_html)
+    skills_section_html = f'''
+            <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 animate-fade-in-up">
+                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
+                    <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
+                    Tech Stack
+                </h2>
+                <div class="space-y-4">{joined_skills_html}</div>
+            </div>
+    ''' if resume.portfolio_show_skills else ''
+
+    joined_edu_html = "".join(education_html)
+    edu_section_html = f'''
+        <section class="animate-fade-in-up">
+            <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
+                    <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--accent)]"></i>
+                    Education
+                </h2>
+                <div class="space-y-3">{joined_edu_html}</div>
+            </div>
+        </section>
+    ''' if resume.portfolio_show_education else ''
+
     return f"""
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
         
@@ -1331,7 +1429,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                     </div>
                     <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-2">{full_name}</h1>
                     <p class="text-lg sm:text-xl font-semibold text-[var(--accent)] mb-3">{role_title}</p>
-                    {f'<p class="text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''}
+                    {bio_html}
                     
                     <!-- Socials -->
                     <div class="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
@@ -1340,18 +1438,12 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                     
                     <!-- CTA -->
                     <div class="flex flex-wrap gap-3 mt-5 justify-center md:justify-start">
-                        <a href="{resume.portfolio_cta_url or f"mailto:{info.email}"}" 
+                        <a href="{cta_target_url}" 
                            class="px-6 py-3 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-sm hover:brightness-110 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-[var(--accent-glow)] flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4"></i>
-                            {resume.portfolio_cta_text or "Let's Connect"}
+                            {cta_target_text}
                         </a>
-                        {f'''
-                        <button onclick="window.parent.postMessage('download_resume', '*')"
-                                class="px-6 py-3 bg-slate-800/60 border border-slate-700/50 text-slate-200 font-semibold rounded-xl text-sm hover:border-[var(--accent)] hover:bg-slate-800 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
-                            Download CV
-                        </button>
-                        ''' if resume.portfolio_show_resume_download else ''}
+                        {resume_btn_html}
                     </div>
                 </div>
             </div>
@@ -1376,60 +1468,21 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         <div id="termOutput" class="hidden mb-12 bg-slate-900/60 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 space-y-4 font-mono animate-fade-in-up"></div>
         
         <!-- PROJECTS -->
-        {f'''
-        <section class="mb-12 animate-fade-in-up">
-            <div class="flex items-center justify-between border-b border-slate-800/50 pb-4 mb-6">
-                <h2 class="text-xl font-bold text-white flex items-center gap-3">
-                    <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
-                    Featured Projects
-                </h2>
-                <span class="text-xs text-slate-500 font-mono">{len(resume.projects)} systems</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {''.join(projects_html)}
-            </div>
-        </section>
-        ''' if resume.portfolio_show_projects else ''}
+        {projects_section_html}
         
         <!-- EXPERIENCE + SKILLS + EDUCATION GRID -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
             
             <!-- Experience -->
-            {f'''
-            <div class="lg:col-span-2 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 animate-fade-in-up">
-                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
-                    <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
-                    Career Timeline
-                </h2>
-                <div class="space-y-2">{''.join(experience_html)}</div>
-            </div>
-            ''' if resume.portfolio_show_experience else ''}
+            {exp_section_html}
             
             <!-- Skills -->
-            {f'''
-            <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 animate-fade-in-up">
-                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
-                    <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
-                    Tech Stack
-                </h2>
-                <div class="space-y-4">{''.join(skills_html)}</div>
-            </div>
-            ''' if resume.portfolio_show_skills else ''}
+            {skills_section_html}
             
         </div>
         
         <!-- EDUCATION -->
-        {f'''
-        <section class="animate-fade-in-up">
-            <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
-                <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-6">
-                    <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--accent)]"></i>
-                    Education
-                </h2>
-                <div class="space-y-3">{''.join(education_html)}</div>
-            </div>
-        </section>
-        ''' if resume.portfolio_show_education else ''}
+        {edu_section_html}
         
     </div>
     
@@ -1628,12 +1681,13 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
                 for b in exp.bullet_points[:3]
             ]
         )
+        loc_sub = f"// {exp.location}" if exp.location else ""
         experiences_html.append(f"""
           <div class="grid grid-cols-1 md:grid-cols-12 gap-6 py-6 border-b border-slate-800 stagger-item transition duration-300 hover:border-[var(--accent)]">
             <div class="md:col-span-4 space-y-1">
               <span class="text-xs font-mono text-[var(--accent)] uppercase font-semibold">{exp.start_date} — {exp.end_date}</span>
               <h4 class="font-bold text-base text-white">{exp.job_title}</h4>
-              <p class="text-xs text-slate-400 italic">{exp.company} {f"// {exp.location}" if exp.location else ""}</p>
+              <p class="text-xs text-slate-400 italic">{exp.company} {loc_sub}</p>
             </div>
             <div class="md:col-span-8">
               <ul class="space-y-1.5">{bullets}</ul>
@@ -1649,6 +1703,49 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
       </div>
     """ for c in resume.skill_categories])
 
+    bio_html = f'<p class="text-base sm:text-xl text-slate-300 max-w-3xl font-light leading-relaxed pt-2 drop-cap">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    resume_btn_html = f'''
+            <button onclick="window.parent.postMessage('download_resume', '*')"
+              class="px-7 py-3.5 border border-slate-700 text-white font-semibold text-xs uppercase tracking-widest hover:border-white hover:bg-white/5 transition duration-300">
+              Download CV Monograph (PDF)
+            </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects_html = "".join(projects_html)
+    projects_section_html = f'''
+        <section class="space-y-6 animate-fade-in-up">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">01 / SELECTED WORKS & SYSTEMS</h3>
+            <span class="text-xs font-mono text-slate-500">{len(resume.projects)} EXHIBITS</span>
+          </div>
+          <div class="space-y-2">{joined_projects_html}</div>
+        </section>
+    ''' if resume.portfolio_show_projects else ''
+
+    joined_exp_html = "".join(experiences_html)
+    exp_section_html = f'''
+        <section class="space-y-6 animate-fade-in-up">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">02 / CAREER RECORD & ACHIEVEMENTS</h3>
+            <span class="text-xs font-mono text-slate-500">{len(resume.work_experience)} MILESTONES</span>
+          </div>
+          <div class="space-y-2">{joined_exp_html}</div>
+        </section>
+    ''' if resume.portfolio_show_experience else ''
+
+    skills_section_html = f'''
+        <section class="space-y-6 animate-fade-in-up">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">03 / CORE COMPETENCIES</h3>
+            <span class="text-xs font-mono text-slate-500">SYSTEM ARCHITECTURE</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2">
+            {skills_html}
+          </div>
+        </section>
+    ''' if resume.portfolio_show_skills else ''
+
     return f"""
       <div class="max-w-6xl mx-auto px-6 py-16 space-y-16">
 
@@ -1660,10 +1757,11 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
             <span>{info.location or "GENEVA // GLOBAL"}</span>
           </div>
 
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div class="space-y-2 flex-1">
-              <h1 class="text-4xl sm:text-7xl lg:text-8xl font-black text-white tracking-tighter uppercase leading-none">{full_name}</h1>
-              <p class="text-xl sm:text-3xl font-light text-[var(--accent)] tracking-tight uppercase pt-1">{role_title}</p>
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
+            <div class="space-y-3">
+              <span class="text-xs font-mono text-[var(--accent)] tracking-widest uppercase">Curriculum Vitae</span>
+              <h1 class="text-4xl sm:text-7xl font-black uppercase tracking-tight text-white">{full_name}</h1>
+              <p class="text-xl sm:text-2xl text-slate-400 font-light tracking-wide italic">{role_title}</p>
             </div>
 
             <!-- Rotating Monogram -->
@@ -1682,18 +1780,13 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
             </div>
           </div>
 
-          {f'<p class="text-base sm:text-xl text-slate-300 max-w-3xl font-light leading-relaxed pt-2 drop-cap">{summary}</p>' if resume.portfolio_show_bio else ''}
+          {bio_html}
 
           <div class="flex flex-wrap items-center gap-4 pt-2">
             <a href="{cta_url}" class="px-7 py-3.5 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-[var(--accent)] hover:text-white transition duration-300 shadow-lg hover:shadow-xl hover:shadow-[var(--accent-glow)]">
               {cta_text} →
             </a>
-            {f'''
-            <button onclick="window.parent.postMessage('download_resume', '*')"
-              class="px-7 py-3.5 border border-slate-700 text-white font-semibold text-xs uppercase tracking-widest hover:border-white hover:bg-white/5 transition duration-300">
-              Download CV Monograph (PDF)
-            </button>
-            ''' if resume.portfolio_show_resume_download else ''}
+            {resume_btn_html}
           </div>
         </header>
 
@@ -1706,39 +1799,13 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
         </div>
 
         <!-- Projects -->
-        {f'''
-        <section class="space-y-6 animate-fade-in-up">
-          <div class="flex justify-between items-baseline border-b border-white pb-3">
-            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">01 / SELECTED WORKS & SYSTEMS</h3>
-            <span class="text-xs font-mono text-slate-500">{len(resume.projects)} EXHIBITS</span>
-          </div>
-          <div class="space-y-2">{"".join(projects_html)}</div>
-        </section>
-        ''' if resume.portfolio_show_projects else ''}
+        {projects_section_html}
 
         <!-- Experience -->
-        {f'''
-        <section class="space-y-6 animate-fade-in-up">
-          <div class="flex justify-between items-baseline border-b border-white pb-3">
-            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">02 / CAREER RECORD & ACHIEVEMENTS</h3>
-            <span class="text-xs font-mono text-slate-500">{len(resume.work_experience)} MILESTONES</span>
-          </div>
-          <div class="space-y-2">{"".join(experiences_html)}</div>
-        </section>
-        ''' if resume.portfolio_show_experience else ''}
+        {exp_section_html}
 
         <!-- Skills -->
-        {f'''
-        <section class="space-y-6 animate-fade-in-up">
-          <div class="flex justify-between items-baseline border-b border-white pb-3">
-            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">03 / CORE COMPETENCIES</h3>
-            <span class="text-xs font-mono text-slate-500">SYSTEM ARCHITECTURE</span>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2">
-            {skills_html}
-          </div>
-        </section>
-        ''' if resume.portfolio_show_skills else ''}
+        {skills_section_html}
 
         <!-- Footer -->
         <footer class="pt-12 border-t-2 border-white flex flex-wrap justify-between items-center text-xs text-slate-400 gap-4 animate-fade-in-up">
@@ -1888,6 +1955,63 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
           </div>
         """)
 
+    bio_html = f'<p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    resume_btn_html = f'''
+              <button onclick="window.parent.postMessage('download_resume', '*')"
+                class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs rounded-xl transition flex items-center gap-2">
+                <i data-lucide="file-down" class="w-4 h-4 text-[var(--accent)]"></i>
+                <span>Download ATS CV</span>
+              </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects = "".join(projects)
+    projects_showcase_html = f'''
+          <div class="space-y-6">
+            <div class="flex items-center gap-2 text-xl font-bold text-white">
+              <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Featured Creations & Systems</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">{joined_projects}</div>
+          </div>
+    ''' if resume.portfolio_show_projects else ''
+
+    exp_items_list = []
+    for e in resume.work_experience:
+        bp_text = " ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])
+        exp_items_list.append(f'<div class="border-l-2 border-[var(--accent)] pl-4 space-y-1"><div class="flex justify-between items-center"><h4 class="font-bold text-white text-sm">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs text-slate-400 font-mono">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 pt-1 leading-relaxed">{bp_text}</p></div>')
+    joined_exp_items = "".join(exp_items_list)
+
+    exp_showcase_html = f'''
+          <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 space-y-6 shadow-xl">
+            <div class="flex items-center gap-2 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Professional Milestone Timeline</span>
+            </div>
+            <div class="space-y-6">
+              {joined_exp_items}
+            </div>
+          </div>
+    ''' if resume.portfolio_show_experience else ''
+
+    skill_cards_list = []
+    for c in resume.skill_categories:
+        rendered_skills = "".join([f'<span class="px-2.5 py-1 text-xs bg-white/10 rounded-lg text-slate-200">{s}</span>' for s in c.skills])
+        skill_cards_list.append(f'<div class="space-y-2"><h5 class="text-xs font-bold text-[var(--accent)] uppercase">{c.category_name}</h5><div class="flex flex-wrap gap-1.5">{rendered_skills}</div></div>')
+    joined_skill_cards = "".join(skill_cards_list)
+
+    skills_showcase_html = f'''
+          <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 space-y-4">
+            <div class="flex items-center gap-2 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Technical Competencies</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {joined_skill_cards}
+            </div>
+          </div>
+    ''' if resume.portfolio_show_skills else ''
+
     return f'''
       <div class="relative overflow-hidden min-h-screen py-16 px-4 sm:px-8">
         
@@ -1908,61 +2032,27 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
               <h1 class="text-3xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-[var(--accent)] tracking-tight">{full_name}</h1>
               <p class="text-base sm:text-xl font-semibold text-[var(--accent)]">{role_title}</p>
             </div>
-            {f'<p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''}
+            {bio_html}
             
             <div class="flex flex-wrap justify-center gap-3 pt-2">
               <a href="{cta_url}" class="px-6 py-3 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] hover:brightness-110 transition flex items-center gap-2">
                 <i data-lucide="sparkles" class="w-4 h-4"></i>
                 <span>{cta_text}</span>
               </a>
-              {f'''
-              <button onclick="window.parent.postMessage('download_resume', '*')"
-                class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs rounded-xl transition flex items-center gap-2">
-                <i data-lucide="file-down" class="w-4 h-4 text-[var(--accent)]"></i>
-                <span>Download ATS CV</span>
-              </button>
-              ''' if resume.portfolio_show_resume_download else ''}
+              {resume_btn_html}
             </div>
 
             {socials_bar}
           </div>
 
           <!-- Projects Showcase -->
-          {f'''
-          <div class="space-y-6">
-            <div class="flex items-center gap-2 text-xl font-bold text-white">
-              <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Featured Creations & Systems</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">{"".join(projects)}</div>
-          </div>
-          ''' if resume.portfolio_show_projects else ''}
+          {projects_showcase_html}
 
           <!-- Experience Showcase -->
-          {f'''
-          <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 space-y-6 shadow-xl">
-            <div class="flex items-center gap-2 text-xl font-bold text-white border-b border-white/10 pb-4">
-              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Professional Milestone Timeline</span>
-            </div>
-            <div class="space-y-6">
-              {"".join([f'<div class="border-l-2 border-[var(--accent)] pl-4 space-y-1"><div class="flex justify-between items-center"><h4 class="font-bold text-white text-sm">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs text-slate-400 font-mono">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 pt-1 leading-relaxed">{" ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])}</p></div>' for e in resume.work_experience])}
-            </div>
-          </div>
-          ''' if resume.portfolio_show_experience else ''}
+          {exp_showcase_html}
 
           <!-- Skills Showcase -->
-          {f'''
-          <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 space-y-4">
-            <div class="flex items-center gap-2 text-xl font-bold text-white border-b border-white/10 pb-4">
-              <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Technical Competencies</span>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {"".join([f'<div class="space-y-2"><h5 class="text-xs font-bold text-[var(--accent)] uppercase">{c.category_name}</h5><div class="flex flex-wrap gap-1.5">{"".join([f"<span class=\"px-2.5 py-1 text-xs bg-white/10 rounded-lg text-slate-200\">{s}</span>" for s in c.skills])}</div></div>' for c in resume.skill_categories])}
-            </div>
-          </div>
-          ''' if resume.portfolio_show_skills else ''}
+          {skills_showcase_html}
 
         </div>
       </div>
@@ -2105,6 +2195,59 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
           </div>
         """)
 
+    bio_html = f'<p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    resume_btn_html = f'''
+                <button onclick="window.parent.postMessage('download_resume', '*')"
+                  class="px-5 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs rounded-2xl shadow hover:-translate-y-0.5 transition transform flex items-center gap-2">
+                  <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
+                  <span>Download ATS Resume</span>
+                </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects_cards = "".join(project_cards)
+    projects_showcase_html = f'''
+          <div class="space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div class="flex items-center gap-2.5 text-xl font-bold text-white">
+                <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)] animate-bounce"></i>
+                <span>Featured Systems & Deployments</span>
+              </div>
+              <span class="text-xs font-mono text-slate-400">Interactive 3D Hover</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{joined_projects_cards}</div>
+          </div>
+    ''' if resume.portfolio_show_projects else ''
+
+    joined_skill_bars = "".join(skill_bars_html)
+    skills_showcase_html = f'''
+          <div class="space-y-6">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
+              <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Core Technical Stack & Proficiency</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{joined_skill_bars}</div>
+          </div>
+    ''' if resume.portfolio_show_skills else ''
+
+    exp_items_list = []
+    for e in resume.work_experience:
+        bp_text = " ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])
+        exp_items_list.append(f'<div class="relative pl-6 border-l-2 border-[var(--accent)] space-y-1.5"><div class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-[var(--accent)] ring-4 ring-[var(--accent-glow)]"></div><div class="flex flex-wrap justify-between items-center"><h4 class="font-bold text-sm text-white">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 leading-relaxed pt-1">{bp_text}</p></div>')
+    joined_exp_items = "".join(exp_items_list)
+
+    exp_showcase_html = f'''
+          <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 space-y-6 shadow-xl">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
+              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Career Trajectory</span>
+            </div>
+            <div class="space-y-6">
+              {joined_exp_items}
+            </div>
+          </div>
+    ''' if resume.portfolio_show_experience else ''
+
     return f"""
       <div class="relative min-h-screen overflow-hidden py-14 px-4 sm:px-8">
         
@@ -2135,20 +2278,14 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
                 </div>
               </div>
 
-              {f'<p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''}
+              {bio_html}
 
               <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
                 <a href="{cta_url}" class="px-6 py-3 bg-[var(--accent)] hover:brightness-110 text-slate-950 font-extrabold text-xs rounded-2xl shadow-xl shadow-[var(--accent-glow)] hover:-translate-y-0.5 transition transform flex items-center gap-2">
                   <i data-lucide="zap" class="w-4 h-4"></i>
                   <span>{cta_text}</span>
                 </a>
-                {f'''
-                <button onclick="window.parent.postMessage('download_resume', '*')"
-                  class="px-5 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs rounded-2xl shadow hover:-translate-y-0.5 transition transform flex items-center gap-2">
-                  <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
-                  <span>Download ATS Resume</span>
-                </button>
-                ''' if resume.portfolio_show_resume_download else ''}
+                {resume_btn_html}
               </div>
 
               <div class="pt-2 flex justify-center md:justify-start">{socials_html}</div>
@@ -2156,42 +2293,13 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
           </div>
 
           <!-- Featured Projects Spotlight (3D Tilt Grid) -->
-          {f'''
-          <div class="space-y-6">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div class="flex items-center gap-2.5 text-xl font-bold text-white">
-                <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)] animate-bounce"></i>
-                <span>Featured Systems & Deployments</span>
-              </div>
-              <span class="text-xs font-mono text-slate-400">Interactive 3D Hover</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{"".join(project_cards)}</div>
-          </div>
-          ''' if resume.portfolio_show_projects else ''}
+          {projects_showcase_html}
 
           <!-- Skills Arsenal (Animated Percentage Bars) -->
-          {f'''
-          <div class="space-y-6">
-            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
-              <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Core Technical Stack & Proficiency</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{"".join(skill_bars_html)}</div>
-          </div>
-          ''' if resume.portfolio_show_skills else ''}
+          {skills_showcase_html}
 
           <!-- Experience Milestones -->
-          {f'''
-          <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 space-y-6 shadow-xl">
-            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
-              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Career Trajectory</span>
-            </div>
-            <div class="space-y-6">
-              {"".join([f'<div class="relative pl-6 border-l-2 border-[var(--accent)] space-y-1.5"><div class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-[var(--accent)] ring-4 ring-[var(--accent-glow)]"></div><div class="flex flex-wrap justify-between items-center"><h4 class="font-bold text-sm text-white">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 leading-relaxed pt-1">{" ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])}</p></div>' for e in resume.work_experience])}
-            </div>
-          </div>
-          ''' if resume.portfolio_show_experience else ''}
+          {exp_showcase_html}
 
         </div>
       </div>
@@ -2308,6 +2416,45 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
           </div>
         """)
 
+    bio_html = f'<p class="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    resume_btn_html = f'''
+              <button onclick="window.parent.postMessage('download_resume', '*')"
+                class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs rounded-2xl transition flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
+                <span>Download ATS CV</span>
+              </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects_cards = "".join(projects_cards)
+    projects_grid_html = f'''
+          <div class="space-y-6 pointer-events-auto">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white">
+              <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Featured Creations & Architectures</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{joined_projects_cards}</div>
+          </div>
+    ''' if resume.portfolio_show_projects else ''
+
+    exp_items_list = []
+    for e in resume.work_experience:
+        bp_text = " ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])
+        exp_items_list.append(f'<div class="border-l-2 border-[var(--accent)] pl-4 space-y-1"><div class="flex justify-between items-center"><h4 class="font-bold text-white text-sm">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs text-slate-400 font-mono">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 pt-1 leading-relaxed">{bp_text}</p></div>')
+    joined_exp_items = "".join(exp_items_list)
+
+    exp_timeline_html = f'''
+          <div class="p-8 rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 space-y-6 shadow-2xl pointer-events-auto">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Experience Log</span>
+            </div>
+            <div class="space-y-6">
+              {joined_exp_items}
+            </div>
+          </div>
+    ''' if resume.portfolio_show_experience else ''
+
     return f"""
       <div class="relative min-h-screen text-slate-100 py-16 px-4 sm:px-8">
         
@@ -2327,7 +2474,7 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
               <h1 class="text-3xl sm:text-6xl font-black text-white tracking-tight">{full_name}</h1>
               <p class="text-base sm:text-xl font-semibold text-[var(--accent)]">{role_title}</p>
             </div>
-            {f'<p class="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''}
+            {bio_html}
 
             <!-- Counting Metrics Animation Cards -->
             <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
@@ -2351,39 +2498,15 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
                 <i data-lucide="sparkles" class="w-4 h-4"></i>
                 <span>{cta_text}</span>
               </a>
-              {f'''
-              <button onclick="window.parent.postMessage('download_resume', '*')"
-                class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs rounded-2xl transition flex items-center gap-2">
-                <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
-                <span>Download ATS CV</span>
-              </button>
-              ''' if resume.portfolio_show_resume_download else ''}
+              {resume_btn_html}
             </div>
           </div>
 
           <!-- Featured Projects Grid -->
-          {f'''
-          <div class="space-y-6 pointer-events-auto">
-            <div class="flex items-center gap-2.5 text-xl font-bold text-white">
-              <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Featured Creations & Architectures</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{"".join(projects_cards)}</div>
-          </div>
-          ''' if resume.portfolio_show_projects else ''}
+          {projects_grid_html}
 
           <!-- Experience Timeline -->
-          {f'''
-          <div class="p-8 rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 space-y-6 shadow-2xl pointer-events-auto">
-            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
-              <i data-lucide="briefcase" class="w-5 h-5 text-[var(--accent)]"></i>
-              <span>Experience Log</span>
-            </div>
-            <div class="space-y-6">
-              {"".join([f'<div class="border-l-2 border-[var(--accent)] pl-4 space-y-1"><div class="flex justify-between items-center"><h4 class="font-bold text-white text-sm">{e.job_title} · <span class="text-[var(--accent)]">{e.company}</span></h4><span class="text-xs text-slate-400 font-mono">{e.start_date} – {e.end_date}</span></div><p class="text-xs text-slate-300 pt-1 leading-relaxed">{" ".join([b.lstrip("•- ") for b in e.bullet_points[:2]])}</p></div>' for e in resume.work_experience])}
-            </div>
-          </div>
-          ''' if resume.portfolio_show_experience else ''}
+          {exp_timeline_html}
 
         </div>
 
@@ -2622,6 +2745,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     exp_html = []
     for exp in resume.work_experience:
         bullets = "".join([f'<li class="text-xs text-slate-600 leading-relaxed">• {b.lstrip("•- ")}</li>' for b in exp.bullet_points[:3]])
+        loc_tag = f"· {exp.location}" if exp.location else ""
         exp_html.append(f'''
           <div class="relative pl-8 pb-8 border-l-2 border-slate-200 last:border-0">
             <div class="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-[var(--accent)] shadow-sm"></div>
@@ -2630,11 +2754,66 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
                 <h4 class="font-bold text-slate-900 text-base">{exp.job_title}</h4>
                 <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">{exp.start_date} – {exp.end_date}</span>
               </div>
-              <p class="text-xs font-semibold text-[var(--accent)]">{exp.company} {f"· {exp.location}" if exp.location else ""}</p>
+              <p class="text-xs font-semibold text-[var(--accent)]">{exp.company} {loc_tag}</p>
               <ul class="space-y-1 pt-2">{bullets}</ul>
             </div>
           </div>
         ''')
+
+    nav_resume_btn = f'''
+              <button onclick="window.parent.postMessage('download_resume', '*')"
+                class="px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-400 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600"></i>
+                <span class="hidden sm:inline">Resume PDF</span>
+              </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    bio_html = f'<p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl pt-1">{summary}</p>' if resume.portfolio_show_bio else ''
+
+    hero_resume_btn = f'''
+                <button onclick="window.parent.postMessage('download_resume', '*')"
+                  class="px-5 py-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-semibold shadow-sm transition">
+                  Download CV Monograph
+                </button>
+    ''' if resume.portfolio_show_resume_download else ''
+
+    joined_projects_html = "".join(projects_html)
+    projects_section_html = f'''
+          <section id="projects" class="space-y-6">
+            <div class="flex justify-between items-baseline border-b border-slate-200 pb-4">
+              <div class="space-y-1">
+                <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">PORTFOLIO EXHIBITS</span>
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Featured Engineering Projects</h2>
+              </div>
+              <span class="text-xs font-mono text-slate-500">{len(resume.projects)} Systems</span>
+            </div>
+            <div class="space-y-6">{joined_projects_html}</div>
+          </section>
+    ''' if resume.portfolio_show_projects else ''
+
+    joined_skills_html = "".join(skills_html)
+    skills_section_html = f'''
+          <section id="skills" class="space-y-6">
+            <div class="border-b border-slate-200 pb-4 space-y-1">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">TECHNICAL MATRIX</span>
+              <h2 class="text-2xl font-black text-slate-900 tracking-tight">Core Competencies & Stack</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{joined_skills_html}</div>
+          </section>
+    ''' if resume.portfolio_show_skills else ''
+
+    joined_exp_html = "".join(exp_html)
+    exp_section_html = f'''
+          <section id="experience" class="space-y-6">
+            <div class="border-b border-slate-200 pb-4 space-y-1">
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">CAREER TRAJECTORY</span>
+              <h2 class="text-2xl font-black text-slate-900 tracking-tight">Milestones & Achievements</h2>
+            </div>
+            <div class="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-sm space-y-2">
+              {joined_exp_html}
+            </div>
+          </section>
+    ''' if resume.portfolio_show_experience else ''
 
     return f'''
       <div class="min-h-screen bg-[#FAFAFC] text-slate-900">
@@ -2660,13 +2839,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
             </nav>
 
             <div class="flex items-center gap-2.5">
-              {f'''
-              <button onclick="window.parent.postMessage('download_resume', '*')"
-                class="px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-400 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
-                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600"></i>
-                <span class="hidden sm:inline">Resume PDF</span>
-              </button>
-              ''' if resume.portfolio_show_resume_download else ''}
+              {nav_resume_btn}
               <a href="{cta_url}"
                 class="px-4 py-2 bg-[var(--accent)] hover:brightness-105 text-white rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-glow)] transition">
                 {cta_text}
@@ -2691,18 +2864,13 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
                 <p class="text-lg sm:text-2xl font-bold text-[var(--accent)]">{role_title}</p>
                 <p class="text-xs text-slate-500 font-medium">{info.location or "Global / Remote"}</p>
               </div>
-              {f'<p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl pt-1">{summary}</p>' if resume.portfolio_show_bio else ''}
+              {bio_html}
               
               <div class="flex flex-wrap items-center gap-3 pt-2 justify-center sm:justify-start">
                 <a href="{cta_url}" class="px-6 py-3 bg-[var(--accent)] text-white font-bold rounded-xl text-xs hover:brightness-105 shadow-md shadow-[var(--accent-glow)] transition">
                   {cta_text} →
                 </a>
-                {f'''
-                <button onclick="window.parent.postMessage('download_resume', '*')"
-                  class="px-5 py-3 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 rounded-xl text-xs font-semibold shadow-sm transition">
-                  Download CV Monograph
-                </button>
-                ''' if resume.portfolio_show_resume_download else ''}
+                {hero_resume_btn}
                 <div class="flex items-center gap-1.5 pl-2">{socials_html}</div>
               </div>
             </div>
@@ -2714,42 +2882,13 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
           </section>
 
           <!-- PROJECTS SHOWCASE -->
-          {f'''
-          <section id="projects" class="space-y-6">
-            <div class="flex justify-between items-baseline border-b border-slate-200 pb-4">
-              <div class="space-y-1">
-                <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">PORTFOLIO EXHIBITS</span>
-                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Featured Engineering Projects</h2>
-              </div>
-              <span class="text-xs font-mono text-slate-500">{len(resume.projects)} Systems</span>
-            </div>
-            <div class="space-y-6">{"".join(projects_html)}</div>
-          </section>
-          ''' if resume.portfolio_show_projects else ''}
+          {projects_section_html}
 
           <!-- SKILLS ARSENAL -->
-          {f'''
-          <section id="skills" class="space-y-6">
-            <div class="border-b border-slate-200 pb-4 space-y-1">
-              <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">TECHNICAL MATRIX</span>
-              <h2 class="text-2xl font-black text-slate-900 tracking-tight">Core Competencies & Stack</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{"".join(skills_html)}</div>
-          </section>
-          ''' if resume.portfolio_show_skills else ''}
+          {skills_section_html}
 
           <!-- EXPERIENCE TIMELINE -->
-          {f'''
-          <section id="experience" class="space-y-6">
-            <div class="border-b border-slate-200 pb-4 space-y-1">
-              <span class="text-xs font-mono uppercase tracking-wider text-[var(--accent)] font-bold">CAREER TRAJECTORY</span>
-              <h2 class="text-2xl font-black text-slate-900 tracking-tight">Milestones & Achievements</h2>
-            </div>
-            <div class="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-10 shadow-sm space-y-2">
-              {"".join(exp_html)}
-            </div>
-          </section>
-          ''' if resume.portfolio_show_experience else ''}
+          {exp_section_html}
 
         </main>
 

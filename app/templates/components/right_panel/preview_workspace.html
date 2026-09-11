@@ -1,5 +1,6 @@
     <!-- RIGHT COLUMN: ATS Intelligence, Template Controls, Portfolio Web & Preview (7 cols) -->
-    <div class="lg:col-span-7 space-y-5 flex flex-col">
+    <div class="lg:col-span-7 space-y-5 flex flex-col"
+         :class="{'hidden lg:flex': tailoredData && mobileWorkspaceTab === 'editor', 'flex': !tailoredData || mobileWorkspaceTab === 'preview'}">
 
       <!-- ATS Score Banner (Shows when tailored data exists) -->
       <template x-if="tailoredData">
@@ -59,178 +60,216 @@
         class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden min-h-[640px]">
 
         <!-- Tab Switcher, Template Selector & Actions Bar -->
-        <div class="p-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/90">
+        <div class="p-2.5 sm:p-3.5 border-b border-slate-800 flex flex-col gap-2.5 bg-slate-900/95">
 
-          <!-- 4 Tabs -->
-          <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-            <button @click="activeTab = 'resume'; renderPdfPreview()"
-              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'resume', 'text-slate-400 hover:text-slate-200': activeTab !== 'resume'}"
-              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-              <span>PDF Resume</span>
-            </button>
-            <button @click="activeTab = 'cover_letter'; renderPdfPreview()"
-              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'cover_letter', 'text-slate-400 hover:text-slate-200': activeTab !== 'cover_letter'}"
-              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i data-lucide="mail" class="w-3.5 h-3.5"></i>
-              <span>Cover Letter</span>
-            </button>
-            <button @click="activeTab = 'portfolio'; renderPortfolioPreview()"
-              :class="{'bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-semibold shadow': activeTab === 'portfolio', 'text-slate-400 hover:text-slate-200': activeTab !== 'portfolio'}"
-              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i data-lucide="globe" class="w-3.5 h-3.5 text-pink-300"></i>
-              <span>Portfolio Web</span>
-              <span
-                class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[9px] font-bold rounded uppercase">Pro</span>
-            </button>
-            <button @click="activeTab = 'text'"
-              :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'text', 'text-slate-400 hover:text-slate-200': activeTab !== 'text'}"
-              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
-              <span>Plain Text</span>
-            </button>
-            <button @click="activeTab = 'jobs'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
-              :class="{'bg-emerald-600 text-white font-semibold shadow': activeTab === 'jobs', 'text-slate-400 hover:text-slate-200': activeTab !== 'jobs'}"
-              class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-300"></i>
-              <span>Matched Jobs</span>
-              <template x-if="tailoredData && tailoredData.matched_jobs && tailoredData.matched_jobs.length > 0">
-                <span class="px-1.5 py-0.2 bg-emerald-400/20 text-emerald-300 text-[9px] font-bold rounded-full" x-text="tailoredData.matched_jobs.length"></span>
+          <!-- Row 1: Primary Workspace Tabs & Quick Actions -->
+          <div class="flex items-center justify-between gap-2 min-w-0">
+            <!-- 5 Tabs (Smooth Horizontal Scroll on Mobile & Laptop) -->
+            <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto no-scrollbar flex-1 min-w-0">
+              <button @click="activeTab = 'resume'; renderPdfPreview()"
+                :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'resume', 'text-slate-400 hover:text-slate-200': activeTab !== 'resume'}"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>PDF Resume</span>
+              </button>
+              <button @click="activeTab = 'cover_letter'; renderPdfPreview()"
+                :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'cover_letter', 'text-slate-400 hover:text-slate-200': activeTab !== 'cover_letter'}"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                <span>Cover Letter</span>
+              </button>
+              <button @click="activeTab = 'portfolio'; renderPortfolioPreview()"
+                :class="{'bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-semibold shadow': activeTab === 'portfolio', 'text-slate-400 hover:text-slate-200': activeTab !== 'portfolio'}"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                <i data-lucide="globe" class="w-3.5 h-3.5 text-pink-300"></i>
+                <span>Portfolio Web</span>
+                <span class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[9px] font-bold rounded uppercase">Pro</span>
+              </button>
+              <button @click="activeTab = 'text'"
+                :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'text', 'text-slate-400 hover:text-slate-200': activeTab !== 'text'}"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+                <span>Plain Text</span>
+              </button>
+              <button @click="activeTab = 'jobs'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                :class="{'bg-emerald-600 text-white font-semibold shadow': activeTab === 'jobs', 'text-slate-400 hover:text-slate-200': activeTab !== 'jobs'}"
+                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-300"></i>
+                <span>Matched Jobs</span>
+                <template x-if="tailoredData && tailoredData.matched_jobs && tailoredData.matched_jobs.length > 0">
+                  <span class="px-1.5 py-0.2 bg-emerald-400/20 text-emerald-300 text-[9px] font-bold rounded-full" x-text="tailoredData.matched_jobs.length"></span>
+                </template>
+              </button>
+            </div>
+
+            <!-- Download & CTAs (Desktop / Tablet top right alignment) -->
+            <div class="hidden sm:flex items-center space-x-1.5 xl:space-x-2 shrink-0 ml-auto">
+              <template x-if="activeTab === 'resume'">
+                <button id="downloadResumeButton" @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
+                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition shrink-0">
+                  <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+                  <span class="hidden xl:inline" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+                  <span class="xl:hidden" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual' : 'Download ATS'"></span>
+                </button>
               </template>
-            </button>
+
+              <template x-if="activeTab === 'cover_letter'">
+                <button id="downloadCoverLetterButton" @click="downloadCoverLetterPdf()" :disabled="!tailoredData || isDownloading"
+                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition shrink-0">
+                  <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
+                  <span class="hidden xl:inline">Download Cover Letter (PDF)</span>
+                  <span class="xl:hidden">Download Cover Letter</span>
+                </button>
+              </template>
+
+              <template x-if="activeTab === 'portfolio'">
+                <div class="flex items-center space-x-1.5">
+                  <button @click="openQrCardModal()" :disabled="!tailoredData"
+                    class="px-2.5 py-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg flex items-center gap-1.5 transition">
+                    <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>Smart Card</span>
+                  </button>
+                  <button @click="publishLivePortfolio()" :disabled="!tailoredData || isPublishing"
+                    class="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-lg shadow flex items-center gap-1.5 transition">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span x-text="isPublishing ? 'Publishing...' : 'Publish URL'"></span>
+                  </button>
+                  <button @click="downloadPortfolioHtml()" :disabled="!tailoredData"
+                    class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1 transition">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Export</span>
+                  </button>
+                </div>
+              </template>
+
+              <template x-if="activeTab === 'text'">
+                <button @click="copyPlainText()" :disabled="!tailoredData"
+                  class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span x-text="copied ? 'Copied!' : 'Copy Plain Text'"></span>
+                </button>
+              </template>
+            </div>
           </div>
 
-          <!-- Template Switcher (Both ATS & Visual Graphic Designer Styles) -->
+          <!-- Row 2: Format & Template Switcher (Horizontal Touch Scroll on Mobile & Desktop) -->
           <template x-if="tailoredData && activeTab === 'resume'">
-            <div
-              class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 flex-wrap">
-              <span class="text-[9px] text-slate-400 px-1 font-bold uppercase">ATS:</span>
+            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+              <span class="text-[9px] text-slate-400 px-1 font-bold uppercase shrink-0">ATS:</span>
               <button @click="setTemplate('classic')"
-                :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
-                class="px-1.5 py-0.5 rounded text-[10px]">Classic</button>
+                :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Classic</button>
               <button @click="setTemplate('modern')"
-                :class="currentTemplate === 'modern' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
-                class="px-1.5 py-0.5 rounded text-[10px]">Navy</button>
+                :class="currentTemplate === 'modern' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Navy</button>
               <button @click="setTemplate('minimal')"
-                :class="currentTemplate === 'minimal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400'"
-                class="px-1.5 py-0.5 rounded text-[10px]">Compact</button>
+                :class="currentTemplate === 'minimal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Compact</button>
 
-              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase border-l border-slate-800 ml-1">🎨 Visual
-                Formats:</span>
+              <span class="text-[9px] text-pink-400 px-1.5 font-bold uppercase border-l border-slate-800 ml-1 shrink-0">🎨 Visual Formats:</span>
               <button @click="setTemplate('visual_sidebar')"
                 :class="currentTemplate === 'visual_sidebar' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
                 <span>Sidebar Photo</span>
               </button>
               <button @click="setTemplate('banner_periwinkle')"
                 :class="currentTemplate === 'banner_periwinkle' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
-                <span>Periwinkle Banner</span>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
+                <span>Periwinkle</span>
               </button>
               <button @click="setTemplate('creative_gradient')"
                 :class="currentTemplate === 'creative_gradient' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
                 <span>Indigo Banner</span>
               </button>
               <button @click="setTemplate('emerald_prestige')"
                 :class="currentTemplate === 'emerald_prestige' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
                 <span>Emerald Prestige</span>
               </button>
               <button @click="setTemplate('tech_noir')"
                 :class="currentTemplate === 'tech_noir' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2 py-0.5 rounded text-[10px] flex items-center gap-1">
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
                 <span>Tech Noir</span>
               </button>
             </div>
           </template>
 
           <!-- Portfolio Theme Selector -->
-          <!-- Portfolio Architecture Selector -->
           <template x-if="tailoredData && activeTab === 'portfolio'">
-            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 flex-wrap">
-              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase">Architecture:</span>
+            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase shrink-0">Theme:</span>
               <button @click="setPortfolioTheme('aurora_white')"
                 :class="{'bg-sky-400 text-slate-950 font-bold shadow': portfolioTheme === 'aurora_white', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'aurora_white'}"
-                class="px-2 py-0.5 rounded text-[10px]">🤍 White</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🤍 White</button>
               <button @click="setPortfolioTheme('motion_zenith')"
                 :class="{'bg-amber-500 text-slate-950 font-bold shadow': portfolioTheme === 'motion_zenith', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'motion_zenith'}"
-                class="px-2 py-0.5 rounded text-[10px]">✨ Motion</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">✨ Motion</button>
               <button @click="setPortfolioTheme('galaxy_canvas')"
                 :class="{'bg-cyan-500 text-slate-950 font-bold shadow': portfolioTheme === 'galaxy_canvas', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'galaxy_canvas'}"
-                class="px-2 py-0.5 rounded text-[10px]">🚀 Galaxy</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🚀 Galaxy</button>
               <button @click="setPortfolioTheme('bento_grid')"
                 :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'bento_grid', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'bento_grid'}"
-                class="px-2 py-0.5 rounded text-[10px]">🍱 Bento</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🍱 Bento</button>
               <button @click="setPortfolioTheme('split_sidebar')"
                 :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'split_sidebar', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'split_sidebar'}"
-                class="px-2 py-0.5 rounded text-[10px]">📑 Split</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📑 Split</button>
               <button @click="setPortfolioTheme('terminal_dev')"
                 :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'terminal_dev', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'terminal_dev'}"
-                class="px-2 py-0.5 rounded text-[10px]">💻 Terminal</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">💻 Terminal</button>
               <button @click="setPortfolioTheme('editorial_swiss')"
                 :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'editorial_swiss', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'editorial_swiss'}"
-                class="px-2 py-0.5 rounded text-[10px]">📰 Swiss</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📰 Swiss</button>
               <button @click="setPortfolioTheme('neon_glass')"
                 :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'neon_glass', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'neon_glass'}"
-                class="px-2 py-0.5 rounded text-[10px]">🌌 Neon</button>
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🌌 Neon</button>
             </div>
           </template>
 
-          <!-- Download & Publish CTAs -->
-          <div class="flex items-center space-x-2">
+          <!-- Mobile Actions Bar (< sm screens) -->
+          <div class="flex sm:hidden items-center justify-between gap-2 pt-1">
             <template x-if="activeTab === 'resume'">
               <button @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
-                class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                <span
-                  x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+                class="w-full py-2.5 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl shadow-md flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
               </button>
             </template>
 
             <template x-if="activeTab === 'cover_letter'">
               <button @click="downloadCoverLetterPdf()" :disabled="!tailoredData || isDownloading"
-                class="px-3.5 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition">
-                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                class="w-full py-2.5 px-3 text-xs font-bold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-xl shadow-md flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="download" class="w-4 h-4"></i>
                 <span>Download Cover Letter (PDF)</span>
               </button>
             </template>
 
             <template x-if="activeTab === 'portfolio'">
-              <div class="flex items-center space-x-2">
+              <div class="grid grid-cols-3 gap-1.5 w-full">
                 <button @click="openQrCardModal()" :disabled="!tailoredData"
-                  class="px-3 py-1.5 text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg flex items-center gap-1.5 transition">
-                  <i data-lucide="qr-code" class="w-3.5 h-3.5 text-amber-400"></i>
-                  <span>📱 Smart Card & Proof</span>
+                  class="py-2 px-1 text-center text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-lg flex items-center justify-center gap-1">
+                  <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+                  <span>Card</span>
                 </button>
                 <button @click="publishLivePortfolio()" :disabled="!tailoredData || isPublishing"
-                  class="px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-pink-600/20 flex items-center gap-1.5 transition">
+                  class="py-2 px-1 text-center text-xs font-bold bg-gradient-to-r from-pink-600 to-indigo-600 text-white rounded-lg shadow flex items-center justify-center gap-1">
                   <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                  <span x-text="isPublishing ? 'Publishing...' : 'Publish Live URL'"></span>
+                  <span>Publish</span>
                 </button>
                 <button @click="downloadPortfolioHtml()" :disabled="!tailoredData"
-                  class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+                  class="py-2 px-1 text-center text-xs font-semibold bg-slate-800 text-slate-200 rounded-lg border border-slate-700 flex items-center justify-center gap-1">
                   <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                  <span>Export HTML</span>
+                  <span>ZIP</span>
                 </button>
               </div>
             </template>
 
             <template x-if="activeTab === 'text'">
               <button @click="copyPlainText()" :disabled="!tailoredData"
-                class="px-3.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                class="w-full py-2 px-3 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                <i data-lucide="copy" class="w-4 h-4"></i>
                 <span x-text="copied ? 'Copied!' : 'Copy Plain Text'"></span>
               </button>
-            </template>
-
-            <template x-if="activeTab === 'jobs'">
-              <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-500/30">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>AI Career Recommendations</span>
-                </span>
-              </div>
             </template>
           </div>
 
@@ -293,11 +332,67 @@
             </div>
           </template>
 
-          <!-- Tab 1: Live PDF Embed (Supports ATS + Visual Designer Formats) -->
+          <!-- Tab 1: Live PDF Vector Canvas Preview (PDF.js for 100% Cross-Platform Mobile & Desktop Support) -->
           <template x-if="tailoredData && activeTab === 'resume'">
-            <div class="w-full h-full min-h-[580px] flex flex-col">
-              <iframe :key="pdfBlobKey" :src="pdfBlobUrl" class="w-full h-full min-h-[580px] rounded-xl border border-slate-800 bg-white"
-                type="application/pdf"></iframe>
+            <div class="w-full flex-1 flex flex-col min-h-[520px] sm:min-h-[620px] rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+              
+              <!-- PDF Preview Interactive Toolbar -->
+              <div class="bg-slate-900/95 border-b border-slate-800 px-3 py-2 flex items-center justify-between gap-2 text-xs flex-shrink-0">
+                <!-- Zoom & Scale Controls -->
+                <div class="flex items-center space-x-1 sm:space-x-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                  <button @click="zoomPdf(-0.15)" class="p-1 rounded hover:bg-slate-800 text-slate-300 transition" title="Zoom Out">
+                    <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <span class="text-[11px] font-mono font-bold text-slate-200 min-w-[36px] text-center" x-text="Math.round((pdfZoom || 1.0) * 100) + '%'">100%</span>
+                  <button @click="zoomPdf(0.15)" class="p-1 rounded hover:bg-slate-800 text-slate-300 transition" title="Zoom In">
+                    <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button @click="resetPdfZoom()" class="hidden sm:inline-block px-1.5 py-0.5 rounded hover:bg-slate-800 text-[10px] text-slate-400 font-medium" title="Fit to Screen">
+                    Fit
+                  </button>
+                </div>
+
+                <!-- Page Count & Multi-Page Guarantee Indicator -->
+                <div class="flex items-center gap-1.5 text-[11px] font-medium text-slate-300">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span x-text="pdfPageCount ? (pdfPageCount + ' Page' + (pdfPageCount > 1 ? 's' : '')) : 'Vector Rendered'"></span>
+                  <span class="hidden sm:inline text-slate-500">• High-DPI</span>
+                </div>
+
+                <!-- Direct Open / Print / New Tab Button -->
+                <div class="flex items-center gap-1.5">
+                  <a :href="pdfRawBlobUrl" target="_blank"
+                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+                    title="Open pure PDF in browser tab or print">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span class="hidden sm:inline">Open in Tab</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Canvas Pages Viewport -->
+              <div id="pdf-preview-scroll-container" class="flex-1 overflow-y-auto overflow-x-auto p-2 sm:p-5 flex flex-col items-center justify-start min-h-[480px]">
+                
+                <!-- Loading State -->
+                <div x-show="isRenderingPdf" class="my-auto py-16 text-center space-y-3">
+                  <div class="relative w-12 h-12 mx-auto">
+                    <div class="w-12 h-12 border-3 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
+                      <i data-lucide="sparkles" class="w-5 h-5 animate-pulse"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-200">Rendering Vector PDF</h4>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Generating high-DPI canvas preview for mobile...</p>
+                  </div>
+                </div>
+
+                <!-- Canvas Pages Wrapper (Dynamically Populated by PDF.js) -->
+                <div id="pdf-canvas-wrapper" x-show="!isRenderingPdf" class="flex flex-col items-center w-full max-w-full">
+                  <!-- Injected canvases appear here -->
+                </div>
+              </div>
+
             </div>
           </template>
 
