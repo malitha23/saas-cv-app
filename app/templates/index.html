@@ -196,6 +196,14 @@
   <!-- Google Identity Services (GIS) SDK -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+  <!-- PDF.js Vector Engine for 100% Cross-Platform Mobile & Desktop Canvas Rendering -->
+  <script src="/static/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+    }
+  </script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -222,6 +230,20 @@
   <style>
     [x-cloak] {
       display: none !important;
+    }
+
+    /* Hide scrollbars for smooth mobile touch carousel navigation */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Mobile safe-area bottom padding for notch and navigation pills */
+    .safe-area-pb {
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
     }
 
     /* Dark scrollbars */
@@ -894,13 +916,37 @@
   {% include 'components/header.html' %}
 
   <!-- Main Grid Workspace -->
-  <main class="flex-1 max-w-8xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <main class="flex-1 max-w-8xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 lg:pb-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
 
     <!-- 2. Free Guest Exploration Banner Component -->
     {% include 'components/guest_banner.html' %}
 
+    <!-- 2.1 Mobile & Tablet Responsive View Switcher (Visible on < lg when tailoredData exists) -->
+    <template x-if="tailoredData">
+      <div class="lg:hidden col-span-1 sticky top-16 z-30 bg-slate-900/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs flex-1">
+          <button @click="mobileWorkspaceTab = 'editor'"
+            :class="{'bg-indigo-600 text-white font-bold shadow': mobileWorkspaceTab === 'editor', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'editor'}"
+            class="flex-1 py-2 rounded-lg transition flex items-center justify-center gap-1.5 text-xs font-semibold">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Edit Resume</span>
+          </button>
+          <button @click="mobileWorkspaceTab = 'preview'; $nextTick(() => { refreshAllPreviews(); if (window.lucide) window.lucide.createIcons(); });"
+            :class="{'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-bold shadow': mobileWorkspaceTab === 'preview', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'preview'}"
+            class="flex-1 py-2 rounded-lg transition flex items-center justify-center gap-1.5 text-xs font-semibold">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            <span>Preview & Download</span>
+            <template x-if="tailoredData.ats_analysis">
+              <span class="px-1.5 py-0.5 bg-emerald-400/20 text-emerald-300 text-[10px] font-bold rounded-full" x-text="tailoredData.ats_analysis.overall_score + '%'"></span>
+            </template>
+          </button>
+        </div>
+      </div>
+    </template>
+
     <!-- LEFT COLUMN: Inputs & Customizer (5 cols) -->
-    <div class="lg:col-span-5 space-y-5">
+    <div class="lg:col-span-5 space-y-5"
+         :class="{'hidden lg:block': tailoredData && mobileWorkspaceTab === 'preview', 'block': !tailoredData || mobileWorkspaceTab === 'editor'}">
 
       <!-- Step 1: Upload Resume Component -->
       {% include 'components/left_panel/step1_upload.html' %}
@@ -977,7 +1023,41 @@
   {% include 'components/modals/realtime_conference_modal.html' %}
   {% include 'components/modals/qr_smart_card_modal.html' %}
   {% include 'components/modals/onboarding_tour_modal.html' %}
-  {% include 'components/chat_copilot.html' %}
+  <!-- 3. Mobile & Tablet Sticky Bottom Floating Action Bar (< lg) -->
+  <div x-show="tailoredData" x-cloak
+    class="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-2.5 px-3 sm:px-4 flex items-center justify-between gap-2 shadow-2xl safe-area-pb">
+    <!-- View Switcher Button -->
+    <button @click="mobileWorkspaceTab = (mobileWorkspaceTab === 'editor' ? 'preview' : 'editor'); $nextTick(() => { if (mobileWorkspaceTab === 'preview') refreshAllPreviews(); if (window.lucide) window.lucide.createIcons(); });"
+      class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition shrink-0">
+      <i :data-lucide="mobileWorkspaceTab === 'editor' ? 'eye' : 'edit-3'" class="w-4 h-4 text-indigo-400"></i>
+      <span x-text="mobileWorkspaceTab === 'editor' ? 'Preview' : 'Edit'"></span>
+    </button>
+
+    <!-- Prominent Download / Action CTA (Always 1-Tap Accessible on Mobile) -->
+    <button @click="downloadCurrentActiveDoc()" :disabled="isDownloading"
+      class="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-indigo-600 to-violet-600 hover:from-emerald-500 hover:to-violet-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-1.5 transition disabled:opacity-50">
+      <template x-if="!isDownloading">
+        <span class="flex items-center gap-1.5 truncate">
+          <i data-lucide="download" class="w-4 h-4 shrink-0"></i>
+          <span class="truncate" x-text="getMobileDownloadLabel()"></span>
+        </span>
+      </template>
+      <template x-if="isDownloading">
+        <span class="flex items-center gap-1.5">
+          <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          <span>Downloading...</span>
+        </span>
+      </template>
+    </button>
+
+    <!-- ATS Score Pill -->
+    <template x-if="tailoredData && tailoredData.ats_analysis">
+      <div class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black flex items-center gap-1 shrink-0" title="Overall ATS Match Score">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+        <span x-text="tailoredData.ats_analysis.overall_score + '%'"></span>
+      </div>
+    </template>
+  </div>
 
   <!-- Comprehensive SaaS Footer -->
   {% include 'components/footer.html' %}

@@ -28,8 +28,14 @@ function resumeApp() {
     userApiKey: '',
     activeTab: 'resume', // 'resume', 'cover_letter', 'portfolio', 'text', 'jobs'
     tailoredData: null,
+    mobileWorkspaceTab: 'editor', // 'editor' or 'preview' on < lg devices
     pdfBlobUrl: null,
     pdfBlobKey: 0,
+    pdfZoom: 1.0,
+    pdfPageCount: 1,
+    isRenderingPdf: false,
+    pdfRawBlobUrl: null,
+    _activePdfBlob: null,
     portfolioHtml: '',
     publishedLiveUrl: '',
     sampleData: {},
@@ -126,6 +132,10 @@ function resumeApp() {
     activeCoachingNudge: null,
     liveSubtitleSpeaker: '',
     liveSubtitleText: '',
+    showConferenceTextInput: true,
+    conferenceCandidateInput: '',
+    aiSpeechWatchdogTimer: null,
+    voiceInterviewWatchdog: null,
     conferenceSidebarOpen: false,
     conferenceConversationHistory: [],
     conferenceMistakes: [],
@@ -379,6 +389,16 @@ function resumeApp() {
       window.addEventListener('message', (event) => {
         if (event.data === 'download_resume') {
           this.downloadResumePdf();
+        }
+      });
+
+      // Auto-refit PDF canvas on mobile screen orientation change or resize
+      window.addEventListener('resize', () => {
+        if (this._activePdfBlob && this.activeTab === 'resume') {
+          clearTimeout(this._pdfResizeTimer);
+          this._pdfResizeTimer = setTimeout(() => {
+            this.renderPdfWithPdfJs(this._activePdfBlob);
+          }, 200);
         }
       });
 
@@ -681,6 +701,11 @@ function resumeApp() {
         await this.renderPdfPreview();
         await this.renderPortfolioPreview();
 
+        // Switch to preview mode on mobile devices so user immediately sees their tailored resume!
+        if (window.innerWidth < 1024) {
+          this.mobileWorkspaceTab = 'preview';
+        }
+
         // Automatically save newly tailored resume into MySQL!
         this.currentResumeId = null;
         await this.performAutoSave();
@@ -877,6 +902,7 @@ function resumeApp() {
       if (!this.tailoredData) return;
 
       try {
+        this.isRenderingPdf = true;
         // Stamp current template into payload before every call
         this.tailoredData.template_style = this.currentTemplate;
 
@@ -896,14 +922,122 @@ function resumeApp() {
         }
 
         const blob = await res.blob();
-        if (this.pdfBlobUrl) {
-          URL.revokeObjectURL(this.pdfBlobUrl);
+        this._activePdfBlob = blob;
+
+        if (this.pdfRawBlobUrl) {
+          URL.revokeObjectURL(this.pdfRawBlobUrl);
         }
-        this.pdfBlobUrl = URL.createObjectURL(blob) + '#toolbar=0&navpanes=0';
+        this.pdfRawBlobUrl = URL.createObjectURL(blob);
+        this.pdfBlobUrl = this.pdfRawBlobUrl;
         this.pdfBlobKey = Date.now();
+
+        await this.renderPdfWithPdfJs(blob);
       } catch (err) {
         console.error('PDF Preview render error:', err);
+      } finally {
+        this.isRenderingPdf = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       }
+    },
+
+    async renderPdfWithPdfJs(blob) {
+      try {
+        if (!window.pdfjsLib) {
+          console.warn('PDF.js not initialized on page');
+          return;
+        }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+
+        const buffer = await blob.arrayBuffer();
+        const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
+        const pdf = await loadingTask.promise;
+        this.pdfPageCount = pdf.numPages;
+
+        const container = document.getElementById('pdf-canvas-wrapper');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const scrollContainer = document.getElementById('pdf-preview-scroll-container');
+        const containerWidth = scrollContainer ? scrollContainer.clientWidth : window.innerWidth;
+        const padding = window.innerWidth < 640 ? 16 : 48;
+        const availableWidth = Math.max(containerWidth - padding, 260);
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const unscaledViewport = page.getViewport({ scale: 1.0 });
+
+          // Determine responsive fit scale (cap at 760px for readability on large screens)
+          const targetWidth = Math.min(availableWidth, 760);
+          const fitScale = targetWidth / unscaledViewport.width;
+          const userZoom = this.pdfZoom || 1.0;
+          const effectiveScale = fitScale * userZoom;
+
+          // HiDPI backing store for sharp text on Retina / OLED mobile screens
+          const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+          const renderViewport = page.getViewport({ scale: effectiveScale * dpr });
+
+          const pageWrapper = document.createElement('div');
+          pageWrapper.className = 'relative flex flex-col items-center mb-5 shadow-2xl rounded-xl border border-slate-700/80 bg-white overflow-hidden transition-all duration-150 max-w-full';
+          pageWrapper.style.width = Math.round(unscaledViewport.width * effectiveScale) + 'px';
+
+          const canvas = document.createElement('canvas');
+          canvas.width = renderViewport.width;
+          canvas.height = renderViewport.height;
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+          canvas.style.display = 'block';
+
+          // Multi-page badge
+          if (pdf.numPages > 1) {
+            const badge = document.createElement('div');
+            badge.className = 'absolute bottom-2 right-2 px-2 py-0.5 rounded bg-slate-900/80 text-white text-[10px] font-mono tracking-wider backdrop-blur-sm pointer-events-none shadow';
+            badge.innerText = `Page ${pageNum} of ${pdf.numPages}`;
+            pageWrapper.appendChild(badge);
+          }
+
+          pageWrapper.appendChild(canvas);
+          container.appendChild(pageWrapper);
+
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+        }
+      } catch (renderErr) {
+        console.error('PDF.js canvas rendering error:', renderErr);
+      }
+    },
+
+    zoomPdf(delta) {
+      const newZoom = Math.min(Math.max((this.pdfZoom || 1.0) + delta, 0.5), 2.2);
+      this.pdfZoom = Math.round(newZoom * 100) / 100;
+      if (this._activePdfBlob) {
+        this.renderPdfWithPdfJs(this._activePdfBlob);
+      }
+    },
+
+    resetPdfZoom() {
+      this.pdfZoom = 1.0;
+      if (this._activePdfBlob) {
+        this.renderPdfWithPdfJs(this._activePdfBlob);
+      }
+    },
+
+    downloadCurrentActiveDoc() {
+      if (this.activeTab === 'cover_letter') {
+        this.downloadCoverLetterPdf();
+      } else if (this.activeTab === 'portfolio') {
+        this.publishLivePortfolio();
+      } else {
+        this.downloadResumePdf();
+      }
+    },
+
+    getMobileDownloadLabel() {
+      if (this.activeTab === 'cover_letter') return 'Download Cover Letter (PDF)';
+      if (this.activeTab === 'portfolio') return 'Publish Live Portfolio';
+      if (['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(this.currentTemplate)) {
+        return 'Download Visual PDF';
+      }
+      return 'Download ATS PDF';
     },
 
     async renderPortfolioPreview() {
@@ -2950,7 +3084,14 @@ function resumeApp() {
     speakCurrentQuestion() {
       if (!this.currentQuestion || !window.speechSynthesis) return;
 
-      window.speechSynthesis.cancel();
+      this.unlockMobileAudio();
+      try {
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (e) {}
+
       const textToSpeak = this.currentQuestion.question_text;
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
@@ -2959,21 +3100,38 @@ function resumeApp() {
 
       // Select natural English voice if available
       const voices = window.speechSynthesis.getVoices();
-      const engVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')));
+      const engVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')));
       if (engVoice) {
         utterance.voice = engVoice;
       }
 
       this.isInterviewerSpeaking = true;
 
-      utterance.onend = () => {
+      const finishInterviewer = () => {
         this.isInterviewerSpeaking = false;
-      };
-      utterance.onerror = () => {
-        this.isInterviewerSpeaking = false;
+        if (this.voiceInterviewWatchdog) {
+          clearTimeout(this.voiceInterviewWatchdog);
+          this.voiceInterviewWatchdog = null;
+        }
       };
 
-      window.speechSynthesis.speak(utterance);
+      utterance.onend = finishInterviewer;
+      utterance.onerror = finishInterviewer;
+
+      // Mobile safety watchdog timer
+      const wordCount = (textToSpeak || '').split(/\s+/).length;
+      const expectedMs = Math.max(3500, (wordCount / 2.2) * 1000 + 2000);
+      this.voiceInterviewWatchdog = setTimeout(finishInterviewer, expectedMs);
+
+      try {
+        window.speechSynthesis.speak(utterance);
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (err) {
+        console.warn('SpeechSynthesis error:', err);
+        finishInterviewer();
+      }
     },
 
     startCandidateRecording() {
@@ -3171,6 +3329,23 @@ function resumeApp() {
     // REAL-TIME AI VIDEO CONFERENCE & LIVE MISTAKE COACHING METHODS
     // ═══════════════════════════════════════════════════════════════════
 
+    unlockMobileAudio() {
+      try {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          // Prime mobile audio pipeline with a silent micro-utterance on user touch
+          const unlockUtterance = new SpeechSynthesisUtterance(' ');
+          unlockUtterance.volume = 0.01;
+          window.speechSynthesis.speak(unlockUtterance);
+        }
+      } catch (e) {
+        console.warn('Audio unlock notice:', e);
+      }
+    },
+
     startRealtimeConference(role = '', company = '') {
       if (!this.currentUser) {
         this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to join the Real-Time AI Video Conference & Live Coaching Studio!');
@@ -3191,6 +3366,9 @@ function resumeApp() {
       this.closeVoiceInterviewModal();
       this.showCopilotModal = false;
 
+      // 🔊 CRITICAL MOBILE AUDIO UNLOCK: must execute immediately within user touch gesture
+      this.unlockMobileAudio();
+
       this.conferenceTargetRole = role || this.tailoredData?.target_job_title || this.targetJobTitle || 'Automotive Technician';
       this.conferenceTargetCompany = company || this.targetCompany || '';
       this.conferenceSessionId = 'conf_' + Math.random().toString(36).substring(2, 11);
@@ -3204,6 +3382,8 @@ function resumeApp() {
       this.isCandidateSpeaking = false;
       this.liveSubtitleSpeaker = '';
       this.liveSubtitleText = '';
+      this.conferenceCandidateInput = '';
+      this.showConferenceTextInput = true;
       this.conferenceSidebarOpen = false;
       this.realtimeConferenceOpen = true;
 
@@ -3214,8 +3394,15 @@ function resumeApp() {
       }, 1000);
 
       // Initialize candidate webcam feed
+      // IMPORTANT: DO NOT request audio: true here!
+      // In iOS Safari and Android Chrome, requesting audio in getUserMedia locks the microphone
+      // and switches mobile audio routing to the telephone earpiece at near 0% volume,
+      // completely breaking SpeechRecognition and muting AI speech output!
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        })
           .then(stream => {
             this.candidateStream = stream;
             this.$nextTick(() => {
@@ -3226,7 +3413,7 @@ function resumeApp() {
             });
           })
           .catch(err => {
-            console.warn('Camera/mic access unavailable or denied:', err);
+            console.warn('Camera access unavailable or denied:', err);
             this.isCameraOn = false;
           });
       }
@@ -3237,142 +3424,228 @@ function resumeApp() {
         // AI Interviewer opening line in conference
         const welcomeText = `Hello! Welcome to our live technical conference for the ${this.conferenceTargetRole} role. Can you introduce yourself and walk me through your core background and hands-on diagnostic experience?`;
         
-        setTimeout(() => {
-          this.conferenceConversationHistory.push({
-            speaker: 'interviewer',
-            text: welcomeText,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          });
-          this.speakAiConferenceResponse(welcomeText, () => {
-            this.initCandidateConferenceSpeechRecognition();
-          });
-        }, 500);
+        this.conferenceConversationHistory.push({
+          speaker: 'interviewer',
+          text: welcomeText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        
+        // Speak AI greeting and then start candidate listening turn
+        this.speakAiConferenceResponse(welcomeText, () => {
+          this.initCandidateConferenceSpeechRecognition();
+        });
+      });
+    },
+
+    replayAiQuestion() {
+      // Re-trigger playback of latest interviewer question with fresh user touch gesture
+      this.unlockMobileAudio();
+      const lastAiMsg = [...this.conferenceConversationHistory].reverse().find(m => m.speaker === 'interviewer');
+      const textToSpeak = lastAiMsg ? lastAiMsg.text : `Hello! Welcome to our conference. Can you introduce yourself and your background?`;
+      this.speakAiConferenceResponse(textToSpeak, () => {
+        this.initCandidateConferenceSpeechRecognition();
       });
     },
 
     speakAiConferenceResponse(text, onComplete) {
-      if (!window.speechSynthesis) {
-        if (onComplete) onComplete();
-        return;
-      }
-
-      window.speechSynthesis.cancel();
       this.isAiThinking = false;
       this.isAiSpeakingTurn = true;
       this.liveSubtitleSpeaker = 'Alex (Interviewer)';
       this.liveSubtitleText = text;
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-
-      const voices = window.speechSynthesis.getVoices();
-      const naturalVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Daniel') || v.name.includes('Samantha')));
-      if (naturalVoice) utterance.voice = naturalVoice;
-
-      utterance.onend = () => {
+      if (!window.speechSynthesis) {
         this.isAiSpeakingTurn = false;
         if (onComplete) onComplete();
-      };
-      utterance.onerror = () => {
-        this.isAiSpeakingTurn = false;
-        if (onComplete) onComplete();
-      };
-
-      window.speechSynthesis.speak(utterance);
-    },
-
-    initCandidateConferenceSpeechRecognition() {
-      if (this.isMicMuted || !this.realtimeConferenceOpen) return;
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        this.activeCoachingNudge = "💡 Speech recognition unavailable in this browser. Please use Chrome or Edge for full live voice conference.";
         return;
       }
 
       try {
-        if (!this.conferenceSpeechRecognition) {
-          const rec = new SpeechRecognition();
-          rec.continuous = false; // Turn-based listening
-          rec.interimResults = true;
-          rec.lang = 'en-US';
+        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (e) {}
 
-          let turnTranscript = '';
-          let turnStartTime = Date.now();
+      let completed = false;
+      const finishSpeaking = () => {
+        if (completed) return;
+        completed = true;
+        if (this.aiSpeechWatchdogTimer) {
+          clearTimeout(this.aiSpeechWatchdogTimer);
+          this.aiSpeechWatchdogTimer = null;
+        }
+        this.isAiSpeakingTurn = false;
+        if (onComplete) onComplete();
+      };
 
-          rec.onstart = () => {
-            this.isCandidateSpeaking = true;
-            turnStartTime = Date.now();
-            turnTranscript = '';
-          };
+      // Watchdog safety timer: mobile browsers (iOS / Android) often fail to fire onend
+      // or silent-block background TTS. Proportional to speech length:
+      const wordCount = (text || '').split(/\s+/).length;
+      const expectedMs = Math.max(3500, (wordCount / 2.2) * 1000 + 2000);
+      this.aiSpeechWatchdogTimer = setTimeout(() => {
+        console.warn('SpeechSynthesis watchdog triggered (mobile safety)');
+        finishSpeaking();
+      }, expectedMs);
 
-          rec.onresult = (event) => {
-            let interim = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-              if (event.results[i].isFinal) {
-                turnTranscript += ' ' + event.results[i][0].transcript.trim();
-              } else {
-                interim += event.results[i][0].transcript;
-              }
-            }
-            const currentFull = (turnTranscript + ' ' + interim).trim();
-            if (currentFull) {
-              this.isCandidateSpeaking = true;
-              this.liveSubtitleSpeaker = 'You (Candidate)';
-              this.liveSubtitleText = currentFull;
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
 
-              // Ultra-Low Latency Auto-Silence Trigger:
-              // If candidate pauses for 1200ms after speaking at least 3 words, stop recognition immediately
-              if (this.conferenceSilenceTimer) clearTimeout(this.conferenceSilenceTimer);
-              if (currentFull.split(/\s+/).length >= 3) {
-                this.conferenceSilenceTimer = setTimeout(() => {
-                  try {
-                    rec.stop();
-                  } catch (e) {}
-                }, 1200);
-              }
-            }
-          };
+        const voices = window.speechSynthesis.getVoices();
+        const naturalVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Daniel') || v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Arthur')));
+        if (naturalVoice) utterance.voice = naturalVoice;
 
-          rec.onerror = (e) => {
-            if (e.error === 'no-speech') {
-              return; // Natural pause between conversational speech turns
-            }
-            console.warn('Conference speech recognition error:', e.error);
-            this.isCandidateSpeaking = false;
-            if (this.conferenceSilenceTimer) clearTimeout(this.conferenceSilenceTimer);
-          };
+        utterance.onend = finishSpeaking;
+        utterance.onerror = (e) => {
+          console.warn('SpeechSynthesis utterance error:', e);
+          finishSpeaking();
+        };
 
-          rec.onend = () => {
-            this.isCandidateSpeaking = false;
-            if (this.conferenceSilenceTimer) {
-              clearTimeout(this.conferenceSilenceTimer);
-              this.conferenceSilenceTimer = null;
-            }
-            const finalClean = turnTranscript.trim();
-            const durationSec = Math.max(3, Math.round((Date.now() - turnStartTime) / 1000));
+        window.speechSynthesis.speak(utterance);
 
-            if (finalClean && finalClean.split(/\s+/).length >= 2 && !this.isMicMuted && this.realtimeConferenceOpen) {
-              this.handleCandidateSpokenTurn(finalClean, durationSec);
-            } else if (this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
-              // Restart listening if nothing substantial was spoken
-              setTimeout(() => {
-                try { rec.start(); } catch (err) {}
-              }, 300);
-            }
-          };
+        // Resume if paused (iOS Safari bug)
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (err) {
+        console.warn('SpeechSynthesis speak failed:', err);
+        finishSpeaking();
+      }
+    },
 
-          this.conferenceSpeechRecognition = rec;
+    initCandidateConferenceSpeechRecognition() {
+      if (this.isMicMuted || !this.realtimeConferenceOpen || this.isAiSpeakingTurn || this.isAiThinking) return;
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        this.activeCoachingNudge = "💡 Live speech recognition unavailable on this browser. You can type your answer in the box below!";
+        this.showConferenceTextInput = true;
+        return;
+      }
+
+      try {
+        // Cleanly stop any existing instance before creating a fresh one
+        if (this.conferenceSpeechRecognition) {
+          try { this.conferenceSpeechRecognition.abort(); } catch (e) {}
+          this.conferenceSpeechRecognition = null;
         }
 
-        if (!this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
-          this.conferenceSpeechRecognition.start();
+        const rec = new SpeechRecognition();
+        rec.continuous = false; // Turn-based listening
+        rec.interimResults = true;
+        rec.lang = 'en-US';
+
+        let turnTranscript = '';
+        let turnStartTime = Date.now();
+
+        rec.onstart = () => {
+          this.isCandidateSpeaking = true;
+          turnStartTime = Date.now();
+          turnTranscript = '';
+          this.liveSubtitleSpeaker = 'You (Candidate)';
+          this.liveSubtitleText = 'Listening to your response... Speak now.';
+        };
+
+        rec.onresult = (event) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              turnTranscript += ' ' + event.results[i][0].transcript.trim();
+            } else {
+              interim += event.results[i][0].transcript;
+            }
+          }
+          const currentFull = (turnTranscript + ' ' + interim).trim();
+          if (currentFull) {
+            this.isCandidateSpeaking = true;
+            this.liveSubtitleSpeaker = 'You (Candidate)';
+            this.liveSubtitleText = currentFull;
+            this.conferenceCandidateInput = currentFull;
+
+            // Auto-Silence trigger: 1300ms pause after >= 3 words
+            if (this.conferenceSilenceTimer) clearTimeout(this.conferenceSilenceTimer);
+            if (currentFull.split(/\s+/).length >= 3) {
+              this.conferenceSilenceTimer = setTimeout(() => {
+                try { rec.stop(); } catch (e) {}
+              }, 1300);
+            }
+          }
+        };
+
+        rec.onerror = (e) => {
+          if (e.error === 'no-speech') {
+            return; // Natural pause
+          }
+          console.warn('Conference speech recognition error:', e.error);
+          if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+            this.activeCoachingNudge = "⚠️ Microphone permission needed. You can type your answer below!";
+            this.showConferenceTextInput = true;
+          }
+          this.isCandidateSpeaking = false;
+          if (this.conferenceSilenceTimer) clearTimeout(this.conferenceSilenceTimer);
+        };
+
+        rec.onend = () => {
+          this.isCandidateSpeaking = false;
+          if (this.conferenceSilenceTimer) {
+            clearTimeout(this.conferenceSilenceTimer);
+            this.conferenceSilenceTimer = null;
+          }
+          const finalClean = (turnTranscript || this.conferenceCandidateInput || '').trim();
+          const durationSec = Math.max(3, Math.round((Date.now() - turnStartTime) / 1000));
+
+          if (finalClean && finalClean.split(/\s+/).length >= 2 && !this.isMicMuted && this.realtimeConferenceOpen && !this.isAiThinking) {
+            this.handleCandidateSpokenTurn(finalClean, durationSec);
+          } else if (this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
+            // Restart listening if conference is still active
+            setTimeout(() => {
+              if (this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
+                try { rec.start(); } catch (err) {}
+              }
+            }, 300);
+          }
+        };
+
+        this.conferenceSpeechRecognition = rec;
+        try {
+          rec.start();
+        } catch (e) {
+          if (e.name !== 'InvalidStateError') {
+            console.warn('SpeechRecognition start error:', e);
+          }
         }
 
       } catch (err) {
         console.warn('Error starting conference speech recognition:', err);
+        this.showConferenceTextInput = true;
       }
+    },
+
+    triggerCandidateMicInput() {
+      this.unlockMobileAudio();
+      if (this.isCandidateSpeaking) {
+        this.forceFinishCandidateSpeaking();
+      } else {
+        this.isMicMuted = false;
+        this.initCandidateConferenceSpeechRecognition();
+      }
+    },
+
+    submitCandidateTextAnswer() {
+      const text = (this.conferenceCandidateInput || '').trim();
+      if (!text || this.isAiThinking) return;
+
+      if (this.conferenceSilenceTimer) {
+        clearTimeout(this.conferenceSilenceTimer);
+        this.conferenceSilenceTimer = null;
+      }
+      if (this.conferenceSpeechRecognition) {
+        try { this.conferenceSpeechRecognition.abort(); } catch (e) {}
+      }
+      this.isCandidateSpeaking = false;
+      this.handleCandidateSpokenTurn(text, 5);
+      this.conferenceCandidateInput = '';
     },
 
     forceFinishCandidateSpeaking() {
@@ -3380,10 +3653,15 @@ function resumeApp() {
         clearTimeout(this.conferenceSilenceTimer);
         this.conferenceSilenceTimer = null;
       }
+      const text = (this.conferenceCandidateInput || this.liveSubtitleText || '').trim();
       if (this.conferenceSpeechRecognition) {
         try {
           this.conferenceSpeechRecognition.stop();
         } catch (e) {}
+      }
+      if (text && text.split(/\s+/).length >= 2 && !this.isAiThinking) {
+        this.handleCandidateSpokenTurn(text, 4);
+        this.conferenceCandidateInput = '';
       }
     },
 
@@ -3518,6 +3796,11 @@ function resumeApp() {
       if (this.conferenceSpeechRecognition) {
         try { this.conferenceSpeechRecognition.stop(); } catch (e) {}
         this.conferenceSpeechRecognition = null;
+      }
+
+      if (this.aiSpeechWatchdogTimer) {
+        clearTimeout(this.aiSpeechWatchdogTimer);
+        this.aiSpeechWatchdogTimer = null;
       }
 
       if (window.speechSynthesis) {

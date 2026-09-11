@@ -472,8 +472,16 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     story.append(HRFlowable(width="100%", thickness=1.5, color=primary, spaceBefore=1, spaceAfter=5))
 
     order = list(getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"])
-    if "skills" not in order:
-        order.insert(1, "skills")
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("skills", resume.show_skills and resume.skill_categories),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
 
     arch = (getattr(resume, "role_archetype", "general_professional") or "general_professional").lower()
     skills_hdr = "TECHNICAL SKILLS"
@@ -684,6 +692,8 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("V1SideEduDeg", fontName=f_bold, fontSize=7.2, leading=9.5, textColor=colors.white))
     _add(S, ParagraphStyle("V1SideEduSub", fontName=f_reg, fontSize=6.8, leading=9, textColor=colors.HexColor("#94A3B8")))
 
+    rendered_v1_skills = [0]
+
     def on_first_page(canvas, doc):
         canvas.saveState()
         info = resume.personal_info
@@ -734,15 +744,16 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         canvas.line(SIDE_X, y, SIDE_W - SIDE_X, y)
         y -= 10
 
-        # Contact Details
+        # Contact Details (Page 1 Only!)
         y -= _draw_sidebar_para(canvas, "CONTACT", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
         y -= 4
         contacts = []
-        if info.email:    contacts.append(("EMAIL", info.email))
-        if info.phone:    contacts.append(("PHONE", info.phone))
-        if info.location: contacts.append(("LOCATION", info.location))
-        if info.linkedin: contacts.append(("LINKEDIN", info.linkedin))
-        if info.github:   contacts.append(("GITHUB", info.github))
+        if info.email:     contacts.append(("EMAIL", info.email))
+        if info.phone:     contacts.append(("PHONE", info.phone))
+        if info.location:  contacts.append(("LOCATION", info.location))
+        if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
+        if info.github:    contacts.append(("GITHUB", info.github))
+        if info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
 
         for lbl, val in contacts:
             if y < 60: break
@@ -761,8 +772,55 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             y -= 4
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "sleek")
-            cats_p1 = resume.skill_categories[:2] if len(resume.skill_categories) > 2 else resume.skill_categories
-            for cat in cats_p1:
+            for cat_idx, cat in enumerate(resume.skill_categories):
+                if y < 45: break
+                if cat.skills:
+                    y -= _draw_sidebar_para(canvas, cat.category_name, S["V1SideCat"], SIDE_X, y, SIDE_MAX_W)
+                    y -= 4
+                    if show_bars:
+                        levels = getattr(cat, "skill_levels", {}) or {}
+                        for s in cat.skills[:4]:
+                            if y < 35: break
+                            s_level = levels.get(s, 85)
+                            consumed = _draw_skill_progress_bar(
+                                canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
+                                style=bar_style, bar_color=accent, bg_color=colors.HexColor('#334155'),
+                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg
+                            )
+                            y -= (consumed + 2.0)
+                    else:
+                        y -= _draw_sidebar_para(canvas, ", ".join(cat.skills), S["V1SideSkill"], SIDE_X, y, SIDE_MAX_W)
+                        y -= 4
+                    y -= 6
+                    rendered_v1_skills[0] = cat_idx + 1
+
+        canvas.setFillColorRGB(0.5, 0.58, 0.70)
+        canvas.setFont("Helvetica", 7)
+        canvas.drawCentredString(SIDE_W / 2, 14, "Page 1")
+        canvas.restoreState()
+
+    def on_later_pages(canvas, doc):
+        canvas.saveState()
+
+        canvas.setFillColor(side_bg)
+        canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
+        canvas.setFillColor(top_stripe)
+        canvas.rect(SIDE_W, PAGE_H - 4, PAGE_W - SIDE_W, 4, fill=1, stroke=0)
+        canvas.setStrokeColor(top_stripe)
+        canvas.setLineWidth(1.5)
+        canvas.line(SIDE_W, 0, SIDE_W, PAGE_H)
+
+        y = PAGE_H - 28
+
+        # Overflow Technical Skills ONLY (if any categories could not fit on Page 1)
+        # Absolutely NO duplicate Name, NO duplicate Title, NO duplicate Contacts!
+        cats_overflow = resume.skill_categories[rendered_v1_skills[0]:] if (resume.skill_categories and rendered_v1_skills[0] < len(resume.skill_categories)) else []
+        if resume.show_skills and cats_overflow and y > 90:
+            y -= _draw_sidebar_para(canvas, "SKILLS & EXPERTISE (CONT.)", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
+            y -= 4
+            show_bars = getattr(resume, "show_skill_bars", True)
+            bar_style = getattr(resume, "skill_bar_style", "sleek")
+            for cat in cats_overflow:
                 if y < 45: break
                 if cat.skills:
                     y -= _draw_sidebar_para(canvas, cat.category_name, S["V1SideCat"], SIDE_X, y, SIDE_MAX_W)
@@ -785,54 +843,6 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
 
         canvas.setFillColorRGB(0.5, 0.58, 0.70)
         canvas.setFont("Helvetica", 7)
-        canvas.drawCentredString(SIDE_W / 2, 14, "Page 1")
-        canvas.restoreState()
-
-    def on_later_pages(canvas, doc):
-        canvas.saveState()
-        info = resume.personal_info
-
-        canvas.setFillColor(side_bg)
-        canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
-        canvas.setFillColor(top_stripe)
-        canvas.rect(SIDE_W, PAGE_H - 4, PAGE_W - SIDE_W, 4, fill=1, stroke=0)
-        canvas.setStrokeColor(top_stripe)
-        canvas.setLineWidth(1.5)
-        canvas.line(SIDE_W, 0, SIDE_W, PAGE_H)
-
-        y = PAGE_H - 28
-
-        # Page 2 Sidebar: Education
-        if resume.show_education and resume.education:
-            y -= _draw_sidebar_para(canvas, "EDUCATION", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 5
-            for edu in resume.education:
-                if y < 80: break
-                y -= _draw_sidebar_para(canvas, edu.degree, S["V1SideEduDeg"], SIDE_X, y, SIDE_MAX_W)
-                y -= 1
-                det_str = f"{edu.institution} ({edu.graduation_year})"
-                if edu.location: det_str += f" · {edu.location}"
-                y -= _draw_sidebar_para(canvas, det_str, S["V1SideEduSub"], SIDE_X, y, SIDE_MAX_W)
-                y -= 5
-
-        if resume.show_certifications and resume.certifications and y > 90:
-            canvas.setStrokeColorRGB(0.25, 0.32, 0.45)
-            canvas.setLineWidth(0.6)
-            canvas.line(SIDE_X, y, SIDE_W - SIDE_X, y)
-            y -= 8
-            y -= _draw_sidebar_para(canvas, "CERTIFICATIONS", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 5
-            for cert in resume.certifications:
-                if y < 60: break
-                y -= _draw_sidebar_para(canvas, cert.name, S["V1SideEduDeg"], SIDE_X, y, SIDE_MAX_W)
-                y -= 1
-                c_str = cert.issuer
-                if cert.year: c_str += f" ({cert.year})"
-                y -= _draw_sidebar_para(canvas, c_str, S["V1SideEduSub"], SIDE_X, y, SIDE_MAX_W)
-                y -= 5
-
-        canvas.setFillColorRGB(0.5, 0.58, 0.70)
-        canvas.setFont("Helvetica", 7)
         canvas.drawCentredString(SIDE_W / 2, 14, f"Page {doc.page}")
 
         canvas.setFillColor(colors.HexColor("#94A3B8"))
@@ -845,7 +855,17 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
 
     # Main Body: Starts directly with PROFESSIONAL SUMMARY (Name is in left sidebar!)
     body = []
-    order = getattr(resume, "section_order", None) or ["summary", "experience", "projects", "education", "certifications"]
+    raw_order = getattr(resume, "section_order", None) or ["summary", "experience", "projects", "education", "certifications"]
+    order = list(raw_order)
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
 
     def add_summary():
         if resume.show_summary and resume.professional_summary:
@@ -919,6 +939,48 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                     body.append(Paragraph(f"• {b.lstrip('•- ')}", S["V1Bullet"]))
                 body.append(Spacer(1, spacer_h * 0.9))
 
+    def add_education():
+        if resume.show_education and resume.education:
+            sec_flow = [
+                Paragraph("EDUCATION", S["V1SecHdr"]),
+                HRFlowable(width="100%", thickness=1.4, color=accent, spaceBefore=0, spaceAfter=3),
+            ]
+            first_edu = resume.education[0]
+            loc0 = f" · {first_edu.location}" if first_edu.location else ""
+            det0 = f" – {first_edu.details}" if getattr(first_edu, "details", None) else ""
+            sec_flow.append(Paragraph(f"<b>{first_edu.degree}</b>", S["V1Job"]))
+            sec_flow.append(Paragraph(f"{first_edu.institution}{loc0} <font color='#64748B' size='8'>({first_edu.graduation_year})</font>{det0}", S["V1Company"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.7))
+
+            for edu in resume.education[1:]:
+                loc = f" · {edu.location}" if edu.location else ""
+                det = f" – {edu.details}" if getattr(edu, "details", None) else ""
+                item_flow = [
+                    Paragraph(f"<b>{edu.degree}</b>", S["V1Job"]),
+                    Paragraph(f"{edu.institution}{loc} <font color='#64748B' size='8'>({edu.graduation_year})</font>{det}", S["V1Company"]),
+                ]
+                body.append(KeepTogether(item_flow))
+                body.append(Spacer(1, spacer_h * 0.7))
+
+    def add_certifications():
+        if resume.show_certifications and resume.certifications:
+            sec_flow = [
+                Paragraph("CERTIFICATIONS & LICENSES", S["V1SecHdr"]),
+                HRFlowable(width="100%", thickness=1.4, color=accent, spaceBefore=0, spaceAfter=3),
+            ]
+            first_cert = resume.certifications[0]
+            year0 = f" <font color='#64748B' size='8'>({first_cert.year})</font>" if first_cert.year else ""
+            sec_flow.append(Paragraph(f"• <b>{first_cert.name}</b> — {first_cert.issuer}{year0}", S["V1Job"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.6))
+
+            for cert in resume.certifications[1:]:
+                year_str = f" <font color='#64748B' size='8'>({cert.year})</font>" if cert.year else ""
+                item_flow = [Paragraph(f"• <b>{cert.name}</b> — {cert.issuer}{year_str}", S["V1Job"])]
+                body.append(KeepTogether(item_flow))
+                body.append(Spacer(1, spacer_h * 0.6))
+
     for sec in order:
         if sec == "summary":
             add_summary()
@@ -926,6 +988,10 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             add_experience()
         elif sec == "projects":
             add_projects()
+        elif sec == "education":
+            add_education()
+        elif sec == "certifications":
+            add_certifications()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=28, bottomMargin=20)
@@ -978,6 +1044,8 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     SIDE_X = 24
     SIDE_MAX_W = 155
 
+    rendered_pw_skills = [0]
+
     def on_first_page(canvas, doc):
         canvas.saveState()
         info = resume.personal_info
@@ -1017,11 +1085,12 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         y -= _draw_sidebar_para(canvas, "CONTACT", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
         y -= 4
         contacts = []
-        if info.email:    contacts.append(("EMAIL", info.email))
-        if info.phone:    contacts.append(("PHONE", info.phone))
-        if info.location: contacts.append(("LOCATION", info.location))
-        if info.linkedin: contacts.append(("LINKEDIN", info.linkedin))
-        if info.github:   contacts.append(("GITHUB", info.github))
+        if info.email:     contacts.append(("EMAIL", info.email))
+        if info.phone:     contacts.append(("PHONE", info.phone))
+        if info.location:  contacts.append(("LOCATION", info.location))
+        if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
+        if info.github:    contacts.append(("GITHUB", info.github))
+        if info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
 
         for lbl, val in contacts:
             if y < 80: break
@@ -1030,22 +1099,8 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             y -= _draw_sidebar_para(canvas, val, S["PwSideVal"], SIDE_X, y, SIDE_MAX_W)
             y -= 4
 
-        if resume.show_education and resume.education and y > 140:
-            canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
-            canvas.setLineWidth(0.6)
-            canvas.line(SIDE_X, y, SIDE_X + SIDE_MAX_W, y)
-            y -= 10
-            y -= _draw_sidebar_para(canvas, "EDUCATION", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 4
-            for edu in resume.education:
-                if y < 80: break
-                y -= _draw_sidebar_para(canvas, f"• {edu.degree}", S["PwSideEduDeg"], SIDE_X, y, SIDE_MAX_W)
-                y -= 1
-                det_str = f"{edu.institution} ({edu.graduation_year})"
-                y -= _draw_sidebar_para(canvas, det_str, S["PwSideEduSub"], SIDE_X + 6, y, SIDE_MAX_W - 6)
-                y -= 5
-
-        if resume.show_skills and resume.skill_categories and y > 100:
+        # Technical Skills in Sidebar (Page 1)
+        if resume.show_skills and resume.skill_categories and y > 80:
             canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
             canvas.setLineWidth(0.6)
             canvas.line(SIDE_X, y, SIDE_X + SIDE_MAX_W, y)
@@ -1054,8 +1109,57 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             y -= 4
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "segmented")
-            cats_p1 = resume.skill_categories[:2] if len(resume.skill_categories) > 2 else resume.skill_categories
-            for cat in cats_p1:
+            for cat_idx, cat in enumerate(resume.skill_categories):
+                if y < 45: break
+                if cat.skills:
+                    y -= _draw_sidebar_para(canvas, cat.category_name, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
+                    y -= 4
+                    if show_bars:
+                        levels = getattr(cat, "skill_levels", {}) or {}
+                        for s in cat.skills[:4]:
+                            if y < 35: break
+                            s_level = levels.get(s, 85)
+                            consumed = _draw_skill_progress_bar(
+                                canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
+                                style=bar_style,
+                                bar_color=colors.HexColor("#1E3A8A"),
+                                bg_color=colors.HexColor("#E2E8F0"),
+                                text_color=dark_text,
+                                pct_color=sub_text,
+                                font_name=f_reg
+                            )
+                            y -= (consumed + 2.0)
+                    else:
+                        y -= _draw_sidebar_para(canvas, ", ".join(cat.skills), S["PwSideSkill"], SIDE_X, y, SIDE_MAX_W)
+                        y -= 4
+                    y -= 6
+                    rendered_pw_skills[0] = cat_idx + 1
+
+        canvas.setFillColor(colors.HexColor("#94A3B8"))
+        canvas.setFont(f_reg, 7)
+        canvas.drawString(SIDE_X, 14, "Page 1")
+        canvas.restoreState()
+
+    def on_later_pages(canvas, doc):
+        canvas.saveState()
+
+        canvas.setFillColor(banner_color)
+        canvas.rect(0, PAGE_H - 6, PAGE_W, 6, fill=1, stroke=0)
+        canvas.setFillColor(colors.HexColor("#64748B"))
+        canvas.setFont(f_reg, 8)
+        canvas.drawRightString(PAGE_W - 24, PAGE_H - 20, f"Page {doc.page}")
+
+        y = PAGE_H - 30
+
+        # Overflow Technical Skills ONLY (if any categories could not fit on Page 1)
+        # Absolutely NO duplicate Candidate Name, NO duplicate Job Title, NO duplicate Contacts, NO duplicate Links!
+        cats_overflow = resume.skill_categories[rendered_pw_skills[0]:] if (resume.skill_categories and rendered_pw_skills[0] < len(resume.skill_categories)) else []
+        if resume.show_skills and cats_overflow and y > 90:
+            show_bars = getattr(resume, "show_skill_bars", True)
+            bar_style = getattr(resume, "skill_bar_style", "segmented")
+            y -= _draw_sidebar_para(canvas, "SKILLS (CONT.)", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
+            y -= 5
+            for cat in cats_overflow:
                 if y < 45: break
                 if cat.skills:
                     y -= _draw_sidebar_para(canvas, cat.category_name, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
@@ -1082,88 +1186,22 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
 
         canvas.setFillColor(colors.HexColor("#94A3B8"))
         canvas.setFont(f_reg, 7)
-        canvas.drawString(SIDE_X, 14, "Page 1")
-        canvas.restoreState()
-
-    def on_later_pages(canvas, doc):
-        canvas.saveState()
-        info = resume.personal_info
-
-        canvas.setFillColor(banner_color)
-        canvas.rect(0, PAGE_H - 6, PAGE_W, 6, fill=1, stroke=0)
-        canvas.setFillColor(colors.HexColor("#64748B"))
-        canvas.setFont(f_reg, 8)
-        canvas.drawRightString(PAGE_W - 24, PAGE_H - 20, f"Page {doc.page}")
-
-        y = PAGE_H - 30
-
-        # Continued Technical Skills on Page 2
-        cats_p2 = resume.skill_categories[2:] if len(resume.skill_categories) > 2 else []
-        if resume.show_skills and cats_p2:
-            show_bars = getattr(resume, "show_skill_bars", True)
-            bar_style = getattr(resume, "skill_bar_style", "segmented")
-            y -= _draw_sidebar_para(canvas, "TECHNICAL SKILLS (CONT.)", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 5
-            for cat in cats_p2:
-                if y < 85: break
-                if cat.skills:
-                    y -= _draw_sidebar_para(canvas, cat.category_name, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
-                    y -= 4
-                    if show_bars:
-                        levels = getattr(cat, "skill_levels", {}) or {}
-                        for s in cat.skills[:4]:
-                            if y < 65: break
-                            s_level = levels.get(s, 85)
-                            consumed = _draw_skill_progress_bar(
-                                canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
-                                style=bar_style,
-                                bar_color=colors.HexColor("#1E3A8A"),
-                                bg_color=colors.HexColor("#E2E8F0"),
-                                text_color=dark_text,
-                                pct_color=sub_text,
-                                font_name=f_reg
-                            )
-                            y -= (consumed + 2.0)
-                    else:
-                        y -= _draw_sidebar_para(canvas, ", ".join(cat.skills), S["PwSideSkill"], SIDE_X, y, SIDE_MAX_W)
-                        y -= 4
-                    y -= 6
-
-            canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
-            canvas.setLineWidth(0.6)
-            canvas.line(SIDE_X, y, SIDE_X + SIDE_MAX_W, y)
-            y -= 10
-
-        if resume.show_certifications and resume.certifications and y > 90:
-            y -= _draw_sidebar_para(canvas, "CERTIFICATIONS", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 4
-            for cert in resume.certifications:
-                if y < 80: break
-                y -= _draw_sidebar_para(canvas, f"• {cert.name}", S["PwSideEduDeg"], SIDE_X, y, SIDE_MAX_W)
-                y -= 1
-                c_str = cert.issuer
-                if cert.year: c_str += f" ({cert.year})"
-                y -= _draw_sidebar_para(canvas, c_str, S["PwSideEduSub"], SIDE_X + 6, y, SIDE_MAX_W - 6)
-                y -= 5
-
-        canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
-        canvas.setLineWidth(0.6)
-        canvas.line(SIDE_X, y, SIDE_X + SIDE_MAX_W, y)
-        y -= 10
-        y -= _draw_sidebar_para(canvas, "LINKS & SOCIALS", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-        y -= 4
-        if info.portfolio: y -= _draw_sidebar_para(canvas, f"Portfolio: {info.portfolio}", S["PwSideVal"], SIDE_X, y, SIDE_MAX_W)
-        if info.linkedin:  y -= _draw_sidebar_para(canvas, f"LinkedIn: {info.linkedin}", S["PwSideVal"], SIDE_X, y, SIDE_MAX_W)
-        if info.github:    y -= _draw_sidebar_para(canvas, f"GitHub: {info.github}", S["PwSideVal"], SIDE_X, y, SIDE_MAX_W)
-
-        canvas.setFillColor(colors.HexColor("#94A3B8"))
-        canvas.setFont(f_reg, 7)
         canvas.drawString(SIDE_X, 14, f"Page {doc.page}")
         canvas.restoreState()
 
     body = []
     body.append(Spacer(1, BANNER_H - 12))
-    order = getattr(resume, "section_order", None) or ["summary", "experience", "projects", "education", "certifications"]
+    raw_order = getattr(resume, "section_order", None) or ["summary", "experience", "projects", "education", "certifications"]
+    order = list(raw_order)
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
 
     def add_pw_summary():
         if resume.show_summary and resume.professional_summary:
@@ -1237,6 +1275,48 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                     body.append(Paragraph(f"• {b.lstrip('•- ')}", S["PwBullet"]))
                 body.append(Spacer(1, spacer_h * 0.9))
 
+    def add_pw_education():
+        if resume.show_education and resume.education:
+            sec_flow = [
+                Paragraph("EDUCATION", S["PwSecHdr"]),
+                HRFlowable(width="100%", thickness=1.0, color=colors.HexColor("#CBD5E1"), spaceBefore=0, spaceAfter=4),
+            ]
+            first_edu = resume.education[0]
+            loc0 = f", {first_edu.location}" if first_edu.location else ""
+            det0 = f" – {first_edu.details}" if getattr(first_edu, "details", None) else ""
+            sec_flow.append(Paragraph(f"<b>{first_edu.degree}</b>, {first_edu.institution}{loc0}", S["PwJob"]))
+            sec_flow.append(Paragraph(f"<font color='#64748B' size='8'>{first_edu.graduation_year}{det0}</font>", S["PwCompany"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.7))
+
+            for edu in resume.education[1:]:
+                loc = f", {edu.location}" if edu.location else ""
+                det = f" – {edu.details}" if getattr(edu, "details", None) else ""
+                item_flow = [
+                    Paragraph(f"<b>{edu.degree}</b>, {edu.institution}{loc}", S["PwJob"]),
+                    Paragraph(f"<font color='#64748B' size='8'>{edu.graduation_year}{det}</font>", S["PwCompany"]),
+                ]
+                body.append(KeepTogether(item_flow))
+                body.append(Spacer(1, spacer_h * 0.7))
+
+    def add_pw_certifications():
+        if resume.show_certifications and resume.certifications:
+            sec_flow = [
+                Paragraph("CERTIFICATIONS & CREDENTIALS", S["PwSecHdr"]),
+                HRFlowable(width="100%", thickness=1.0, color=colors.HexColor("#CBD5E1"), spaceBefore=0, spaceAfter=4),
+            ]
+            first_cert = resume.certifications[0]
+            year0 = f" <font color='#64748B' size='8'>({first_cert.year})</font>" if first_cert.year else ""
+            sec_flow.append(Paragraph(f"• <b>{first_cert.name}</b> — {first_cert.issuer}{year0}", S["PwJob"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.6))
+
+            for cert in resume.certifications[1:]:
+                year_str = f" <font color='#64748B' size='8'>({cert.year})</font>" if cert.year else ""
+                item_flow = [Paragraph(f"• <b>{cert.name}</b> — {cert.issuer}{year_str}", S["PwJob"])]
+                body.append(KeepTogether(item_flow))
+                body.append(Spacer(1, spacer_h * 0.6))
+
     for sec in order:
         if sec == "summary":
             add_pw_summary()
@@ -1244,6 +1324,10 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             add_pw_experience()
         elif sec == "projects":
             add_pw_projects()
+        elif sec == "education":
+            add_pw_education()
+        elif sec == "certifications":
+            add_pw_certifications()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=195, rightMargin=24, topMargin=24, bottomMargin=20)
@@ -1462,6 +1546,31 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
             body.append(KeepTogether(sec_flow))
             body.append(Spacer(1, spacer_h * 0.8))
 
+    def add_cg_certifications():
+        if resume.show_certifications and resume.certifications:
+            sec_flow = [
+                Paragraph("CERTIFICATIONS & LICENSES", S["CgSecHdr"]),
+                HRFlowable(width="100%", thickness=1.5, color=violet_accent, spaceBefore=0, spaceAfter=4)
+            ]
+            for cert in resume.certifications:
+                year_str = f" <font color='#64748B'>({cert.year})</font>" if cert.year else ""
+                sec_flow.append(Paragraph(f"• <b>{cert.name}</b> — {cert.issuer}{year_str}", S["CgBody"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.8))
+
+    raw_order = getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"]
+    order = list(raw_order)
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("skills", resume.show_skills and resume.skill_categories),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
+
     for sec in order:
         if sec == "summary":
             add_cg_summary()
@@ -1473,6 +1582,8 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
             add_cg_projects()
         elif sec == "education":
             add_cg_education()
+        elif sec == "certifications":
+            add_cg_certifications()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)
@@ -1679,9 +1790,35 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
             ]
             for edu in resume.education:
                 loc = f" · {edu.location}" if edu.location else ""
-                sec_flow.append(Paragraph(f"<b>{edu.degree}</b> — {edu.institution}{loc} <font color='#64748B'>({edu.graduation_year})</font>", S["EmBody"]))
+                det = f" – {edu.details}" if getattr(edu, "details", None) else ""
+                sec_flow.append(Paragraph(f"<b>{edu.degree}</b> — {edu.institution}{loc} <font color='#64748B'>({edu.graduation_year})</font>{det}", S["EmBody"]))
             body.append(KeepTogether(sec_flow))
             body.append(Spacer(1, spacer_h * 0.8))
+
+    def add_em_certifications():
+        if resume.show_certifications and resume.certifications:
+            sec_flow = [
+                Paragraph(f"<font color='{mint_accent.hexval()}'>■</font>  CERTIFICATIONS & HONORS", S["EmSecHdr"]),
+                HRFlowable(width="100%", thickness=1.4, color=mint_accent, spaceBefore=0, spaceAfter=4)
+            ]
+            for cert in resume.certifications:
+                year_str = f" <font color='#64748B'>({cert.year})</font>" if cert.year else ""
+                sec_flow.append(Paragraph(f"• <b>{cert.name}</b> — {cert.issuer}{year_str}", S["EmBody"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.8))
+
+    raw_order = getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"]
+    order = list(raw_order)
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("skills", resume.show_skills and resume.skill_categories),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
 
     for sec in order:
         if sec == "summary":
@@ -1694,6 +1831,8 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
             add_em_projects()
         elif sec == "education":
             add_em_education()
+        elif sec == "certifications":
+            add_em_certifications()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)
@@ -1914,9 +2053,35 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
             ]
             for edu in resume.education:
                 loc = f" · {edu.location}" if edu.location else ""
-                sec_flow.append(Paragraph(f"<b>{edu.degree}</b> — {edu.institution}{loc} <font color='#64748B'>({edu.graduation_year})</font>", S["TnBody"]))
+                det = f" – {edu.details}" if getattr(edu, "details", None) else ""
+                sec_flow.append(Paragraph(f"<b>{edu.degree}</b> — {edu.institution}{loc} <font color='#64748B'>({edu.graduation_year})</font>{det}", S["TnBody"]))
             body.append(KeepTogether(sec_flow))
             body.append(Spacer(1, spacer_h * 0.8))
+
+    def add_tn_certifications():
+        if resume.show_certifications and resume.certifications:
+            sec_flow = [
+                Paragraph(f"<font color='{cyan_tech.hexval()}'>// </font><b>06. CERTIFICATIONS_&_CREDENTIALS</b>", S["TnSecHdr"]),
+                HRFlowable(width="100%", thickness=1.2, color=cyan_tech, spaceBefore=0, spaceAfter=4)
+            ]
+            for cert in resume.certifications:
+                year_str = f" <font color='#64748B'>({cert.year})</font>" if cert.year else ""
+                sec_flow.append(Paragraph(f"> <b>{cert.name}</b> — {cert.issuer}{year_str}", S["TnBody"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h * 0.8))
+
+    raw_order = getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"]
+    order = list(raw_order)
+    for sec_name, is_active in [
+        ("summary", resume.show_summary and resume.professional_summary),
+        ("skills", resume.show_skills and resume.skill_categories),
+        ("experience", resume.show_experience and resume.work_experience),
+        ("projects", resume.show_projects and resume.projects),
+        ("education", resume.show_education and resume.education),
+        ("certifications", resume.show_certifications and resume.certifications),
+    ]:
+        if is_active and sec_name not in order:
+            order.append(sec_name)
 
     for sec in order:
         if sec == "summary":
@@ -1929,6 +2094,8 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
             add_tn_projects()
         elif sec == "education":
             add_tn_education()
+        elif sec == "certifications":
+            add_tn_certifications()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)

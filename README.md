@@ -1,3 +1,13 @@
+---
+title: DreemFolio AI
+emoji: 📄
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🚀 DreemFolio AI - ATS-Friendly AI Resume & Cover Letter SaaS
 
 A production-ready Micro-SaaS platform that transforms resumes into 100% ATS-compliant single-column PDF resumes and tailored cover letters in under 10 seconds using Google Gemini Flash.
