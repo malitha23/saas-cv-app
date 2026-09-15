@@ -126,6 +126,12 @@ function resumeApp() {
     isMicMuted: false,
     isAiSpeakingTurn: false,
     isAiThinking: false,
+    currentAiAudio: null,
+    conferenceVoice: 'Puck',
+    liveConferenceWs: null,
+    liveAudioCtx: null,
+    nextLiveAudioStartTime: 0,
+    liveVoiceMode: 'gemini_live',
     isCandidateSpeaking: false,
     conferenceSilenceTimer: null,
     liveCoachingEnabled: true,
@@ -289,6 +295,26 @@ function resumeApp() {
     mobileMenuOpen: false,
     isSubmittingUpgrade: false,
 
+    // Direct Bank Transfer & Slip Upload State
+    pricingPaymentMethod: 'card', // 'card' or 'bank_transfer'
+    bankTransferConfig: {
+      enabled: true,
+      bank_name: 'Commercial Bank of Ceylon',
+      account_name: 'Malitha Sayuranga',
+      account_number: '800123456789',
+      branch: 'Colombo Main Branch',
+      instructions: 'Please deposit or transfer the exact amount and enter your registered email or phone number in the transaction remarks.'
+    },
+    selectedBankPlan: 'pro',
+    bankSlipFile: null,
+    bankSlipFileName: '',
+    bankSlipPreview: null,
+    bankTransferReference: '',
+    isSubmittingBankSlip: false,
+    bankSlipMessage: '',
+    bankSlipSuccess: false,
+    myPendingBankSlip: null,
+
     get filteredAdminUsers() {
       if (!this.adminUserSearchQuery) return this.adminUsersList;
       const q = this.adminUserSearchQuery.toLowerCase();
@@ -324,8 +350,10 @@ function resumeApp() {
           });
           if (authRes.ok) {
             this.currentUser = await authRes.json();
+            localStorage.setItem('saas_user', JSON.stringify(this.currentUser));
           } else {
             localStorage.removeItem('saas_token');
+            localStorage.removeItem('saas_user');
             this.currentUser = null;
           }
         } catch (e) {
@@ -344,6 +372,44 @@ function resumeApp() {
 
       // Fetch dynamic subscription plans from MySQL
       await this.loadDynamicPlans();
+
+      // Check for PayHere / Payment Gateway Return Redirects
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment');
+        const orderId = urlParams.get('order_id');
+        if (paymentStatus) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if (paymentStatus === 'success') {
+            const curToken = localStorage.getItem('saas_token');
+            if (curToken) {
+              try {
+                const refreshRes = await fetch('/api/auth/me', {
+                  headers: { 'Authorization': `Bearer ${curToken}` }
+                });
+                if (refreshRes.ok) {
+                  this.currentUser = await refreshRes.json();
+                }
+              } catch (e) {
+                console.warn('Post-payment session refresh error:', e);
+              }
+            }
+            setTimeout(() => {
+              alert(`🎉 Payment Successful!\nYour account has been upgraded with full subscription access.\nOrder Reference: ${orderId || 'Verified'}`);
+            }, 400);
+          } else if (paymentStatus === 'canceled') {
+            setTimeout(() => {
+              alert('ℹ️ Checkout was canceled. You have not been charged.');
+            }, 400);
+          } else if (paymentStatus === 'failed' || paymentStatus === 'amount_tampered') {
+            setTimeout(() => {
+              alert('⚠️ Payment processing failed or was rejected. Please try again or contact support.');
+            }, 400);
+          }
+        }
+      } catch (paramErr) {
+        console.warn('Query param processing error:', paramErr);
+      }
 
       // Initialize Google OAuth2 Identity Services
       await this.initGoogleAuth();
@@ -1986,8 +2052,11 @@ function resumeApp() {
           throw new Error(data.detail || 'Authentication failed');
         }
 
-        // Save JWT access token
+        // Save JWT access token & user profile
         localStorage.setItem('saas_token', data.access_token);
+        if (data.user) {
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+        }
         this.avatarImgFailed = false;
         this.currentUser = data.user;
         this.showAuthModal = false;
@@ -2044,6 +2113,8 @@ function resumeApp() {
           this.isGoogleAuthEnabled = Boolean(data.is_enabled && data.client_id);
 
           if (this.isGoogleAuthEnabled && window.google && window.google.accounts && window.google.accounts.id) {
+            if (this.googleAuthInitialized) return;
+            this.googleAuthInitialized = true;
             window.google.accounts.id.initialize({
               client_id: this.googleClientId,
               callback: (response) => this.handleGoogleCredentialResponse(response),
@@ -2184,10 +2255,17 @@ function resumeApp() {
             message: `Welcome, ${data.user.full_name}! You are authenticated via Google (${data.user.email}). Start optimizing your ATS resumes right away!`
           };
           this.showWelcomeModal = true;
-        }
+        this.welcomeModalData = {
+          title: '🎉 Welcome to DreemFolio AI!',
+          name: data.user.full_name || 'Innovator',
+          plan: (data.user.plan_tier || 'FREE').toUpperCase(),
+          role: data.user.is_admin ? '🛡️ System Administrator' : 'Candidate Member',
+          message: 'Signed in with Google. All AI ATS tailoring and portfolio tools are now active!'
+        };
+        this.showWelcomeModal = true;
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       } catch (err) {
-        this.authError = err.message;
+        alert(err.message || 'Google authentication error.');
       } finally {
         this.isSubmittingGoogleAuth = false;
       }
@@ -2202,6 +2280,7 @@ function resumeApp() {
       this.showLogoutModal = false;
       this.showQuotaDropdown = false;
       localStorage.removeItem('saas_token');
+      localStorage.removeItem('saas_user');
       this.currentUser = null;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
@@ -2374,42 +2453,216 @@ function resumeApp() {
       }
     },
 
-    async upgradeSubscription(targetPlan, durationMonths = 1) {
+    async initiatePayHereCheckout(targetPlan) {
       if (!this.currentUser) {
-        this.openAuthModal('login');
+        this.openAuthModal('login', 'Please log in to upgrade your subscription.');
         return;
       }
 
       this.isSubmittingUpgrade = true;
       const token = localStorage.getItem('saas_token');
       try {
-        const res = await fetch('/api/subscription/upgrade', {
+        const currency = (this.activeCurrency || 'LKR').toUpperCase();
+        const res = await fetch('/api/payments/payhere/initiate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            plan_tier: targetPlan,
-            duration_months: durationMonths,
-            payment_method: 'card'
+            plan: targetPlan,
+            currency: currency === 'USD' ? 'USD' : 'LKR'
           })
         });
 
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(typeof err.detail === 'object' ? JSON.stringify(err.detail) : (err.detail || 'Upgrade failed'));
+          throw new Error(err.detail || 'Could not initiate PayHere payment');
         }
 
-        const updatedUser = await res.json();
-        this.currentUser = updatedUser;
-        this.showPricingModal = false;
-        alert(`🎉 Congratulations! Your SaaS account has been upgraded to ${targetPlan.toUpperCase()} with full privileges!`);
-        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        const data = await res.json();
+        if (!data.success || !data.action_url || !data.params) {
+          throw new Error('Invalid payment parameters returned from server.');
+        }
+
+        // Dynamically build and submit hidden HTML form directly to PayHere
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.action_url;
+        form.style.display = 'none';
+
+        for (const [key, value] of Object.entries(data.params)) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
       } catch (err) {
-        alert('Upgrade Error: ' + err.message);
+        alert('Payment Gateway Error: ' + err.message);
       } finally {
         this.isSubmittingUpgrade = false;
+      }
+    },
+
+    async upgradeSubscription(targetPlan, durationMonths = 1) {
+      return await this.initiatePayHereCheckout(targetPlan);
+    },
+
+    async openBankTransferCheckout(defaultPlan = 'pro') {
+      this.pricingPaymentMethod = 'bank_transfer';
+      this.selectedBankPlan = defaultPlan;
+      this.showPricingModal = true;
+      await this.loadBankTransferConfig();
+      if (this.currentUser) {
+        await this.checkUserPendingBankSlips();
+      }
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    async loadBankTransferConfig() {
+      try {
+        const res = await fetch('/api/payments/bank-transfer/config');
+        if (res.ok) {
+          this.bankTransferConfig = await res.json();
+        }
+      } catch (e) {
+        console.warn('Could not load bank transfer config:', e);
+      }
+    },
+
+    async checkUserPendingBankSlips() {
+      const token = localStorage.getItem('saas_token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/payments/bank-transfer/my-slips', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const slips = await res.json();
+          this.myPendingBankSlip = slips.find(s => s.status === 'pending') || null;
+        }
+      } catch (e) {}
+    },
+
+    handleSlipFileSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Receipt file size exceeds 5MB limit. Please choose a smaller image or document.');
+        event.target.value = '';
+        return;
+      }
+
+      this.bankSlipFile = file;
+      this.bankSlipFileName = file.name;
+      this.bankSlipMessage = '';
+
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.bankSlipPreview = e.target.result;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.bankSlipPreview = null;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    clearSelectedSlip() {
+      this.bankSlipFile = null;
+      this.bankSlipFileName = '';
+      this.bankSlipPreview = null;
+      this.bankSlipMessage = '';
+      const input = this.$refs && this.$refs.slipFileInput;
+      if (input) input.value = '';
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    getSelectedBankPlan() {
+      if (!this.dynamicPlans || this.dynamicPlans.length === 0) return null;
+      return this.dynamicPlans.find(p => p.plan_key === this.selectedBankPlan) || this.dynamicPlans.find(p => p.plan_key === 'pro');
+    },
+
+    async submitBankTransferSlip() {
+      if (!this.currentUser) {
+        this.openAuthModal('login');
+        return;
+      }
+      if (!this.bankSlipFile) {
+        this.bankSlipMessage = 'Please select your deposit slip image or PDF first.';
+        this.bankSlipSuccess = false;
+        return;
+      }
+
+      this.isSubmittingBankSlip = true;
+      this.bankSlipMessage = '';
+      const token = localStorage.getItem('saas_token');
+
+      const planObj = this.getSelectedBankPlan();
+      let amount = 990;
+      if (planObj && planObj.price_display) {
+        const parsed = parseInt(planObj.price_display.replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          amount = parsed;
+        }
+      } else if (this.selectedBankPlan === 'elite') {
+        amount = 2490;
+      }
+
+      const currency = (this.activeCurrency || 'LKR').toUpperCase();
+
+      const formData = new FormData();
+      formData.append('file', this.bankSlipFile);
+      formData.append('target_plan', this.selectedBankPlan);
+      formData.append('amount_paid', amount);
+      formData.append('currency', currency);
+      if (this.bankTransferReference) {
+        formData.append('bank_reference', this.bankTransferReference);
+      }
+
+      try {
+        const res = await fetch('/api/payments/bank-transfer/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Upload failed. Please check file format.');
+        }
+
+        this.bankSlipSuccess = true;
+        this.bankSlipMessage = '🎉 ' + data.message;
+        this.clearSelectedSlip();
+        await this.checkUserPendingBankSlips();
+      } catch (err) {
+        this.bankSlipSuccess = false;
+        this.bankSlipMessage = '⚠️ ' + err.message;
+      } finally {
+        this.isSubmittingBankSlip = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    copyToClipboard(text, successMsg = 'Copied to clipboard!') {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('📋 ' + successMsg);
+        }).catch(() => {
+          prompt('Copy to clipboard (Ctrl+C):', text);
+        });
+      } else {
+        prompt('Copy to clipboard (Ctrl+C):', text);
       }
     },
 
@@ -3081,31 +3334,24 @@ function resumeApp() {
       }
     },
 
-    speakCurrentQuestion() {
-      if (!this.currentQuestion || !window.speechSynthesis) return;
+    async speakCurrentQuestion() {
+      if (!this.currentQuestion) return;
+      const textToSpeak = this.currentQuestion.question_text;
+      if (!textToSpeak) return;
 
       this.unlockMobileAudio();
-      try {
-        window.speechSynthesis.cancel();
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-      } catch (e) {}
-
-      const textToSpeak = this.currentQuestion.question_text;
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-
-      // Select natural English voice if available
-      const voices = window.speechSynthesis.getVoices();
-      const engVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')));
-      if (engVoice) {
-        utterance.voice = engVoice;
-      }
-
       this.isInterviewerSpeaking = true;
+
+      if (this.currentMockInterviewAudio) {
+        try {
+          this.currentMockInterviewAudio.pause();
+          this.currentMockInterviewAudio.currentTime = 0;
+        } catch (e) {}
+        this.currentMockInterviewAudio = null;
+      }
+      if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
 
       const finishInterviewer = () => {
         this.isInterviewerSpeaking = false;
@@ -3115,22 +3361,59 @@ function resumeApp() {
         }
       };
 
-      utterance.onend = finishInterviewer;
-      utterance.onerror = finishInterviewer;
-
-      // Mobile safety watchdog timer
       const wordCount = (textToSpeak || '').split(/\s+/).length;
-      const expectedMs = Math.max(3500, (wordCount / 2.2) * 1000 + 2000);
+      const expectedMs = Math.max(4500, (wordCount / 2.0) * 1000 + 4000);
       this.voiceInterviewWatchdog = setTimeout(finishInterviewer, expectedMs);
 
+      // Try Direct Server-Side Neural Voice API
       try {
-        window.speechSynthesis.speak(utterance);
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
+        const response = await fetch('/api/conference/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: textToSpeak, voice: 'en-US-ChristopherNeural' })
+        });
+        if (response.ok) {
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          this.currentMockInterviewAudio = audio;
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            this.currentMockInterviewAudio = null;
+            finishInterviewer();
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            this.currentMockInterviewAudio = null;
+            this.fallbackMockSpeechSynthesis(textToSpeak, finishInterviewer);
+          };
+          await audio.play();
+          return;
         }
+      } catch (e) {
+        console.warn('Direct voice failed for mock interview, using fallback:', e);
+      }
+
+      this.fallbackMockSpeechSynthesis(textToSpeak, finishInterviewer);
+    },
+
+    fallbackMockSpeechSynthesis(textToSpeak, onFinish) {
+      if (!window.speechSynthesis) {
+        if (onFinish) onFinish();
+        return;
+      }
+      try {
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        const voices = window.speechSynthesis.getVoices();
+        const engVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel')));
+        if (engVoice) utterance.voice = engVoice;
+        utterance.onend = onFinish;
+        utterance.onerror = onFinish;
+        window.speechSynthesis.speak(utterance);
       } catch (err) {
-        console.warn('SpeechSynthesis error:', err);
-        finishInterviewer();
+        if (onFinish) onFinish();
       }
     },
 
@@ -3331,6 +3614,19 @@ function resumeApp() {
 
     unlockMobileAudio() {
       try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) {
+          if (!this.liveAudioCtx || this.liveAudioCtx.state === 'closed') {
+            this.liveAudioCtx = new AudioCtxClass({ sampleRate: 24000 });
+          }
+          if (this.liveAudioCtx.state === 'suspended') {
+            this.liveAudioCtx.resume();
+          }
+        }
+      } catch (e) {
+        console.warn('Live Web Audio unlock notice:', e);
+      }
+      try {
         if (window.speechSynthesis) {
           window.speechSynthesis.cancel();
           if (window.speechSynthesis.paused) {
@@ -3421,25 +3717,171 @@ function resumeApp() {
       this.$nextTick(() => {
         if (window.lucide) window.lucide.createIcons();
 
-        // AI Interviewer opening line in conference
-        const welcomeText = `Hello! Welcome to our live technical conference for the ${this.conferenceTargetRole} role. Can you introduce yourself and walk me through your core background and hands-on diagnostic experience?`;
-        
-        this.conferenceConversationHistory.push({
-          speaker: 'interviewer',
-          text: welcomeText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        
-        // Speak AI greeting and then start candidate listening turn
-        this.speakAiConferenceResponse(welcomeText, () => {
-          this.initCandidateConferenceSpeechRecognition();
-        });
+        // Initialize Direct Gemini Live Multimodal WebSocket for sub-second direct voice
+        this.initLiveConferenceWebSocket();
       });
     },
 
+    initLiveConferenceWebSocket(triggerGreeting = true) {
+      if (this.liveConferenceWs) {
+        try { this.liveConferenceWs.close(); } catch (e) {}
+        this.liveConferenceWs = null;
+      }
+
+      // Initialize Web Audio Context for 24kHz raw PCM stream
+      try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) {
+          if (!this.liveAudioCtx || this.liveAudioCtx.state === 'closed') {
+            this.liveAudioCtx = new AudioCtxClass({ sampleRate: 24000 });
+          }
+          if (this.liveAudioCtx.state === 'suspended') {
+            this.liveAudioCtx.resume();
+          }
+          this.nextLiveAudioStartTime = 0;
+        }
+      } catch (err) {
+        console.warn('Web Audio API init warning:', err);
+      }
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const roleParam = encodeURIComponent(this.conferenceTargetRole || 'Senior Software Engineer');
+      const companyParam = encodeURIComponent(this.conferenceTargetCompany || 'Global Employer');
+      const voiceParam = encodeURIComponent(this.conferenceVoice || 'Puck');
+      const userParam = encodeURIComponent(this.currentUser?.full_name || 'Candidate');
+      const wsUrl = `${protocol}//${host}/ws/conference/live?role=${roleParam}&company=${companyParam}&voice=${voiceParam}&user_name=${userParam}`;
+
+      console.log('[Gemini Live WS] Connecting to:', wsUrl);
+      try {
+        const ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
+        this.liveConferenceWs = ws;
+
+        ws.onopen = () => {
+          console.log('[Gemini Live WS] WebSocket connected successfully');
+          this.liveVoiceMode = 'gemini_live';
+          // Trigger opening greeting from Gemini Live if specified
+          if (triggerGreeting) {
+            ws.send(JSON.stringify({ type: 'start' }));
+          }
+        };
+
+        ws.onmessage = (event) => {
+          if (typeof event.data === 'string') {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === 'ready') {
+                console.log('[Gemini Live WS] Ready, voice:', data.voice);
+              } else if (data.type === 'subtitle') {
+                this.liveSubtitleSpeaker = 'Alex (Interviewer)';
+                if (this.liveSubtitleText && this.liveSubtitleText !== 'Responding in real time...' && this.liveSubtitleText !== 'Speaking...') {
+                  this.liveSubtitleText += ' ' + data.text;
+                } else {
+                  this.liveSubtitleText = data.text;
+                }
+              } else if (data.type === 'turn_complete') {
+                console.log('[Gemini Live WS] Turn complete from Gemini Live');
+                if (this.liveSubtitleText && this.liveSubtitleText !== 'Responding in real time...') {
+                  const already = this.conferenceConversationHistory.some(m => m.speaker === 'interviewer' && m.text === this.liveSubtitleText);
+                  if (!already) {
+                    this.conferenceConversationHistory.push({
+                      speaker: 'interviewer',
+                      text: this.liveSubtitleText,
+                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    });
+                  }
+                }
+                if (this.conferenceTurnTransitionTimer) {
+                  clearTimeout(this.conferenceTurnTransitionTimer);
+                }
+                const remainingAudioSec = Math.max(0, (this.nextLiveAudioStartTime || 0) - (this.liveAudioCtx ? this.liveAudioCtx.currentTime : 0));
+                const delayMs = Math.max(350, (remainingAudioSec * 1000) + 200);
+                this.conferenceTurnTransitionTimer = setTimeout(() => {
+                  if (this.realtimeConferenceOpen && !this.isMicMuted) {
+                    this.isAiSpeakingTurn = false;
+                    this.initCandidateConferenceSpeechRecognition();
+                  }
+                }, delayMs);
+              }
+            } catch (e) {}
+          } else {
+            this.enqueueLivePcmChunk(event.data);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.warn('[Gemini Live WS] WebSocket connection error, falling back to HTTP:', err);
+          this.liveVoiceMode = 'http_fallback';
+          const welcomeText = `Hello! Welcome to our live technical conference for the ${this.conferenceTargetRole} role. Can you introduce yourself and walk me through your background?`;
+          this.speakAiConferenceResponse(welcomeText, () => {
+            this.initCandidateConferenceSpeechRecognition();
+          });
+        };
+
+        ws.onclose = (event) => {
+          console.log('[Gemini Live WS] WebSocket disconnected code:', event.code);
+          this.liveConferenceWs = null;
+        };
+      } catch (err) {
+        console.warn('[Gemini Live WS] Failed to create WebSocket:', err);
+        this.liveVoiceMode = 'http_fallback';
+      }
+    },
+
+    async enqueueLivePcmChunk(data) {
+      let arrayBuffer;
+      try {
+        if (data instanceof Blob) {
+          arrayBuffer = await data.arrayBuffer();
+        } else if (data instanceof ArrayBuffer) {
+          arrayBuffer = data;
+        } else {
+          return;
+        }
+      } catch (err) {
+        console.warn('PCM buffer conversion error:', err);
+        return;
+      }
+      if (!this.liveAudioCtx) return;
+      if (this.liveAudioCtx.state === 'suspended') {
+        try { await this.liveAudioCtx.resume(); } catch (e) {}
+      }
+      const int16 = new Int16Array(arrayBuffer);
+      if (int16.length === 0) return;
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) {
+        float32[i] = int16[i] / 32768.0;
+      }
+      const audioBuf = this.liveAudioCtx.createBuffer(1, float32.length, 24000);
+      audioBuf.getChannelData(0).set(float32);
+      const src = this.liveAudioCtx.createBufferSource();
+      src.buffer = audioBuf;
+      src.connect(this.liveAudioCtx.destination);
+
+      const now = this.liveAudioCtx.currentTime;
+      const startTime = Math.max(now, this.nextLiveAudioStartTime || now);
+      src.start(startTime);
+      this.nextLiveAudioStartTime = startTime + audioBuf.duration;
+
+      this.isAiSpeakingTurn = true;
+      src.onended = () => {
+        if (this.liveAudioCtx && this.liveAudioCtx.currentTime >= this.nextLiveAudioStartTime - 0.05) {
+          this.isAiSpeakingTurn = false;
+        }
+      };
+    },
+
     replayAiQuestion() {
-      // Re-trigger playback of latest interviewer question with fresh user touch gesture
+      // Re-trigger playback or ask AI to repeat question
       this.unlockMobileAudio();
+      if (this.liveConferenceWs && this.liveConferenceWs.readyState === WebSocket.OPEN) {
+        this.liveConferenceWs.send(JSON.stringify({
+          type: 'candidate_turn',
+          text: 'Please repeat your question.'
+        }));
+        return;
+      }
       const lastAiMsg = [...this.conferenceConversationHistory].reverse().find(m => m.speaker === 'interviewer');
       const textToSpeak = lastAiMsg ? lastAiMsg.text : `Hello! Welcome to our conference. Can you introduce yourself and your background?`;
       this.speakAiConferenceResponse(textToSpeak, () => {
@@ -3447,24 +3889,23 @@ function resumeApp() {
       });
     },
 
-    speakAiConferenceResponse(text, onComplete) {
+    async speakAiConferenceResponse(text, onComplete) {
       this.isAiThinking = false;
       this.isAiSpeakingTurn = true;
       this.liveSubtitleSpeaker = 'Alex (Interviewer)';
       this.liveSubtitleText = text;
 
-      if (!window.speechSynthesis) {
-        this.isAiSpeakingTurn = false;
-        if (onComplete) onComplete();
-        return;
+      // 1. Immediately cancel any running audio playback or browser synthesis
+      if (this.currentAiAudio) {
+        try {
+          this.currentAiAudio.pause();
+          this.currentAiAudio.currentTime = 0;
+        } catch (e) {}
+        this.currentAiAudio = null;
       }
-
-      try {
-        window.speechSynthesis.cancel();
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-      } catch (e) {}
+      if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+      }
 
       let completed = false;
       const finishSpeaking = () => {
@@ -3478,39 +3919,78 @@ function resumeApp() {
         if (onComplete) onComplete();
       };
 
-      // Watchdog safety timer: mobile browsers (iOS / Android) often fail to fire onend
-      // or silent-block background TTS. Proportional to speech length:
+      // Watchdog safety timer
       const wordCount = (text || '').split(/\s+/).length;
-      const expectedMs = Math.max(3500, (wordCount / 2.2) * 1000 + 2000);
+      const expectedMs = Math.max(4500, (wordCount / 2.0) * 1000 + 4000);
       this.aiSpeechWatchdogTimer = setTimeout(() => {
-        console.warn('SpeechSynthesis watchdog triggered (mobile safety)');
+        console.warn('[Direct Voice API] Speech watchdog triggered');
         finishSpeaking();
       }, expectedMs);
 
+      // 2. Play using Direct Server-Side Neural Voice API (/api/conference/tts)
+      try {
+        const response = await fetch('/api/conference/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text,
+            voice: this.conferenceVoice || 'en-US-ChristopherNeural'
+          })
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          this.currentAiAudio = audio;
+
+          audio.onplay = () => {
+            this.isAiSpeakingTurn = true;
+          };
+
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            this.currentAiAudio = null;
+            finishSpeaking();
+          };
+
+          audio.onerror = (err) => {
+            console.warn('[Direct Voice API] HTML5 audio error, falling back to browser speech:', err);
+            URL.revokeObjectURL(audioUrl);
+            this.currentAiAudio = null;
+            this.fallbackBrowserSpeechSynthesis(text, finishSpeaking);
+          };
+
+          await audio.play();
+          return;
+        } else {
+          console.warn('[Direct Voice API] Server TTS HTTP status:', response.status);
+        }
+      } catch (err) {
+        console.warn('[Direct Voice API] Direct Server Voice fetch failed, using fallback:', err);
+      }
+
+      // 3. Fallback to browser SpeechSynthesis if server TTS was unreachable
+      this.fallbackBrowserSpeechSynthesis(text, finishSpeaking);
+    },
+
+    fallbackBrowserSpeechSynthesis(text, onComplete) {
+      if (!window.speechSynthesis) {
+        if (onComplete) onComplete();
+        return;
+      }
       try {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
-
         const voices = window.speechSynthesis.getVoices();
-        const naturalVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Daniel') || v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Arthur')));
+        const naturalVoice = voices.find(v => v.lang && v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Daniel') || v.name.includes('Samantha')));
         if (naturalVoice) utterance.voice = naturalVoice;
-
-        utterance.onend = finishSpeaking;
-        utterance.onerror = (e) => {
-          console.warn('SpeechSynthesis utterance error:', e);
-          finishSpeaking();
-        };
-
+        utterance.onend = () => { if (onComplete) onComplete(); };
+        utterance.onerror = () => { if (onComplete) onComplete(); };
         window.speechSynthesis.speak(utterance);
-
-        // Resume if paused (iOS Safari bug)
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-      } catch (err) {
-        console.warn('SpeechSynthesis speak failed:', err);
-        finishSpeaking();
+      } catch (e) {
+        if (onComplete) onComplete();
       }
     },
 
@@ -3574,8 +4054,8 @@ function resumeApp() {
         };
 
         rec.onerror = (e) => {
-          if (e.error === 'no-speech') {
-            return; // Natural pause
+          if (e.error === 'no-speech' || e.error === 'aborted') {
+            return; // Natural pause or intentional abort
           }
           console.warn('Conference speech recognition error:', e.error);
           if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
@@ -3592,15 +4072,19 @@ function resumeApp() {
             clearTimeout(this.conferenceSilenceTimer);
             this.conferenceSilenceTimer = null;
           }
-          const finalClean = (turnTranscript || this.conferenceCandidateInput || '').trim();
+          // Ignore obsolete or aborted instances so they never fight for the mic
+          if (this.conferenceSpeechRecognition !== rec) {
+            return;
+          }
+          const finalClean = (turnTranscript || '').trim();
           const durationSec = Math.max(3, Math.round((Date.now() - turnStartTime) / 1000));
 
           if (finalClean && finalClean.split(/\s+/).length >= 2 && !this.isMicMuted && this.realtimeConferenceOpen && !this.isAiThinking) {
             this.handleCandidateSpokenTurn(finalClean, durationSec);
           } else if (this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
-            // Restart listening if conference is still active
+            // Restart listening if conference is still active and instance is current
             setTimeout(() => {
-              if (this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
+              if (this.conferenceSpeechRecognition === rec && this.realtimeConferenceOpen && !this.isAiSpeakingTurn && !this.isAiThinking && !this.isMicMuted) {
                 try { rec.start(); } catch (err) {}
               }
             }, 300);
@@ -3670,6 +4154,29 @@ function resumeApp() {
         clearTimeout(this.conferenceSilenceTimer);
         this.conferenceSilenceTimer = null;
       }
+      this.conferenceCandidateInput = '';
+
+      // Fast-Path: Send directly over Gemini Live Multimodal WebSocket (< 800ms)
+      if (this.liveConferenceWs && this.liveConferenceWs.readyState === WebSocket.OPEN) {
+        this.isAiThinking = false;
+        this.isAiSpeakingTurn = true;
+        this.nextLiveAudioStartTime = 0;
+        this.liveSubtitleSpeaker = 'Alex (Interviewer)';
+        this.liveSubtitleText = 'Responding in real time...';
+
+        this.conferenceConversationHistory.push({
+          speaker: 'candidate',
+          text: candidateSpeech,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+
+        this.liveConferenceWs.send(JSON.stringify({
+          type: 'candidate_turn',
+          text: candidateSpeech
+        }));
+        return;
+      }
+
       this.isAiThinking = true;
       this.liveSubtitleSpeaker = 'Alex (Interviewer)';
       this.liveSubtitleText = '🤔 Alex is analyzing your response...';
@@ -3805,6 +4312,23 @@ function resumeApp() {
 
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
+      }
+
+      if (this.currentAiAudio) {
+        try {
+          this.currentAiAudio.pause();
+          this.currentAiAudio.currentTime = 0;
+        } catch (e) {}
+        this.currentAiAudio = null;
+      }
+
+      if (this.liveConferenceWs) {
+        try { this.liveConferenceWs.close(); } catch (e) {}
+        this.liveConferenceWs = null;
+      }
+      if (this.liveAudioCtx) {
+        try { this.liveAudioCtx.close(); } catch (e) {}
+        this.liveAudioCtx = null;
       }
 
       this.isAiSpeakingTurn = false;

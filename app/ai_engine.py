@@ -779,6 +779,53 @@ Return ONLY valid JSON matching this schema:
     return TailoredResume(**data)
 
 
+def generate_gemini_text(prompt: str, api_key: Optional[str] = None, max_tokens: int = 250, temperature: float = 0.6) -> str:
+    """Helper to query Gemini models with automatic fallback across 3.6-flash, 3.5-flash, and REST."""
+    k = api_key or os.getenv("GEMINI_API_KEY")
+    if not k:
+        return ""
+    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+    try:
+        from google import genai
+        from google.genai import types
+        client = genai.Client(api_key=k)
+        for m in models_to_try:
+            try:
+                res = client.models.generate_content(
+                    model=m,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        max_output_tokens=max_tokens,
+                        temperature=temperature
+                    )
+                )
+                if res and res.text and res.text.strip():
+                    return res.text.strip()
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    # REST Fallback
+    import requests
+    for m in models_to_try:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={k}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"maxOutputTokens": max_tokens, "temperature": temperature}
+            }
+            res = requests.post(url, json=payload, timeout=12)
+            if res.status_code == 200:
+                data = res.json()
+                parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
+                if parts and parts[0].get("text"):
+                    return parts[0]["text"].strip()
+        except Exception:
+            continue
+    return ""
+
+
 def _parse_and_tailor_user_data(
     resume_text: str,
     job_description: str,
@@ -1952,13 +1999,9 @@ def generate_mock_interview_questions(
         resume_text = json.dumps(resume_context)
     archetype = detect_role_archetype(resume_text, clean_role)
 
-    # 1. Attempt Gemini 2.5 Dynamic Generation
+    # 1. Attempt Gemini Dynamic Generation
     if api_key:
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            
             prompt = f"""
 You are an executive hiring manager conducting a live oral interview for the role of "{clean_role}" at "{clean_company}".
 Candidate Domain Archetype: {archetype}
@@ -1987,23 +2030,25 @@ Output strictly valid JSON with this schema:
   ]
 }}
 """
-            resp = model.generate_content(prompt)
-            raw = (resp.text or "").strip()
-            if raw.startswith("```json"):
-                raw = raw[7:]
-            if raw.endswith("```"):
-                raw = raw[:-3]
-            parsed = json.loads(raw.strip())
-            questions = parsed.get("questions", [])
-            if questions and len(questions) >= 1:
-                return {
-                    "session_id": session_id,
-                    "target_role": clean_role,
-                    "target_company": clean_company,
-                    "interview_type": interview_type,
-                    "difficulty": difficulty,
-                    "questions": questions[:question_count]
-                }
+            raw = generate_gemini_text(prompt, api_key=api_key, max_tokens=650, temperature=0.6)
+            if raw:
+                if raw.startswith("```json"):
+                    raw = raw[7:]
+                elif raw.startswith("```"):
+                    raw = raw[3:]
+                if raw.endswith("```"):
+                    raw = raw[:-3]
+                parsed = json.loads(raw.strip())
+                questions = parsed.get("questions", [])
+                if questions and len(questions) >= 1:
+                    return {
+                        "session_id": session_id,
+                        "target_role": clean_role,
+                        "target_company": clean_company,
+                        "interview_type": interview_type,
+                        "difficulty": difficulty,
+                        "questions": questions[:question_count]
+                    }
         except Exception:
             pass
 
@@ -2146,12 +2191,7 @@ def evaluate_mock_interview_answer(
     # 1. Attempt Gemini Evaluation
     if api_key and word_count >= 5:
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            
-            prompt = f"""
-You are an expert executive interview coach assessing a candidate's spoken response.
+            prompt = f"""You are an expert executive interview coach assessing a candidate's spoken response.
 Target Role: {target_role}
 Question Asked: "{question_text}"
 Spoken Answer: "{clean_answer}"
@@ -2168,8 +2208,8 @@ Output strictly valid JSON with this exact schema:
   "star_breakdown": {{
     "situation": "Evaluation of how well the context was set",
     "task": "Evaluation of the clear responsibility defined",
-    "action": "Evaluation of specific tools, steps, and techniques described",
-    "result": "Evaluation of quantifiable outcomes, metrics, or lessons learned"
+    "action": "Evaluation of the specific diagnostic or procedural actions taken",
+    "result": "Evaluation of the final outcome and measurable impact"
   }},
   "strengths": [
     "Specific positive attribute 1",
@@ -2179,28 +2219,28 @@ Output strictly valid JSON with this exact schema:
     "Actionable tip to make this answer stronger"
   ],
   "exemplary_answer": "A 3-4 sentence high-impact model answer script using the STAR method that an elite candidate would deliver for this question."
-}}
-"""
-            resp = model.generate_content(prompt)
-            raw = (resp.text or "").strip()
-            if raw.startswith("```json"):
-                raw = raw[7:]
-            if raw.endswith("```"):
-                raw = raw[:-3]
-            parsed = json.loads(raw.strip())
-            
-            return {
-                "question_id": 1,
-                "score": int(parsed.get("score", 82)),
-                "star_breakdown": parsed.get("star_breakdown", {}),
-                "filler_words_detected": list(set(found_fillers)),
-                "filler_words_count": len(found_fillers),
-                "words_per_minute": wpm,
-                "pacing_feedback": pacing_feedback,
-                "strengths": parsed.get("strengths", ["Clear domain articulation", "Demonstrated problem ownership"]),
-                "improvements": parsed.get("improvements", ["Quantify the business or operational result with specific percentages or time savings"]),
-                "exemplary_answer": parsed.get("exemplary_answer", "")
-            }
+}}"""
+            raw = generate_gemini_text(prompt, api_key=api_key, max_tokens=700, temperature=0.6)
+            if raw:
+                if raw.startswith("```json"):
+                    raw = raw[7:]
+                elif raw.startswith("```"):
+                    raw = raw[3:]
+                if raw.endswith("```"):
+                    raw = raw[:-3]
+                parsed = json.loads(raw.strip())
+                return {
+                    "question_id": 1,
+                    "score": int(parsed.get("score", 82)),
+                    "star_breakdown": parsed.get("star_breakdown", {}),
+                    "filler_words_detected": list(set(found_fillers)),
+                    "filler_words_count": len(found_fillers),
+                    "words_per_minute": wpm,
+                    "pacing_feedback": pacing_feedback,
+                    "strengths": parsed.get("strengths", ["Clear domain articulation", "Demonstrated problem ownership"]),
+                    "improvements": parsed.get("improvements", ["Quantify the business or operational result with specific percentages or time savings"]),
+                    "exemplary_answer": parsed.get("exemplary_answer", "")
+                }
         except Exception:
             pass
 
@@ -2458,38 +2498,29 @@ def process_conference_conversation_turn(
     interviewer_reply = ""
     history_count = len(conversation_history or [])
 
-    if api_key and word_count >= 3:
+    if api_key and word_count >= 2:
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-
             history_context = ""
             if conversation_history:
                 for h in conversation_history[-4:]:
                     history_context += f"{h.get('speaker', 'interviewer').upper()}: {h.get('text', '')}\n"
 
-            prompt = f"""
-You are "Alex", an experienced executive interviewer conducting a live oral video call with a candidate applying for "{clean_role}" at "{clean_company}".
+            prompt = f"""You are "Alex", an experienced executive interviewer conducting a live oral video call with a candidate applying for "{clean_role}" at "{clean_company}".
 Conversation History:
 {history_context}
 Candidate's Just-Spoken Answer: "{clean_speech}"
 Candidate Mistakes Identified: {[m['label'] for m in mistakes]}
 
 INSTRUCTIONS:
-1. Speak naturally as a human interviewer on a Zoom/Google Meet call.
-2. If the candidate made a significant mistake or gave a vague technical answer, gently and constructively call it out or probe deeper (e.g. "That's a good overview, but in our shop, precision diagnostics are critical. What specific diagnostic readings did you inspect on the CAN bus?").
-3. Keep your spoken response concise (2-3 sentences max) so the conversation keeps moving.
-4. Output strictly the plain text of your spoken response (no markdown, no quotes, no conversational tags).
-"""
-            resp = model.generate_content(
-                prompt,
-                generation_config={
-                    "max_output_tokens": 100,
-                    "temperature": 0.6,
-                }
-            )
-            interviewer_reply = (resp.text or "").strip().replace('"', '')
+1. Speak naturally and warmly as a human interviewer on a Zoom/Google Meet call.
+2. Address the candidate's exact role ({clean_role}). If the candidate gave a good answer, acknowledge it briefly and ask a sharp follow-up question directly related to {clean_role} tools, practical challenges, or methodology.
+3. If the candidate made a significant mistake or gave a vague answer, gently call it out or probe deeper for specific tools, metrics, or evidence.
+4. Keep your spoken response concise (2 sentences max) so the conversation moves naturally.
+5. Output strictly the plain text of your spoken response (no markdown, no quotes, no conversational tags)."""
+
+            gemini_reply = generate_gemini_text(prompt, api_key=api_key, max_tokens=120, temperature=0.6)
+            if gemini_reply:
+                interviewer_reply = gemini_reply.replace('"', '').strip()
         except Exception:
             pass
 

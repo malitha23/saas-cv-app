@@ -717,5 +717,25 @@ class ConferenceDebriefResponse(BaseModel):
     executive_summary: str
 
 
+class ConferenceTTSRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=3000, description="Spoken text to synthesize into studio MP3 audio")
+    voice: Optional[str] = Field("en-US-ChristopherNeural", description="Voice profile identifier")
 
 
+class PayHereInitiateRequest(BaseModel):
+    plan: str = Field(..., description="'pro', 'elite', or 'sprint'")
+    currency: Optional[str] = Field(default="LKR", description="'LKR' or 'USD'")
+    phone: Optional[str] = Field(default=None)
+    address: Optional[str] = Field(default=None)
+    city: Optional[str] = Field(default=None)
+
+
+class PayHereInitiateResponse(BaseModel):
+    success: bool
+    order_id: str
+    action_url: str
+    params: Dict[str, Any]
+    mode: str
+    amount: float
+    currency: str
+    plan: str

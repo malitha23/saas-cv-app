@@ -9,9 +9,10 @@ import re
 import json
 import time
 import datetime
+import uuid
 from collections import defaultdict
 from typing import Optional, Dict, List, Any, Tuple, Union, Set
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Response, Request, Depends, Query, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,9 @@ from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+import logging
+
+logger = logging.getLogger("dreemfolio.main")
 
 from app.schemas import (
     TailorRequest, TailoredResume, ParseResponse, CheckoutRequest, DomainVerifyRequest,
@@ -38,7 +42,9 @@ from app.schemas import (
     FinalInterviewReportRequest, FinalInterviewReportResponse,
     ConferenceTurnRequest, ConferenceTurnResponse,
     ConferenceDebriefRequest, ConferenceDebriefResponse,
-    VerifyPinRequest, VerifyPinResponse
+    ConferenceTTSRequest,
+    VerifyPinRequest, VerifyPinResponse,
+    PayHereInitiateRequest, PayHereInitiateResponse
 )
 from app.parser import parse_resume_file, extract_candidate_name
 from app.ai_engine import (
@@ -46,11 +52,14 @@ from app.ai_engine import (
     generate_mock_interview_questions, evaluate_mock_interview_answer, generate_interview_final_report,
     process_conference_conversation_turn, generate_conference_debrief
 )
+from app.tts_engine import synthesize_speech_audio
+from app.conference_live_ws import handle_conference_live_websocket
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
 from app.portfolio_generator import generate_portfolio_html, generate_qr_code_svg, generate_vcard_content, generate_qr_code_png
 from app.sample_data import SAMPLE_RESUMES
 from app.database import get_db, engine, Base
-from app.models import User, UserResume, SaasSetting, UserJobApplication
+from app.models import User, UserResume, SaasSetting, UserJobApplication, BankPaymentSlip, OnlinePaymentOrder
+from app.payhere import PayHereGateway
 from app.auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, get_optional_user,
@@ -108,6 +117,7 @@ RATE_LIMIT_RULES: Dict[str, tuple[int, int]] = {
     "/api/portfolio/verify-pin": (10, 60),     # Max 10 PIN attempts per minute (Anti-Bruteforce)
     "/api/upload": (10, 60),                   # Max 10 resume file uploads per minute
     "/api/conference/turn": (30, 60),          # Max 30 live conference turns per minute
+    "/api/conference/tts": (60, 60),           # Max 60 voice syntheses per minute
     "/api/interview/evaluate-answer": (20, 60),# Max 20 interview evaluations per minute
     "/api/chat/copilot": (20, 60),             # Max 20 Career Copilot chat requests per minute
 }
@@ -1087,6 +1097,466 @@ async def get_subscription_status(
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DIRECT BANK TRANSFER & SLIP UPLOAD ROUTES (LOCAL PAYMENT VERIFICATION)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/payments/bank-transfer/config")
+async def get_bank_transfer_config(db: Session = Depends(get_db)):
+    """Return configured bank account details and instructions for direct deposit."""
+    enabled_val = get_saas_setting(db, "bank_transfer_enabled", "true")
+    return {
+        "enabled": enabled_val.lower() in ["true", "1", "yes"],
+        "bank_name": get_saas_setting(db, "bank_name", "Commercial Bank of Ceylon"),
+        "account_name": get_saas_setting(db, "bank_account_name", "Malitha Sayuranga"),
+        "account_number": get_saas_setting(db, "bank_account_number", "800123456789"),
+        "branch": get_saas_setting(db, "bank_branch", "Colombo Main Branch"),
+        "instructions": get_saas_setting(db, "bank_transfer_instructions", "Please deposit or transfer the exact amount and enter your registered email or phone number as the payment reference or remark. Upload a clear screenshot or photo of the payment slip below.")
+    }
+
+
+@app.post("/api/payments/bank-transfer/upload")
+async def upload_bank_payment_slip(
+    file: UploadFile = File(...),
+    target_plan: str = Form(...),
+    amount_paid: float = Form(...),
+    currency: str = Form("LKR"),
+    bank_reference: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Candidate uploads bank deposit / online mobile transfer receipt (JPG, PNG, WEBP, PDF).
+    Validates file integrity, saves safely to static/uploads/slips/, and creates a pending slip record.
+    """
+    plan = target_plan.lower().strip()
+    if plan not in ["pro", "elite", "sprint"]:
+        raise HTTPException(status_code=400, detail="Invalid plan tier. Allowed options: 'pro', 'elite', 'sprint'.")
+
+    # Read up to 5MB + 1 byte
+    max_slip_size = 5 * 1024 * 1024
+    content = await file.read(max_slip_size + 1)
+    if len(content) > max_slip_size:
+        raise HTTPException(status_code=413, detail="Receipt file size exceeds the 5MB limit. Please upload a smaller image.")
+    if not content:
+        raise HTTPException(status_code=400, detail="Uploaded slip file is empty.")
+
+    filename = (file.filename or "slip.png").strip()
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in [".png", ".jpg", ".jpeg", ".webp", ".pdf"]:
+        raise HTTPException(status_code=400, detail="Invalid receipt format. Please upload PNG, JPG, WEBP, or PDF.")
+
+    # Ensure uploads/slips directory exists
+    slips_dir = os.path.join(os.path.dirname(__file__), "static", "uploads", "slips")
+    os.makedirs(slips_dir, exist_ok=True)
+
+    import uuid
+    safe_filename = f"slip_u{current_user.id}_{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
+    dest_path = os.path.join(slips_dir, safe_filename)
+    with open(dest_path, "wb") as f:
+        f.write(content)
+
+    slip_url = f"/static/uploads/slips/{safe_filename}"
+
+    slip = BankPaymentSlip(
+        user_id=current_user.id,
+        target_plan=plan,
+        amount_paid=float(amount_paid),
+        currency=currency.upper().strip(),
+        slip_image_url=slip_url,
+        bank_reference=bank_reference.strip() if bank_reference else None,
+        status="pending"
+    )
+    db.add(slip)
+    db.commit()
+    db.refresh(slip)
+
+    return {
+        "success": True,
+        "message": "Payment slip submitted successfully! Our team will verify and activate your subscription within 1-2 hours.",
+        "slip_id": slip.id,
+        "status": "pending",
+        "slip_url": slip_url
+    }
+
+
+@app.get("/api/payments/bank-transfer/my-slips")
+async def get_my_bank_payment_slips(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retrieve all submitted bank payment slips for the authenticated candidate."""
+    slips = db.scalars(
+        select(BankPaymentSlip)
+        .where(BankPaymentSlip.user_id == current_user.id)
+        .order_by(BankPaymentSlip.id.desc())
+    ).all()
+
+    return [
+        {
+            "id": s.id,
+            "target_plan": s.target_plan,
+            "amount_paid": s.amount_paid,
+            "currency": s.currency,
+            "slip_image_url": s.slip_image_url,
+            "bank_reference": s.bank_reference,
+            "status": s.status,
+            "admin_notes": s.admin_notes,
+            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
+            "reviewed_at": s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
+        }
+        for s in slips
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PAYHERE PAYMENT GATEWAY CHECKOUT & IPN WEBHOOK INTEGRATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/payments/payhere/initiate", response_model=PayHereInitiateResponse)
+async def initiate_payhere_payment(
+    req: PayHereInitiateRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generates a secure, cryptographically signed PayHere checkout session.
+    Calculates MD5 hash on server. Prevents client-side price tampering.
+    """
+    plan = req.plan.lower().strip()
+    if plan not in ["pro", "elite", "sprint"]:
+        raise HTTPException(status_code=400, detail="Invalid subscription plan. Only 'pro', 'elite', and 'sprint' are supported.")
+
+    currency = req.currency.upper().strip() if req.currency else "LKR"
+    if currency not in ["LKR", "USD"]:
+        currency = "LKR"
+
+    verified_amount = PayHereGateway.get_plan_price(plan, currency, db=db)
+
+    # Unique Order Reference
+    order_id = f"ORD-{datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
+
+    # Determine Base URL
+    env_base = os.getenv("APP_BASE_URL")
+    if env_base and env_base.strip():
+        base_url = env_base.strip().rstrip("/")
+    else:
+        base_url = str(request.base_url).rstrip("/")
+
+    # Prepare signed payload
+    payload = PayHereGateway.prepare_checkout_payload(
+        order_id=order_id,
+        plan_tier=plan,
+        user_email=current_user.email,
+        user_name=current_user.full_name or "Candidate",
+        user_id=current_user.id,
+        base_url=base_url,
+        currency=currency,
+        phone=req.phone,
+        address=req.address,
+        city=req.city,
+        db=db
+    )
+
+    # Record order in database
+    order = OnlinePaymentOrder(
+        order_id=order_id,
+        user_id=current_user.id,
+        target_plan=plan,
+        amount=verified_amount,
+        currency=currency,
+        gateway="payhere",
+        status="initiated"
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return PayHereInitiateResponse(
+        success=True,
+        order_id=order_id,
+        action_url=payload["action_url"],
+        params=payload["params"],
+        mode=payload["mode"],
+        amount=verified_amount,
+        currency=currency,
+        plan=plan
+    )
+
+
+@app.post("/api/payments/payhere/notify")
+async def payhere_ipn_notify(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    PayHere Instant Payment Notification (IPN) Webhook Callback.
+    1. Verifies md5sig cryptographic signature with constant-time comparison.
+    2. Validates amount & currency against database order.
+    3. Handles status codes: 2 (Success), 0 (Pending), -1 (Canceled), -2/-3 (Failed/Chargedback).
+    4. Automatically upgrades user subscription upon verified success.
+    """
+    form_data = await request.form()
+    data = dict(form_data)
+    logger.info("PayHere IPN Webhook Received: %s", {k: v for k, v in data.items() if k != "md5sig"})
+
+    merchant_id = str(data.get("merchant_id", "")).strip()
+    order_id = str(data.get("order_id", "")).strip()
+    payment_id = str(data.get("payment_id", "")).strip()
+    payhere_amount = str(data.get("payhere_amount", "")).strip()
+    payhere_currency = str(data.get("payhere_currency", "")).strip().upper()
+    status_code_str = str(data.get("status_code", "")).strip()
+    md5sig = str(data.get("md5sig", "")).strip()
+    method = str(data.get("method", "")).strip()
+    status_message = str(data.get("status_message", "")).strip()
+    card_holder_name = str(data.get("card_holder_name", "")).strip()
+    card_no = str(data.get("card_no", "")).strip()
+
+    if not order_id or not status_code_str or not md5sig:
+        logger.error("PayHere IPN missing mandatory fields: order_id=%s, status_code=%s", order_id, status_code_str)
+        raise HTTPException(status_code=400, detail="Missing required IPN fields.")
+
+    config = PayHereGateway.get_config()
+    merchant_secret = config["merchant_secret"]
+
+    # 1. Cryptographic Signature Verification
+    is_valid_sig = PayHereGateway.verify_ipn_signature(
+        merchant_id=merchant_id,
+        order_id=order_id,
+        payhere_amount=payhere_amount,
+        payhere_currency=payhere_currency,
+        status_code=status_code_str,
+        md5sig=md5sig,
+        merchant_secret=merchant_secret
+    )
+
+    if not is_valid_sig:
+        logger.critical("Security Alert: PayHere IPN signature verification failed! order_id=%s, received_sig=%s", order_id, md5sig)
+        raise HTTPException(status_code=400, detail="Invalid cryptographic IPN signature.")
+
+    # 2. Lookup existing order
+    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    if not order:
+        logger.error("PayHere IPN received for non-existent order: %s", order_id)
+        raise HTTPException(status_code=404, detail="Order reference not found.")
+
+    # 3. Anti-Tampering Check: Compare paid amount and currency with database
+    try:
+        paid_amount_float = float(payhere_amount)
+    except (ValueError, TypeError):
+        paid_amount_float = 0.0
+
+    if abs(paid_amount_float - order.amount) > 0.01 or payhere_currency != order.currency:
+        logger.critical(
+            "Price Tampering Detected! Order %s expected %s %s, received %s %s",
+            order_id, order.currency, order.amount, payhere_currency, paid_amount_float
+        )
+        order.status = "amount_tampered"
+        order.status_message = f"Tampered: Paid {payhere_currency} {payhere_amount} vs Expected {order.currency} {order.amount}"
+        order.raw_ipn_data = json.dumps(data)
+        db.commit()
+        raise HTTPException(status_code=400, detail="Payment amount or currency mismatch.")
+
+    try:
+        status_code_int = int(status_code_str)
+    except ValueError:
+        status_code_int = -99
+
+    order.payhere_payment_id = payment_id
+    order.payment_method = method
+    order.card_holder_name = card_holder_name
+    order.card_no_masked = card_no
+    order.status_code = status_code_int
+    order.status_message = status_message
+    order.raw_ipn_data = json.dumps(data)
+    order.updated_at = datetime.datetime.utcnow()
+
+    # 4. Status Code Processing
+    if status_code_int == 2:
+        # SUCCESS (2)
+        order.status = "success"
+        candidate = db.get(User, order.user_id)
+        if candidate:
+            now = datetime.datetime.utcnow()
+            if order.target_plan == "sprint":
+                candidate.plan_tier = "pro"
+                candidate.subscription_expires_at = now + datetime.timedelta(days=7)
+            else:
+                candidate.plan_tier = order.target_plan
+                candidate.subscription_expires_at = now + datetime.timedelta(days=30)
+            candidate.subscription_status = "active"
+            candidate.subscription_started_at = now
+            logger.info("Candidate %s successfully upgraded to %s via PayHere (Order %s, Payment ID %s)", candidate.email, candidate.plan_tier.upper(), order_id, payment_id)
+
+    elif status_code_int == 0:
+        # PENDING (0)
+        order.status = "pending"
+        logger.info("PayHere Payment Pending: Order %s", order_id)
+
+    elif status_code_int == -1:
+        # CANCELED (-1)
+        order.status = "canceled"
+        logger.info("PayHere Payment Canceled: Order %s", order_id)
+
+    elif status_code_int in [-2, -3]:
+        # FAILED (-2) or CHARGEDBACK (-3)
+        order.status = "failed" if status_code_int == -2 else "chargedback"
+        if status_code_int == -3:
+            candidate = db.get(User, order.user_id)
+            if candidate and candidate.plan_tier == order.target_plan:
+                candidate.plan_tier = "free"
+                candidate.subscription_status = "expired"
+        logger.warning("PayHere Payment Failed/Chargedback (%s): Order %s", status_code_int, order_id)
+
+    db.commit()
+    return Response(content="OK", status_code=200, media_type="text/plain")
+
+
+@app.api_route("/api/payments/payhere/return", methods=["GET", "POST"])
+async def payhere_return_redirect(
+    request: Request,
+    order_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    PayHere return redirect URL. Handles both GET and POST requests.
+    Redirects candidate to /payment/status with order verification details.
+    """
+    effective_order_id = order_id
+    if not effective_order_id and request.method == "POST":
+        try:
+            form_data = await request.form()
+            effective_order_id = form_data.get("order_id")
+        except Exception:
+            pass
+
+    status = "success"
+    if effective_order_id:
+        order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
+        if order:
+            if order.status in ["failed", "canceled", "amount_tampered", "pending"]:
+                status = order.status
+            elif order.status == "initiated":
+                # When returning immediately, IPN might be executing in parallel
+                status = "pending"
+
+    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status={status}", status_code=303)
+
+
+@app.api_route("/api/payments/payhere/cancel", methods=["GET", "POST"])
+async def payhere_cancel_redirect(
+    request: Request,
+    order_id: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    PayHere cancel redirect URL. Handles both GET and POST requests.
+    Marks initiated order as canceled and redirects candidate to /payment/status with reason.
+    """
+    effective_order_id = order_id
+    if not effective_order_id and request.method == "POST":
+        try:
+            form_data = await request.form()
+            effective_order_id = form_data.get("order_id")
+        except Exception:
+            pass
+
+    if effective_order_id:
+        order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
+        if order and order.status in ["initiated", "pending"]:
+            order.status = "canceled"
+            order.status_message = "Payment canceled by user during PayHere checkout."
+            db.commit()
+
+    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status=canceled", status_code=303)
+
+
+@app.get("/api/payments/orders/{order_id}/status")
+async def get_payment_order_status(
+    order_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns verified status for a specific payment order.
+    Used for front-end real-time polling during payment completion.
+    """
+    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order reference not found")
+
+    return {
+        "order_id": order.order_id,
+        "status": order.status,
+        "target_plan": order.target_plan,
+        "amount": order.amount,
+        "currency": order.currency,
+        "status_code": order.status_code,
+        "status_message": order.status_message,
+        "payhere_payment_id": order.payhere_payment_id,
+        "payment_method": order.payment_method,
+        "created_at": order.created_at.isoformat() if order.created_at else None,
+        "updated_at": order.updated_at.isoformat() if order.updated_at else None
+    }
+
+
+
+@app.get("/api/admin/payhere/config")
+async def admin_get_payhere_config(
+    current_user: User = Depends(require_admin)
+):
+    """Returns active PayHere credentials read directly from .env (secret masked)."""
+    try:
+        config = PayHereGateway.get_config()
+        secret = config["merchant_secret"]
+        masked_secret = f"{secret[:3]}...{secret[-3:]}" if len(secret) > 6 else "***"
+        return {
+            "merchant_id": config["merchant_id"],
+            "merchant_secret_masked": masked_secret,
+            "mode": config["mode"],
+            "currency": config["currency"],
+            "checkout_url": config["checkout_url"],
+            "app_base_url": config.get("app_base_url", "")
+        }
+    except Exception as e:
+        return {
+            "merchant_id": "",
+            "merchant_secret_masked": "",
+            "mode": "sandbox",
+            "currency": "LKR",
+            "checkout_url": "",
+            "app_base_url": "",
+            "error": str(e)
+        }
+
+
+@app.get("/api/admin/payhere/orders")
+async def admin_get_payhere_orders(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Lists online gateway payment orders with user and status details."""
+    orders = db.scalars(select(OnlinePaymentOrder).order_by(OnlinePaymentOrder.id.desc()).limit(100)).all()
+    results = []
+    for o in orders:
+        user = db.get(User, o.user_id)
+        results.append({
+            "id": o.id,
+            "order_id": o.order_id,
+            "user_id": o.user_id,
+            "user_email": user.email if user else "Unknown",
+            "target_plan": o.target_plan,
+            "amount": o.amount,
+            "currency": o.currency,
+            "status": o.status,
+            "payhere_payment_id": o.payhere_payment_id,
+            "payment_method": o.payment_method,
+            "card_no_masked": o.card_no_masked,
+            "created_at": o.created_at.strftime("%Y-%m-%d %H:%M") if o.created_at else None,
+            "updated_at": o.updated_at.strftime("%Y-%m-%d %H:%M") if o.updated_at else None
+        })
+    return results
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SAAS CLOUD RESUMES PERSISTENCE ROUTES (MYSQL)
@@ -1515,6 +1985,75 @@ async def conference_debrief_endpoint(
         raise HTTPException(status_code=500, detail=f"Conference debrief failed: {str(e)}")
 
 
+@app.post("/api/conference/tts")
+async def conference_tts_post(payload: ConferenceTTSRequest):
+    """
+    Direct Server-Side Neural Voice Engine.
+    Synthesizes studio-quality natural human MP3 audio for AI Interviewer Alex.
+    Uses Edge-TTS with instant Google TTS fallback. 100% Free, zero token cost.
+    """
+    text = (payload.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    try:
+        audio_bytes, source = await synthesize_speech_audio(text, payload.voice)
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "X-TTS-Engine": source,
+                "Content-Disposition": "inline; filename=alex_speech.mp3"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS synthesis failed: {str(e)}")
+
+
+@app.get("/api/conference/tts")
+async def conference_tts_get(
+    text: str = Query(..., min_length=1, max_length=3000),
+    voice: Optional[str] = Query("en-US-ChristopherNeural")
+):
+    """
+    Direct Server-Side Neural Voice Engine (GET endpoint for direct HTML5 audio playback).
+    """
+    clean_text = text.strip()
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    try:
+        audio_bytes, source = await synthesize_speech_audio(clean_text, voice)
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={
+                "Cache-Control": "public, max-age=86400",
+                "X-TTS-Engine": source,
+                "Content-Disposition": "inline; filename=alex_speech.mp3"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS synthesis failed: {str(e)}")
+
+
+@app.websocket("/ws/conference/live")
+async def conference_live_ws_endpoint(websocket: WebSocket):
+    """
+    Real-Time Bidirectional Voice-to-Voice WebSocket Gateway.
+    Powered by Google Gemini Live Multimodal API (gemini-2.5-flash-native-audio-latest).
+    Streams raw 24kHz audio chunks directly to candidate's browser with sub-800ms latency.
+    """
+    role = websocket.query_params.get("role", "Senior Software Engineer")
+    company = websocket.query_params.get("company", "Global Employer")
+    voice = websocket.query_params.get("voice", "Puck")
+    user_name = websocket.query_params.get("user_name")
+    await handle_conference_live_websocket(
+        websocket=websocket,
+        role=role,
+        company=company,
+        voice=voice,
+        user_name=user_name
+    )
 
 
 @app.get("/api/user/job-tracker", response_model=List[TrackedJobResponse])
@@ -1900,6 +2439,148 @@ async def admin_override_user_plan(
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ADMIN BANK SLIPS VERIFICATION & APPROVAL ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/admin/bank-slips")
+async def admin_get_bank_slips(
+    status: Optional[str] = Query(None),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin retrieves submitted bank transfer receipts with candidate information."""
+    stmt = select(BankPaymentSlip).order_by(BankPaymentSlip.id.desc())
+    if status and status.lower() in ["pending", "approved", "rejected"]:
+        stmt = stmt.where(BankPaymentSlip.status == status.lower())
+
+    slips = db.scalars(stmt).all()
+    results = []
+    for s in slips:
+        candidate = db.get(User, s.user_id)
+        results.append({
+            "id": s.id,
+            "user_id": s.user_id,
+            "user_email": candidate.email if candidate else "Unknown",
+            "user_name": candidate.full_name if candidate else "Candidate",
+            "current_user_tier": candidate.plan_tier if candidate else "free",
+            "target_plan": s.target_plan,
+            "amount_paid": s.amount_paid,
+            "currency": s.currency,
+            "slip_image_url": s.slip_image_url,
+            "bank_reference": s.bank_reference,
+            "status": s.status,
+            "admin_notes": s.admin_notes,
+            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
+            "reviewed_at": s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
+        })
+    return results
+
+
+@app.post("/api/admin/bank-slips/{slip_id}/approve")
+async def admin_approve_bank_slip(
+    slip_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    1-Click Admin Approval:
+    Instantly upgrades candidate's account to target plan (Pro/Elite/Sprint),
+    activates subscription, sets expiration date, and marks slip approved.
+    """
+    slip = db.get(BankPaymentSlip, slip_id)
+    if not slip:
+        raise HTTPException(status_code=404, detail="Bank payment slip not found.")
+
+    candidate = db.get(User, slip.user_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Associated candidate user account not found.")
+
+    tier = slip.target_plan.lower().strip()
+    now = datetime.datetime.utcnow()
+    if tier == "sprint":
+        days = 7
+        actual_tier = "pro"
+    else:
+        days = 30
+        actual_tier = tier
+
+    candidate.plan_tier = actual_tier
+    candidate.subscription_status = "active"
+    candidate.subscription_started_at = now
+    candidate.subscription_expires_at = now + datetime.timedelta(days=days)
+
+    slip.status = "approved"
+    slip.reviewed_by = current_user.id
+    slip.reviewed_at = now
+    slip.admin_notes = f"Approved by admin ({current_user.email}) on {now.strftime('%Y-%m-%d %H:%M UTC')}"
+
+    db.commit()
+    db.refresh(candidate)
+    db.refresh(slip)
+
+    return {
+        "success": True,
+        "message": f"Successfully activated {actual_tier.upper()} plan for {candidate.email} (+{days} days)! Slip marked approved.",
+        "user_id": candidate.id,
+        "user_email": candidate.email,
+        "new_tier": candidate.plan_tier,
+        "expires_at": candidate.subscription_expires_at.strftime("%Y-%m-%d")
+    }
+
+
+@app.post("/api/admin/bank-slips/{slip_id}/reject")
+async def admin_reject_bank_slip(
+    slip_id: int,
+    req: Dict[str, Any] = {},
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin marks slip rejected with explanation note."""
+    slip = db.get(BankPaymentSlip, slip_id)
+    if not slip:
+        raise HTTPException(status_code=404, detail="Bank payment slip not found.")
+
+    reason = req.get("reason", "Payment verification could not be confirmed.")
+    slip.status = "rejected"
+    slip.reviewed_by = current_user.id
+    slip.reviewed_at = datetime.datetime.utcnow()
+    slip.admin_notes = reason
+
+    db.commit()
+    db.refresh(slip)
+    return {"success": True, "message": "Slip marked as rejected.", "slip_id": slip.id}
+
+
+@app.post("/api/admin/bank-transfer/config")
+async def admin_update_bank_config(
+    req: Dict[str, Any],
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin updates bank details and deposit instructions."""
+    fields = [
+        "bank_transfer_enabled", "bank_name", "bank_account_name",
+        "bank_account_number", "bank_branch", "bank_transfer_instructions"
+    ]
+    updated = 0
+    for f in fields:
+        if f in req:
+            val_str = str(req[f]).strip()
+            stmt = select(SaasSetting).where(SaasSetting.key == f)
+            setting = db.scalars(stmt).first()
+            if setting:
+                setting.value = val_str
+                setting.updated_at = datetime.datetime.utcnow()
+            else:
+                db.add(SaasSetting(key=f, value=val_str, description="Bank transfer setting"))
+            updated += 1
+
+    db.commit()
+    return {"success": True, "message": f"{updated} bank transfer settings updated!"}
+
+
+
 DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
     "DEFAULT": {
         "country_code": "DEFAULT",
@@ -2238,7 +2919,7 @@ async def update_subscription_plans(
         c_stmt = select(SaasSetting).where(SaasSetting.key == "saas_country_pricing_json")
         c_setting = db.scalars(c_stmt).first()
         if c_setting:
-            c_setting.value = json_str
+            c_setting.value = json.dumps(country_dict, ensure_ascii=False)
             c_setting.updated_at = datetime.datetime.utcnow()
     db.commit()
     return {"success": True, "message": "Subscription plans updated successfully in database!"}
@@ -2383,9 +3064,93 @@ async def serve_favicon():
     return Response(content="", status_code=204)
 
 
+@app.get("/payment/status", response_class=HTMLResponse)
+@app.get("/payment/success", response_class=HTMLResponse)
+@app.get("/payment/failed", response_class=HTMLResponse)
+async def serve_payment_status(
+    request: Request,
+    order_id: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Renders the dedicated Payment Status page (Success or Failed with clear reasons).
+    """
+    order = None
+    if order_id:
+        order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+
+    # Determine effective status
+    effective_status = status or (order.status if order else "failed")
+    if request.url.path.endswith("/success"):
+        effective_status = "success"
+    elif request.url.path.endswith("/failed") and effective_status == "success":
+        effective_status = "failed"
+
+    # Plan title formatting
+    plan_names = {
+        "sprint": "7-Day Sprint Pass",
+        "pro": "Pro Career Plan (30 Days)",
+        "elite": "Executive Elite (30 Days)"
+    }
+    raw_plan = order.target_plan if order else "pro"
+    plan_title = plan_names.get(raw_plan.lower(), f"{raw_plan.title()} Plan")
+
+    # Amount formatting
+    if order:
+        curr_symbol = "Rs. " if order.currency == "LKR" else "$"
+        formatted_amount = f"{curr_symbol}{order.amount:,.2f}"
+    else:
+        formatted_amount = ""
+
+    # Failure reasons in English and Sinhala
+    failure_reason_en = ""
+    failure_reason_si = ""
+
+    if effective_status == "canceled":
+        failure_reason_en = "The transaction was canceled by the user during the PayHere checkout session. No charges were deducted from your card or account."
+        failure_reason_si = "PayHere ගෙවීම් පිටුවේදී ඔබ විසින් ගෙවීම අවලංගු කරන ලදී. ඔබගේ ගිණුමෙන් කිසිදු මුදලක් අය වී නොමැත."
+    elif effective_status == "amount_tampered":
+        failure_reason_en = "Security integrity verification failed: The transaction amount or currency did not match the official order price."
+        failure_reason_si = "ආරක්ෂණ පරීක්ෂාව අසාර්ථක විය: ගෙවීමට උත්සාහ කළ මුදල සහ ඇණවුමේ නිල මුදල අතර නොගැලපීමක් පවතී."
+    elif effective_status == "pending":
+        failure_reason_en = "Your payment was submitted and is awaiting final clearance from your issuing bank or PayHere."
+        failure_reason_si = "ඔබගේ ගෙවීම ඉදිරිපත් කර ඇති අතර ඔබගේ බැංකුවේ හෝ PayHere හි අවසන් අනුමැතිය බලාපොරොත්තුවෙන් පවතී."
+    else:
+        msg = (order.status_message if order and order.status_message else "").strip()
+        if msg:
+            failure_reason_en = f"Gateway message: {msg}. Please verify your card details, account balance, and e-commerce activation."
+        else:
+            failure_reason_en = "The payment could not be processed by your bank or the card network. Please check your card balance, expiration, and online transaction permissions."
+        failure_reason_si = "ඔබගේ බැංකුව හෝ ගෙවීම් පද්ධතිය මඟින් ගනුදෙනුව අනුමත නොකරන ලදී. කරුණාකර ඔබගේ කාඩ්පතේ ශේෂය සහ Online Payments පහසුකම පරීක්ෂා කරන්න, නැතහොත් Direct Bank Transfer මඟින් ගෙවීම සිදුකරන්න."
+
+    page_title = "Payment Successful" if effective_status == "success" else ("Payment Canceled" if effective_status == "canceled" else "Payment Failed")
+    formatted_date = order.created_at.strftime("%b %d, %Y - %I:%M %p") if (order and order.created_at) else datetime.datetime.utcnow().strftime("%b %d, %Y - %I:%M %p")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="payment_status.html",
+        context={
+            "order": order,
+            "order_id": order_id or "",
+            "status": effective_status,
+            "plan_title": plan_title,
+            "formatted_amount": formatted_amount,
+            "failure_reason_en": failure_reason_en,
+            "failure_reason_si": failure_reason_si,
+            "page_title": page_title,
+            "formatted_date": formatted_date
+        }
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_landing(request: Request):
     """Serve the modern, high-converting Landing Page with OWASP security headers."""
+    payment_param = request.query_params.get("payment")
+    if payment_param:
+        order_id = request.query_params.get("order_id", "")
+        return RedirectResponse(url=f"/payment/status?order_id={order_id}&status={payment_param}", status_code=303)
     return templates.TemplateResponse(request=request, name="landing.html")
 
 

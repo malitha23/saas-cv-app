@@ -13,11 +13,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (Locally Hosted) -->
+  <script src="/static/vendor/lucide.min.js"></script>
   
-  <!-- Alpine.js -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Alpine.js (Locally Hosted) -->
+  <script defer src="/static/vendor/alpine.min.js"></script>
 
   <style>
     [x-cloak] { display: none !important; }
@@ -117,6 +117,23 @@
           class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
           <i data-lucide="users" class="w-4 h-4"></i>
           <span>User Directory (<span x-text="usersList.length"></span>)</span>
+        </button>
+
+        <button @click="activeTab = 'bank_slips'; loadBankSlips()"
+          :class="activeTab === 'bank_slips' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="landmark" class="w-4 h-4"></i>
+          <span>Bank Slips (ගෙවීම් තහවුරු කිරීම්)</span>
+          <span x-show="pendingSlipsCount > 0"
+                class="px-2 py-0.5 rounded-full bg-rose-500 text-[10px] font-black text-white animate-pulse"
+                x-text="pendingSlipsCount"></span>
+        </button>
+
+        <button @click="activeTab = 'payhere'; loadPayHereOrders(); loadPayHereConfig()"
+          :class="activeTab === 'payhere' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="credit-card" class="w-4 h-4"></i>
+          <span>PayHere Gateway & Logs</span>
         </button>
       </div>
 
@@ -610,6 +627,349 @@
         </div>
       </div>
 
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 6: BANK PAYMENT SLIPS VERIFICATION & ACCOUNT SETTINGS           -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'bank_slips'" class="space-y-6">
+
+        <!-- Top Overview & Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-emerald-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold">
+              <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+              <span>Manual Bank Transfer Verification</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-100">Bank Deposit Slips & Subscriptions</h2>
+            <p class="text-xs text-slate-400">Review candidate payment receipts and approve upgrades with 1-click account activation.</p>
+          </div>
+
+          <!-- Status Filters -->
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+            <button @click="bankSlipsFilter = 'all'"
+                    class="px-3 py-1.5 rounded-lg transition"
+                    :class="bankSlipsFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200'">
+              All (<span x-text="bankSlipsList.length"></span>)
+            </button>
+            <button @click="bankSlipsFilter = 'pending'"
+                    class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                    :class="bankSlipsFilter === 'pending' ? 'bg-amber-600 text-white' : 'text-amber-400 hover:text-amber-300'">
+              <span>Pending</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-[10px]" x-text="pendingSlipsCount"></span>
+            </button>
+            <button @click="bankSlipsFilter = 'approved'"
+                    class="px-3 py-1.5 rounded-lg transition"
+                    :class="bankSlipsFilter === 'approved' ? 'bg-emerald-600 text-white' : 'text-emerald-400 hover:text-emerald-300'">
+              Approved
+            </button>
+            <button @click="bankSlipsFilter = 'rejected'"
+                    class="px-3 py-1.5 rounded-lg transition"
+                    :class="bankSlipsFilter === 'rejected' ? 'bg-rose-600 text-white' : 'text-rose-400 hover:text-rose-300'">
+              Rejected
+            </button>
+          </div>
+        </div>
+
+        <!-- Slips Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 bg-slate-950/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Candidate</th>
+                  <th class="py-3.5 px-4">Target Plan</th>
+                  <th class="py-3.5 px-4">Amount Paid</th>
+                  <th class="py-3.5 px-4">Reference</th>
+                  <th class="py-3.5 px-4">Receipt Slip</th>
+                  <th class="py-3.5 px-4">Status</th>
+                  <th class="py-3.5 px-4">Submitted Date</th>
+                  <th class="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-xs">
+                <template x-if="filteredBankSlips.length === 0">
+                  <tr>
+                    <td colspan="8" class="py-12 text-center text-slate-500">
+                      <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 text-slate-600"></i>
+                      <p class="font-bold">No payment slips found matching the selected filter.</p>
+                    </td>
+                  </tr>
+                </template>
+
+                <template x-for="slip in filteredBankSlips" :key="slip.id">
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <!-- Candidate Info -->
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-500 flex items-center justify-center font-bold text-xs text-white shrink-0"
+                             x-text="(slip.user_name || 'U').charAt(0).toUpperCase()"></div>
+                        <div>
+                          <p class="font-bold text-slate-200" x-text="slip.user_name"></p>
+                          <p class="text-[11px] text-slate-400 font-mono" x-text="slip.user_email"></p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Target Plan -->
+                    <td class="py-3.5 px-4">
+                      <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase"
+                            :class="{
+                              'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': slip.target_plan === 'pro',
+                              'bg-amber-500/20 text-amber-300 border border-amber-500/30': slip.target_plan === 'elite',
+                              'bg-violet-500/20 text-violet-300 border border-violet-500/30': slip.target_plan === 'sprint'
+                            }"
+                            x-text="slip.target_plan"></span>
+                    </td>
+
+                    <!-- Amount Paid -->
+                    <td class="py-3.5 px-4 font-mono font-bold text-emerald-400">
+                      <span x-text="slip.currency + ' ' + Number(slip.amount_paid).toLocaleString()"></span>
+                    </td>
+
+                    <!-- Reference -->
+                    <td class="py-3.5 px-4 text-[11px] text-slate-300">
+                      <span x-text="slip.bank_reference || 'None'"></span>
+                    </td>
+
+                    <!-- Slip Thumbnail -->
+                    <td class="py-3.5 px-4">
+                      <div class="cursor-pointer group relative w-12 h-12 rounded-lg overflow-hidden border border-slate-700 bg-slate-950 flex items-center justify-center"
+                           @click="previewSlipUrl = slip.slip_image_url">
+                        <template x-if="slip.slip_image_url && !slip.slip_image_url.endsWith('.pdf')">
+                          <img :src="slip.slip_image_url" class="w-full h-full object-cover group-hover:scale-110 transition">
+                        </template>
+                        <template x-if="slip.slip_image_url && slip.slip_image_url.endsWith('.pdf')">
+                          <i data-lucide="file-text" class="w-6 h-6 text-rose-400"></i>
+                        </template>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <i data-lucide="zoom-in" class="w-4 h-4 text-white"></i>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3.5 px-4">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1"
+                            :class="{
+                              'bg-amber-500/20 text-amber-300 border border-amber-500/30': slip.status === 'pending',
+                              'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': slip.status === 'approved',
+                              'bg-rose-500/20 text-rose-300 border border-rose-500/30': slip.status === 'rejected'
+                            }">
+                        <span class="w-1.5 h-1.5 rounded-full"
+                              :class="{
+                                'bg-amber-400 animate-ping': slip.status === 'pending',
+                                'bg-emerald-400': slip.status === 'approved',
+                                'bg-rose-400': slip.status === 'rejected'
+                              }"></span>
+                        <span x-text="slip.status"></span>
+                      </span>
+                    </td>
+
+                    <!-- Submitted Date -->
+                    <td class="py-3.5 px-4 text-[11px] text-slate-400 font-mono" x-text="slip.created_at"></td>
+
+                    <!-- Actions -->
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <template x-if="slip.status === 'pending'">
+                          <div class="flex items-center gap-2">
+                            <button @click="approveSlip(slip.id)"
+                                    class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1">
+                              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                              <span>Approve</span>
+                            </button>
+
+                            <button @click="rejectSlip(slip.id)"
+                                    class="px-2.5 py-1.5 bg-slate-800 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 font-bold text-xs rounded-xl transition">
+                              Reject
+                            </button>
+                          </div>
+                        </template>
+
+                        <template x-if="slip.status !== 'pending'">
+                          <span class="text-[11px] text-slate-500 italic" x-text="slip.status === 'approved' ? 'Active' : 'Declined'"></span>
+                        </template>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bank Account Settings Configuration Card -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2 text-slate-200 font-bold text-sm">
+              <i data-lucide="settings-2" class="w-4 h-4 text-indigo-400"></i>
+              <span>Deposit Bank Account Configuration (Displayed to Candidates)</span>
+            </div>
+            <span x-show="bankConfigSaveMsg" class="text-xs font-semibold text-emerald-400" x-text="bankConfigSaveMsg"></span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-1">
+              <label class="font-bold text-slate-400">Bank Name:</label>
+              <input type="text" x-model="adminBankConfig.bank_name"
+                     class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-200 outline-none">
+            </div>
+
+            <div class="space-y-1">
+              <label class="font-bold text-slate-400">Account Name (Beneficiary):</label>
+              <input type="text" x-model="adminBankConfig.account_name"
+                     class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-200 outline-none">
+            </div>
+
+            <div class="space-y-1">
+              <label class="font-bold text-slate-400">Account Number:</label>
+              <input type="text" x-model="adminBankConfig.account_number"
+                     class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-200 outline-none font-mono">
+            </div>
+
+            <div class="space-y-1">
+              <label class="font-bold text-slate-400">Branch Name:</label>
+              <input type="text" x-model="adminBankConfig.branch"
+                     class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-200 outline-none">
+            </div>
+
+            <div class="sm:col-span-2 space-y-1">
+              <label class="font-bold text-slate-400">Deposit / Transfer Instructions (Remark advice):</label>
+              <textarea x-model="adminBankConfig.instructions" rows="2"
+                        class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-3 text-slate-200 outline-none"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button @click="saveBankConfig()" :disabled="isSavingBankConfig"
+                    class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>Save Bank Details</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 7: PAYHERE GATEWAY SETTINGS & ONLINE ORDER LOGS                -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'payhere'" class="space-y-6">
+
+        <!-- Top Header & Settings Box -->
+        <div class="bg-slate-900/90 border border-indigo-500/20 p-5 sm:p-6 rounded-2xl shadow-xl space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 text-xs font-semibold">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                <span>Cryptographic Payment Gateway</span>
+              </div>
+              <h2 class="text-lg font-black text-slate-100">PayHere Gateway Configuration & Status</h2>
+              <p class="text-xs text-slate-400">Server-side HMAC/MD5 hash calculation and IPN checksum verification protects against amount tampering.</p>
+            </div>
+
+            <span x-show="payHereSaveMsg" class="text-xs font-semibold text-emerald-400" x-text="payHereSaveMsg"></span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-slate-400 text-[11px] block">Environment Mode (.env)</span>
+              <span class="font-bold uppercase tracking-wider text-xs px-2 py-0.5 rounded inline-block"
+                    :class="payHereConfig.mode === 'live' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                    x-text="payHereConfig.mode === 'live' ? '🚀 LIVE (Production)' : '🧪 SANDBOX (Testing)'"></span>
+            </div>
+
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-slate-400 text-[11px] block">Merchant ID (.env)</span>
+              <span class="font-mono font-bold text-slate-200 text-xs block" x-text="payHereConfig.merchant_id || 'Not set in .env'"></span>
+            </div>
+
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-slate-400 text-[11px] block">Merchant Secret (.env)</span>
+              <span class="font-mono font-bold text-slate-200 text-xs block" x-text="payHereConfig.merchant_secret_masked || 'Not set in .env'"></span>
+            </div>
+
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <span class="text-slate-400 text-[11px] block">Base Public URL (.env)</span>
+              <span class="font-mono text-[11px] text-indigo-300 truncate block" x-text="payHereConfig.app_base_url || 'Using host origin'"></span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap justify-between items-center pt-2 gap-2 text-[11px] text-slate-400 border-t border-slate-800/80">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="link-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Active Gateway URL: <code class="text-indigo-300 font-mono" x-text="payHereConfig.checkout_url"></code></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-slate-400">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Managed via server <code>.env</code> file (Single Source of Truth)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden space-y-3 p-5">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div>
+              <h3 class="font-bold text-slate-100 text-sm">Online Gateway Payment Logs</h3>
+              <p class="text-xs text-slate-400">Recent customer checkout orders and verified IPN callbacks</p>
+            </div>
+            <button @click="loadPayHereOrders()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-semibold flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th class="py-3 px-3">Order ID</th>
+                  <th class="py-3 px-3">Candidate</th>
+                  <th class="py-3 px-3">Plan</th>
+                  <th class="py-3 px-3">Amount</th>
+                  <th class="py-3 px-3">Status</th>
+                  <th class="py-3 px-3">PayHere Payment ID</th>
+                  <th class="py-3 px-3">Method</th>
+                  <th class="py-3 px-3">Created</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <template x-for="ord in payhereOrders" :key="ord.id">
+                  <tr class="hover:bg-slate-800/30 transition">
+                    <td class="py-3 px-3 font-mono font-bold text-slate-200" x-text="ord.order_id"></td>
+                    <td class="py-3 px-3 text-slate-300" x-text="ord.user_email"></td>
+                    <td class="py-3 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                            :class="ord.target_plan === 'elite' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'"
+                            x-text="ord.target_plan"></span>
+                    </td>
+                    <td class="py-3 px-3 font-bold text-slate-200" x-text="ord.currency + ' ' + ord.amount"></td>
+                    <td class="py-3 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                            :class="{
+                              'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': ord.status === 'success',
+                              'bg-amber-500/20 text-amber-300 border border-amber-500/30': ord.status === 'pending',
+                              'bg-slate-800 text-slate-400': ord.status === 'initiated' || ord.status === 'canceled',
+                              'bg-rose-500/20 text-rose-300 border border-rose-500/30': ord.status === 'failed' || ord.status === 'amount_tampered'
+                            }"
+                            x-text="ord.status"></span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-slate-400" x-text="ord.payhere_payment_id || '-'"></td>
+                    <td class="py-3 px-3 font-mono text-slate-300" x-text="ord.payment_method || '-'"></td>
+                    <td class="py-3 px-3 text-slate-400" x-text="ord.created_at"></td>
+                  </tr>
+                </template>
+                <template x-if="payhereOrders.length === 0">
+                  <tr>
+                    <td colspan="8" class="py-6 text-center text-slate-500">No online payment transactions recorded yet.</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Admin Footer -->
@@ -645,6 +1005,37 @@
         },
         isSavingRules: false,
         rulesSaveMsg: '',
+        bankSlipsList: [],
+        bankSlipsFilter: 'all',
+        previewSlipUrl: null,
+        adminBankConfig: {
+          bank_name: 'Commercial Bank of Ceylon PLC',
+          account_name: 'CV Maker Global (Pvt) Ltd',
+          account_number: '8001234567',
+          branch: 'Colombo 03 / Super Branch',
+          instructions: 'Please upload a clear photo or PDF of your deposit/transfer receipt. Your plan will be activated within 10-30 minutes.'
+        },
+        isSavingBankConfig: false,
+        bankConfigSaveMsg: '',
+        payhereOrders: [],
+        payhereConfig: {
+          merchant_id: '',
+          merchant_secret: '',
+          mode: 'sandbox',
+          currency: 'LKR',
+          checkout_url: ''
+        },
+        isSavingPayHereConfig: false,
+        payHereSaveMsg: '',
+
+        get pendingSlipsCount() {
+          return this.bankSlipsList.filter(s => s.status === 'pending').length;
+        },
+
+        get filteredBankSlips() {
+          if (this.bankSlipsFilter === 'all') return this.bankSlipsList;
+          return this.bankSlipsList.filter(s => s.status === this.bankSlipsFilter);
+        },
 
         get filteredUsers() {
           if (!this.userSearchQuery) return this.usersList;
@@ -686,7 +1077,11 @@
               this.loadCountryPricing(),
               this.loadOverview(),
               this.loadRules(),
-              this.loadUsers()
+              this.loadUsers(),
+              this.loadBankSlips(),
+              this.loadBankConfig(),
+              this.loadPayHereConfig(),
+              this.loadPayHereOrders()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -959,9 +1354,176 @@
           } catch (e) {
             alert('Error extending plan: ' + e.message);
           }
+        },
+
+        async loadBankSlips() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/bank-slips', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.bankSlipsList = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (e) {
+            console.error('Failed to load bank slips:', e);
+          }
+        },
+
+        async approveSlip(slipId) {
+          if (!confirm(`Are you sure you want to APPROVE payment slip #${slipId} and activate candidate subscription?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/bank-slips/${slipId}/approve`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ admin_notes: 'Approved via Admin Portal' })
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Approval failed');
+            }
+            await this.loadBankSlips();
+            await this.loadOverview();
+            await this.loadUsers();
+            alert(`✅ Slip #${slipId} approved successfully and candidate plan upgraded!`);
+          } catch (e) {
+            alert('Approval Error: ' + e.message);
+          }
+        },
+
+        async rejectSlip(slipId) {
+          const reason = prompt('Please enter rejection reason (e.g. Invalid slip / Incorrect amount / Unclear image):');
+          if (reason === null) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/bank-slips/${slipId}/reject`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ reason: reason || 'Slip verification rejected by administrator' })
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Rejection failed');
+            }
+            await this.loadBankSlips();
+            alert(`Slip #${slipId} marked as rejected.`);
+          } catch (e) {
+            alert('Rejection Error: ' + e.message);
+          }
+        },
+
+        async loadBankConfig() {
+          try {
+            const res = await fetch('/api/payments/bank-transfer/config');
+            if (res.ok) {
+              this.adminBankConfig = await res.json();
+            }
+          } catch (e) {
+            console.error('Failed to load bank config:', e);
+          }
+        },
+
+        async saveBankConfig() {
+          this.isSavingBankConfig = true;
+          this.bankConfigSaveMsg = '';
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/bank-transfer/config', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(this.adminBankConfig)
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Failed to update bank config');
+            }
+            this.bankConfigSaveMsg = '✅ Bank details updated successfully!';
+            setTimeout(() => { this.bankConfigSaveMsg = ''; }, 4000);
+          } catch (e) {
+            alert('Bank Config Error: ' + e.message);
+          } finally {
+            this.isSavingBankConfig = false;
+          }
+        },
+
+        async loadPayHereConfig() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/payhere/config', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.payhereConfig.merchant_id = data.merchant_id || '';
+              this.payhereConfig.merchant_secret_masked = data.merchant_secret_masked || '';
+              this.payhereConfig.mode = data.mode || 'sandbox';
+              this.payhereConfig.currency = data.currency || 'LKR';
+              this.payhereConfig.checkout_url = data.checkout_url || '';
+              this.payhereConfig.app_base_url = data.app_base_url || '';
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (e) {
+            console.error('Failed to load PayHere config:', e);
+          }
+        },
+
+        async loadPayHereOrders() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/payhere/orders', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.payhereOrders = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (e) {
+            console.error('Failed to load PayHere orders:', e);
+          }
         }
       };
     }
   </script>
+
+  <!-- Fullscreen Slip Image Lightbox Modal -->
+  <div x-show="previewSlipUrl"
+       x-cloak
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+       @click="previewSlipUrl = null"
+       @keydown.escape.window="previewSlipUrl = null">
+    <div class="relative max-w-4xl max-h-[92vh] flex flex-col items-center" @click.stop>
+      <button @click="previewSlipUrl = null"
+              class="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-lg bg-slate-800/80 border border-slate-700">
+        <span>Close Preview (Esc)</span>
+        ✕
+      </button>
+      <img :src="previewSlipUrl"
+           alt="Bank Slip Preview"
+           class="max-w-full max-h-[85vh] rounded-xl object-contain border border-slate-700 shadow-2xl bg-slate-950">
+      <div class="mt-3 flex gap-3">
+        <a :href="previewSlipUrl" target="_blank"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-white border border-slate-700">
+          <span>Open Full Resolution in New Tab</span>
+        </a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -185,11 +185,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (Locally Hosted) -->
+  <script src="/static/vendor/lucide.min.js"></script>
 
-  <!-- Alpine.js -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Alpine.js (Locally Hosted) -->
+  <script defer src="/static/vendor/alpine.min.js"></script>
 
   <style>
     [x-cloak] { display: none !important; }
@@ -231,15 +231,21 @@
       <div class="flex items-center space-x-3">
         <!-- Logged In State -->
         <template x-if="token">
-          <div class="flex items-center space-x-3">
-            <span class="hidden sm:inline-block text-xs font-medium text-slate-300">
-              Welcome back, <span class="font-bold text-indigo-400" x-text="userName"></span>
+          <div class="flex items-center space-x-2 sm:space-x-3">
+            <span class="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Welcome, <strong class="text-white" x-text="userName"></strong></span>
+              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" x-text="userPlan" x-show="userPlan"></span>
             </span>
             <a href="/app"
                class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition flex items-center gap-2">
-              <span>Go to Dashboard</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              <i data-lucide="layout" class="w-4 h-4"></i>
+              <span>Go to Workspace</span>
             </a>
+            <button @click="logout()" title="Sign Out"
+                    class="p-2 sm:p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
           </div>
         </template>
 
@@ -296,18 +302,40 @@
 
       <!-- CTA Buttons Group -->
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-        <a href="/app"
-           class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
-          <i data-lucide="sparkles" class="w-5 h-5"></i>
-          <span>Get Started for Free</span>
-          <i data-lucide="arrow-right" class="w-5 h-5"></i>
-        </a>
+        <!-- Logged In Hero CTA -->
+        <template x-if="token">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <a href="/app"
+               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
+              <i data-lucide="rocket" class="w-5 h-5"></i>
+              <span>Open AI Workspace</span>
+              <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+            <a href="/app?openPricing=true"
+               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+              <span>Subscription & Plans</span>
+            </a>
+          </div>
+        </template>
 
-        <a href="/app?demo=true"
-           class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
-          <i data-lucide="play" class="w-4 h-4 text-indigo-400"></i>
-          <span>View Live Demo</span>
-        </a>
+        <!-- Logged Out Hero CTA -->
+        <template x-if="!token">
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <a href="/app"
+               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+              <span>Get Started for Free</span>
+              <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+
+            <a href="/app?demo=true"
+               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              <i data-lucide="play" class="w-4 h-4 text-indigo-400"></i>
+              <span>View Live Demo</span>
+            </a>
+          </div>
+        </template>
       </div>
 
       <!-- Micro-Trust Signals -->
@@ -790,11 +818,21 @@
       <p class="text-slate-300 text-sm sm:text-base mb-8 max-w-lg mx-auto">
         Join smart job seekers who tailored their resumes with AI and beat automated recruiter filters.
       </p>
-      <a href="/app"
-         class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
-        <span>Get Started Now — It's Free</span>
-        <i data-lucide="arrow-right" class="w-5 h-5"></i>
-      </a>
+      <template x-if="token">
+        <a href="/app"
+           class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
+          <i data-lucide="rocket" class="w-5 h-5"></i>
+          <span>Continue to AI Workspace</span>
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </a>
+      </template>
+      <template x-if="!token">
+        <a href="/app"
+           class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
+          <span>Get Started Now — It's Free</span>
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </a>
+      </template>
     </div>
   </section>
 
@@ -808,9 +846,22 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <script>
     function landingPage() {
+      const activeToken = localStorage.getItem('saas_token') || localStorage.getItem('dreemfolio_token') || '';
+      let initialName = '';
+      let initialPlan = '';
+      const cachedUserStr = localStorage.getItem('saas_user') || localStorage.getItem('dreemfolio_user');
+      if (cachedUserStr) {
+        try {
+          const u = JSON.parse(cachedUserStr);
+          initialName = u.full_name ? u.full_name.split(' ')[0] : (u.email ? u.email.split('@')[0] : 'Member');
+          initialPlan = (u.plan_tier || 'free').toUpperCase();
+        } catch(e) {}
+      }
+
       return {
-        token: localStorage.getItem('dreemfolio_token') || '',
-        userName: '',
+        token: activeToken,
+        userName: initialName,
+        userPlan: initialPlan,
         openFaq: 1,
         freePrice: 'Rs. 0',
         proPrice: 'Rs. 990',
@@ -819,13 +870,25 @@
         activeCurrency: 'LKR',
         activeCurrencySymbol: 'Rs.',
 
-        initLanding() {
-          const userStr = localStorage.getItem('dreemfolio_user');
-          if (userStr) {
+        async initLanding() {
+          // If token is present, verify and refresh user profile with backend
+          if (this.token) {
             try {
-              const u = JSON.parse(userStr);
-              this.userName = u.full_name ? u.full_name.split(' ')[0] : 'Member';
-            } catch(e) {}
+              const meRes = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+              });
+              if (meRes.ok) {
+                const userData = await meRes.json();
+                this.userName = userData.full_name ? userData.full_name.split(' ')[0] : (userData.email ? userData.email.split('@')[0] : 'Member');
+                this.userPlan = (userData.plan_tier || 'free').toUpperCase();
+                localStorage.setItem('saas_user', JSON.stringify(userData));
+                localStorage.setItem('saas_token', this.token);
+              } else if (meRes.status === 401) {
+                this.logout();
+              }
+            } catch (authErr) {
+              console.warn('Session check warning:', authErr);
+            }
           }
 
           // Fetch dynamic pricing
@@ -859,9 +922,26 @@
             })
             .catch(() => {});
 
-          if (window.lucide && typeof window.lucide.createIcons === 'function') {
-            window.lucide.createIcons();
-          }
+          this.$nextTick(() => {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          });
+        },
+
+        logout() {
+          localStorage.removeItem('saas_token');
+          localStorage.removeItem('saas_user');
+          localStorage.removeItem('dreemfolio_token');
+          localStorage.removeItem('dreemfolio_user');
+          this.token = '';
+          this.userName = '';
+          this.userPlan = '';
+          this.$nextTick(() => {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          });
         },
 
         toggleFaq(idx) {

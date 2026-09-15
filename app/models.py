@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -43,6 +43,14 @@ class User(Base):
     # Relationship to user's tracked job applications
     job_applications: Mapped[List["UserJobApplication"]] = relationship(
         "UserJobApplication", back_populates="user", cascade="all, delete-orphan"
+    )
+    # Relationship to user's bank payment slips
+    bank_payment_slips: Mapped[List["BankPaymentSlip"]] = relationship(
+        "BankPaymentSlip", back_populates="user", cascade="all, delete-orphan"
+    )
+    # Relationship to user's online gateway payment orders
+    online_orders: Mapped[List["OnlinePaymentOrder"]] = relationship(
+        "OnlinePaymentOrder", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -117,4 +125,64 @@ class UserJobApplication(Base):
 
     def __repr__(self) -> str:
         return f"<UserJobApplication(id={self.id}, user_id={self.user_id}, role='{self.job_title}', company='{self.company_name}', status='{self.status}')>"
+
+
+class BankPaymentSlip(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for local bank deposit slips and transfer verification.
+    Enables zero-gateway-fee manual subscriptions with admin review and 1-click approval.
+    """
+    __tablename__ = "bank_payment_slips"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    target_plan: Mapped[str] = mapped_column(String(50), nullable=False)  # 'pro', 'elite', 'sprint'
+    amount_paid: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="LKR")
+    slip_image_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    bank_reference: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)  # 'pending', 'approved', 'rejected'
+    admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Relationship to parent User
+    user: Mapped["User"] = relationship("User", back_populates="bank_payment_slips")
+
+    def __repr__(self) -> str:
+        return f"<BankPaymentSlip(id={self.id}, user_id={self.user_id}, plan='{self.target_plan}', status='{self.status}')>"
+
+
+class OnlinePaymentOrder(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Online Payment Gateway Orders (PayHere, etc.).
+    Keeps audit records of generated hashes, IPN callbacks, payment status,
+    and gateway transaction identifiers.
+    """
+    __tablename__ = "online_payment_orders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    order_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    target_plan: Mapped[str] = mapped_column(String(50), nullable=False)  # 'pro', 'elite'
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), nullable=False, default="LKR")
+    gateway: Mapped[str] = mapped_column(String(50), nullable=False, default="payhere")
+    status: Mapped[str] = mapped_column(String(50), default="initiated", nullable=False)  # 'initiated', 'pending', 'success', 'failed', 'canceled'
+    payhere_payment_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    payment_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # VISA, MASTER, etc.
+    card_holder_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    card_no_masked: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 2: Success, 0: Pending, -1: Canceled, -2: Failed
+    status_message: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    raw_ipn_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationship to parent User
+    user: Mapped["User"] = relationship("User", back_populates="online_orders")
+
+    def __repr__(self) -> str:
+        return f"<OnlinePaymentOrder(order_id='{self.order_id}', user_id={self.user_id}, plan='{self.target_plan}', status='{self.status}')>"
 
