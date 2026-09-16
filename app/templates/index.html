@@ -921,6 +921,9 @@
     <!-- 2. Free Guest Exploration Banner Component -->
     {% include 'components/guest_banner.html' %}
 
+    <!-- 2.05 Active Payment / Slip In-Progress Banner Component -->
+    {% include 'components/pending_order_banner.html' %}
+
     <!-- 2.1 Mobile & Tablet Responsive View Switcher (Visible on < lg when tailoredData exists) -->
     <template x-if="tailoredData">
       <div class="lg:hidden col-span-1 sticky top-16 z-30 bg-slate-900/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between gap-2">

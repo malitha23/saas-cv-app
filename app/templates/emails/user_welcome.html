@@ -1,0 +1,35 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="text-align: center; margin-bottom: 24px;">
+    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 50%; font-size: 24px; text-align: center; margin-bottom: 12px;">
+      🚀
+    </div>
+    <h1 style="font-size: 22px; margin-bottom: 8px;">Welcome to DreemFolio AI, {{ full_name }}!</h1>
+    <p style="font-size: 14px; color: #94a3b8; max-width: 440px; margin: 0 auto;">
+      Your account is ready. You now have access to an AI-powered resume architect designed to help you land top-tier interviews.
+    </p>
+  </div>
+
+  <div class="meta-box" style="margin-top: 10px;">
+    <h3 style="font-size: 14px; margin-bottom: 12px; color: #f1f5f9; text-transform: uppercase; letter-spacing: 0.5px;">
+      ✨ What you can do right now:
+    </h3>
+    <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 13px; line-height: 1.8;">
+      <li><strong>ATS Resume Tailoring:</strong> Match your resume against any Job Description using Google XYZ action verbs.</li>
+      <li><strong>8 Executive Visual Themes:</strong> Choose between classic single-column ATS layouts and modern designer templates.</li>
+      <li><strong>AI Cover Letter Generator:</strong> Instantly craft tailored, role-specific cover letters.</li>
+      <li><strong>Live Developer Portfolio:</strong> Generate a shareable personal web portfolio with QR smart card.</li>
+    </ul>
+  </div>
+
+  <div style="text-align: center; margin: 30px 0 20px 0;">
+    <a href="{{ base_url }}/app" class="cta-btn" target="_blank">
+      Launch My Dashboard →
+    </a>
+  </div>
+
+  <p style="text-align: center; font-size: 12px; color: #64748b; margin-top: 20px;">
+    Need assistance? Our support team is here to help at any time. Simply reply to this email or visit our Help Center.
+  </p>
+{% endblock %}

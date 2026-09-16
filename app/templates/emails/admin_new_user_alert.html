@@ -1,0 +1,42 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="margin-bottom: 20px;">
+    <span style="display: inline-block; padding: 4px 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; font-size: 11px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+      Admin Operational Alert
+    </span>
+    <h1 style="font-size: 20px; margin-bottom: 6px;">👤 New SaaS User Registered</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      A new user has just registered on DreemFolio AI.
+    </p>
+  </div>
+
+  <div class="meta-box">
+    <div class="meta-row">
+      <span class="meta-label">Full Name</span>
+      <span class="meta-value">{{ full_name }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Email Address</span>
+      <span class="meta-value highlight">{{ user_email }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Auth Provider</span>
+      <span class="meta-value">{{ provider | default('Email') | upper }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Initial Tier</span>
+      <span class="meta-value">Free Starter</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Registration Time</span>
+      <span class="meta-value">{{ created_at }}</span>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 26px;">
+    <a href="{{ base_url }}/paneladmin" class="cta-btn" target="_blank" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+      Open Admin Control Center →
+    </a>
+  </div>
+{% endblock %}

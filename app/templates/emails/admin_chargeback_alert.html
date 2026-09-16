@@ -1,0 +1,54 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="margin-bottom: 20px;">
+    <span style="display: inline-block; padding: 4px 10px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+      🚨 High Priority Security Alert
+    </span>
+    <h1 style="font-size: 20px; margin-bottom: 6px; color: #f87171;">⚠️ PayHere Chargeback Dispute Received</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      A bank dispute / chargeback (Status: -3) was reported by PayHere. The user's subscription access has been immediately revoked to Free tier.
+    </p>
+  </div>
+
+  <div class="meta-box" style="border-color: rgba(239, 68, 68, 0.3);">
+    <div class="meta-row">
+      <span class="meta-label">Customer Email</span>
+      <span class="meta-value highlight" style="color: #f87171;">{{ user_email }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Customer Name</span>
+      <span class="meta-value">{{ full_name }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Order Reference</span>
+      <span class="meta-value">{{ order_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">PayHere Payment ID</span>
+      <span class="meta-value highlight">{{ payment_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Disputed Amount</span>
+      <span class="meta-value" style="color: #f87171; font-weight: 700; font-size: 14px;">{{ currency }} {{ "%.2f"|format(amount) }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Revoked Tier</span>
+      <span class="meta-value">{{ target_plan|upper }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Security Action Taken</span>
+      <span class="meta-value" style="color: #4ade80;">Downgraded to Free Starter (Expired)</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Timestamp</span>
+      <span class="meta-value">{{ alert_date }}</span>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 26px;">
+    <a href="{{ base_url }}/paneladmin" class="cta-btn" target="_blank" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
+      Inspect Account in Admin Panel →
+    </a>
+  </div>
+{% endblock %}

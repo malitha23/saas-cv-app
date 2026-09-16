@@ -1,0 +1,63 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="text-align: center; margin-bottom: 24px;">
+    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 50%; font-size: 24px; text-align: center; margin-bottom: 12px;">
+      🎉
+    </div>
+    <h1 style="font-size: 22px; margin-bottom: 6px;">Your Subscription is Active!</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      Hello <strong>{{ full_name }}</strong>, thank you for subscribing to DreemFolio AI. Your account has been upgraded successfully.
+    </p>
+  </div>
+
+  <div class="alert-box alert-success" style="text-align: center;">
+    <strong>Plan Activated:</strong> {{ plan_title }} ({{ duration_days }} Days Access)
+  </div>
+
+  <div class="meta-box">
+    <div class="meta-row">
+      <span class="meta-label">Order Reference</span>
+      <span class="meta-value">{{ order_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">PayHere Payment ID</span>
+      <span class="meta-value">{{ payment_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Amount Paid</span>
+      <span class="meta-value highlight" style="color: #34d399; font-size: 15px;">{{ currency }} {{ "%.2f"|format(amount) }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Payment Date</span>
+      <span class="meta-value">{{ payment_date }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Status</span>
+      <span class="meta-value" style="color: #34d399;">PAID & VERIFIED</span>
+    </div>
+  </div>
+
+  <div class="meta-box" style="background: rgba(15, 23, 42, 0.6);">
+    <h3 style="font-size: 13px; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase;">
+      🔓 Unlocked Premium Features:
+    </h3>
+    <ul style="margin: 0; padding-left: 18px; color: #94a3b8; font-size: 13px; line-height: 1.8;">
+      <li>Unlimited ATS Resume Tailoring & Google XYZ Enhancements</li>
+      <li>Clean, Watermark-Free PDF & Cover Letter Downloads</li>
+      <li>All 8 Executive Visual Designer Templates</li>
+      <li>Personal Developer Portfolio Website & Live Link</li>
+      <li>AI Career Copilot & Job Application Tracker</li>
+    </ul>
+  </div>
+
+  <div style="text-align: center; margin: 30px 0 10px 0;">
+    <a href="{{ base_url }}/app" class="cta-btn" target="_blank">
+      Go to My Dashboard →
+    </a>
+  </div>
+
+  <p style="text-align: center; font-size: 12px; color: #64748b; margin-top: 20px;">
+    Need an official tax invoice or have billing questions? Contact us at support@dreemfolio.com.
+  </p>
+{% endblock %}

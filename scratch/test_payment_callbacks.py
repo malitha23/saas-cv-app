@@ -106,6 +106,8 @@ def test_payment_callbacks_and_status_pages():
         print("✅ Payment Success Page rendering verified!")
 
         # 8. Test Payment Status Page - Canceled
+        order.status = "canceled"
+        db.commit()
         status_canceled = client.get(f"/payment/status?order_id={order_id}&status=canceled")
         assert status_canceled.status_code == 200
         assert "Payment Canceled" in status_canceled.text

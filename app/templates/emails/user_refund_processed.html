@@ -1,0 +1,59 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="text-align: center; margin-bottom: 24px;">
+    <div style="display: inline-block; width: 48px; height: 48px; line-height: 48px; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 50%; font-size: 24px; text-align: center; margin-bottom: 12px;">
+      ↩️
+    </div>
+    <h1 style="font-size: 22px; margin-bottom: 6px;">Refund Confirmation</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      Hello <strong>{{ full_name }}</strong>, a refund has been issued for your recent transaction on DreemFolio AI.
+    </p>
+  </div>
+
+  <div class="alert-box alert-warning" style="text-align: center;">
+    <strong>Refund Status:</strong> Successfully processed via PayHere Gateway
+  </div>
+
+  <div class="meta-box">
+    <div class="meta-row">
+      <span class="meta-label">Order Reference</span>
+      <span class="meta-value">{{ order_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">PayHere Refund Ref</span>
+      <span class="meta-value highlight">{{ refund_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Refunded Amount</span>
+      <span class="meta-value highlight" style="color: #fbbf24; font-size: 15px;">{{ currency }} {{ "%.2f"|format(amount) }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Reason</span>
+      <span class="meta-value">{{ reason }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Processed Date</span>
+      <span class="meta-value">{{ refund_date }}</span>
+    </div>
+  </div>
+
+  <div class="meta-box" style="background: rgba(15, 23, 42, 0.6);">
+    <h3 style="font-size: 13px; color: #cbd5e1; margin-bottom: 8px;">
+      ℹ️ Important Banking Notice:
+    </h3>
+    <p style="font-size: 13px; color: #94a3b8; margin: 0; line-height: 1.7;">
+      Depending on your card issuer or bank, the refunded funds typically reflect on your bank account / card statement within <strong>3 to 5 business days</strong>.
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 28px 0 10px 0;">
+    <a href="{{ base_url }}/app" class="cta-btn" target="_blank">
+      Open DreemFolio AI →
+    </a>
+  </div>
+
+  <p style="text-align: center; font-size: 12px; color: #64748b; margin-top: 20px;">
+    If you have any questions regarding your refund, feel free to reply to this email or reach out to support@dreemfolio.com.
+  </p>
+{% endblock %}

@@ -1,0 +1,75 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PENDING PAYMENT & BANK SLIP IN-PROGRESS BANNER COMPONENT               -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<template x-if="currentUser && (currentUser.has_pending_order || currentUser.has_pending_slip)">
+  <div class="col-span-1 lg:col-span-12 p-3.5 bg-gradient-to-r from-amber-950/70 via-slate-900/90 to-amber-950/50 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-lg transition-all animate-fadeIn">
+    
+    <!-- Online Order Pending Section -->
+    <template x-if="currentUser.has_pending_order && currentUser.pending_order">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+          <i data-lucide="credit-card" class="w-4 h-4 animate-pulse"></i>
+        </div>
+        <div>
+          <div class="font-bold text-amber-200 flex items-center gap-2">
+            <span>Payment In Progress</span>
+            <span class="px-2 py-0.5 rounded-md bg-amber-500/30 text-[10px] font-mono font-black uppercase text-amber-100" x-text="currentUser.pending_order.target_plan + ' PLAN'"></span>
+            <span class="text-[11px] text-amber-400/80 font-mono" x-text="'(' + currentUser.pending_order.currency + ' ' + currentUser.pending_order.amount + ')'"></span>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-0.5">
+            Your transaction (Order #<span class="font-mono text-amber-300" x-text="currentUser.pending_order.order_id"></span>) is awaiting confirmation from PayHere. Features will unlock automatically upon approval.
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <!-- Bank Slip Pending Section -->
+    <template x-if="!currentUser.has_pending_order && currentUser.has_pending_slip">
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+          <i data-lucide="receipt" class="w-4 h-4 animate-pulse"></i>
+        </div>
+        <div>
+          <div class="font-bold text-emerald-200 flex items-center gap-2">
+            <span>Bank Deposit Slip Under Review</span>
+            <span class="px-2 py-0.5 rounded-md bg-emerald-500/30 text-[10px] font-mono font-black uppercase text-emerald-100">MANUAL VERIFICATION</span>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-0.5">
+            Our finance team is verifying your deposited payment slip. Your subscription tier will be activated promptly.
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+      <template x-if="currentUser.has_pending_order && currentUser.pending_order">
+        <div class="flex items-center gap-2">
+          <a :href="currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)"
+            class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs shadow flex items-center gap-1.5">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>Check Status</span>
+          </a>
+          <button @click="refreshCurrentUser()"
+            title="Refresh Account Data"
+            class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          </button>
+          <button @click="if (confirm('Do you want to discard this pending payment and start a new checkout?')) { initiatePayHereCheckout(currentUser.pending_order.target_plan, true); }"
+            class="px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400/80 hover:text-amber-300 border border-amber-500/30 rounded-lg transition text-[11px]">
+            Start Fresh
+          </button>
+        </div>
+      </template>
+
+      <template x-if="!currentUser.has_pending_order && currentUser.has_pending_slip">
+        <button @click="openBankTransferCheckout()"
+          class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition text-xs shadow flex items-center gap-1.5">
+          <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+          <span>View Submitted Slips</span>
+        </button>
+      </template>
+    </div>
+
+  </div>
+</template>

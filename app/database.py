@@ -99,7 +99,9 @@ def init_engine():
                 ("daily_interview_count", "INT NOT NULL DEFAULT 0"),
                 ("google_id", "VARCHAR(255) NULL"),
                 ("avatar_url", "VARCHAR(500) NULL"),
-                ("auth_provider", "VARCHAR(50) NOT NULL DEFAULT 'email'")
+                ("auth_provider", "VARCHAR(50) NOT NULL DEFAULT 'email'"),
+                ("reset_password_token", "VARCHAR(255) NULL"),
+                ("reset_password_expires_at", "DATETIME NULL")
             ]
             with engine.connect() as mig_conn:
                 for col_name, col_def in needed_cols:

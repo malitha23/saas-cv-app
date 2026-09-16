@@ -34,6 +34,8 @@ class User(Base):
     auth_provider: Mapped[str] = mapped_column(String(50), default="email", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    reset_password_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationship to user's saved resumes
@@ -139,6 +141,7 @@ class BankPaymentSlip(Base):
     target_plan: Mapped[str] = mapped_column(String(50), nullable=False)  # 'pro', 'elite', 'sprint'
     amount_paid: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="LKR")
+    billing_cycle: Mapped[str] = mapped_column(String(20), nullable=False, default="1m")  # '1m', '3m', '6m', '12m', 'lifetime'
     slip_image_url: Mapped[str] = mapped_column(String(500), nullable=False)
     bank_reference: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)  # 'pending', 'approved', 'rejected'
@@ -165,7 +168,8 @@ class OnlinePaymentOrder(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     order_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
-    target_plan: Mapped[str] = mapped_column(String(50), nullable=False)  # 'pro', 'elite'
+    target_plan: Mapped[str] = mapped_column(String(50), nullable=False)  # 'pro', 'elite', 'sprint'
+    billing_cycle: Mapped[str] = mapped_column(String(20), nullable=False, default="1m")  # '1m', '3m', '6m', '12m', 'lifetime'
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     currency: Mapped[str] = mapped_column(String(10), nullable=False, default="LKR")
     gateway: Mapped[str] = mapped_column(String(50), nullable=False, default="payhere")
@@ -177,6 +181,16 @@ class OnlinePaymentOrder(Base):
     status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 2: Success, 0: Pending, -1: Canceled, -2: Failed
     status_message: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     raw_ipn_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Refund Tracking & Audit Fields
+    payhere_refund_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    refund_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    refunded_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    refunded_by_admin: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Candidate Refund Request Tracking
+    refund_requested: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    refund_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    refund_request_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

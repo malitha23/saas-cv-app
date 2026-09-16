@@ -3598,12 +3598,12 @@
         <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white mb-2">
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-100" x-text="authMode === 'login' ? 'Welcome Back to DreemFolio' : 'Create Your SaaS Account'"></h3>
-        <p class="text-xs text-slate-400" x-text="authMode === 'login' ? 'Sign in to access all templates, downloads & MySQL saved resumes' : 'Register in seconds to unlock unlimited tailoring & cloud persistence'"></p>
+        <h3 class="text-lg font-bold text-slate-100" x-text="authMode === 'login' ? 'Welcome Back to DreemFolio' : (authMode === 'forgot' ? 'Reset Your Password' : 'Create Your SaaS Account')"></h3>
+        <p class="text-xs text-slate-400" x-text="authMode === 'login' ? 'Sign in to access all templates, downloads & MySQL saved resumes' : (authMode === 'forgot' ? 'Enter your email to receive a secure password reset link' : 'Register in seconds to unlock unlimited tailoring & cloud persistence')"></p>
       </div>
 
-      <!-- Mode Switcher Tabs -->
-      <div class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+      <!-- Mode Switcher Tabs (Hidden in forgot mode) -->
+      <div x-show="authMode !== 'forgot'" class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
         <button @click="authMode = 'login'; authError = ''; renderGoogleButton()"
           :class="{'bg-indigo-600 text-white font-bold shadow': authMode === 'login', 'text-slate-400 hover:text-slate-200': authMode !== 'login'}"
           class="py-1.5 rounded-lg transition text-center">
@@ -3617,7 +3617,7 @@
       </div>
 
       <!-- Prompt Alert when triggered by action -->
-      <template x-if="authPromptMessage">
+      <template x-if="authPromptMessage && authMode !== 'forgot'">
         <div class="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs flex items-center gap-2">
           <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 shrink-0"></i>
           <span x-text="authPromptMessage"></span>
@@ -3632,8 +3632,16 @@
         </div>
       </template>
 
-      <!-- Google Sign-In / Registration Action with Native Popup -->
-      <div class="pt-1">
+      <!-- Success Alert for Forgot Password -->
+      <template x-if="forgotSuccess">
+        <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span x-text="forgotSuccess"></span>
+        </div>
+      </template>
+
+      <!-- Google Sign-In / Registration Action with Native Popup (Hidden in forgot mode) -->
+      <div class="pt-1" x-show="authMode !== 'forgot'">
         <!-- 1-Click Direct Google Popup Trigger Button -->
         <button type="button" @click="triggerGoogleSignIn()" :disabled="isSubmittingGoogleAuth"
           class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800/80 text-slate-200 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.99] disabled:opacity-50">
@@ -3655,15 +3663,15 @@
         </button>
       </div>
 
-      <!-- Divider: OR -->
-      <div class="relative flex items-center py-1">
+      <!-- Divider: OR (Hidden in forgot mode) -->
+      <div class="relative flex items-center py-1" x-show="authMode !== 'forgot'">
         <div class="flex-grow border-t border-slate-800"></div>
         <span class="flex-shrink mx-3 text-[10px] uppercase font-extrabold tracking-widest text-slate-500">or with email</span>
         <div class="flex-grow border-t border-slate-800"></div>
       </div>
 
-      <!-- Auth Form -->
-      <form @submit.prevent="submitAuth()" class="space-y-3 pt-1 text-xs">
+      <!-- Auth Form (Login / Register) -->
+      <form x-show="authMode !== 'forgot'" @submit.prevent="submitAuth()" class="space-y-3 pt-1 text-xs">
         <div x-show="authMode === 'register'">
           <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Full Name</label>
           <input type="text" x-model="authForm.full_name" placeholder="Malitha Sayuranga"
@@ -3677,7 +3685,13 @@
         </div>
 
         <div>
-          <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Password</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Password</label>
+            <button type="button" x-show="authMode === 'login'" @click="authMode = 'forgot'; authError = ''; forgotSuccess = ''"
+              class="text-[10px] text-indigo-400 hover:text-indigo-300 hover:underline">
+              Forgot password?
+            </button>
+          </div>
           <input type="password" required minlength="6" x-model="authForm.password" placeholder="••••••••"
             class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none">
           <span x-show="authMode === 'register'" class="text-[9px] text-slate-500 mt-0.5 block">Minimum 6 characters. Encrypted with bcrypt.</span>
@@ -3697,13 +3711,39 @@
         </button>
       </form>
 
+      <!-- Forgot Password Form -->
+      <form x-show="authMode === 'forgot'" @submit.prevent="submitForgotPassword()" class="space-y-3 pt-1 text-xs">
+        <div>
+          <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Registered Email Address</label>
+          <input type="email" required x-model="forgotEmail" placeholder="you@example.com"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none">
+          <span class="text-[9px] text-slate-500 mt-1 block">We'll send a password reset link to this email.</span>
+        </div>
+
+        <button type="submit" :disabled="isSubmittingForgot || !forgotEmail"
+          class="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition">
+          <template x-if="!isSubmittingForgot">
+            <span>Send Reset Link</span>
+          </template>
+          <template x-if="isSubmittingForgot">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Sending Email...</span>
+            </div>
+          </template>
+        </button>
+      </form>
+
       <!-- Toggle prompt -->
       <div class="text-center pt-2 border-t border-slate-800 text-xs text-slate-400">
         <template x-if="authMode === 'login'">
-          <span>Don't have an account? <button @click="authMode = 'register'; authError = ''" class="text-indigo-400 hover:underline font-semibold">Register here</button></span>
+          <span>Don't have an account? <button @click="authMode = 'register'; authError = ''; forgotSuccess = ''" class="text-indigo-400 hover:underline font-semibold">Register here</button></span>
         </template>
         <template x-if="authMode === 'register'">
-          <span>Already have an account? <button @click="authMode = 'login'; authError = ''" class="text-indigo-400 hover:underline font-semibold">Sign In</button></span>
+          <span>Already have an account? <button @click="authMode = 'login'; authError = ''; forgotSuccess = ''" class="text-indigo-400 hover:underline font-semibold">Sign In</button></span>
+        </template>
+        <template x-if="authMode === 'forgot'">
+          <span>Remember your password? <button @click="authMode = 'login'; authError = ''; forgotSuccess = ''" class="text-indigo-400 hover:underline font-semibold">Back to Sign In</button></span>
         </template>
       </div>
 

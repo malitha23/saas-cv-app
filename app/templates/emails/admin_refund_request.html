@@ -1,0 +1,57 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="margin-bottom: 20px;">
+    <span style="display: inline-block; padding: 4px 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+      Customer Action Required
+    </span>
+    <h1 style="font-size: 20px; margin-bottom: 6px;">⚠️ Customer Refund Requested</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      A customer has submitted an online refund request for a completed PayHere transaction.
+    </p>
+  </div>
+
+  <div class="meta-box">
+    <div class="meta-row">
+      <span class="meta-label">Customer Name</span>
+      <span class="meta-value">{{ full_name }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Customer Email</span>
+      <span class="meta-value highlight">{{ user_email }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Target Plan</span>
+      <span class="meta-value" style="color: #a78bfa; font-weight: 700;">{{ target_plan | upper }} PLAN</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Order Amount</span>
+      <span class="meta-value" style="color: #fbbf24; font-weight: 700; font-size: 14px;">{{ currency }} {{ "%.2f"|format(amount) }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Order Reference</span>
+      <span class="meta-value">{{ order_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">PayHere Payment ID</span>
+      <span class="meta-value">{{ payment_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Request Timestamp</span>
+      <span class="meta-value">{{ request_date }}</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 18px; padding: 14px; background: #0b1120; border: 1px solid #1e293b; border-left: 3px solid #f59e0b; border-radius: 8px;">
+    <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #f59e0b; margin: 0 0 6px 0; letter-spacing: 0.5px;">Customer Stated Reason:</p>
+    <p style="font-size: 13px; color: #e2e8f0; margin: 0; line-height: 1.5; font-style: italic;">
+      "{{ reason }}"
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-top: 26px;">
+    <a href="{{ base_url }}/paneladmin" class="cta-btn" target="_blank" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #020617; font-weight: 800;">
+      Review in Admin Center & Issue Refund →
+    </a>
+  </div>
+{% endblock %}

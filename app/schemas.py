@@ -278,6 +278,26 @@ class UserLoginRequest(BaseModel):
     password: str = Field(..., description="User password")
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(..., description="User registered email address")
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., description="Cryptographic reset token")
+    new_password: str = Field(..., min_length=6, description="New password (at least 6 characters)")
+
+
+class PendingOrderInfo(BaseModel):
+    order_id: str
+    target_plan: str
+    amount: float
+    currency: str
+    gateway: str
+    status: str
+    created_at: str
+    status_url: str
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -310,6 +330,10 @@ class UserResponse(BaseModel):
     lifetime_visual_downloads_remaining: Optional[int] = 1
     lifetime_cover_letter_downloads_count: int = 0
     lifetime_cover_letter_downloads_remaining: Optional[int] = 3
+    # Pending Payment Protection Fields
+    has_pending_order: bool = False
+    pending_order: Optional[PendingOrderInfo] = None
+    has_pending_slip: bool = False
     # Google OAuth2 Fields
     avatar_url: Optional[str] = None
     auth_provider: str = "email"
@@ -364,6 +388,9 @@ class SubscriptionStatusResponse(BaseModel):
     lifetime_cover_letter_downloads_count: int = 0
     lifetime_cover_letter_downloads_limit: Optional[int] = 3
     lifetime_cover_letter_downloads_remaining: Optional[int] = None
+    has_pending_order: bool = False
+    pending_order: Optional[PendingOrderInfo] = None
+    has_pending_slip: bool = False
     features: Dict[str, Any]
 
 
@@ -724,10 +751,12 @@ class ConferenceTTSRequest(BaseModel):
 
 class PayHereInitiateRequest(BaseModel):
     plan: str = Field(..., description="'pro', 'elite', or 'sprint'")
+    billing_cycle: Optional[str] = Field(default="1m", description="'1m', '3m', '6m', '12m', or 'lifetime'")
     currency: Optional[str] = Field(default="LKR", description="'LKR' or 'USD'")
     phone: Optional[str] = Field(default=None)
     address: Optional[str] = Field(default=None)
     city: Optional[str] = Field(default=None)
+    force: bool = Field(default=False, description="Set to True to override existing in-flight pending order")
 
 
 class PayHereInitiateResponse(BaseModel):
@@ -739,3 +768,46 @@ class PayHereInitiateResponse(BaseModel):
     amount: float
     currency: str
     plan: str
+    billing_cycle: str = "1m"
+
+
+class AdminRefundRequest(BaseModel):
+    order_id: str = Field(..., description="Unique order reference to refund (e.g. ORD-2026...)")
+    reason: str = Field(..., min_length=3, max_length=255, description="Administrative reason for processing the refund")
+    amount: Optional[float] = Field(default=None, description="Optional partial refund amount. If omitted, full order amount is refunded")
+
+
+class AdminRefundResponse(BaseModel):
+    success: bool
+    order_id: str
+    refund_id: Optional[str] = None
+    message: str
+
+
+class UserRefundRequest(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=500, description="Reason for requesting refund")
+
+
+class BillingDiscountRule(BaseModel):
+    discount_percent: float = Field(default=0, ge=0, le=100)
+    badge: Optional[str] = None
+
+
+class LifetimePriceRule(BaseModel):
+    pro_price_lkr: float = Field(default=14900, ge=0)
+    elite_price_lkr: float = Field(default=24900, ge=0)
+    pro_price_usd: float = Field(default=149, ge=0)
+    elite_price_usd: float = Field(default=249, ge=0)
+    badge: Optional[str] = None
+
+
+class BillingDiscountsConfig(BaseModel):
+    rule_3m: BillingDiscountRule = Field(alias="3m")
+    rule_6m: BillingDiscountRule = Field(alias="6m")
+    rule_12m: BillingDiscountRule = Field(alias="12m")
+    lifetime: LifetimePriceRule
+
+
+class PayHereSubscriptionActionRequest(BaseModel):
+    subscription_id: str = Field(..., description="PayHere Subscription reference identifier")
+

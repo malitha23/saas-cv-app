@@ -1,0 +1,54 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+  <div style="margin-bottom: 20px;">
+    <span style="display: inline-block; padding: 4px 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+      Audit Log Notice
+    </span>
+    <h1 style="font-size: 20px; margin-bottom: 6px;">🔔 Refund Executed via PayHere</h1>
+    <p style="font-size: 14px; color: #94a3b8;">
+      A customer refund has been successfully dispatched to the PayHere Payment Gateway.
+    </p>
+  </div>
+
+  <div class="meta-box">
+    <div class="meta-row">
+      <span class="meta-label">Customer Name</span>
+      <span class="meta-value">{{ full_name }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Customer Email</span>
+      <span class="meta-value highlight">{{ user_email }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Order Reference</span>
+      <span class="meta-value">{{ order_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">PayHere Refund Ref</span>
+      <span class="meta-value highlight">{{ refund_id }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Refunded Amount</span>
+      <span class="meta-value" style="color: #fbbf24; font-weight: 700; font-size: 14px;">{{ currency }} {{ "%.2f"|format(amount) }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Executed By</span>
+      <span class="meta-value">{{ admin_email }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Reason / Notes</span>
+      <span class="meta-value">{{ reason }}</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-label">Timestamp</span>
+      <span class="meta-value">{{ refund_date }}</span>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 26px;">
+    <a href="{{ base_url }}/paneladmin" class="cta-btn" target="_blank" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+      View Orders in Admin Center →
+    </a>
+  </div>
+{% endblock %}

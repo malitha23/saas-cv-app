@@ -109,6 +109,36 @@
         </div>
       </template>
 
+      <!-- Active Pending Online Order Notice (If user has an active online checkout) -->
+      <template x-if="currentUser?.has_pending_order && currentUser?.pending_order">
+        <div class="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200 shadow-md">
+          <div class="flex items-start sm:items-center gap-3">
+            <div class="p-2 rounded-xl bg-amber-500/20 text-amber-400 shrink-0">
+              <i data-lucide="clock" class="w-5 h-5 animate-pulse"></i>
+            </div>
+            <div class="space-y-0.5">
+              <div class="font-bold text-amber-100 flex items-center gap-2">
+                <span>Active Payment in Progress</span>
+                <span class="px-2 py-0.5 rounded-full bg-amber-500/30 text-[10px] font-mono font-black uppercase" x-text="currentUser.pending_order.target_plan + ' PLAN'"></span>
+              </div>
+              <p class="text-[11px] text-amber-300/80">
+                Order <span class="font-mono font-bold" x-text="currentUser.pending_order.order_id"></span> is awaiting gateway confirmation. Avoid paying twice.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <a :href="currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)"
+              class="flex-1 sm:flex-initial px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition text-center shadow">
+              Check Status
+            </a>
+            <button @click="if (confirm('Are you sure you want to discard this pending checkout and start fresh?')) { initiatePayHereCheckout(currentUser.pending_order.target_plan, true); }"
+              class="px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-amber-300/80 hover:text-amber-200 border border-amber-500/30 rounded-xl transition font-medium text-[11px]">
+              Start Fresh
+            </button>
+          </div>
+        </div>
+      </template>
+
       <!-- Payment Method Mode Selector (Online vs Direct Bank Transfer) -->
       <div class="flex items-center justify-center pt-1">
         <div class="inline-flex p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-bold shadow-inner">
@@ -123,6 +153,53 @@
                   :class="pricingPaymentMethod === 'bank_transfer' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' : 'text-slate-400 hover:text-slate-200'">
             <i data-lucide="landmark" class="w-4 h-4"></i>
             <span>🏛️ Direct Bank Deposit / Transfer (LKR)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Duration & Multi-Month Discount Selector Bar -->
+      <div class="flex flex-col items-center justify-center gap-1.5 pt-1">
+        <div class="inline-flex flex-wrap items-center justify-center p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold shadow-inner gap-1 max-w-full">
+          <!-- 1 Month -->
+          <button type="button" @click="selectedBillingCycle = '1m'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5"
+                  :class="selectedBillingCycle === '1m' ? 'bg-indigo-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'">
+            <span>1 Month</span>
+          </button>
+          
+          <!-- 3 Months -->
+          <button type="button" @click="selectedBillingCycle = '3m'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5"
+                  :class="selectedBillingCycle === '3m' ? 'bg-indigo-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'">
+            <span>3 Months</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-wide"
+                  x-text="'-' + (billingDiscounts['3m']?.discount_percent || 15) + '%'"></span>
+          </button>
+
+          <!-- 6 Months -->
+          <button type="button" @click="selectedBillingCycle = '6m'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5"
+                  :class="selectedBillingCycle === '6m' ? 'bg-indigo-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'">
+            <span>6 Months</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-wide"
+                  x-text="'-' + (billingDiscounts['6m']?.discount_percent || 25) + '%'"></span>
+          </button>
+
+          <!-- 12 Months / 1 Year -->
+          <button type="button" @click="selectedBillingCycle = '12m'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5"
+                  :class="selectedBillingCycle === '12m' ? 'bg-indigo-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'">
+            <span>1 Year</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-black tracking-wide"
+                  x-text="'-' + (billingDiscounts['12m']?.discount_percent || 40) + '%'"></span>
+          </button>
+
+          <!-- Lifetime Pass -->
+          <button type="button" @click="selectedBillingCycle = 'lifetime'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5"
+                  :class="selectedBillingCycle === 'lifetime' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow font-black' : 'text-amber-300/80 hover:text-amber-200'">
+            <span>👑 Lifetime</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 text-[9px] font-black uppercase">Forever</span>
           </button>
         </div>
       </div>
@@ -224,7 +301,7 @@
                       </div>
                       <div class="text-xs font-mono font-extrabold mt-1"
                            :class="p.plan_key === 'pro' ? 'text-indigo-300' : 'text-amber-300'"
-                           x-text="p.price_display + ' ' + p.period_display"></div>
+                           x-text="getCalculatedPrice(p.plan_key).price_display + ' ' + getCalculatedPrice(p.plan_key).period_display"></div>
                     </button>
                   </template>
                 </div>
@@ -235,13 +312,13 @@
                 <div>
                   <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Exact Deposit Amount:</span>
                   <div class="text-base font-black text-white font-mono mt-0.5"
-                       x-text="getSelectedBankPlan()?.price_display || 'Rs. 990'"></div>
+                       x-text="getCalculatedPrice(selectedBankPlan).price_display"></div>
                 </div>
                 <div class="text-right">
                   <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
                         :class="selectedBankPlan === 'elite' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'"
-                        x-text="(selectedBankPlan || 'pro').toUpperCase() + ' PLAN (30 DAYS)'"></span>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Instant 1-Click Activation</p>
+                        x-text="(selectedBankPlan || 'pro').toUpperCase() + ' PLAN (' + (selectedBillingCycle === 'lifetime' ? 'LIFETIME 100Y' : (selectedBillingCycle === '12m' ? '365 DAYS' : (selectedBillingCycle === '6m' ? '180 DAYS' : (selectedBillingCycle === '3m' ? '90 DAYS' : '30 DAYS')))) + ')'"></span>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Instant Activation After Verification</p>
                 </div>
               </div>
 
@@ -339,15 +416,17 @@
                 <span class="text-xs font-bold uppercase tracking-wider plan-title"
                   :class="p.is_popular ? 'text-indigo-300' : (p.plan_key === 'elite' ? 'text-amber-400' : 'text-slate-400')"
                   x-text="p.title"></span>
-                <span x-show="p.badge && !p.is_popular" class="px-2 py-0.5 text-[9px] font-semibold rounded plan-badge"
+                <span x-show="selectedBillingCycle !== '1m' && p.plan_key !== 'free'" class="px-2 py-0.5 text-[9px] font-black rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm"
+                  x-text="getCalculatedPrice(p.plan_key).badge"></span>
+                <span x-show="selectedBillingCycle === '1m' && p.badge && !p.is_popular" class="px-2 py-0.5 text-[9px] font-semibold rounded plan-badge"
                   :class="p.plan_key === 'elite' ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-slate-800 text-slate-300'"
                   x-text="p.badge"></span>
               </div>
 
               <div>
-                <span class="text-3xl font-black plan-price" :class="p.is_popular ? 'text-white' : 'text-white'" x-text="p.price_display"></span>
-                <span class="text-xs text-slate-400 plan-period" x-text="' ' + p.period_display"></span>
-                <p x-show="p.sub_billing_text" class="text-[11px] text-slate-400 plan-sub-billing" x-text="p.sub_billing_text"></p>
+                <span class="text-3xl font-black plan-price text-white" x-text="getCalculatedPrice(p.plan_key).price_display"></span>
+                <span class="text-xs text-slate-400 plan-period" x-text="' ' + getCalculatedPrice(p.plan_key).period_display"></span>
+                <p x-show="getCalculatedPrice(p.plan_key).sub_billing_text" class="text-[11px] text-emerald-400 font-medium plan-sub-billing" x-text="getCalculatedPrice(p.plan_key).sub_billing_text"></p>
               </div>
 
               <p class="text-xs plan-desc" :class="p.is_popular ? 'text-slate-300' : 'text-slate-400'" x-text="p.description"></p>
@@ -375,22 +454,24 @@
               </template>
 
               <template x-if="p.plan_key === 'pro'">
-                <button @click="upgradeSubscription('pro', 1)"
+                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('pro'); }"
                   :disabled="currentUser?.plan_tier === 'pro'"
-                  :class="currentUser?.plan_tier === 'pro' ? 'bg-indigo-900/50 text-indigo-300 cursor-default' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50'"
+                  :class="currentUser?.plan_tier === 'pro' ? 'bg-indigo-900/50 text-indigo-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50')"
                   class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
-                  <i x-show="currentUser?.plan_tier !== 'pro'" data-lucide="zap" class="w-4 h-4"></i>
-                  <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : (p.button_text || 'Upgrade to Pro ($9/mo)')"></span>
+                  <i x-show="currentUser?.plan_tier !== 'pro' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'pro')" data-lucide="zap" class="w-4 h-4"></i>
+                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
+                  <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Pro (' + getCalculatedPrice('pro').price_display + ')'))"></span>
                 </button>
               </template>
 
               <template x-if="p.plan_key === 'elite'">
-                <button @click="upgradeSubscription('elite', 1)"
+                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('elite'); }"
                   :disabled="currentUser?.plan_tier === 'elite'"
-                  :class="currentUser?.plan_tier === 'elite' ? 'bg-amber-900/40 text-amber-300 cursor-default' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20'"
+                  :class="currentUser?.plan_tier === 'elite' ? 'bg-amber-900/40 text-amber-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20')"
                   class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
-                  <i x-show="currentUser?.plan_tier !== 'elite'" data-lucide="crown" class="w-4 h-4"></i>
-                  <span x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : (p.button_text || 'Upgrade to Elite ($19/mo)')"></span>
+                  <i x-show="currentUser?.plan_tier !== 'elite' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'elite')" data-lucide="crown" class="w-4 h-4"></i>
+                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
+                  <span x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Elite (' + getCalculatedPrice('elite').price_display + ')'))"></span>
                 </button>
               </template>
             </div>
@@ -410,9 +491,10 @@
             <p class="text-[11px] text-slate-400">Get 7 full days of Pro Career access without a monthly subscription.</p>
           </div>
         </div>
-        <button @click="upgradeSubscription('sprint', 1)"
-          class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-violet-300 border border-violet-500/30 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm">
-          <span x-text="'7-Day Sprint Pass (' + (activeSprintPrice || '$4.99') + ')'"></span>
+        <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { upgradeSubscription('sprint', 1); }"
+          :class="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-800 hover:bg-slate-700 text-violet-300 border-violet-500/30'"
+          class="px-4 py-2 border rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm">
+          <span x-text="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' ? '⏳ Pass Payment In Progress' : ('7-Day Sprint Pass (' + (activeSprintPrice || '$4.99') + ')')"></span>
         </button>
       </div>
       </div>

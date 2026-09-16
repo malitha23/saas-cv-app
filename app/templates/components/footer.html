@@ -77,16 +77,49 @@
               Privacy Policy
             </a>
           </li>
+          <li>
+            <a href="/refund" 
+               @click="if (typeof openLegalModal === 'function') { $event.preventDefault(); openLegalModal('refund'); }"
+               class="text-slate-400 hover:text-purple-400 transition-colors">
+              Refund & Cancellation Policy
+            </a>
+          </li>
         </ul>
       </div>
 
     </div>
 
-    <!-- Divider & Bottom Centered Copyright -->
-    <div class="border-t border-slate-800/80 mt-10 pt-6 text-center">
-      <p class="text-xs text-slate-500">
-        &copy; 2026 DreemFolio AI. All rights reserved.
-      </p>
+    <!-- Payment Methods & Security Trust Badges -->
+    <div class="border-t border-slate-800/80 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+        <span>Secured by 256-bit SSL • Official PayHere Payment Gateway Partner</span>
+      </div>
+      <div class="flex items-center flex-wrap gap-2 text-slate-400">
+        <span class="text-slate-500 font-semibold">Accepted Payments:</span>
+        <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-300 font-bold">VISA</span>
+        <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-300 font-bold">MasterCard</span>
+        <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-300 font-bold">Amex</span>
+        <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-300 font-bold">eZ Cash</span>
+        <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-[10px] text-slate-300 font-bold">Bank Transfer</span>
+      </div>
+    </div>
+
+    <!-- Bottom Centered Copyright & Contact -->
+    <div class="border-t border-slate-800/60 mt-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div class="space-y-0.5 text-center sm:text-left">
+        <p>&copy; 2026 DreemFolio AI (Pvt) Ltd. All rights reserved.</p>
+        <p class="text-[10px] text-slate-600">Level 12, West Tower, World Trade Center, Echelon Square, Colombo 00100, Sri Lanka</p>
+      </div>
+      <div class="text-center sm:text-right space-y-0.5">
+        <p>
+          Hotline: <a href="tel:+94112345678" class="text-slate-400 hover:text-indigo-400 transition font-mono">+94 11 234 5678</a> • 
+          Support: <a href="mailto:support@dreemfolio.com" class="text-slate-400 hover:text-indigo-400 transition">support@dreemfolio.com</a>
+        </p>
+        <p class="text-[10px] text-slate-600">
+          Billing & Invoicing: <a href="mailto:billing@dreemfolio.com" class="text-slate-400 hover:text-indigo-400 transition">billing@dreemfolio.com</a>
+        </p>
+      </div>
     </div>
 
   </div>

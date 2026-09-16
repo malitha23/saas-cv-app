@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{ subject | default("DreemFolio AI Notification") }}</title>
+  <style>
+    /* Reset & Client-Specific Styles */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100% !important;
+      height: 100% !important;
+      background-color: #0b0f19;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      background-color: #0b0f19;
+      padding: 40px 10px;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background-color: #111827;
+      border: 1px solid #1f293d;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    .header-banner {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      padding: 32px 30px;
+      text-align: center;
+      border-bottom: 1px solid #3730a3;
+    }
+    .logo-badge {
+      display: inline-block;
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .logo-tag {
+      color: #a78bfa;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 4px;
+    }
+    .body-content {
+      padding: 36px 32px;
+      color: #cbd5e1;
+      font-size: 15px;
+    }
+    h1, h2, h3 {
+      color: #f8fafc;
+      margin-top: 0;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    p {
+      margin: 0 0 16px 0;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .meta-box {
+      background-color: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+    }
+    .meta-row {
+      display: table;
+      width: 100%;
+      padding: 6px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .meta-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .meta-label {
+      display: table-cell;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: 40%;
+    }
+    .meta-value {
+      display: table-cell;
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: right;
+      width: 60%;
+    }
+    .meta-value.highlight {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 14px 32px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      margin: 10px 0;
+    }
+    .alert-box {
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin: 20px 0;
+    }
+    .alert-info {
+      background-color: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #c7d2fe;
+    }
+    .alert-success {
+      background-color: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+    }
+    .alert-warning {
+      background-color: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+    }
+    .footer {
+      background-color: #0c1222;
+      border-top: 1px solid #1e293b;
+      padding: 24px 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .footer a {
+      color: #818cf8;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <!-- Header -->
+      <div class="header-banner">
+        <a href="{{ base_url | default('http://localhost:8000') }}" class="logo-badge" target="_blank">
+          ✨ DreemFolio <span style="color: #a855f7;">AI</span>
+        </a>
+        <span class="logo-tag">AI Career Architect & Portfolio Studio</span>
+      </div>
+
+      <!-- Main Body Block -->
+      <div class="body-content">
+        {% block content %}{% endblock %}
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p style="margin-bottom: 8px; font-size: 12px; color: #64748b;">
+          © {{ current_year | default(2026) }} DreemFolio AI. All rights reserved.
+        </p>
+        <p style="margin-bottom: 0; font-size: 11px; color: #475569;">
+          <a href="{{ base_url }}/privacy">Privacy Policy</a> •
+          <a href="{{ base_url }}/terms">Terms of Service</a> •
+          <a href="{{ base_url }}/refund">Refund Policy</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

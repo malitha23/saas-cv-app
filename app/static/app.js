@@ -56,6 +56,9 @@ function resumeApp() {
     authForm: { email: '', password: '', full_name: '' },
     authError: '',
     isSubmittingAuth: false,
+    forgotEmail: '',
+    isSubmittingForgot: false,
+    forgotSuccess: '',
     googleClientId: '',
     isGoogleAuthEnabled: false,
     isSubmittingGoogleAuth: false,
@@ -315,6 +318,21 @@ function resumeApp() {
     bankSlipSuccess: false,
     myPendingBankSlip: null,
 
+    // Multi-Duration Billing & Discounts State
+    selectedBillingCycle: '1m', // '1m', '3m', '6m', '12m', 'lifetime'
+    billingDiscounts: {
+      "3m": { "discount_percent": 15, "badge": "Save 15%" },
+      "6m": { "discount_percent": 25, "badge": "Save 25%" },
+      "12m": { "discount_percent": 40, "badge": "Save 40% • Best Value" },
+      "lifetime": {
+        "pro_price_lkr": 14900,
+        "elite_price_lkr": 24900,
+        "pro_price_usd": 149,
+        "elite_price_usd": 249,
+        "badge": "Forever Access • 0 Renewals"
+      }
+    },
+
     get filteredAdminUsers() {
       if (!this.adminUserSearchQuery) return this.adminUsersList;
       const q = this.adminUserSearchQuery.toLowerCase();
@@ -372,6 +390,7 @@ function resumeApp() {
 
       // Fetch dynamic subscription plans from MySQL
       await this.loadDynamicPlans();
+      await this.loadBillingDiscounts();
 
       // Check for PayHere / Payment Gateway Return Redirects
       try {
@@ -2087,6 +2106,35 @@ function resumeApp() {
       }
     },
 
+    async submitForgotPassword() {
+      this.authError = '';
+      this.forgotSuccess = '';
+      if (!this.forgotEmail || !this.forgotEmail.includes('@')) {
+        this.authError = 'Please enter a valid email address.';
+        return;
+      }
+      this.isSubmittingForgot = true;
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: this.forgotEmail.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to request password reset link.');
+        }
+        this.forgotSuccess = data.message || 'If an account exists with this email, a reset link has been sent to your inbox.';
+      } catch (err) {
+        this.authError = err.message;
+      } finally {
+        this.isSubmittingForgot = false;
+        this.$nextTick(() => {
+          if (window.lucide) window.lucide.createIcons();
+        });
+      }
+    },
+
     // ─────────────────────────────────────────────────────────────────────────
     // GOOGLE OAUTH2 / GOOGLE IDENTITY SERVICES (GIS) METHODS
     // ─────────────────────────────────────────────────────────────────────────
@@ -2239,6 +2287,9 @@ function resumeApp() {
 
         // Securely store SaaS token
         localStorage.setItem('saas_token', data.access_token);
+        if (data.user) {
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+        }
         this.avatarImgFailed = false;
         this.currentUser = data.user;
         this.showAuthModal = false;
@@ -2255,14 +2306,7 @@ function resumeApp() {
             message: `Welcome, ${data.user.full_name}! You are authenticated via Google (${data.user.email}). Start optimizing your ATS resumes right away!`
           };
           this.showWelcomeModal = true;
-        this.welcomeModalData = {
-          title: '🎉 Welcome to DreemFolio AI!',
-          name: data.user.full_name || 'Innovator',
-          plan: (data.user.plan_tier || 'FREE').toUpperCase(),
-          role: data.user.is_admin ? '🛡️ System Administrator' : 'Candidate Member',
-          message: 'Signed in with Google. All AI ATS tailoring and portfolio tools are now active!'
-        };
-        this.showWelcomeModal = true;
+        }
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       } catch (err) {
         alert(err.message || 'Google authentication error.');
@@ -2309,6 +2353,108 @@ function resumeApp() {
     async selectCountryCurrency(countryCode) {
       this.activeCountryCode = countryCode;
       await this.loadDynamicPlans(countryCode);
+    },
+
+    async loadBillingDiscounts() {
+      try {
+        const res = await fetch('/api/payments/billing/discounts');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === 'object') {
+            this.billingDiscounts = data;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load billing discounts:', e);
+      }
+    },
+
+    getCalculatedPrice(planKey) {
+      if (planKey === 'free' || planKey === 'sprint') {
+        const plan = (this.dynamicPlans || []).find(p => p.plan_key === planKey);
+        return {
+          price_display: plan ? plan.price_display : (planKey === 'free' ? '$0' : (this.activeSprintPrice || '$4.99')),
+          period_display: planKey === 'free' ? '/ forever' : '/ 7-day sprint',
+          sub_billing_text: '',
+          raw_amount: 0,
+          badge: plan?.badge || ''
+        };
+      }
+
+      const cycle = this.selectedBillingCycle || '1m';
+      const currency = (this.activeCurrency || 'LKR').toUpperCase();
+      const symbol = this.activeCurrencySymbol || (currency === 'USD' ? '$' : 'Rs. ');
+
+      // Base monthly rates
+      let baseMonthly = (planKey === 'elite') ? (currency === 'USD' ? 19 : 2490) : (currency === 'USD' ? 9 : 990);
+
+      const discounts = this.billingDiscounts || {};
+
+      if (cycle === '1m') {
+        return {
+          price_display: `${symbol}${currency === 'USD' ? baseMonthly : baseMonthly.toLocaleString()}`,
+          period_display: '/ month',
+          sub_billing_text: 'Billed monthly • One-time prepaid checkout',
+          raw_amount: baseMonthly,
+          badge: planKey === 'pro' ? '🔥 Best Seller' : 'Most Powerful'
+        };
+      } else if (cycle === '3m') {
+        const discPct = discounts['3m']?.discount_percent ?? 15;
+        const total = Math.round(baseMonthly * 3 * (1 - discPct / 100));
+        const perMonth = Math.round(total / 3);
+        return {
+          price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
+          period_display: '/ 3 months',
+          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          raw_amount: total,
+          badge: `Save ${discPct}%`
+        };
+      } else if (cycle === '6m') {
+        const discPct = discounts['6m']?.discount_percent ?? 25;
+        const total = Math.round(baseMonthly * 6 * (1 - discPct / 100));
+        const perMonth = Math.round(total / 6);
+        return {
+          price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
+          period_display: '/ 6 months',
+          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          raw_amount: total,
+          badge: `Save ${discPct}%`
+        };
+      } else if (cycle === '12m') {
+        const discPct = discounts['12m']?.discount_percent ?? 40;
+        const total = Math.round(baseMonthly * 12 * (1 - discPct / 100));
+        const perMonth = Math.round(total / 12);
+        return {
+          price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
+          period_display: '/ year',
+          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          raw_amount: total,
+          badge: `Super Saver ${discPct}% OFF`
+        };
+      } else if (cycle === 'lifetime') {
+        const lifetimeCfg = discounts['lifetime'] || {};
+        let total = 0;
+        if (currency === 'USD') {
+          total = lifetimeCfg[`${planKey}_price_usd`] ?? (planKey === 'elite' ? 249 : 149);
+        } else {
+          total = lifetimeCfg[`${planKey}_price_lkr`] ?? (planKey === 'elite' ? 24900 : 14900);
+        }
+        return {
+          price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
+          period_display: '/ lifetime pass',
+          sub_billing_text: 'Pay once, enjoy forever • 100 Years Unlimited Access',
+          raw_amount: total,
+          badge: lifetimeCfg.badge || '👑 Lifetime Pass'
+        };
+      }
+
+      return {
+        price_display: `${symbol}${baseMonthly}`,
+        period_display: '/ month',
+        sub_billing_text: '',
+        raw_amount: baseMonthly,
+        badge: ''
+      };
     },
 
     async saveResumeToMySQL() {
@@ -2453,7 +2599,7 @@ function resumeApp() {
       }
     },
 
-    async initiatePayHereCheckout(targetPlan) {
+    async initiatePayHereCheckout(targetPlan, force = false) {
       if (!this.currentUser) {
         this.openAuthModal('login', 'Please log in to upgrade your subscription.');
         return;
@@ -2471,13 +2617,31 @@ function resumeApp() {
           },
           body: JSON.stringify({
             plan: targetPlan,
-            currency: currency === 'USD' ? 'USD' : 'LKR'
+            currency: currency === 'USD' ? 'USD' : 'LKR',
+            billing_cycle: this.selectedBillingCycle || '1m',
+            force: Boolean(force)
           })
         });
 
+        if (res.status === 409) {
+          const conflictData = await res.json();
+          const detail = conflictData.detail || {};
+          const msg = typeof detail === 'string' ? detail : (detail.message || 'You already have a payment in progress for this order.');
+          
+          const viewStatus = confirm(`⏳ Active Payment in Progress!\n\n${msg}\n\nClick 'OK' to check your live payment status, or 'Cancel' to close.`);
+          if (viewStatus) {
+            const statusUrl = detail.status_url || (`/payment/status?order_id=${detail.order_id || ''}`);
+            window.location.href = statusUrl;
+            return;
+          }
+          await this.refreshCurrentUser();
+          return;
+        }
+
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.detail || 'Could not initiate PayHere payment');
+          const errorMsg = typeof err.detail === 'string' ? err.detail : (err.detail?.message || 'Could not initiate PayHere payment');
+          throw new Error(errorMsg);
         }
 
         const data = await res.json();
@@ -2502,7 +2666,7 @@ function resumeApp() {
         document.body.appendChild(form);
         form.submit();
       } catch (err) {
-        alert('Payment Gateway Error: ' + err.message);
+        alert('Payment Gateway: ' + err.message);
       } finally {
         this.isSubmittingUpgrade = false;
       }
@@ -2605,22 +2769,14 @@ function resumeApp() {
       this.bankSlipMessage = '';
       const token = localStorage.getItem('saas_token');
 
-      const planObj = this.getSelectedBankPlan();
-      let amount = 990;
-      if (planObj && planObj.price_display) {
-        const parsed = parseInt(planObj.price_display.replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(parsed) && parsed > 0) {
-          amount = parsed;
-        }
-      } else if (this.selectedBankPlan === 'elite') {
-        amount = 2490;
-      }
-
+      const calcPrice = this.getCalculatedPrice(this.selectedBankPlan);
+      let amount = calcPrice?.raw_amount || (this.selectedBankPlan === 'elite' ? 2490 : 990);
       const currency = (this.activeCurrency || 'LKR').toUpperCase();
 
       const formData = new FormData();
       formData.append('file', this.bankSlipFile);
       formData.append('target_plan', this.selectedBankPlan);
+      formData.append('billing_cycle', this.selectedBillingCycle || '1m');
       formData.append('amount_paid', amount);
       formData.append('currency', currency);
       if (this.bankTransferReference) {

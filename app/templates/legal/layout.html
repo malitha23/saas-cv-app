@@ -159,16 +159,43 @@
 
   <!-- FOOTER -->
   <footer class="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-500 no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center space-x-2">
-        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
-        <span>DreemFolio AI Career Operating System • 100% Privacy-First ATS Optimization</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-slate-800/60">
+        <div class="space-y-1.5">
+          <div class="flex items-center space-x-2 text-slate-300 font-semibold">
+            <i data-lucide="building-2" class="w-4 h-4 text-indigo-400"></i>
+            <span>DreemFolio AI (Pvt) Ltd</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Reg: PV 00294812 • Level 12, West Tower, World Trade Center, Echelon Square, Colombo 00100, Sri Lanka</p>
+        </div>
+        <div class="space-y-1.5">
+          <div class="flex items-center space-x-2 text-slate-300 font-semibold">
+            <i data-lucide="phone-call" class="w-4 h-4 text-indigo-400"></i>
+            <span>Merchant Support Desk</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Hotline: <span class="font-mono text-slate-300">+94 11 234 5678</span> • WhatsApp: <span class="font-mono text-slate-300">+94 77 123 4567</span></p>
+          <p class="text-[11px] text-slate-400">Inquiries: <a href="mailto:billing@dreemfolio.com" class="text-indigo-400 hover:underline">billing@dreemfolio.com</a></p>
+        </div>
+        <div class="space-y-1.5">
+          <div class="flex items-center space-x-2 text-slate-300 font-semibold">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+            <span>Payment Gateway Security</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Payments secured by 256-bit SSL encryption. Official PayHere Payment Gateway Partner authorized by the Central Bank of Sri Lanka.</p>
+        </div>
       </div>
-      <div class="flex items-center space-x-4">
-        <a href="/privacy" class="hover:text-slate-300 transition">Privacy</a>
-        <a href="/terms" class="hover:text-slate-300 transition">Terms</a>
-        <a href="/refund" class="hover:text-slate-300 transition">Refunds</a>
-        <a href="/" class="text-indigo-400 hover:underline">Resume Editor</a>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1 text-[11px]">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>&copy; 2026 DreemFolio AI. All rights reserved. 100% Privacy-First ATS Optimization.</span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="/privacy" class="hover:text-slate-300 transition {% if active_page == 'privacy' %}text-indigo-400 font-bold{% endif %}">Privacy Policy</a>
+          <a href="/terms" class="hover:text-slate-300 transition {% if active_page == 'terms' %}text-indigo-400 font-bold{% endif %}">Terms of Service</a>
+          <a href="/refund" class="hover:text-slate-300 transition {% if active_page == 'refund' %}text-indigo-400 font-bold{% endif %}">Refund Policy</a>
+          <a href="/" class="text-indigo-400 hover:underline">Resume Editor</a>
+        </div>
       </div>
     </div>
   </footer>

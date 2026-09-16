@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile & Billing History - DreemFolio AI</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
+  <link rel="apple-touch-icon" href="/static/images/logo.png?v=2">
+
+  <!-- Tailwind CSS CDN & Inter Font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Alpine.js & Lucide Icons -->
+  <script defer src="/static/vendor/alpine.min.js"></script>
+  <script src="/static/vendor/lucide.min.js"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: 'Inter', sans-serif; }
+    code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white"
+  x-data="userProfileApp()" x-init="init()">
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- TOP NAVIGATION HEADER                                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <header class="w-full border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="text-base font-black tracking-tight text-white flex items-center gap-1.5">
+            DreemFolio <span class="text-xs px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-semibold border border-indigo-500/30">AI</span>
+          </span>
+          <span class="text-[10px] text-slate-400 block -mt-0.5">Profile & Billing Portal</span>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a href="/app" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400"></i>
+          <span>App Workspace</span>
+        </a>
+
+        <button @click="signOut()" class="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Sign Out</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN PROFILE & BILLING CONTAINER                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Loading Skeleton -->
+    <div x-show="isLoading" class="p-12 text-center text-slate-400 space-y-3">
+      <div class="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-xs font-semibold">Loading profile, quotas and billing history...</p>
+    </div>
+
+    <!-- Error State -->
+    <div x-show="errorMessage" x-cloak class="p-4 bg-rose-500/15 border border-rose-500/30 text-rose-200 text-xs rounded-2xl flex items-center justify-between">
+      <span x-text="errorMessage"></span>
+      <button @click="init()" class="underline font-bold">Try Again</button>
+    </div>
+
+    <div x-show="!isLoading && currentUser" x-cloak class="space-y-8">
+
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- ROW 1: USER ACCOUNT & CURRENT SUBSCRIPTION TIER CARDS         -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Card A: Account Profile Overview -->
+        <div class="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-5 relative overflow-hidden">
+          <div class="absolute -top-16 -right-16 w-36 h-36 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="flex items-center gap-4">
+            <!-- User Avatar -->
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-violet-600 to-pink-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-indigo-500/30 shrink-0 uppercase"
+              x-text="(currentUser?.full_name || currentUser?.email || 'U').charAt(0)">
+            </div>
+            <div class="min-w-0">
+              <h2 class="font-black text-white text-lg truncate" x-text="currentUser?.full_name || 'Candidate'"></h2>
+              <p class="text-xs text-slate-400 font-mono truncate" x-text="currentUser?.email"></p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                  :class="currentUser?.auth_provider === 'google' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'"
+                  x-text="currentUser?.auth_provider === 'google' ? 'Google Auth' : 'Email Account'">
+                </span>
+                <span class="text-[11px] text-slate-500 font-medium">User ID #<span x-text="currentUser?.id"></span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800/80 text-xs space-y-2">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Account Status:</span>
+              <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Active & Verified
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Member Since:</span>
+              <span class="text-slate-300 font-medium" x-text="currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'}) : '2026'"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card B: Active Plan & Validity -->
+        <div class="lg:col-span-2 p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden">
+          <div class="absolute -top-20 -right-20 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Membership Tier</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider shadow-sm"
+                  :class="{
+                    'bg-slate-800 text-slate-300 border border-slate-700': !currentUser?.plan_tier || currentUser?.plan_tier === 'free',
+                    'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-indigo-500/10': currentUser?.plan_tier === 'pro',
+                    'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10': currentUser?.plan_tier === 'elite'
+                  }"
+                  x-text="(currentUser?.plan_tier || 'free').toUpperCase() + ' PLAN'">
+                </span>
+              </div>
+              <h3 class="text-2xl font-black text-white tracking-tight"
+                x-text="currentUser?.plan_tier === 'elite' ? 'Executive Elite Membership' : (currentUser?.plan_tier === 'pro' ? 'Pro Career Membership' : 'Free Basic Tier')">
+              </h3>
+              <p class="text-xs text-slate-400 mt-1"
+                x-text="currentUser?.subscription_validity_label || (currentUser?.plan_tier === 'free' ? 'Unlimited lifetime basic access' : 'Active subscription')">
+              </p>
+            </div>
+
+            <div class="shrink-0 flex items-center gap-2">
+              <a href="/app"
+                class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
+                <i data-lucide="zap" class="w-4 h-4"></i>
+                <span x-text="currentUser?.plan_tier === 'free' ? 'Upgrade to Pro / Elite' : 'Change or Extend Plan'"></span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Quota Meters Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-800/80 text-xs">
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Daily AI Tailoring</span>
+              <span class="text-base font-black"
+                :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'text-emerald-400' : 'text-indigo-300'"
+                x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'Unlimited' : (currentUser?.daily_generations_remaining + ' left')">
+              </span>
+            </div>
+
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Classic ATS PDFs</span>
+              <span class="text-base font-black"
+                :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'text-emerald-400' : ((currentUser?.lifetime_ats_downloads_remaining === 0) ? 'text-rose-400' : 'text-slate-200')"
+                x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'Unlimited' : (currentUser?.lifetime_ats_downloads_remaining + ' left')">
+              </span>
+            </div>
+
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Visual Photo CVs</span>
+              <span class="text-base font-black"
+                :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'text-emerald-400' : ((currentUser?.lifetime_visual_downloads_remaining === 0) ? 'text-rose-400' : 'text-pink-300')"
+                x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'Unlimited' : (currentUser?.lifetime_visual_downloads_remaining + ' left')">
+              </span>
+            </div>
+
+            <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-1">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Cover Letters</span>
+              <span class="text-base font-black"
+                :class="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'text-emerald-400' : 'text-violet-300'"
+                x-text="(currentUser?.plan_tier === 'pro' || currentUser?.plan_tier === 'elite') ? 'Unlimited' : (currentUser?.lifetime_cover_letter_downloads_remaining + ' left')">
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- ROW 2: PAYMENT & SUBSCRIPTION BILLING HISTORY                 -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div class="p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-6">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+          <div>
+            <h3 class="text-lg font-black text-white tracking-tight flex items-center gap-2">
+              <i data-lucide="receipt" class="w-5 h-5 text-indigo-400"></i>
+              <span>Payments & Subscriptions History</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Audit log of all online card payments and bank deposit slips with receipts & refund options.</p>
+          </div>
+
+          <!-- Tab Selector Pills -->
+          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold shrink-0">
+            <button @click="activeHistoryTab = 'online'"
+              :class="activeHistoryTab === 'online' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+              class="px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+              <span>Online Orders (<span x-text="onlineOrders.length"></span>)</span>
+            </button>
+            <button @click="activeHistoryTab = 'bank'"
+              :class="activeHistoryTab === 'bank' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'"
+              class="px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i data-lucide="landmark" class="w-3.5 h-3.5"></i>
+              <span>Bank Slips (<span x-text="bankSlips.length"></span>)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- TAB 1: ONLINE ORDERS (PayHere Gateway)                       -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div x-show="activeHistoryTab === 'online'" class="space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="text-[10px] uppercase font-extrabold text-slate-400 bg-slate-950/60 border-y border-slate-800">
+                <tr>
+                  <th class="py-3 px-3">Order ID & Date</th>
+                  <th class="py-3 px-3">Plan Tier</th>
+                  <th class="py-3 px-3">Amount</th>
+                  <th class="py-3 px-3">Payment Info</th>
+                  <th class="py-3 px-3">Status</th>
+                  <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-medium">
+                <template x-for="ord in onlineOrders" :key="ord.id">
+                  <tr class="hover:bg-slate-800/30 transition-colors">
+                    
+                    <!-- Order ID & Date -->
+                    <td class="py-3.5 px-3">
+                      <span class="font-mono font-bold text-white block" x-text="ord.order_id"></span>
+                      <span class="text-[10px] text-slate-400" x-text="ord.created_at || 'Just now'"></span>
+                    </td>
+
+                    <!-- Plan Tier -->
+                    <td class="py-3.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
+                        :class="ord.target_plan === 'elite' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'"
+                        x-text="ord.target_plan + ' PLAN'">
+                      </span>
+                    </td>
+
+                    <!-- Amount -->
+                    <td class="py-3.5 px-3 font-mono font-bold text-slate-200">
+                      <span x-text="ord.currency + ' ' + Number(ord.amount).toFixed(2)"></span>
+                    </td>
+
+                    <!-- Payment Info -->
+                    <td class="py-3.5 px-3">
+                      <div class="text-xs">
+                        <span class="font-semibold text-slate-200" x-text="ord.payment_method || 'PayHere'"></span>
+                        <span x-show="ord.card_no_masked" class="text-slate-400 font-mono text-[11px] block" x-text="ord.card_no_masked"></span>
+                      </div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3.5 px-3">
+                      <!-- Success -->
+                      <template x-if="ord.status === 'success' && !ord.payhere_refund_id && !ord.refund_requested">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold">
+                          <i data-lucide="check-circle" class="w-3 h-3"></i> Completed
+                        </span>
+                      </template>
+
+                      <!-- Refund Requested (Under Review) -->
+                      <template x-if="ord.refund_requested && !ord.payhere_refund_id">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[11px] font-bold"
+                          :title="'Reason: ' + (ord.refund_request_reason || 'N/A')">
+                          <i data-lucide="clock" class="w-3 h-3 animate-pulse"></i> Refund Under Review
+                        </span>
+                      </template>
+
+                      <!-- Refunded -->
+                      <template x-if="ord.payhere_refund_id || ord.status === 'refunded'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[11px] font-bold"
+                          :title="'Refund ID: ' + ord.payhere_refund_id">
+                          <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Refunded
+                        </span>
+                      </template>
+
+                      <!-- Pending -->
+                      <template x-if="ord.status === 'pending' || ord.status === 'initiated'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold">
+                          <i data-lucide="clock" class="w-3 h-3 animate-spin"></i> Pending
+                        </span>
+                      </template>
+
+                      <!-- Canceled / Failed -->
+                      <template x-if="ord.status === 'canceled' || ord.status === 'failed'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[11px] font-bold uppercase">
+                          <span x-text="ord.status"></span>
+                        </span>
+                      </template>
+                    </td>
+
+                    <!-- Actions Column -->
+                    <td class="py-3.5 px-3 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <!-- View Receipt -->
+                        <a :href="ord.status_url || ('/payment/status?order_id=' + ord.order_id + '&status=' + ord.status)"
+                          class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition font-semibold text-[11px] inline-flex items-center gap-1">
+                          <i data-lucide="external-link" class="w-3 h-3"></i>
+                          <span>Receipt</span>
+                        </a>
+
+                        <!-- Request Refund Button -->
+                        <template x-if="ord.can_request_refund">
+                          <button @click="openRefundRequestModal(ord)"
+                            class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg transition font-bold text-[11px] inline-flex items-center gap-1">
+                            <i data-lucide="help-circle" class="w-3 h-3"></i>
+                            <span>Request Refund</span>
+                          </button>
+                        </template>
+                      </div>
+                    </td>
+
+                  </tr>
+                </template>
+
+                <!-- Empty State -->
+                <template x-if="onlineOrders.length === 0">
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-slate-500">
+                      <div class="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center mx-auto mb-2 text-slate-600">
+                        <i data-lucide="credit-card" class="w-6 h-6"></i>
+                      </div>
+                      <p class="font-medium text-xs">No online card transactions yet.</p>
+                      <a href="/app" class="text-indigo-400 hover:underline text-[11px] mt-1 inline-block">Upgrade to Pro to get started</a>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- TAB 2: DIRECT BANK TRANSFER SLIPS                           -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div x-show="activeHistoryTab === 'bank'" class="space-y-4" x-cloak>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="text-[10px] uppercase font-extrabold text-slate-400 bg-slate-950/60 border-y border-slate-800">
+                <tr>
+                  <th class="py-3 px-3">Slip ID & Date</th>
+                  <th class="py-3 px-3">Target Plan</th>
+                  <th class="py-3 px-3">Amount Deposited</th>
+                  <th class="py-3 px-3">Bank Reference</th>
+                  <th class="py-3 px-3">Verification Status</th>
+                  <th class="py-3 px-3 text-right">Slip Image</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-medium">
+                <template x-for="slip in bankSlips" :key="slip.id">
+                  <tr class="hover:bg-slate-800/30 transition-colors">
+                    
+                    <!-- ID & Date -->
+                    <td class="py-3.5 px-3">
+                      <span class="font-mono font-bold text-white block" x-text="'SLIP-#' + slip.id"></span>
+                      <span class="text-[10px] text-slate-400" x-text="slip.created_at"></span>
+                    </td>
+
+                    <!-- Plan -->
+                    <td class="py-3.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
+                        :class="slip.target_plan === 'elite' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'"
+                        x-text="slip.target_plan + ' PLAN'">
+                      </span>
+                    </td>
+
+                    <!-- Amount -->
+                    <td class="py-3.5 px-3 font-mono font-bold text-slate-200">
+                      <span x-text="slip.currency + ' ' + Number(slip.amount_paid).toFixed(2)"></span>
+                    </td>
+
+                    <!-- Bank Reference -->
+                    <td class="py-3.5 px-3 font-mono text-slate-400">
+                      <span x-text="slip.bank_reference || 'None provided'"></span>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3.5 px-3">
+                      <template x-if="slip.status === 'approved'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold">
+                          <i data-lucide="check" class="w-3 h-3"></i> Approved & Active
+                        </span>
+                      </template>
+                      <template x-if="slip.status === 'pending'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-bold">
+                          <i data-lucide="clock" class="w-3 h-3 animate-pulse"></i> Under Review
+                        </span>
+                      </template>
+                      <template x-if="slip.status === 'rejected'">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-bold"
+                          :title="slip.admin_notes || 'Declined'">
+                          <i data-lucide="x" class="w-3 h-3"></i> Rejected
+                        </span>
+                      </template>
+                    </td>
+
+                    <!-- Slip Image -->
+                    <td class="py-3.5 px-3 text-right">
+                      <a :href="slip.slip_image_url" target="_blank"
+                        class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition font-semibold text-[11px] inline-flex items-center gap-1">
+                        <i data-lucide="image" class="w-3 h-3"></i>
+                        <span>View Slip</span>
+                      </a>
+                    </td>
+
+                  </tr>
+                </template>
+
+                <!-- Empty State -->
+                <template x-if="bankSlips.length === 0">
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-slate-500">
+                      <div class="w-12 h-12 rounded-2xl bg-slate-950 flex items-center justify-center mx-auto mb-2 text-slate-600">
+                        <i data-lucide="landmark" class="w-6 h-6"></i>
+                      </div>
+                      <p class="font-medium text-xs">No direct bank deposits submitted.</p>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: SUBMIT REFUND REQUEST                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div x-show="showRefundModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+    <div @click.away="if(!isSubmittingRefund) showRefundModal = false"
+      class="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+            <i data-lucide="help-circle" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-100 text-base">Request Payment Refund</h4>
+            <p class="text-[11px] text-slate-400">Order Reference: <span class="font-mono text-indigo-300 font-bold" x-text="selectedRefundOrder?.order_id"></span></p>
+          </div>
+        </div>
+        <button @click="showRefundModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Order Summary Card -->
+      <div class="p-3.5 bg-slate-950/70 border border-slate-800 rounded-2xl text-xs space-y-1.5">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Target Plan:</span>
+          <span class="font-bold uppercase text-white" x-text="selectedRefundOrder?.target_plan + ' PLAN'"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Amount Paid:</span>
+          <span class="font-mono font-bold text-amber-400" x-text="selectedRefundOrder?.currency + ' ' + Number(selectedRefundOrder?.amount).toFixed(2)"></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">PayHere Payment ID:</span>
+          <span class="font-mono text-slate-300" x-text="selectedRefundOrder?.payhere_payment_id || 'N/A'"></span>
+        </div>
+      </div>
+
+      <!-- Refund Reason Input -->
+      <form @submit.prevent="submitRefundRequest()" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">
+            Reason for requesting a refund <span class="text-rose-400">*</span>
+          </label>
+          <textarea required minlength="5" maxlength="500" x-model="refundReason" rows="3"
+            placeholder="Please specify why you are requesting a refund (e.g., accidental duplicate checkout, subscription change, etc.)..."
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:border-indigo-500 focus:outline-none resize-none leading-relaxed"></textarea>
+          <span class="text-[10px] text-slate-500 mt-1 block">Your reason will be shared with the management team for review.</span>
+        </div>
+
+        <div class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] leading-relaxed">
+          <p class="font-bold mb-0.5">Refund Policy & Timeline:</p>
+          <p>Upon approval, funds are reversed back to your originating debit/credit card via PayHere. Depending on your bank, reversals reflect within 2 to 5 business days.</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" @click="showRefundModal = false" :disabled="isSubmittingRefund"
+            class="px-4 py-2 text-slate-400 hover:text-slate-200 font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" :disabled="isSubmittingRefund || !refundReason.trim()"
+            class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-rose-600/25 transition flex items-center gap-2">
+            <template x-if="isSubmittingRefund">
+              <div class="flex items-center gap-2">
+                <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Submitting...</span>
+              </div>
+            </template>
+            <template x-if="!isSubmittingRefund">
+              <span>Submit Refund Request</span>
+            </template>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div x-show="toastMessage" x-cloak
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 translate-y-2"
+    x-transition:enter-end="opacity-100 translate-y-0"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 translate-y-0"
+    x-transition:leave-end="opacity-0 translate-y-2"
+    class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-600 text-white text-xs font-bold shadow-2xl shadow-emerald-600/30 flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span x-text="toastMessage"></span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- ALPINE.JS COMPONENT LOGIC                                           -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <script>
+    function userProfileApp() {
+      return {
+        isLoading: true,
+        errorMessage: '',
+        currentUser: null,
+        onlineOrders: [],
+        bankSlips: [],
+        activeHistoryTab: 'online',
+
+        // Refund Request Modal State
+        showRefundModal: false,
+        selectedRefundOrder: null,
+        refundReason: '',
+        isSubmittingRefund: false,
+        toastMessage: '',
+
+        async init() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) {
+            window.location.href = '/app';
+            return;
+          }
+
+          this.isLoading = true;
+          this.errorMessage = '';
+
+          try {
+            // 1. Fetch authenticated user profile
+            const authRes = await fetch('/api/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (authRes.status === 401) {
+              localStorage.removeItem('saas_token');
+              window.location.href = '/app';
+              return;
+            }
+
+            if (!authRes.ok) {
+              throw new Error('Failed to load user profile');
+            }
+
+            this.currentUser = await authRes.json();
+
+            // 2. Fetch payment history
+            const histRes = await fetch('/api/payments/my-history', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (histRes.ok) {
+              const histData = await histRes.json();
+              this.onlineOrders = histData.online_orders || [];
+              this.bankSlips = histData.bank_slips || [];
+            }
+          } catch (err) {
+            this.errorMessage = err.message || 'Error connecting to server';
+          } finally {
+            this.isLoading = false;
+            this.$nextTick(() => {
+              if (window.lucide) window.lucide.createIcons();
+            });
+          }
+        },
+
+        openRefundRequestModal(order) {
+          this.selectedRefundOrder = order;
+          this.refundReason = '';
+          this.showRefundModal = true;
+          this.$nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        },
+
+        async submitRefundRequest() {
+          if (!this.selectedRefundOrder || !this.refundReason.trim()) return;
+
+          this.isSubmittingRefund = true;
+          const token = localStorage.getItem('saas_token');
+
+          try {
+            const res = await fetch(`/api/payments/orders/${this.selectedRefundOrder.order_id}/request-refund`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                reason: this.refundReason.trim()
+              })
+            });
+
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Could not submit refund request');
+            }
+
+            const data = await res.json();
+            this.showRefundModal = false;
+            this.showToast('Refund request submitted for review.');
+
+            // Refresh history
+            await this.init();
+          } catch (err) {
+            alert('Refund Request Error: ' + err.message);
+          } finally {
+            this.isSubmittingRefund = false;
+          }
+        },
+
+        showToast(msg) {
+          this.toastMessage = msg;
+          setTimeout(() => {
+            this.toastMessage = '';
+          }, 4000);
+        },
+
+        signOut() {
+          if (confirm('Are you sure you want to sign out?')) {
+            localStorage.removeItem('saas_token');
+            localStorage.removeItem('saas_user');
+            window.location.href = '/app';
+          }
+        }
+      };
+    }
+  </script>
+</body>
+
+</html>
