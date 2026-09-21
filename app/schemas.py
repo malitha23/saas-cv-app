@@ -4,35 +4,62 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 
+# kk
 class SocialLink(BaseModel):
-    name: str = Field(..., description="Name of the platform (e.g. 'GitHub', 'LinkedIn', 'Twitter/X', 'Instagram', 'Portfolio', 'Calendly', 'WhatsApp')")
+    name: str = Field(
+        ...,
+        description="Name of the platform (e.g. 'GitHub', 'LinkedIn', 'Twitter/X', 'Instagram', 'Portfolio', 'Calendly', 'WhatsApp')",
+    )
     url: str = Field(..., description="Target URL or handle")
-    icon: str = Field(default="globe", description="Lucide icon name: github, linkedin, twitter, instagram, youtube, mail, globe, calendar, message-circle")
-    enabled: bool = Field(default=True, description="Whether to display this link on the portfolio")
+    icon: str = Field(
+        default="globe",
+        description="Lucide icon name: github, linkedin, twitter, instagram, youtube, mail, globe, calendar, message-circle",
+    )
+    enabled: bool = Field(
+        default=True, description="Whether to display this link on the portfolio"
+    )
 
 
 class PersonalInfo(BaseModel):
     full_name: str = Field(..., description="Full candidate name")
     email: str = Field(..., description="Professional email address")
     phone: str = Field(..., description="Phone number formatted cleanly")
-    location: str = Field(..., description="City, State/Country e.g. 'San Francisco, CA' or 'Sri Lanka'")
+    location: str = Field(
+        ..., description="City, State/Country e.g. 'San Francisco, CA' or 'Sri Lanka'"
+    )
     linkedin: Optional[str] = Field(None, description="LinkedIn profile URL or handle")
     portfolio: Optional[str] = Field(None, description="Portfolio website URL")
     github: Optional[str] = Field(None, description="GitHub profile URL")
-    avatar_url: Optional[str] = Field(None, description="Candidate profile photo or avatar URL")
-    hero_headline: Optional[str] = Field(None, description="Custom hero headline or tagline")
+    avatar_url: Optional[str] = Field(
+        None, description="Candidate profile photo or avatar URL"
+    )
+    hero_headline: Optional[str] = Field(
+        None, description="Custom hero headline or tagline"
+    )
     availability_badge: Optional[str] = Field(
         default="Available for High-Impact Roles & Consulting",
-        description="Availability status badge text"
+        description="Availability status badge text",
     )
-    custom_domain: Optional[str] = Field(None, description="Custom private domain e.g. 'malitha.dev'")
-    social_links: List[SocialLink] = Field(default_factory=list, description="Dynamic list of social media and custom links")
+    custom_domain: Optional[str] = Field(
+        None, description="Custom private domain e.g. 'malitha.dev'"
+    )
+    social_links: List[SocialLink] = Field(
+        default_factory=list,
+        description="Dynamic list of social media and custom links",
+    )
 
 
 class SkillCategory(BaseModel):
-    category_name: str = Field(..., description="Category name (e.g. 'Languages & Frameworks', 'Mobile Development', 'Databases & Tools')")
-    skills: List[str] = Field(default_factory=list, description="List of matched hard/soft skills")
-    skill_levels: Dict[str, int] = Field(default_factory=dict, description="Skill name to percentage (10 to 100)")
+    category_name: str = Field(
+        ...,
+        description="Category name (e.g. 'Languages & Frameworks', 'Mobile Development', 'Databases & Tools')",
+    )
+    skills: List[str] = Field(
+        default_factory=list, description="List of matched hard/soft skills"
+    )
+    skill_levels: Dict[str, int] = Field(
+        default_factory=dict, description="Skill name to percentage (10 to 100)"
+    )
 
 
 class WorkExperienceItem(BaseModel):
@@ -43,26 +70,34 @@ class WorkExperienceItem(BaseModel):
     end_date: str = Field(..., description="End date (e.g. 'Present' or 'May 2024')")
     bullet_points: List[str] = Field(
         default_factory=list,
-        description="High-impact bullet points rewritten with strong action verbs, quantifiable metrics, and JD keyword alignment."
+        description="High-impact bullet points rewritten with strong action verbs, quantifiable metrics, and JD keyword alignment.",
     )
 
 
 class EducationItem(BaseModel):
-    degree: str = Field(..., description="Degree and major (e.g. 'BSc in Software Engineering')")
+    degree: str = Field(
+        ..., description="Degree and major (e.g. 'BSc in Software Engineering')"
+    )
     institution: str = Field(..., description="University / College name")
     location: Optional[str] = Field(None, description="City, State or Country")
-    graduation_year: str = Field(..., description="Graduation year (e.g. '2023 - 2025')")
-    details: Optional[str] = Field(None, description="GPA, Honors, or notable coursework")
+    graduation_year: str = Field(
+        ..., description="Graduation year (e.g. '2023 - 2025')"
+    )
+    details: Optional[str] = Field(
+        None, description="GPA, Honors, or notable coursework"
+    )
 
 
 class ProjectItem(BaseModel):
     name: str = Field(..., description="Project name")
-    technologies: List[str] = Field(default_factory=list, description="Technologies & frameworks used")
+    technologies: List[str] = Field(
+        default_factory=list, description="Technologies & frameworks used"
+    )
     link: Optional[str] = Field(None, description="GitHub repo link or primary URL")
     demo_url: Optional[str] = Field(None, description="Live preview / deployed app URL")
     description_bullets: List[str] = Field(
         default_factory=list,
-        description="Bullet points explaining scope, architecture, and measurable outcome"
+        description="Bullet points explaining scope, architecture, and measurable outcome",
     )
 
 
@@ -81,71 +116,182 @@ class KeywordDetail(BaseModel):
 
 class ATSAnalysis(BaseModel):
     overall_score: int = Field(..., description="ATS Match Score from 0 to 100")
-    matched_keywords: List[str] = Field(default_factory=list, description="Keywords found in both JD and candidate profile")
-    missing_keywords: List[str] = Field(default_factory=list, description="Target JD keywords recommended to incorporate")
-    formatting_score: int = Field(default=100, description="ATS structural formatting compliance score (0-100)")
-    impact_quantification_score: int = Field(default=92, description="Metric and active verb impact score (0-100)")
-    contact_score: int = Field(default=100, description="Contact details completeness (0-100)")
-    experience_score: int = Field(default=95, description="Work experience alignment score (0-100)")
+    matched_keywords: List[str] = Field(
+        default_factory=list,
+        description="Keywords found in both JD and candidate profile",
+    )
+    missing_keywords: List[str] = Field(
+        default_factory=list,
+        description="Target JD keywords recommended to incorporate",
+    )
+    formatting_score: int = Field(
+        default=100, description="ATS structural formatting compliance score (0-100)"
+    )
+    impact_quantification_score: int = Field(
+        default=92, description="Metric and active verb impact score (0-100)"
+    )
+    contact_score: int = Field(
+        default=100, description="Contact details completeness (0-100)"
+    )
+    experience_score: int = Field(
+        default=95, description="Work experience alignment score (0-100)"
+    )
     skills_score: int = Field(default=92, description="Skills alignment score (0-100)")
-    action_verbs_count: int = Field(default=14, description="Number of strong action verbs identified")
-    metrics_quantified_count: int = Field(default=8, description="Number of quantifiable metrics (% or $) included")
-    summary_feedback: str = Field(..., description="Quick executive assessment of ATS readiness")
-    recommendations: List[str] = Field(default_factory=list, description="Actionable suggestions to improve interview conversion")
+    action_verbs_count: int = Field(
+        default=14, description="Number of strong action verbs identified"
+    )
+    metrics_quantified_count: int = Field(
+        default=8, description="Number of quantifiable metrics (% or $) included"
+    )
+    summary_feedback: str = Field(
+        ..., description="Quick executive assessment of ATS readiness"
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Actionable suggestions to improve interview conversion",
+    )
 
 
 class CoverLetter(BaseModel):
-    recipient_name: str = Field(default="Hiring Team", description="Name or 'Hiring Manager'")
-    recipient_title: Optional[str] = Field(default="Talent Acquisition Team", description="Title")
+    recipient_name: str = Field(
+        default="Hiring Team", description="Name or 'Hiring Manager'"
+    )
+    recipient_title: Optional[str] = Field(
+        default="Talent Acquisition Team", description="Title"
+    )
     company_name: str = Field(..., description="Target company name")
-    company_address: Optional[str] = Field(None, description="Company address or location")
+    company_address: Optional[str] = Field(
+        None, description="Company address or location"
+    )
     salutation: str = Field(default="Dear Hiring Manager,", description="Salutation")
-    opening_paragraph: str = Field(..., description="Compelling hook expressing enthusiasm for the exact role and company")
-    body_paragraph: str = Field(..., description="Evidence of relevant past achievements directly solving JD requirements")
-    closing_paragraph: str = Field(..., description="Call to action, availability for interview, and appreciation")
+    opening_paragraph: str = Field(
+        ...,
+        description="Compelling hook expressing enthusiasm for the exact role and company",
+    )
+    body_paragraph: str = Field(
+        ...,
+        description="Evidence of relevant past achievements directly solving JD requirements",
+    )
+    closing_paragraph: str = Field(
+        ..., description="Call to action, availability for interview, and appreciation"
+    )
     sign_off: str = Field(default="Sincerely,", description="Formal sign-off")
-    tone: str = Field(default="professional", description="Tone: professional, assertive, enthusiastic, or executive")
-    letter_date: Optional[str] = Field(default=None, description="Formal letter date e.g. 'September 3, 2026'")
-    reference_subject: Optional[str] = Field(default=None, description="Subject or Reference line e.g. 'Application for Senior Software Engineer'")
-    signature_mode: str = Field(default="script", description="Signature mode: 'script', 'draw', 'upload', or 'none'")
-    signature_style: str = Field(default="script_1", description="Script calligraphy style: 'script_1', 'script_2', 'script_3'")
-    signature_image_data: Optional[str] = Field(default=None, description="Base64 PNG of drawn or uploaded signature")
-    sign_off_title: Optional[str] = Field(default=None, description="Signer designation/title below name e.g. 'Software Engineer'")
-    postscript: Optional[str] = Field(default=None, description="Optional P.S. note at the bottom")
-    enclosure: Optional[str] = Field(default=None, description="Optional Enclosure/Attachment note e.g. 'Enclosure: Resume & Portfolio'")
-    layout_style: str = Field(default="modern_banner", description="Layout style: 'modern_banner', 'classic_corporate', 'minimal_clean'")
-    full_text: Optional[str] = Field(None, description="Complete formatted text representation")
+    tone: str = Field(
+        default="professional",
+        description="Tone: professional, assertive, enthusiastic, or executive",
+    )
+    letter_date: Optional[str] = Field(
+        default=None, description="Formal letter date e.g. 'September 3, 2026'"
+    )
+    reference_subject: Optional[str] = Field(
+        default=None,
+        description="Subject or Reference line e.g. 'Application for Senior Software Engineer'",
+    )
+    signature_mode: str = Field(
+        default="script",
+        description="Signature mode: 'script', 'draw', 'upload', or 'none'",
+    )
+    signature_style: str = Field(
+        default="script_1",
+        description="Script calligraphy style: 'script_1', 'script_2', 'script_3'",
+    )
+    signature_image_data: Optional[str] = Field(
+        default=None, description="Base64 PNG of drawn or uploaded signature"
+    )
+    sign_off_title: Optional[str] = Field(
+        default=None,
+        description="Signer designation/title below name e.g. 'Software Engineer'",
+    )
+    postscript: Optional[str] = Field(
+        default=None, description="Optional P.S. note at the bottom"
+    )
+    enclosure: Optional[str] = Field(
+        default=None,
+        description="Optional Enclosure/Attachment note e.g. 'Enclosure: Resume & Portfolio'",
+    )
+    layout_style: str = Field(
+        default="modern_banner",
+        description="Layout style: 'modern_banner', 'classic_corporate', 'minimal_clean'",
+    )
+    full_text: Optional[str] = Field(
+        None, description="Complete formatted text representation"
+    )
 
 
 class MatchedJobOpportunity(BaseModel):
     title: str = Field(..., description="Job title of matching role")
-    company_type: str = Field(default="Tech / SaaS / Enterprise", description="Target industry or company tier e.g. 'Cloud SaaS / Global Remote'")
-    match_score: int = Field(default=95, description="Calculated candidate match score (0-100)")
-    match_reason: str = Field(..., description="Why the candidate is a strong fit based on their verified skills & experience")
-    key_skills: List[str] = Field(default_factory=list, description="Key overlapping skills")
-    work_mode: str = Field(default="Remote", description="Work mode: 'Remote', 'Hybrid', or 'On-site'")
-    experience_level: str = Field(default="Mid-Senior", description="Experience level e.g. 'Entry-Level', 'Mid-Level', 'Senior', 'Lead'")
-    estimated_salary: Optional[str] = Field(default=None, description="Market salary estimate e.g. '$95k - $125k / yr'")
-    search_keywords: str = Field(..., description="Concise keywords for live job search queries")
+    company_type: str = Field(
+        default="Tech / SaaS / Enterprise",
+        description="Target industry or company tier e.g. 'Cloud SaaS / Global Remote'",
+    )
+    match_score: int = Field(
+        default=95, description="Calculated candidate match score (0-100)"
+    )
+    match_reason: str = Field(
+        ...,
+        description="Why the candidate is a strong fit based on their verified skills & experience",
+    )
+    key_skills: List[str] = Field(
+        default_factory=list, description="Key overlapping skills"
+    )
+    work_mode: str = Field(
+        default="Remote", description="Work mode: 'Remote', 'Hybrid', or 'On-site'"
+    )
+    experience_level: str = Field(
+        default="Mid-Senior",
+        description="Experience level e.g. 'Entry-Level', 'Mid-Level', 'Senior', 'Lead'",
+    )
+    estimated_salary: Optional[str] = Field(
+        default=None, description="Market salary estimate e.g. '$95k - $125k / yr'"
+    )
+    search_keywords: str = Field(
+        ..., description="Concise keywords for live job search queries"
+    )
 
 
 class ProofOfWorkItem(BaseModel):
     id: str = Field(default_factory=lambda: "pow_" + uuid.uuid4().hex[:8])
-    title: str = Field(..., description="E.g. 'CAN-Bus Diagnostics & Repair' or 'High-Load Microservice'")
-    category: str = Field(default="trade_repair", description="'trade_repair', 'technical_project', 'design', 'general'")
-    tools_used: List[str] = Field(default_factory=list, description="Tools/Tech used, e.g. ['Fluke 88V', 'OBD-II Scanner']")
-    description: str = Field(..., description="Concise description of the task and verified resolution")
-    before_image_url: Optional[str] = Field(default=None, description="Optional photo URL before repair/project")
-    after_image_url: Optional[str] = Field(default=None, description="Optional photo URL after repair/project")
-    metrics_label: Optional[str] = Field(default=None, description="Key result metric e.g. '0 Rework' or '100% Signal Integrity'")
+    title: str = Field(
+        ...,
+        description="E.g. 'CAN-Bus Diagnostics & Repair' or 'High-Load Microservice'",
+    )
+    category: str = Field(
+        default="trade_repair",
+        description="'trade_repair', 'technical_project', 'design', 'general'",
+    )
+    tools_used: List[str] = Field(
+        default_factory=list,
+        description="Tools/Tech used, e.g. ['Fluke 88V', 'OBD-II Scanner']",
+    )
+    description: str = Field(
+        ..., description="Concise description of the task and verified resolution"
+    )
+    before_image_url: Optional[str] = Field(
+        default=None, description="Optional photo URL before repair/project"
+    )
+    after_image_url: Optional[str] = Field(
+        default=None, description="Optional photo URL after repair/project"
+    )
+    metrics_label: Optional[str] = Field(
+        default=None,
+        description="Key result metric e.g. '0 Rework' or '100% Signal Integrity'",
+    )
     verified: bool = Field(default=True)
 
 
 class PortfolioSecurityConfig(BaseModel):
-    is_pin_protected: bool = Field(default=False, description="Require 4-digit PIN to access live portfolio")
-    access_pin: Optional[str] = Field(default=None, description="4-digit secret PIN (e.g. '1234')")
-    watermark_enabled: bool = Field(default=True, description="Subtle security watermark on proof images")
-    verification_hash: Optional[str] = Field(default=None, description="HMAC SHA-256 verification signature")
+    is_pin_protected: bool = Field(
+        default=False, description="Require 4-digit PIN to access live portfolio"
+    )
+    access_pin: Optional[str] = Field(
+        default=None, description="4-digit secret PIN (e.g. '1234')"
+    )
+    watermark_enabled: bool = Field(
+        default=True, description="Subtle security watermark on proof images"
+    )
+    verification_hash: Optional[str] = Field(
+        default=None, description="HMAC SHA-256 verification signature"
+    )
 
 
 class VerifyPinRequest(BaseModel):
@@ -165,28 +311,55 @@ class TailoredResume(BaseModel):
     target_company: Optional[str] = Field(None, description="Target company name")
     professional_summary: str = Field(
         ...,
-        description="3-4 sentence professional summary tightly tailored to target role with matched keywords"
+        description="3-4 sentence professional summary tightly tailored to target role with matched keywords",
     )
-    template_style: str = Field(default="classic", description="Template style: 'classic', 'modern', 'minimal'")
-    font_size_scale: str = Field(default="standard", description="Font scaling: 'compact', 'standard', 'spacious'")
-    font_family: str = Field(default="Helvetica", description="Font family: 'Helvetica', 'Times-Roman', 'Courier'")
-    custom_accent_color: Optional[str] = Field(default=None, description="Custom hex accent color e.g. '#1E3A8A'")
-    show_photo: bool = Field(default=False, description="Show/Hide Profile Photo in Visual Resumes")
-    show_skill_bars: bool = Field(default=True, description="Show progress bars for skills in visual formats")
-    skill_bar_style: str = Field(default="sleek", description="Progress bar style: 'sleek', 'segmented', 'badge'")
-    show_summary: bool = Field(default=True, description="Show/Hide Professional Summary")
+    template_style: str = Field(
+        default="classic", description="Template style: 'classic', 'modern', 'minimal'"
+    )
+    font_size_scale: str = Field(
+        default="standard",
+        description="Font scaling: 'compact', 'standard', 'spacious'",
+    )
+    font_family: str = Field(
+        default="Helvetica",
+        description="Font family: 'Helvetica', 'Times-Roman', 'Courier'",
+    )
+    custom_accent_color: Optional[str] = Field(
+        default=None, description="Custom hex accent color e.g. '#1E3A8A'"
+    )
+    show_photo: bool = Field(
+        default=False, description="Show/Hide Profile Photo in Visual Resumes"
+    )
+    show_skill_bars: bool = Field(
+        default=True, description="Show progress bars for skills in visual formats"
+    )
+    skill_bar_style: str = Field(
+        default="sleek", description="Progress bar style: 'sleek', 'segmented', 'badge'"
+    )
+    show_summary: bool = Field(
+        default=True, description="Show/Hide Professional Summary"
+    )
     show_skills: bool = Field(default=True, description="Show/Hide Technical Skills")
     show_experience: bool = Field(default=True, description="Show/Hide Work Experience")
     show_projects: bool = Field(default=True, description="Show/Hide Key Projects")
     show_education: bool = Field(default=True, description="Show/Hide Education")
-    show_certifications: bool = Field(default=True, description="Show/Hide Certifications")
+    show_certifications: bool = Field(
+        default=True, description="Show/Hide Certifications"
+    )
     role_archetype: str = Field(
         default="general_professional",
-        description="Role blueprint: 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'"
+        description="Role blueprint: 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'",
     )
     section_order: List[str] = Field(
-        default_factory=lambda: ["summary", "skills", "experience", "projects", "education", "certifications"],
-        description="Display order of resume sections"
+        default_factory=lambda: [
+            "summary",
+            "skills",
+            "experience",
+            "projects",
+            "education",
+            "certifications",
+        ],
+        description="Display order of resume sections",
     )
     skill_categories: List[SkillCategory] = Field(default_factory=list)
     work_experience: List[WorkExperienceItem] = Field(default_factory=list)
@@ -199,46 +372,83 @@ class TailoredResume(BaseModel):
     # Recommended Career Opportunities
     matched_jobs: List[MatchedJobOpportunity] = Field(
         default_factory=list,
-        description="Similar high-match job opportunities tailored to candidate's profile"
+        description="Similar high-match job opportunities tailored to candidate's profile",
     )
 
     # Full Portfolio Web Customization Suite
-    portfolio_theme: str = Field(default="bento_grid", description="Portfolio layout: 'bento_grid', 'split_sidebar', 'terminal_dev', 'editorial_swiss', 'neon_glass'")
-    portfolio_accent_color: Optional[str] = Field(default=None, description="Custom accent hex color for portfolio")
-    portfolio_font: str = Field(default="Inter", description="Portfolio font family: 'Inter', 'JetBrains Mono', 'Outfit', 'Playfair Display', 'Plus Jakarta Sans', 'Fira Code'")
+    portfolio_theme: str = Field(
+        default="bento_grid",
+        description="Portfolio layout: 'bento_grid', 'split_sidebar', 'terminal_dev', 'editorial_swiss', 'neon_glass'",
+    )
+    portfolio_accent_color: Optional[str] = Field(
+        default=None, description="Custom accent hex color for portfolio"
+    )
+    portfolio_font: str = Field(
+        default="Inter",
+        description="Portfolio font family: 'Inter', 'JetBrains Mono', 'Outfit', 'Playfair Display', 'Plus Jakarta Sans', 'Fira Code'",
+    )
     portfolio_show_bio: bool = Field(default=True, description="Show/Hide Bio section")
-    portfolio_show_skills: bool = Field(default=True, description="Show/Hide Skills section")
-    portfolio_show_experience: bool = Field(default=True, description="Show/Hide Work Experience section")
-    portfolio_show_projects: bool = Field(default=True, description="Show/Hide Key Projects section")
-    portfolio_show_education: bool = Field(default=True, description="Show/Hide Education section")
-    portfolio_show_resume_download: bool = Field(default=True, description="Show direct ATS Resume download button on portfolio")
-    portfolio_cta_text: str = Field(default="Get in Touch", description="Primary call-to-action button text")
-    portfolio_cta_url: Optional[str] = Field(default=None, description="Primary call-to-action URL or mailto")
-    portfolio_metrics: List[Dict[str, str]] = Field(default_factory=list, description="Custom stat counter highlights (label & value)")
+    portfolio_show_skills: bool = Field(
+        default=True, description="Show/Hide Skills section"
+    )
+    portfolio_show_experience: bool = Field(
+        default=True, description="Show/Hide Work Experience section"
+    )
+    portfolio_show_projects: bool = Field(
+        default=True, description="Show/Hide Key Projects section"
+    )
+    portfolio_show_education: bool = Field(
+        default=True, description="Show/Hide Education section"
+    )
+    portfolio_show_resume_download: bool = Field(
+        default=True, description="Show direct ATS Resume download button on portfolio"
+    )
+    portfolio_cta_text: str = Field(
+        default="Get in Touch", description="Primary call-to-action button text"
+    )
+    portfolio_cta_url: Optional[str] = Field(
+        default=None, description="Primary call-to-action URL or mailto"
+    )
+    portfolio_metrics: List[Dict[str, str]] = Field(
+        default_factory=list,
+        description="Custom stat counter highlights (label & value)",
+    )
 
     # Interactive Proof-of-Work & High-Security Smart Card Suite
     proof_of_work: List[ProofOfWorkItem] = Field(
         default_factory=list,
-        description="Verified tangible evidence of actual work (Before/After repair photos, diagnostic reports, live code/demos)"
+        description="Verified tangible evidence of actual work (Before/After repair photos, diagnostic reports, live code/demos)",
     )
     security_config: PortfolioSecurityConfig = Field(
         default_factory=PortfolioSecurityConfig,
-        description="High security PIN gate, HMAC verification badge, and anti-scraping settings"
+        description="High security PIN gate, HMAC verification badge, and anti-scraping settings",
     )
 
 
 class TailorRequest(BaseModel):
-    resume_text: str = Field(..., description="Raw text of the candidate's existing resume")
+    resume_text: str = Field(
+        ..., description="Raw text of the candidate's existing resume"
+    )
     job_description: str = Field(..., description="Target Job Description text")
-    job_title: Optional[str] = Field(None, description="Optional target job title override")
-    company_name: Optional[str] = Field(None, description="Optional target company override")
+    job_title: Optional[str] = Field(
+        None, description="Optional target job title override"
+    )
+    company_name: Optional[str] = Field(
+        None, description="Optional target company override"
+    )
     role_archetype: Optional[str] = Field(
         "auto",
-        description="Role blueprint: 'auto', 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'"
+        description="Role blueprint: 'auto', 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'",
     )
-    template_style: Optional[str] = Field("classic", description="Template: classic, modern, minimal")
-    cover_letter_tone: Optional[str] = Field("professional", description="Tone of cover letter")
-    api_key: Optional[str] = Field(None, description="User-provided Gemini API key (optional)")
+    template_style: Optional[str] = Field(
+        "classic", description="Template: classic, modern, minimal"
+    )
+    cover_letter_tone: Optional[str] = Field(
+        "professional", description="Tone of cover letter"
+    )
+    api_key: Optional[str] = Field(
+        None, description="User-provided Gemini API key (optional)"
+    )
 
 
 class ParseResponse(BaseModel):
@@ -259,7 +469,9 @@ class DomainVerifyRequest(BaseModel):
 
 
 class CheckoutRequest(BaseModel):
-    tier: str = Field(..., description="'single' ($3), 'monthly' ($9), or 'lifetime' ($29)")
+    tier: str = Field(
+        ..., description="'single' ($3), 'monthly' ($9), or 'lifetime' ($29)"
+    )
     email: Optional[str] = None
 
 
@@ -267,11 +479,16 @@ class CheckoutRequest(BaseModel):
 # SAAS AUTHENTICATION & PERSISTENCE SCHEMAS
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class UserRegisterRequest(BaseModel):
     email: str = Field(..., description="Valid email address")
-    password: str = Field(..., min_length=6, description="Password (at least 6 characters)")
+    password: str = Field(
+        ..., min_length=6, description="Password (at least 6 characters)"
+    )
     full_name: str = Field(default="Candidate", description="User's full name")
-    referral_code: Optional[str] = Field(default=None, description="Optional referral code of inviter")
+    referral_code: Optional[str] = Field(
+        default=None, description="Optional referral code of inviter"
+    )
 
 
 class UserLoginRequest(BaseModel):
@@ -285,7 +502,9 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     token: str = Field(..., description="Cryptographic reset token")
-    new_password: str = Field(..., min_length=6, description="New password (at least 6 characters)")
+    new_password: str = Field(
+        ..., min_length=6, description="New password (at least 6 characters)"
+    )
 
 
 class PendingOrderInfo(BaseModel):
@@ -349,14 +568,24 @@ class UserResponse(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    credential: str = Field(..., description="Google ID Token JWT returned by Google Identity Services")
-    client_id: Optional[str] = Field(None, description="Optional Client ID for audience verification")
-    referral_code: Optional[str] = Field(None, description="Optional referral code of inviter")
+    credential: str = Field(
+        ..., description="Google ID Token JWT returned by Google Identity Services"
+    )
+    client_id: Optional[str] = Field(
+        None, description="Optional Client ID for audience verification"
+    )
+    referral_code: Optional[str] = Field(
+        None, description="Optional referral code of inviter"
+    )
 
 
 class GoogleConfigResponse(BaseModel):
-    client_id: Optional[str] = Field(None, description="Active Google OAuth 2.0 Client ID")
-    is_enabled: bool = Field(default=False, description="Whether Google Sign-In is configured and active")
+    client_id: Optional[str] = Field(
+        None, description="Active Google OAuth 2.0 Client ID"
+    )
+    is_enabled: bool = Field(
+        default=False, description="Whether Google Sign-In is configured and active"
+    )
 
 
 class TokenResponse(BaseModel):
@@ -367,8 +596,12 @@ class TokenResponse(BaseModel):
 
 class SubscriptionUpgradeRequest(BaseModel):
     plan_tier: str = Field(..., description="'pro' or 'elite' or 'sprint'")
-    duration_months: int = Field(default=1, description="Duration in months (1, 3, or 12)")
-    payment_method: Optional[str] = Field(default="card", description="Payment method: card, payhere, stripe, simulation")
+    duration_months: int = Field(
+        default=1, description="Duration in months (1, 3, or 12)"
+    )
+    payment_method: Optional[str] = Field(
+        default="card", description="Payment method: card, payhere, stripe, simulation"
+    )
 
 
 class SubscriptionStatusResponse(BaseModel):
@@ -410,7 +643,9 @@ class SubscriptionStatusResponse(BaseModel):
 class ValidatePromoRequest(BaseModel):
     code: str = Field(..., description="Promo or coupon code string")
     target_plan: str = Field(default="pro", description="'pro', 'elite', 'sprint'")
-    billing_cycle: str = Field(default="1m", description="'1m', '3m', '6m', '12m', 'lifetime'")
+    billing_cycle: str = Field(
+        default="1m", description="'1m', '3m', '6m', '12m', 'lifetime'"
+    )
 
 
 class ValidatePromoResponse(BaseModel):
@@ -430,13 +665,23 @@ class RedeemFreePromoRequest(BaseModel):
 
 
 class AdminCreatePromoCodeRequest(BaseModel):
-    code: str = Field(..., description="Unique alphanumeric coupon code e.g. 'SLIIT2026'")
-    code_type: str = Field(default="discount_percent", description="'discount_percent' or 'free_pass'")
-    discount_percent: float = Field(default=0.0, description="Percentage discount (e.g. 20, 50, 100)")
-    free_days: int = Field(default=0, description="Number of days of free access (e.g. 7, 30)")
+    code: str = Field(
+        ..., description="Unique alphanumeric coupon code e.g. 'SLIIT2026'"
+    )
+    code_type: str = Field(
+        default="discount_percent", description="'discount_percent' or 'free_pass'"
+    )
+    discount_percent: float = Field(
+        default=0.0, description="Percentage discount (e.g. 20, 50, 100)"
+    )
+    free_days: int = Field(
+        default=0, description="Number of days of free access (e.g. 7, 30)"
+    )
     target_plan: str = Field(default="any", description="'any', 'pro', 'elite'")
     max_uses: int = Field(default=0, description="Max redemptions (0 = unlimited)")
-    expires_at: Optional[str] = Field(default=None, description="Expiration date 'YYYY-MM-DD'")
+    expires_at: Optional[str] = Field(
+        default=None, description="Expiration date 'YYYY-MM-DD'"
+    )
 
 
 class AdminPromoCodeItem(BaseModel):
@@ -458,11 +703,15 @@ class AdminPromoCodeItem(BaseModel):
 
 
 class CountryPricingConfig(BaseModel):
-    country_code: str = Field(..., description="2-letter ISO code e.g. 'LK', 'US', 'IN', or 'DEFAULT'")
+    country_code: str = Field(
+        ..., description="2-letter ISO code e.g. 'LK', 'US', 'IN', or 'DEFAULT'"
+    )
     country_name: str = Field(..., description="Country name e.g. 'Sri Lanka'")
     currency_code: str = Field(..., description="'LKR', 'USD', 'INR', 'EUR'")
     currency_symbol: str = Field(..., description="'Rs.', '$', '₹', '€'")
-    sprint_price: str = Field(..., description="7-Day Sprint Pass price e.g. 'Rs. 490' or '$4.99'")
+    sprint_price: str = Field(
+        ..., description="7-Day Sprint Pass price e.g. 'Rs. 490' or '$4.99'"
+    )
     plans: List["PlanItemConfig"]
 
 
@@ -485,7 +734,6 @@ class AdminUpdateCountryPricingRequest(BaseModel):
     currency_symbol: str
     sprint_price: str
     plans: List["PlanItemConfig"]
-
 
 
 class AdminOverviewResponse(BaseModel):
@@ -526,13 +774,21 @@ class AdminSettingItem(BaseModel):
 
 
 class AdminUpdateSettingsRequest(BaseModel):
-    settings: Dict[str, str] = Field(..., description="Key-value mapping of updated SaaS settings")
+    settings: Dict[str, str] = Field(
+        ..., description="Key-value mapping of updated SaaS settings"
+    )
 
 
 class SaveResumeRequest(BaseModel):
-    resume_id: Optional[int] = Field(default=None, description="Existing resume ID to update, or None to create new")
-    title: str = Field(default="My Professional Resume", description="Saved resume title")
-    resume_data: TailoredResume = Field(..., description="Complete tailored resume state")
+    resume_id: Optional[int] = Field(
+        default=None, description="Existing resume ID to update, or None to create new"
+    )
+    title: str = Field(
+        default="My Professional Resume", description="Saved resume title"
+    )
+    resume_data: TailoredResume = Field(
+        ..., description="Complete tailored resume state"
+    )
 
 
 class SavedResumeListItem(BaseModel):
@@ -546,12 +802,20 @@ class SavedResumeListItem(BaseModel):
 class PlanItemConfig(BaseModel):
     plan_key: str = Field(..., description="'free', 'pro', 'elite'")
     title: str = Field(..., description="Display title of the plan")
-    badge: Optional[str] = Field(None, description="Badge tag, e.g. 'Freemium', '🔥 Best Seller'")
+    badge: Optional[str] = Field(
+        None, description="Badge tag, e.g. 'Freemium', '🔥 Best Seller'"
+    )
     price_display: str = Field(..., description="Price display, e.g. '$0', '$9'")
-    period_display: str = Field(..., description="Period display, e.g. '/ forever', '/ month'")
-    sub_billing_text: Optional[str] = Field("", description="Sub-billing line, e.g. 'or $19 for 3-Month Pass'")
+    period_display: str = Field(
+        ..., description="Period display, e.g. '/ forever', '/ month'"
+    )
+    sub_billing_text: Optional[str] = Field(
+        "", description="Sub-billing line, e.g. 'or $19 for 3-Month Pass'"
+    )
     description: str = Field(..., description="Short marketing description")
-    features: List[str] = Field(default_factory=list, description="Bullet points of plan features")
+    features: List[str] = Field(
+        default_factory=list, description="Bullet points of plan features"
+    )
     is_popular: bool = Field(default=False, description="Highlight card style")
     button_text: str = Field(default="Select Plan", description="CTA button label")
 
@@ -568,11 +832,21 @@ class UpdatePlansConfigRequest(BaseModel):
 # AI Job Hunter, 1-Click Application Copilot & Tracker Schemas
 # ═══════════════════════════════════════════════════════════════════
 
+
 class JobSearchRequest(BaseModel):
-    keywords: str = Field(..., description="Job role keywords or technology e.g. 'Senior Frontend Engineer'")
-    location: Optional[str] = Field(default="Remote", description="Location or 'Remote'")
-    work_mode: Optional[str] = Field(default="all", description="'all', 'remote', 'hybrid', 'onsite'")
-    experience_level: Optional[str] = Field(default="all", description="'all', 'entry', 'mid', 'senior', 'lead'")
+    keywords: str = Field(
+        ...,
+        description="Job role keywords or technology e.g. 'Senior Frontend Engineer'",
+    )
+    location: Optional[str] = Field(
+        default="Remote", description="Location or 'Remote'"
+    )
+    work_mode: Optional[str] = Field(
+        default="all", description="'all', 'remote', 'hybrid', 'onsite'"
+    )
+    experience_level: Optional[str] = Field(
+        default="all", description="'all', 'entry', 'mid', 'senior', 'lead'"
+    )
     limit: int = Field(default=8, ge=1, le=25)
 
 
@@ -610,11 +884,22 @@ class ApplicationKitRequest(BaseModel):
 class ApplicationKitResponse(BaseModel):
     job_title: str
     company_name: str
-    elevator_pitch: str = Field(..., description="30-second authentic professional intro")
-    why_company: str = Field(..., description="Compelling, tailored reason for applying to this company & role")
-    key_achievement: str = Field(..., description="Top quantifiable achievement proving candidate's capability")
-    salary_expectation_answer: str = Field(..., description="Tactful, market-rate salary negotiation response")
-    availability_notice_answer: str = Field(..., description="Direct availability and notice period statement")
+    elevator_pitch: str = Field(
+        ..., description="30-second authentic professional intro"
+    )
+    why_company: str = Field(
+        ...,
+        description="Compelling, tailored reason for applying to this company & role",
+    )
+    key_achievement: str = Field(
+        ..., description="Top quantifiable achievement proving candidate's capability"
+    )
+    salary_expectation_answer: str = Field(
+        ..., description="Tactful, market-rate salary negotiation response"
+    )
+    availability_notice_answer: str = Field(
+        ..., description="Direct availability and notice period statement"
+    )
     strengths_summary: List[str] = Field(default_factory=list)
     recommended_custom_qa: List[Dict[str, str]] = Field(default_factory=list)
 
@@ -661,6 +946,7 @@ class TrackedJobResponse(BaseModel):
 # AI Career Copilot Chatbot Schemas
 # ═══════════════════════════════════════════════════════════════════
 
+
 class ChatMessage(BaseModel):
     role: str = Field(..., description="'user', 'assistant', or 'system'")
     content: str = Field(..., description="Message text content")
@@ -669,36 +955,66 @@ class ChatMessage(BaseModel):
 
 class ChatCopilotRequest(BaseModel):
     messages: List[ChatMessage] = Field(..., description="Conversation message history")
-    resume_context: Optional[Dict[str, Any]] = Field(default=None, description="Active candidate CV data")
-    target_job_title: Optional[str] = Field(default=None, description="Target job title")
+    resume_context: Optional[Dict[str, Any]] = Field(
+        default=None, description="Active candidate CV data"
+    )
+    target_job_title: Optional[str] = Field(
+        default=None, description="Target job title"
+    )
     company_name: Optional[str] = Field(default=None, description="Target company name")
 
 
 class ChatCopilotResponse(BaseModel):
-    reply: str = Field(..., description="AI Career Copilot assistant response in markdown format")
-    suggested_prompts: List[str] = Field(default_factory=list, description="Follow-up suggested quick actions or questions")
-    action_trigger: Optional[Dict[str, Any]] = Field(default=None, description="Optional interactive action trigger")
+    reply: str = Field(
+        ..., description="AI Career Copilot assistant response in markdown format"
+    )
+    suggested_prompts: List[str] = Field(
+        default_factory=list,
+        description="Follow-up suggested quick actions or questions",
+    )
+    action_trigger: Optional[Dict[str, Any]] = Field(
+        default=None, description="Optional interactive action trigger"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════
 # AI Voice Mock Interview Simulator Schemas
 # ═══════════════════════════════════════════════════════════════════
 
+
 class InterviewQuestion(BaseModel):
     id: int = Field(..., description="Question index starting at 1")
-    category: str = Field(..., description="Category e.g. 'STAR Behavioral', 'Technical Architecture', 'Conflict Resolution'")
+    category: str = Field(
+        ...,
+        description="Category e.g. 'STAR Behavioral', 'Technical Architecture', 'Conflict Resolution'",
+    )
     question_text: str = Field(..., description="The spoken interview question")
-    interviewer_cue: str = Field(default="Focus on your specific role and measurable impact.", description="Tip/cue for candidate")
-    expected_competencies: List[str] = Field(default_factory=list, description="Key skills and criteria evaluated")
+    interviewer_cue: str = Field(
+        default="Focus on your specific role and measurable impact.",
+        description="Tip/cue for candidate",
+    )
+    expected_competencies: List[str] = Field(
+        default_factory=list, description="Key skills and criteria evaluated"
+    )
 
 
 class MockInterviewStartRequest(BaseModel):
     target_role: str = Field(default="Professional", description="Target job title")
-    target_company: Optional[str] = Field(default=None, description="Target company or organization")
-    interview_type: str = Field(default="behavioral", description="'behavioral', 'technical', or 'situational'")
-    difficulty: str = Field(default="standard", description="'friendly', 'standard', or 'executive'")
-    question_count: int = Field(default=3, ge=1, le=8, description="Number of questions in session")
-    resume_context: Optional[Dict[str, Any]] = Field(default=None, description="Active candidate CV data")
+    target_company: Optional[str] = Field(
+        default=None, description="Target company or organization"
+    )
+    interview_type: str = Field(
+        default="behavioral", description="'behavioral', 'technical', or 'situational'"
+    )
+    difficulty: str = Field(
+        default="standard", description="'friendly', 'standard', or 'executive'"
+    )
+    question_count: int = Field(
+        default=3, ge=1, le=8, description="Number of questions in session"
+    )
+    resume_context: Optional[Dict[str, Any]] = Field(
+        default=None, description="Active candidate CV data"
+    )
 
 
 class MockInterviewStartResponse(BaseModel):
@@ -715,15 +1031,22 @@ class EvaluateAnswerRequest(BaseModel):
     question_id: int
     question_text: str
     candidate_answer_transcript: str
-    duration_seconds: int = Field(default=45, ge=1, description="Time in seconds taken to answer")
+    duration_seconds: int = Field(
+        default=45, ge=1, description="Time in seconds taken to answer"
+    )
     target_role: str = "Professional"
     interview_type: str = "behavioral"
 
 
 class AnswerEvaluationResponse(BaseModel):
     question_id: int
-    score: int = Field(..., ge=0, le=100, description="Readiness score for this question")
-    star_breakdown: Dict[str, str] = Field(default_factory=dict, description="Evaluation of Situation, Task, Action, Result")
+    score: int = Field(
+        ..., ge=0, le=100, description="Readiness score for this question"
+    )
+    star_breakdown: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Evaluation of Situation, Task, Action, Result",
+    )
     filler_words_detected: List[str] = Field(default_factory=list)
     filler_words_count: int = 0
     words_per_minute: float = 0.0
@@ -743,7 +1066,9 @@ class FinalInterviewReportRequest(BaseModel):
 class FinalInterviewReportResponse(BaseModel):
     session_id: str
     overall_score: int = Field(..., ge=0, le=100)
-    hiring_verdict: str = Field(..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'")
+    hiring_verdict: str = Field(
+        ..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'"
+    )
     verdict_color: str = "emerald"
     competency_scores: Dict[str, int] = Field(default_factory=dict)
     total_filler_words: int = 0
@@ -758,17 +1083,27 @@ class FinalInterviewReportResponse(BaseModel):
 # Real-Time AI Video Conference & Live Mistake Coaching Schemas
 # ═══════════════════════════════════════════════════════════════════
 
+
 class MistakeItem(BaseModel):
-    type: str = Field(default="technical_vagueness", description="'technical_vagueness', 'filler_words', 'pacing', 'structure_star', or 'grammar'")
-    severity: str = Field(default="warning", description="'tip', 'warning', or 'critical'")
-    label: str = Field(..., description="Short mistake headline (e.g. 'Missing Diagnostic Tool Name')")
+    type: str = Field(
+        default="technical_vagueness",
+        description="'technical_vagueness', 'filler_words', 'pacing', 'structure_star', or 'grammar'",
+    )
+    severity: str = Field(
+        default="warning", description="'tip', 'warning', or 'critical'"
+    )
+    label: str = Field(
+        ..., description="Short mistake headline (e.g. 'Missing Diagnostic Tool Name')"
+    )
     explanation: str = Field(..., description="Why this weakens the interview response")
     suggestion: str = Field(..., description="How to rephrase or correct it")
 
 
 class ConferenceTurnRequest(BaseModel):
     session_id: str
-    candidate_transcript: str = Field(..., description="Spoken speech transcribed live from candidate")
+    candidate_transcript: str = Field(
+        ..., description="Spoken speech transcribed live from candidate"
+    )
     conversation_history: List[Dict[str, Any]] = Field(default_factory=list)
     target_role: str = "Automotive Technician"
     target_company: Optional[str] = None
@@ -776,8 +1111,12 @@ class ConferenceTurnRequest(BaseModel):
 
 
 class ConferenceTurnResponse(BaseModel):
-    interviewer_reply: str = Field(..., description="Spoken verbal reply from AI interviewer")
-    live_coaching_nudge: Optional[str] = Field(default=None, description="Floating HUD coaching alert on video")
+    interviewer_reply: str = Field(
+        ..., description="Spoken verbal reply from AI interviewer"
+    )
+    live_coaching_nudge: Optional[str] = Field(
+        default=None, description="Floating HUD coaching alert on video"
+    )
     mistakes_detected: List[MistakeItem] = Field(default_factory=list)
     words_per_minute: float = 0.0
     filler_words_count: int = 0
@@ -797,7 +1136,9 @@ class ConferenceDebriefRequest(BaseModel):
 class ConferenceDebriefResponse(BaseModel):
     session_id: str
     overall_score: int = Field(..., ge=0, le=100)
-    hiring_verdict: str = Field(..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'")
+    hiring_verdict: str = Field(
+        ..., description="'Strong Hire', 'Hire', 'Borderline', or 'Needs Improvement'"
+    )
     verdict_color: str = "emerald"
     total_turns: int = 0
     total_mistakes_count: int = 0
@@ -808,19 +1149,33 @@ class ConferenceDebriefResponse(BaseModel):
 
 
 class ConferenceTTSRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=3000, description="Spoken text to synthesize into studio MP3 audio")
-    voice: Optional[str] = Field("en-US-ChristopherNeural", description="Voice profile identifier")
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=3000,
+        description="Spoken text to synthesize into studio MP3 audio",
+    )
+    voice: Optional[str] = Field(
+        "en-US-ChristopherNeural", description="Voice profile identifier"
+    )
 
 
 class PayHereInitiateRequest(BaseModel):
     plan: str = Field(..., description="'pro', 'elite', or 'sprint'")
-    billing_cycle: Optional[str] = Field(default="1m", description="'1m', '3m', '6m', '12m', or 'lifetime'")
+    billing_cycle: Optional[str] = Field(
+        default="1m", description="'1m', '3m', '6m', '12m', or 'lifetime'"
+    )
     currency: Optional[str] = Field(default="LKR", description="'LKR' or 'USD'")
     phone: Optional[str] = Field(default=None)
     address: Optional[str] = Field(default=None)
     city: Optional[str] = Field(default=None)
-    force: bool = Field(default=False, description="Set to True to override existing in-flight pending order")
-    promo_code: Optional[str] = Field(default=None, description="Optional coupon or promo code")
+    force: bool = Field(
+        default=False,
+        description="Set to True to override existing in-flight pending order",
+    )
+    promo_code: Optional[str] = Field(
+        default=None, description="Optional coupon or promo code"
+    )
 
 
 class PayHereInitiateResponse(BaseModel):
@@ -836,9 +1191,19 @@ class PayHereInitiateResponse(BaseModel):
 
 
 class AdminRefundRequest(BaseModel):
-    order_id: str = Field(..., description="Unique order reference to refund (e.g. ORD-2026...)")
-    reason: str = Field(..., min_length=3, max_length=255, description="Administrative reason for processing the refund")
-    amount: Optional[float] = Field(default=None, description="Optional partial refund amount. If omitted, full order amount is refunded")
+    order_id: str = Field(
+        ..., description="Unique order reference to refund (e.g. ORD-2026...)"
+    )
+    reason: str = Field(
+        ...,
+        min_length=3,
+        max_length=255,
+        description="Administrative reason for processing the refund",
+    )
+    amount: Optional[float] = Field(
+        default=None,
+        description="Optional partial refund amount. If omitted, full order amount is refunded",
+    )
 
 
 class AdminRefundResponse(BaseModel):
@@ -849,7 +1214,9 @@ class AdminRefundResponse(BaseModel):
 
 
 class UserRefundRequest(BaseModel):
-    reason: str = Field(..., min_length=5, max_length=500, description="Reason for requesting refund")
+    reason: str = Field(
+        ..., min_length=5, max_length=500, description="Reason for requesting refund"
+    )
 
 
 class BillingDiscountRule(BaseModel):
@@ -873,12 +1240,15 @@ class BillingDiscountsConfig(BaseModel):
 
 
 class PayHereSubscriptionActionRequest(BaseModel):
-    subscription_id: str = Field(..., description="PayHere Subscription reference identifier")
+    subscription_id: str = Field(
+        ..., description="PayHere Subscription reference identifier"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # EMAIL QUEUE & OUTBOX AUDIT SCHEMAS
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class QueuedEmailItem(BaseModel):
     id: int
@@ -908,5 +1278,3 @@ class EmailQueueStatsResponse(BaseModel):
 class EmailQueueListResponse(BaseModel):
     stats: EmailQueueStatsResponse
     items: List[QueuedEmailItem]
-
-
