@@ -1,0 +1,33 @@
+name: Deploy DreemFolio SaaS to CloudPanel VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH to CloudPanel Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }} # e.g. dreemfolio or root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd /home/dreemfolio/htdocs/www.dreemfolio.com
+            
+            # 1. Fix Git dubious ownership issue
+            git config --global --add safe.directory /home/dreemfolio/htdocs/www.dreemfolio.com
+            
+            # 2. Pull latest code from GitHub
+            git pull origin main
+            
+            # 3. Build & Reload containers seamlessly (Zero Downtime)
+            docker compose up -d --build --remove-orphans
+            
+            # 4. Cleanup old dangling images to save server disk space
+            docker image prune -f
+            
+            echo "🚀 DreemFolio SaaS Deployment Completed Successfully!"
