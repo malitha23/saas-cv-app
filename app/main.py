@@ -6,6 +6,7 @@ if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 import time
+import asyncio
 import logging
 from typing import Dict, List
 from fastapi import FastAPI, Request
@@ -127,15 +128,44 @@ async def add_security_headers(request: Request, call_next):
 # ─────────────────────────────────────────────────────────────────────────────
 # APPLICATION LIFECYCLE & DATABASE SETUP
 # ─────────────────────────────────────────────────────────────────────────────
+_email_worker_running = True
+
+async def email_queue_worker_loop():
+    """Background task cycling every 60 seconds to retry failed/pending emails."""
+    from app.email_service import process_email_queue
+    logger.info("🚀 Email queue auto-retry background worker started.")
+    while _email_worker_running:
+        try:
+            await asyncio.sleep(60)
+            stats = await asyncio.to_thread(process_email_queue, 25)
+            if stats.get("processed", 0) > 0:
+                logger.info("📬 Email Queue Worker processed batch: %s", stats)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error("Error in email queue worker loop: %s", e)
+
 @app.on_event("startup")
 def on_startup():
-    """Ensure database tables are created in MySQL on startup."""
+    """Ensure database tables are created in MySQL on startup and start queue worker."""
     try:
         active_engine = get_engine()
         Base.metadata.create_all(bind=active_engine)
         print("[DB] Database tables successfully initialized!")
     except Exception as e:
         print("[DB] Warning during database table initialization:", str(e))
+
+    # Launch background worker
+    try:
+        asyncio.create_task(email_queue_worker_loop())
+    except Exception as worker_err:
+        logger.warning("Failed to start email queue worker: %s", worker_err)
+
+@app.on_event("shutdown")
+def on_shutdown():
+    """Gracefully terminate background workers."""
+    global _email_worker_running
+    _email_worker_running = False
 
 
 # ─────────────────────────────────────────────────────────────────────────────

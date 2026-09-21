@@ -2907,6 +2907,28 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     '''
 
 
+def render_viral_portfolio_badge(slug: str) -> str:
+    """Render high-converting viral badge at bottom of published portfolio."""
+    ref_param = f"portfolio_{slug}" if slug else "portfolio_viral"
+    return f"""
+    <!-- DreemFolio AI Viral Growth Badge -->
+    <footer class="w-full py-10 px-4 text-center border-t border-white/10 mt-20 relative z-20">
+      <div class="max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="/?ref={ref_param}" target="_blank" rel="noopener noreferrer"
+           class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/60 shadow-xl transition-all duration-300 text-xs text-slate-300 hover:text-white">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+          <span>⚡ Built with <strong class="text-white font-bold tracking-tight">DreemFolio AI</strong></span>
+          <span class="text-slate-600">•</span>
+          <span class="text-indigo-400 group-hover:text-indigo-300 font-bold flex items-center gap-1">
+            Create your free portfolio in 2 mins
+            <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
+          </span>
+        </a>
+      </div>
+    </footer>
+    """
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # MASTER PORTFOLIO COMPOSER
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2984,6 +3006,7 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
     clean_slug = slug or re.sub(r"[^a-zA-Z0-9_-]", "-", (safe_resume.personal_info.full_name or "candidate").lower()).strip("-")
     pin_gate_html = render_pin_gate_overlay(safe_resume, clean_slug)
     verification_html = render_verification_badge(safe_resume, clean_slug)
+    viral_badge_html = render_viral_portfolio_badge(clean_slug)
 
     full_name = safe_resume.personal_info.full_name or "Professional Portfolio"
     role_title = safe_resume.target_job_title or "Portfolio"
@@ -3018,6 +3041,7 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
   {pin_gate_html}
   {verification_html}
   {layout_html}
+  {viral_badge_html}
 
   <script>
     function hydrateIcons() {{

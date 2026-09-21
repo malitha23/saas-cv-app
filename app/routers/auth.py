@@ -85,6 +85,7 @@ async def auth_with_google(
             # 3. Create brand new user
             now = datetime.datetime.utcnow()
             random_pw = secrets.token_urlsafe(32)
+            my_ref_code = generate_unique_referral_code(db)
             user = User(
                 email=google_email,
                 hashed_password=hash_password(random_pw),
@@ -102,11 +103,15 @@ async def auth_with_google(
                 avatar_url=google_picture,
                 auth_provider="google",
                 is_admin=False,
-                is_active=True
+                is_active=True,
+                referral_code=my_ref_code
             )
             db.add(user)
             db.commit()
             db.refresh(user)
+
+            if req.referral_code:
+                process_referral_signup(user, req.referral_code, db)
 
             base_url = str(request.base_url).rstrip("/")
             send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
@@ -122,6 +127,44 @@ async def auth_with_google(
         token_type="bearer",
         user=build_user_response(user, db)
     )
+
+
+def generate_unique_referral_code(db: Session) -> str:
+    """Generate cryptographically distinct referral code e.g. DF-A1B2C3."""
+    for _ in range(10):
+        candidate = f"DF-{secrets.token_hex(3).upper()}"
+        if not db.scalars(select(User.id).where(User.referral_code == candidate)).first():
+            return candidate
+    return f"DF-{secrets.token_hex(4).upper()}"
+
+
+def process_referral_signup(new_user: User, raw_ref_code: Optional[str], db: Session) -> bool:
+    """Link referred user and reward inviter with +1 clean ATS download with anti-fraud protection."""
+    if not raw_ref_code or not raw_ref_code.strip():
+        return False
+    ref_clean = raw_ref_code.strip()
+    
+    referrer = None
+    if ref_clean.upper().startswith("DF-"):
+        referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
+    elif ref_clean.startswith("portfolio_"):
+        slug = ref_clean.replace("portfolio_", "").strip().lower()
+        users = db.scalars(select(User)).all()
+        for u in users:
+            clean_u = re.sub(r'[^a-zA-Z0-9]', '-', u.full_name.lower()).strip('-')
+            if clean_u == slug:
+                referrer = u
+                break
+    else:
+        referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
+
+    # Anti-fraud: cannot refer oneself
+    if referrer and referrer.id != new_user.id:
+        new_user.referred_by_id = referrer.id
+        referrer.referral_bonus_downloads = (getattr(referrer, "referral_bonus_downloads", 0) or 0) + 1
+        db.commit()
+        return True
+    return False
 
 
 @router.post("/api/auth/register", response_model=TokenResponse)
@@ -141,16 +184,23 @@ async def register_user(
             detail="An account with this email address already exists. Please log in."
         )
 
+    my_referral_code = generate_unique_referral_code(db)
+
     user = User(
         email=email_clean,
         hashed_password=hash_password(req.password),
         full_name=req.full_name.strip() or "Candidate",
         plan_tier="free",  # Default Free Starter Tier
-        subscription_status="active"
+        subscription_status="active",
+        referral_code=my_referral_code
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Process Referral attribution if provided
+    if req.referral_code:
+        process_referral_signup(user, req.referral_code, db)
 
     base_url = str(request.base_url).rstrip("/")
     send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)

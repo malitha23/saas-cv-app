@@ -4,10 +4,13 @@ import logging
 import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+from app.models import QueuedEmail
 
 logger = logging.getLogger("dreemfolio.email")
 
@@ -80,10 +83,69 @@ def get_admin_emails(db=None) -> List[str]:
     return list(recipients)
 
 
-def send_raw_email(to_email: str, subject: str, html_body: str, plain_body: Optional[str] = None) -> bool:
+def enqueue_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    plain_body: Optional[str] = None,
+    error_msg: Optional[str] = None,
+    delay_minutes: int = 1,
+    db: Optional[Session] = None
+) -> Optional[QueuedEmail]:
+    """Persists an email into the database queue for automated background retries."""
+    to_clean = to_email.strip()
+    next_retry = datetime.utcnow() + timedelta(minutes=max(1, delay_minutes))
+
+    def _do_insert(session: Session):
+        queued = QueuedEmail(
+            recipient_email=to_clean,
+            subject=subject,
+            html_body=html_body,
+            plain_body=plain_body,
+            status="pending",
+            attempts=1 if error_msg else 0,
+            max_attempts=5,
+            last_error=error_msg,
+            next_retry_at=next_retry,
+            created_at=datetime.utcnow()
+        )
+        session.add(queued)
+        session.commit()
+        session.refresh(queued)
+        logger.info("📥 Queued email for retry: ID=%s To=%s Subject='%s' (Next retry at %s)", queued.id, to_clean, subject, next_retry)
+        return queued
+
+    if db is not None:
+        try:
+            return _do_insert(db)
+        except Exception as err:
+            logger.error("Failed to enqueue email with provided DB session: %s", err)
+            return None
+    else:
+        try:
+            from app.database import get_db, init_engine
+            init_engine()
+            session = next(get_db())
+            try:
+                return _do_insert(session)
+            finally:
+                session.close()
+        except Exception as err:
+            logger.error("Failed to enqueue email with fallback DB session: %s", err)
+            return None
+
+
+def send_raw_email(
+    to_email: str,
+    subject: str,
+    html_body: str,
+    plain_body: Optional[str] = None,
+    enqueue_on_fail: bool = True
+) -> bool:
     """
     Core blocking SMTP dispatcher.
     If SMTP credentials are missing, logs simulation cleanly without throwing errors.
+    If live sending fails (e.g. timeout, connection error), automatically enqueues to DB for retry.
     """
     cfg = get_smtp_config()
     to_clean = to_email.strip()
@@ -124,8 +186,164 @@ def send_raw_email(to_email: str, subject: str, html_body: str, plain_body: Opti
         logger.info("✅ Transactional email successfully dispatched to: %s | Subject: %s", to_clean, subject)
         return True
     except Exception as e:
-        logger.error("❌ Failed to dispatch email to %s: %s", to_clean, str(e))
+        err_msg = str(e)
+        logger.error("❌ Failed to dispatch email to %s: %s", to_clean, err_msg)
+        if enqueue_on_fail:
+            try:
+                enqueue_email(
+                    to_email=to_clean,
+                    subject=subject,
+                    html_body=html_body,
+                    plain_body=plain_body,
+                    error_msg=f"Initial dispatch failure: {err_msg}",
+                    delay_minutes=1
+                )
+            except Exception as q_err:
+                logger.error("Failed to auto-enqueue failed email: %s", q_err)
         return False
+
+
+def process_email_queue(batch_size: int = 20, db: Optional[Session] = None) -> Dict[str, int]:
+    """
+    Processes due pending emails from the queue with exponential backoff.
+    Returns summary stats: {'processed': count, 'sent': count, 'failed': count, 'retrying': count}.
+    """
+    stats = {"processed": 0, "sent": 0, "failed": 0, "retrying": 0}
+    now = datetime.utcnow()
+
+    def _run_batch(session: Session):
+        stmt = (
+            select(QueuedEmail)
+            .where(
+                QueuedEmail.status.in_(["pending", "processing"]),
+                QueuedEmail.attempts < QueuedEmail.max_attempts,
+                QueuedEmail.next_retry_at <= now
+            )
+            .order_by(QueuedEmail.next_retry_at.asc())
+            .limit(batch_size)
+        )
+        items = list(session.scalars(stmt).all())
+        if not items:
+            return stats
+
+        stats["processed"] = len(items)
+        for item in items:
+            item.status = "processing"
+            session.commit()
+
+            # Attempt direct delivery WITHOUT enqueuing again
+            success = send_raw_email(
+                to_email=item.recipient_email,
+                subject=item.subject,
+                html_body=item.html_body,
+                plain_body=item.plain_body,
+                enqueue_on_fail=False
+            )
+
+            if success:
+                item.status = "sent"
+                item.sent_at = datetime.utcnow()
+                item.last_error = None
+                stats["sent"] += 1
+                logger.info("✅ Queued email ID=%s successfully delivered to %s!", item.id, item.recipient_email)
+            else:
+                item.attempts += 1
+                if item.attempts >= item.max_attempts:
+                    item.status = "failed"
+                    stats["failed"] += 1
+                    logger.warning("🚫 Queued email ID=%s permanently failed after %s attempts.", item.id, item.attempts)
+                else:
+                    item.status = "pending"
+                    # Exponential backoff: 2^attempts minutes (e.g. 2m, 4m, 8m, 16m)
+                    backoff_minutes = min(60, 2 ** item.attempts)
+                    item.next_retry_at = datetime.utcnow() + timedelta(minutes=backoff_minutes)
+                    stats["retrying"] += 1
+                    logger.info("⏳ Queued email ID=%s delivery failed. Next retry in %s mins at %s.", item.id, backoff_minutes, item.next_retry_at)
+
+            session.commit()
+        return stats
+
+    if db is not None:
+        try:
+            return _run_batch(db)
+        except Exception as err:
+            logger.error("Error processing email queue: %s", err)
+            return stats
+    else:
+        try:
+            from app.database import get_db, init_engine
+            init_engine()
+            session = next(get_db())
+            try:
+                return _run_batch(session)
+            finally:
+                session.close()
+        except Exception as err:
+            logger.error("Error running email queue worker: %s", err)
+            return stats
+
+
+def retry_single_queued_email(email_id: int, db: Optional[Session] = None) -> bool:
+    """Forces an immediate retry attempt for a specific queued email."""
+    def _do_retry(session: Session):
+        item = session.get(QueuedEmail, email_id)
+        if not item:
+            return False
+
+        success = send_raw_email(
+            to_email=item.recipient_email,
+            subject=item.subject,
+            html_body=item.html_body,
+            plain_body=item.plain_body,
+            enqueue_on_fail=False
+        )
+
+        if success:
+            item.status = "sent"
+            item.sent_at = datetime.utcnow()
+            item.last_error = None
+        else:
+            item.attempts += 1
+            item.status = "failed" if item.attempts >= item.max_attempts else "pending"
+            item.next_retry_at = datetime.utcnow() + timedelta(minutes=min(60, 2 ** item.attempts))
+
+        session.commit()
+        return success
+
+    if db is not None:
+        return _do_retry(db)
+    else:
+        from app.database import get_db, init_engine
+        init_engine()
+        session = next(get_db())
+        try:
+            return _do_retry(session)
+        finally:
+            session.close()
+
+
+def retry_all_queued_emails(db: Optional[Session] = None) -> int:
+    """Resets all pending and failed emails to be immediately eligible for retry."""
+    def _do_reset(session: Session):
+        stmt = select(QueuedEmail).where(QueuedEmail.status.in_(["pending", "failed"]))
+        items = list(session.scalars(stmt).all())
+        now = datetime.utcnow()
+        for item in items:
+            item.status = "pending"
+            item.next_retry_at = now
+        session.commit()
+        return len(items)
+
+    if db is not None:
+        return _do_reset(db)
+    else:
+        from app.database import get_db, init_engine
+        init_engine()
+        session = next(get_db())
+        try:
+            return _do_reset(session)
+        finally:
+            session.close()
 
 
 def dispatch_email_in_background(to_email: str, subject: str, html_body: str, background_tasks=None):

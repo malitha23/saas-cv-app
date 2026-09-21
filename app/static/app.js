@@ -1,4 +1,20 @@
 function resumeApp() {
+  // Safe initial pre-hydration from localStorage to eliminate auth button flash
+  let initialUser = null;
+  let isChecking = false;
+  try {
+    const token = localStorage.getItem('saas_token');
+    const userStr = localStorage.getItem('saas_user');
+    if (token) {
+      isChecking = true;
+      if (userStr) {
+        initialUser = JSON.parse(userStr);
+      }
+    }
+  } catch (e) {
+    console.warn('Initial session pre-hydration notice:', e);
+  }
+
   return {
     // State
     resumeText: '',
@@ -46,8 +62,21 @@ function resumeApp() {
     newSkillInputs: {},
 
     // SaaS Auth & MySQL Cloud State
-    currentUser: null,
+    currentUser: initialUser,
+    isAuthChecking: isChecking,
     avatarImgFailed: false,
+
+    // Promo Codes & Viral Campaigns State
+    promoInputCode: '',
+    appliedPromo: null,
+    promoMessage: '',
+    promoError: '',
+    isApplyingPromo: false,
+    isClaimingFreePass: false,
+
+    // ATS Scorecard Share State
+    showAtsScoreCardModal: false,
+    copiedAtsCard: false,
     showUserProfileDropdown: false,
     showAuthModal: false,
     authMode: 'login', // 'login' or 'register'
@@ -197,6 +226,13 @@ function resumeApp() {
 
     // Interactive Quota Dropdown Popover in Header
     showQuotaDropdown: false,
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PAYHERE LITE MODE FEATURE SWITCH (See PAYHERE_LITE_MODE_GUIDE.md in root)
+    // ═══════════════════════════════════════════════════════════════════════════
+    // When true: Hides USD / foreign currency toggles on Customer UI & locks to LKR One-Time Payments.
+    // When false: Enables multi-currency (USD/LKR) and PayHere Recurring Billing.
+    payhereLiteMode: true,
 
     // Dynamic Subscription Plans & Country-Specific Pricing State
     activeCountryCode: 'LK',
@@ -376,7 +412,12 @@ function resumeApp() {
           }
         } catch (e) {
           console.warn('SaaS session restore error:', e);
+        } finally {
+          this.isAuthChecking = false;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
         }
+      } else {
+        this.isAuthChecking = false;
       }
 
       // Restore theme preference
@@ -392,9 +433,13 @@ function resumeApp() {
       await this.loadDynamicPlans();
       await this.loadBillingDiscounts();
 
-      // Check for PayHere / Payment Gateway Return Redirects
+      // Check for PayHere / Payment Gateway Return Redirects & Referral Codes
       try {
         const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        if (refCode && refCode.trim()) {
+          localStorage.setItem('dreemfolio_ref', refCode.trim());
+        }
         const paymentStatus = urlParams.get('payment');
         const orderId = urlParams.get('order_id');
         if (paymentStatus) {
@@ -2057,6 +2102,10 @@ function resumeApp() {
       };
       if (this.authMode === 'register') {
         payload.full_name = this.authForm.full_name || 'Candidate';
+        const refStored = localStorage.getItem('dreemfolio_ref');
+        if (refStored && refStored.trim()) {
+          payload.referral_code = refStored.trim();
+        }
       }
 
       try {
@@ -2264,12 +2313,14 @@ function resumeApp() {
       this.authError = '';
 
       try {
+        const refStored = localStorage.getItem('dreemfolio_ref');
         const res = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             credential: googleResponse.credential,
-            client_id: this.googleClientId || null
+            client_id: this.googleClientId || null,
+            referral_code: (refStored && refStored.trim()) ? refStored.trim() : null
           })
         });
 
@@ -2326,21 +2377,29 @@ function resumeApp() {
       localStorage.removeItem('saas_token');
       localStorage.removeItem('saas_user');
       this.currentUser = null;
+      this.isAuthChecking = false;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
 
     async loadDynamicPlans(countryCode = null) {
       try {
-        const code = countryCode || this.activeCountryCode || 'LK';
+        // In PayHere Lite Mode, strictly lock to Sri Lanka (LK / LKR)
+        const code = this.payhereLiteMode ? 'LK' : (countryCode || this.activeCountryCode || 'LK');
         const res = await fetch(`/api/subscription/plans?country=${encodeURIComponent(code)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.plans && data.plans.length > 0) {
             this.dynamicPlans = data.plans;
           }
-          if (data.country_code) this.activeCountryCode = data.country_code;
-          if (data.currency) this.activeCurrency = data.currency;
-          if (data.currency_symbol) this.activeCurrencySymbol = data.currency_symbol;
+          if (this.payhereLiteMode) {
+            this.activeCountryCode = 'LK';
+            this.activeCurrency = 'LKR';
+            this.activeCurrencySymbol = 'Rs. ';
+          } else {
+            if (data.country_code) this.activeCountryCode = data.country_code;
+            if (data.currency) this.activeCurrency = data.currency;
+            if (data.currency_symbol) this.activeCurrencySymbol = data.currency_symbol;
+          }
           if (data.sprint_price) this.activeSprintPrice = data.sprint_price;
           if (data.available_countries) this.availableCountries = data.available_countries;
           this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
@@ -2390,8 +2449,9 @@ function resumeApp() {
 
       const discounts = this.billingDiscounts || {};
 
+      let calcRes = null;
       if (cycle === '1m') {
-        return {
+        calcRes = {
           price_display: `${symbol}${currency === 'USD' ? baseMonthly : baseMonthly.toLocaleString()}`,
           period_display: '/ month',
           sub_billing_text: 'Billed monthly • One-time prepaid checkout',
@@ -2402,7 +2462,7 @@ function resumeApp() {
         const discPct = discounts['3m']?.discount_percent ?? 15;
         const total = Math.round(baseMonthly * 3 * (1 - discPct / 100));
         const perMonth = Math.round(total / 3);
-        return {
+        calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ 3 months',
           sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
@@ -2413,7 +2473,7 @@ function resumeApp() {
         const discPct = discounts['6m']?.discount_percent ?? 25;
         const total = Math.round(baseMonthly * 6 * (1 - discPct / 100));
         const perMonth = Math.round(total / 6);
-        return {
+        calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ 6 months',
           sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
@@ -2424,7 +2484,7 @@ function resumeApp() {
         const discPct = discounts['12m']?.discount_percent ?? 40;
         const total = Math.round(baseMonthly * 12 * (1 - discPct / 100));
         const perMonth = Math.round(total / 12);
-        return {
+        calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ year',
           sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
@@ -2439,22 +2499,37 @@ function resumeApp() {
         } else {
           total = lifetimeCfg[`${planKey}_price_lkr`] ?? (planKey === 'elite' ? 24900 : 14900);
         }
-        return {
+        calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ lifetime pass',
           sub_billing_text: 'Pay once, enjoy forever • 100 Years Unlimited Access',
           raw_amount: total,
           badge: lifetimeCfg.badge || '👑 Lifetime Pass'
         };
+      } else {
+        calcRes = {
+          price_display: `${symbol}${baseMonthly}`,
+          period_display: '/ month',
+          sub_billing_text: '',
+          raw_amount: baseMonthly,
+          badge: ''
+        };
       }
 
-      return {
-        price_display: `${symbol}${baseMonthly}`,
-        period_display: '/ month',
-        sub_billing_text: '',
-        raw_amount: baseMonthly,
-        badge: ''
-      };
+      // If user entered a valid percentage promo code, apply discount to calculated price
+      if (this.appliedPromo && this.appliedPromo.discount_percent > 0 && (this.appliedPromo.target_plan === 'any' || this.appliedPromo.target_plan === planKey)) {
+        const promoPct = this.appliedPromo.discount_percent;
+        const discounted = Math.max(10, Math.round(calcRes.raw_amount * (1 - promoPct / 100)));
+        return {
+          price_display: `${symbol}${currency === 'USD' ? discounted : discounted.toLocaleString()}`,
+          period_display: calcRes.period_display,
+          sub_billing_text: `🎉 Promo Applied: ${promoPct}% OFF (Was ${calcRes.price_display})`,
+          raw_amount: discounted,
+          badge: `🎁 ${promoPct}% OFF Applied`
+        };
+      }
+
+      return calcRes;
     },
 
     async saveResumeToMySQL() {
@@ -2609,6 +2684,7 @@ function resumeApp() {
       const token = localStorage.getItem('saas_token');
       try {
         const currency = (this.activeCurrency || 'LKR').toUpperCase();
+        const promoCodeToApply = (this.appliedPromo && this.appliedPromo.code) ? this.appliedPromo.code : null;
         const res = await fetch('/api/payments/payhere/initiate', {
           method: 'POST',
           headers: {
@@ -2619,7 +2695,8 @@ function resumeApp() {
             plan: targetPlan,
             currency: currency === 'USD' ? 'USD' : 'LKR',
             billing_cycle: this.selectedBillingCycle || '1m',
-            force: Boolean(force)
+            force: Boolean(force),
+            promo_code: promoCodeToApply
           })
         });
 
@@ -2674,6 +2751,126 @@ function resumeApp() {
 
     async upgradeSubscription(targetPlan, durationMonths = 1) {
       return await this.initiatePayHereCheckout(targetPlan);
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // PROMO CODES & FREE PASS CAMPAIGN METHODS
+    // ─────────────────────────────────────────────────────────────────────────
+    async applyPromoCode() {
+      const code = (this.promoInputCode || '').trim().toUpperCase();
+      if (!code) {
+        this.promoError = 'Please enter a promo code.';
+        this.promoMessage = '';
+        return;
+      }
+      this.isApplyingPromo = true;
+      this.promoError = '';
+      this.promoMessage = '';
+      try {
+        const token = localStorage.getItem('saas_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/promo/validate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            code: code,
+            target_plan: 'pro',
+            billing_cycle: this.selectedBillingCycle || '1m'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.valid) {
+          this.appliedPromo = null;
+          this.promoError = data.message || 'Invalid promo code.';
+          this.promoMessage = '';
+        } else {
+          this.appliedPromo = data;
+          this.promoMessage = data.message;
+          this.promoError = '';
+        }
+      } catch (err) {
+        this.promoError = 'Failed to validate promo code: ' + err.message;
+      } finally {
+        this.isApplyingPromo = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    clearPromoCode() {
+      this.promoInputCode = '';
+      this.appliedPromo = null;
+      this.promoMessage = '';
+      this.promoError = '';
+    },
+
+    async claimFreePass() {
+      if (!this.currentUser) {
+        this.openAuthModal('login', 'Please log in to redeem your free pass.');
+        return;
+      }
+      if (!this.appliedPromo || this.appliedPromo.code_type !== 'free_pass') {
+        alert('Please enter a valid free pass code.');
+        return;
+      }
+      this.isClaimingFreePass = true;
+      try {
+        const token = localStorage.getItem('saas_token');
+        const res = await fetch('/api/promo/redeem-free', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ code: this.appliedPromo.code })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Could not redeem free pass.');
+        }
+        this.currentUser = data;
+        alert(`🎉 Congratulations! Free pass activated. You now have active Pro access for ${this.appliedPromo.free_days} days!`);
+        this.clearPromoCode();
+        this.showPricingModal = false;
+      } catch (err) {
+        alert('Redemption error: ' + err.message);
+      } finally {
+        this.isClaimingFreePass = false;
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ATS SCORECARD VIRAL SHARING METHODS
+    // ─────────────────────────────────────────────────────────────────────────
+    shareAtsWhatsApp() {
+      const score = this.tailoredData?.ats_analysis?.overall_score || 95;
+      const role = this.tailoredData?.role_archetype || 'Professional';
+      const ref = this.currentUser?.referral_code || '';
+      const link = `${window.location.origin}/?ref=${ref || 'ats'}`;
+      const msg = `🚀 My ATS Resume Match Score is ${score}% for ${role} on DreemFolio AI! Check your resume score for free here: ${link}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    },
+
+    shareAtsLinkedIn() {
+      const ref = this.currentUser?.referral_code || '';
+      const link = `${window.location.origin}/?ref=${ref || 'ats'}`;
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`, '_blank');
+    },
+
+    async copyAtsCardText() {
+      const score = this.tailoredData?.ats_analysis?.overall_score || 95;
+      const role = this.tailoredData?.role_archetype || 'Professional';
+      const ref = this.currentUser?.referral_code || '';
+      const link = `${window.location.origin}/?ref=${ref || 'ats'}`;
+      const text = `🎯 DreemFolio AI Verified Scorecard\n• Role: ${role}\n• ATS Compatibility: ${score}%\n• Result: 100% Parser Safe (Workday, Lever, Greenhouse)\n• Check your score: ${link}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        this.copiedAtsCard = true;
+        setTimeout(() => { this.copiedAtsCard = false; }, 3000);
+      } catch (e) {
+        prompt('Copy your scorecard summary:', text);
+      }
     },
 
     async openBankTransferCheckout(defaultPlan = 'pro') {

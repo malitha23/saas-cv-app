@@ -271,6 +271,7 @@ class UserRegisterRequest(BaseModel):
     email: str = Field(..., description="Valid email address")
     password: str = Field(..., min_length=6, description="Password (at least 6 characters)")
     full_name: str = Field(default="Candidate", description="User's full name")
+    referral_code: Optional[str] = Field(default=None, description="Optional referral code of inviter")
 
 
 class UserLoginRequest(BaseModel):
@@ -338,6 +339,10 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     auth_provider: str = "email"
     google_id: Optional[str] = None
+    # Referral Engine Fields
+    referral_code: Optional[str] = None
+    referral_bonus_downloads: int = 0
+    referrals_count: int = 0
 
     class Config:
         from_attributes = True
@@ -346,6 +351,7 @@ class UserResponse(BaseModel):
 class GoogleAuthRequest(BaseModel):
     credential: str = Field(..., description="Google ID Token JWT returned by Google Identity Services")
     client_id: Optional[str] = Field(None, description="Optional Client ID for audience verification")
+    referral_code: Optional[str] = Field(None, description="Optional referral code of inviter")
 
 
 class GoogleConfigResponse(BaseModel):
@@ -391,7 +397,64 @@ class SubscriptionStatusResponse(BaseModel):
     has_pending_order: bool = False
     pending_order: Optional[PendingOrderInfo] = None
     has_pending_slip: bool = False
+    # Referral Engine Fields
+    referral_code: Optional[str] = None
+    referral_bonus_downloads: int = 0
+    referrals_count: int = 0
     features: Dict[str, Any]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROMO CODE & CAMPAIGN SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════
+class ValidatePromoRequest(BaseModel):
+    code: str = Field(..., description="Promo or coupon code string")
+    target_plan: str = Field(default="pro", description="'pro', 'elite', 'sprint'")
+    billing_cycle: str = Field(default="1m", description="'1m', '3m', '6m', '12m', 'lifetime'")
+
+
+class ValidatePromoResponse(BaseModel):
+    valid: bool
+    message: str
+    code: Optional[str] = None
+    code_type: Optional[str] = None  # 'discount_percent', 'free_pass'
+    discount_percent: float = 0.0
+    free_days: int = 0
+    discount_amount: float = 0.0
+    final_amount: Optional[float] = None
+    currency: Optional[str] = None
+
+
+class RedeemFreePromoRequest(BaseModel):
+    code: str = Field(..., description="Free campaign or promo pass code")
+
+
+class AdminCreatePromoCodeRequest(BaseModel):
+    code: str = Field(..., description="Unique alphanumeric coupon code e.g. 'SLIIT2026'")
+    code_type: str = Field(default="discount_percent", description="'discount_percent' or 'free_pass'")
+    discount_percent: float = Field(default=0.0, description="Percentage discount (e.g. 20, 50, 100)")
+    free_days: int = Field(default=0, description="Number of days of free access (e.g. 7, 30)")
+    target_plan: str = Field(default="any", description="'any', 'pro', 'elite'")
+    max_uses: int = Field(default=0, description="Max redemptions (0 = unlimited)")
+    expires_at: Optional[str] = Field(default=None, description="Expiration date 'YYYY-MM-DD'")
+
+
+class AdminPromoCodeItem(BaseModel):
+    id: int
+    code: str
+    code_type: str
+    discount_percent: float
+    free_days: int
+    target_plan: str
+    max_uses: int
+    times_used: int
+    is_active: bool
+    expires_at: Optional[str] = None
+    created_at: str
+    created_by_admin: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class CountryPricingConfig(BaseModel):
@@ -757,6 +820,7 @@ class PayHereInitiateRequest(BaseModel):
     address: Optional[str] = Field(default=None)
     city: Optional[str] = Field(default=None)
     force: bool = Field(default=False, description="Set to True to override existing in-flight pending order")
+    promo_code: Optional[str] = Field(default=None, description="Optional coupon or promo code")
 
 
 class PayHereInitiateResponse(BaseModel):
@@ -810,4 +874,39 @@ class BillingDiscountsConfig(BaseModel):
 
 class PayHereSubscriptionActionRequest(BaseModel):
     subscription_id: str = Field(..., description="PayHere Subscription reference identifier")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EMAIL QUEUE & OUTBOX AUDIT SCHEMAS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class QueuedEmailItem(BaseModel):
+    id: int
+    recipient_email: str
+    subject: str
+    status: str
+    attempts: int
+    max_attempts: int
+    plain_body: Optional[str] = None
+    html_body: Optional[str] = None
+    last_error: Optional[str] = None
+    next_retry_at: datetime
+    created_at: datetime
+    sent_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class EmailQueueStatsResponse(BaseModel):
+    total: int
+    pending: int
+    sent: int
+    failed: int
+
+
+class EmailQueueListResponse(BaseModel):
+    stats: EmailQueueStatsResponse
+    items: List[QueuedEmailItem]
+
 

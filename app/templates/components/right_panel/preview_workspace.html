@@ -40,8 +40,8 @@
 
           </div>
 
-          <!-- Matched Skills Tags -->
-          <div class="pt-2 border-t border-slate-800/80 space-y-2">
+          <!-- Matched Skills Tags & Share Scorecard Button -->
+          <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="text-[11px] text-slate-400 font-semibold mr-1">Matched Skills:</span>
               <template x-for="kw in tailoredData.ats_analysis.matched_keywords" :key="kw">
@@ -50,6 +50,12 @@
                   x-text="kw"></span>
               </template>
             </div>
+
+            <button @click="showAtsScoreCardModal = true; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                    class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 shrink-0">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              <span>Share ATS Scorecard</span>
+            </button>
           </div>
 
         </div>
@@ -1063,21 +1069,107 @@
 
             </div>
           </template>
-              </div>
-
-              <!-- Fallback if empty -->
-              <template x-if="!tailoredData || !tailoredData.matched_jobs || tailoredData.matched_jobs.length === 0">
-                <div class="p-8 text-center bg-slate-900 rounded-xl border border-slate-800">
-                  <i data-lucide="search" class="w-8 h-8 text-slate-500 mx-auto mb-2"></i>
-                  <p class="text-sm text-slate-400">Tailoring matches for your profile...</p>
-                </div>
-              </template>
-
-            </div>
 
         </div>
 
       </div>
 
     </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: ATS SCORECARD SHAREABLE VISUAL (VIRAL SOCIAL PROOF)          -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div x-show="showAtsScoreCardModal" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 my-auto"
+         @click.outside="showAtsScoreCardModal = false">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+            <i data-lucide="award" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-100 text-sm">ATS Readiness Scorecard</h3>
+            <p class="text-[10px] text-slate-400">Share your match score with recruiters & on LinkedIn</p>
+          </div>
+        </div>
+        <button @click="showAtsScoreCardModal = false" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- The Shareable Graphic Card Preview -->
+      <div id="ats-shareable-card" class="p-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/80 border-2 border-emerald-500/40 shadow-2xl space-y-4 relative overflow-hidden text-center">
+        <div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Top Header Tag -->
+        <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-800/80 pb-2.5">
+          <span class="font-mono text-emerald-400 font-bold flex items-center gap-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> DreemFolio AI Verified
+          </span>
+          <span class="font-bold text-slate-300 uppercase tracking-wider" x-text="tailoredData?.role_archetype || 'Candidate'"></span>
+        </div>
+
+        <!-- Big Score Gauge -->
+        <div class="py-2 space-y-2">
+          <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-slate-950 border-4 border-emerald-400 shadow-xl shadow-emerald-500/20 text-emerald-400 font-black text-3xl mx-auto">
+            <span x-text="(tailoredData?.ats_analysis?.overall_score || 95) + '%'">95%</span>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-white text-base">ATS Compatibility Match</h4>
+            <p class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1 mt-0.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <span>High Probability of Interview Callback</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Skills highlights -->
+        <div class="space-y-1.5 text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+          <span class="text-[10px] text-slate-400 font-bold uppercase block">Verified Keyword Matches:</span>
+          <div class="flex flex-wrap gap-1">
+            <template x-for="kw in (tailoredData?.ats_analysis?.matched_keywords || []).slice(0, 6)" :key="kw">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-medium text-[10px]" x-text="kw"></span>
+            </template>
+          </div>
+        </div>
+
+        <!-- Watermark / Footer Badge -->
+        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+          <span>Parser Safe: Workday • Lever • Greenhouse</span>
+          <span class="font-mono text-indigo-400 font-semibold">dreemfolio.com</span>
+        </div>
+      </div>
+
+      <!-- 1-Click Sharing Actions -->
+      <div class="space-y-2 pt-1">
+        <p class="text-[11px] font-bold text-slate-400 text-center">Share with 1-Click:</p>
+        <div class="grid grid-cols-2 gap-2">
+          <!-- WhatsApp Share -->
+          <button @click="shareAtsWhatsApp()"
+                  class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20">
+            <i data-lucide="share-2" class="w-4 h-4"></i>
+            <span>WhatsApp</span>
+          </button>
+
+          <!-- LinkedIn Share -->
+          <button @click="shareAtsLinkedIn()"
+                  class="py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg shadow-sky-600/20">
+            <i data-lucide="linkedin" class="w-4 h-4"></i>
+            <span>LinkedIn</span>
+          </button>
+        </div>
+
+        <!-- Copy Link / Text -->
+        <button @click="copyAtsCardText()"
+                class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2">
+          <i data-lucide="copy" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span x-text="copiedAtsCard ? 'Scorecard Summary Copied!' : 'Copy Scorecard Text & Link'"></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
 

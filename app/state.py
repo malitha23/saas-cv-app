@@ -144,12 +144,27 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
     life_visual_used = getattr(user, "lifetime_visual_downloads_count", 0) or 0
     life_cl_used = getattr(user, "lifetime_cover_letter_downloads_count", 0) or 0
 
-    life_ats_remaining = None if tier in ["pro", "elite"] else max(0, life_ats_limit - life_ats_used)
+    bonus_ats = getattr(user, "referral_bonus_downloads", 0) or 0
+    effective_ats_limit = life_ats_limit + bonus_ats
+
+    life_ats_remaining = None if tier in ["pro", "elite"] else max(0, effective_ats_limit - life_ats_used)
     life_visual_remaining = None if tier in ["pro", "elite"] else max(0, life_visual_limit - life_visual_used)
     life_cl_remaining = None if tier in ["pro", "elite"] else max(0, life_cl_limit - life_cl_used)
 
     started_str = user.subscription_started_at.strftime("%B %d, %Y") if user.subscription_started_at else None
     exp_str = user.subscription_expires_at.strftime("%B %d, %Y") if user.subscription_expires_at else None
+
+    # Calculate referrals count
+    referrals_count = 0
+    if db is not None:
+        try:
+            from sqlalchemy import select, func
+            from app.models import User as UserModel
+            referrals_count = db.scalar(
+                select(func.count(UserModel.id)).where(UserModel.referred_by_id == user.id)
+            ) or 0
+        except Exception:
+            referrals_count = 0
 
     # Pending Payment Protection Detection
     has_pending = False
@@ -232,5 +247,8 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         has_pending_slip=has_slip,
         avatar_url=getattr(user, "avatar_url", None),
         auth_provider=getattr(user, "auth_provider", "email") or "email",
-        google_id=getattr(user, "google_id", None)
+        google_id=getattr(user, "google_id", None),
+        referral_code=getattr(user, "referral_code", None),
+        referral_bonus_downloads=getattr(user, "referral_bonus_downloads", 0) or 0,
+        referrals_count=referrals_count
     )

@@ -64,10 +64,53 @@ async def serve_refund_policy(request: Request):
     return templates.TemplateResponse(request=request, name="legal/refund.html", context={"active_page": "refund"})
 
 
-@router.get("/security")
+@router.get("/security", response_class=HTMLResponse)
 async def serve_security_whitepaper(request: Request):
-    """Hidden for now - redirect to home page."""
-    return RedirectResponse(url="/", status_code=302)
+    """Serve official Enterprise Security & Compliance Whitepaper."""
+    return templates.TemplateResponse(request=request, name="legal/security.html", context={"active_page": "security"})
+
+
+@router.get("/contact", response_class=HTMLResponse)
+@router.get("/support", response_class=HTMLResponse)
+async def serve_contact_page(request: Request):
+    """Serve official Contact & Support page with human assistance channels."""
+    return templates.TemplateResponse(request=request, name="legal/contact.html", context={"active_page": "contact"})
+
+
+@router.get("/pricing", response_class=HTMLResponse)
+async def serve_pricing_page(request: Request):
+    """
+    Dedicated, high-converting Pricing route for search engines & direct traffic.
+    Serves the landing page with custom SEO metadata and auto-scrolls to #pricing.
+    """
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={
+            "page_title": "DreemFolio AI Pricing — Fair Country Plans, 7-Day Sprint & Lifetime Access",
+            "page_description": "Explore transparent, affordable pricing for DreemFolio AI. 100% ATS score tailoring, cover letters, and live developer portfolios. Special PPP discounts for Sri Lanka.",
+            "canonical_url": "https://dreemfolio.com/pricing",
+            "auto_scroll": "pricing"
+        }
+    )
+
+
+@router.get("/features", response_class=HTMLResponse)
+async def serve_features_page(request: Request):
+    """
+    Dedicated, high-converting Features route for search engines & direct traffic.
+    Serves the landing page with custom SEO metadata and auto-scrolls to #features.
+    """
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={
+            "page_title": "DreemFolio AI Features — 100% ATS Resume Tailor, Cover Letters & Live Web Portfolios",
+            "page_description": "Discover how DreemFolio AI tailors resumes to any job description, generates ATS-safe PDFs, builds modern photo CVs, drafts cover letters, and publishes developer portfolios.",
+            "canonical_url": "https://dreemfolio.com/features",
+            "auto_scroll": "features"
+        }
+    )
 
 
 @router.get("/robots.txt", response_class=Response)
@@ -76,6 +119,10 @@ async def serve_robots_txt():
     content = """User-agent: *
 Allow: /
 Allow: /app
+Allow: /pricing
+Allow: /features
+Allow: /contact
+Allow: /support
 Allow: /privacy
 Allow: /terms
 Allow: /refund
@@ -106,10 +153,34 @@ async def serve_sitemap_xml():
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://dreemfolio.com/pricing</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://dreemfolio.com/features</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://dreemfolio.com/app</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://dreemfolio.com/contact</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://dreemfolio.com/security</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://dreemfolio.com/privacy</loc>
@@ -128,12 +199,6 @@ async def serve_sitemap_xml():
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://dreemfolio.com/security</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
   </url>
 </urlset>"""
     return Response(content=sitemap, media_type="application/xml")

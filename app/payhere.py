@@ -274,6 +274,7 @@ class PayHereGateway:
         phone: Optional[str] = None,
         address: Optional[str] = None,
         city: Optional[str] = None,
+        amount_override: Optional[float] = None,
         db: Optional[Session] = None
     ) -> Dict[str, Any]:
         """
@@ -283,7 +284,10 @@ class PayHereGateway:
         config = cls.get_config()
         active_currency = (currency or config["currency"]).upper().strip()
         cycle = (billing_cycle or "1m").lower().strip()
-        amount = cls.get_plan_price(plan_tier, active_currency, billing_cycle=cycle, db=db)
+        if amount_override is not None and amount_override > 0:
+            amount = round(float(amount_override), 2)
+        else:
+            amount = cls.get_plan_price(plan_tier, active_currency, billing_cycle=cycle, db=db)
         formatted_amount = f"{amount:.2f}"
 
         cycle_labels = {

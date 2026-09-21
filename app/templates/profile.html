@@ -197,6 +197,61 @@
       </div>
 
       <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- VIRAL REFERRAL PROGRAM: REFER & EARN LIFETIME ATS DOWNLOADS    -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-purple-950/30 border border-indigo-500/30 shadow-2xl space-y-5 relative overflow-hidden">
+        <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+              <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i>
+              <span>Invite Friends & Earn Free ATS Downloads</span>
+            </div>
+            <h3 class="text-xl font-black text-white tracking-tight">Your Unique Referral Invitation Link</h3>
+            <p class="text-xs text-slate-400 max-w-2xl">
+              Give your classmates and colleagues an edge! Every time someone signs up using your link, you automatically receive <b class="text-emerald-400">+1 Free ATS PDF Download</b> added directly to your account.
+            </p>
+          </div>
+
+          <!-- Referral Stats Badge -->
+          <div class="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 shrink-0">
+            <div class="text-center px-3 border-r border-slate-800">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Referral Code</span>
+              <span class="font-mono font-black text-indigo-300 text-sm" x-text="currentUser?.referral_code || 'DF-2026'"></span>
+            </div>
+            <div class="text-center px-3">
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads Earned</span>
+              <span class="font-mono font-black text-emerald-400 text-sm" x-text="'+' + (currentUser?.referral_bonus_downloads || 0)"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copyable Link Bar & Share Buttons -->
+        <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <div class="flex-1 w-full flex items-center bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-xs">
+            <i data-lucide="link" class="w-4 h-4 text-slate-500 mr-2 shrink-0"></i>
+            <span class="font-mono text-slate-300 truncate select-all" x-text="getReferralUrl()"></span>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button @click="copyReferralUrl()"
+                    class="flex-1 sm:flex-initial px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-2xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span x-text="copiedReferral ? 'Copied to Clipboard!' : 'Copy Link'"></span>
+            </button>
+
+            <a :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent('Create a free ATS-optimized resume & hosted portfolio in 2 minutes with DreemFolio AI! Check it out: ' + getReferralUrl())"
+               target="_blank"
+               class="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-2xl transition flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+              <span>WhatsApp</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ───────────────────────────────────────────────────────────── -->
       <!-- ROW 2: PAYMENT & SUBSCRIPTION BILLING HISTORY                 -->
       <!-- ───────────────────────────────────────────────────────────── -->
       <div class="p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-6">
@@ -670,6 +725,26 @@
             localStorage.removeItem('saas_token');
             localStorage.removeItem('saas_user');
             window.location.href = '/app';
+          }
+        },
+
+        copiedReferral: false,
+
+        getReferralUrl() {
+          const code = this.currentUser?.referral_code || '';
+          const base = window.location.origin;
+          return `${base}/?ref=${code}`;
+        },
+
+        async copyReferralUrl() {
+          const url = this.getReferralUrl();
+          try {
+            await navigator.clipboard.writeText(url);
+            this.copiedReferral = true;
+            this.showToast('Referral link copied to clipboard!');
+            setTimeout(() => { this.copiedReferral = false; }, 3000);
+          } catch (e) {
+            prompt('Copy your referral link:', url);
           }
         }
       };

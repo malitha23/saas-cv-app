@@ -142,6 +142,23 @@
           <i data-lucide="percent" class="w-4 h-4"></i>
           <span>Billing Discounts (3M, 6M, 1Y, Lifetime)</span>
         </button>
+
+        <button @click="activeTab = 'promos'; loadAdminPromos()"
+          :class="activeTab === 'promos' ? 'bg-pink-600 text-white shadow-lg shadow-pink-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4"></i>
+          <span>Promo Codes & Coupons (<span x-text="promoCodesList.length"></span>)</span>
+        </button>
+
+        <button @click="activeTab = 'emails'; loadEmailQueue()"
+          :class="activeTab === 'emails' ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="mail" class="w-4 h-4"></i>
+          <span>Email Queue & Retries</span>
+          <span x-show="emailQueueStats.pending > 0"
+                class="px-2 py-0.5 rounded-full bg-amber-500 text-[10px] font-black text-slate-950 animate-pulse"
+                x-text="emailQueueStats.pending"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -1259,6 +1276,544 @@
             </div>
           </div>
         </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- TAB: PROMO CODES & VIRAL CAMPAIGNS                                   -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div x-show="activeTab === 'promos'" class="space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
+            <div class="space-y-1">
+              <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-300 text-xs font-semibold">
+                <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+                <span>Coupons & University Growth Loops</span>
+              </div>
+              <h2 class="text-lg font-black text-slate-100">Promo Codes & Campus Campaigns</h2>
+              <p class="text-xs text-slate-400">Generate discount coupon codes or instant free-access passes for hackathons, universities, and marketing campaigns.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button @click="showCreatePromoModal = true"
+                class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-xs rounded-xl shadow-lg shadow-pink-600/30 flex items-center gap-2 transition">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Create New Promo Code</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Promo Codes Table -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-200 text-sm">Active & Historic Promo Codes</span>
+                <span class="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[11px] font-bold" x-text="promoCodesList.length + ' Codes'"></span>
+              </div>
+              <button @click="loadAdminPromos()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="{'animate-spin': isLoadingPromos}"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="text-[10px] uppercase font-extrabold text-slate-400 bg-slate-950/60 border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Coupon Code</th>
+                    <th class="py-3 px-4">Type</th>
+                    <th class="py-3 px-4">Benefit / Value</th>
+                    <th class="py-3 px-4">Target Plan</th>
+                    <th class="py-3 px-4">Redemptions</th>
+                    <th class="py-3 px-4">Expiration</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 font-medium">
+                  <template x-for="p in promoCodesList" :key="p.id">
+                    <tr class="hover:bg-slate-800/30 transition-colors">
+                      <!-- Code -->
+                      <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-2">
+                          <span class="font-mono font-black text-white bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 tracking-wider text-xs" x-text="p.code"></span>
+                        </div>
+                      </td>
+
+                      <!-- Type -->
+                      <td class="py-3.5 px-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                              :class="p.code_type === 'free_pass' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'"
+                              x-text="p.code_type === 'free_pass' ? 'Free Pass' : 'Discount %'">
+                        </span>
+                      </td>
+
+                      <!-- Benefit / Value -->
+                      <td class="py-3.5 px-4 font-bold">
+                        <template x-if="p.code_type === 'free_pass'">
+                          <span class="text-purple-300" x-text="p.free_days + ' Days Free Access'"></span>
+                        </template>
+                        <template x-if="p.code_type !== 'free_pass'">
+                          <span class="text-emerald-400 font-mono text-sm" x-text="p.discount_percent + '% OFF'"></span>
+                        </template>
+                      </td>
+
+                      <!-- Target Plan -->
+                      <td class="py-3.5 px-4 font-semibold uppercase text-[11px] text-slate-300" x-text="p.target_plan === 'any' ? 'All Plans' : (p.target_plan + ' Only')"></td>
+
+                      <!-- Redemptions -->
+                      <td class="py-3.5 px-4 font-mono text-xs">
+                        <span class="font-bold text-white" x-text="p.times_used"></span>
+                        <span class="text-slate-500" x-text="' / ' + (p.max_uses > 0 ? p.max_uses : '∞')"></span>
+                      </td>
+
+                      <!-- Expiration -->
+                      <td class="py-3.5 px-4 font-mono text-[11px] text-slate-400" x-text="p.expires_at ? p.expires_at : 'Never'"></td>
+
+                      <!-- Status -->
+                      <td class="py-3.5 px-4">
+                        <button @click="toggleAdminPromo(p.id)"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition"
+                                :class="p.is_active ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'">
+                          <span class="w-1.5 h-1.5 rounded-full" :class="p.is_active ? 'bg-emerald-400' : 'bg-slate-500'"></span>
+                          <span x-text="p.is_active ? 'Active' : 'Disabled'"></span>
+                        </button>
+                      </td>
+
+                      <!-- Actions -->
+                      <td class="py-3.5 px-4 text-right">
+                        <button @click="deleteAdminPromo(p.id, p.code)"
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                                title="Delete Promo Code">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </template>
+
+                  <template x-if="promoCodesList.length === 0">
+                    <tr>
+                      <td colspan="8" class="py-12 text-center text-slate-500 text-xs">
+                        <i data-lucide="tag" class="w-8 h-8 text-slate-600 mx-auto mb-2 opacity-50"></i>
+                        <p>No promo codes created yet. Click "Create New Promo Code" above to launch a campaign!</p>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Create Promo Code Modal -->
+          <div x-show="showCreatePromoModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4" @click.outside="showCreatePromoModal = false">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                  </div>
+                  <h3 class="font-bold text-slate-100 text-sm">Create New Promo Campaign</h3>
+                </div>
+                <button @click="showCreatePromoModal = false" class="text-slate-400 hover:text-white">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <div class="space-y-3 text-xs">
+                <div>
+                  <label class="font-bold text-slate-300 block mb-1">Coupon Code (Uppercase)</label>
+                  <input type="text" x-model="newPromo.code" placeholder="e.g. SLIIT2026, EARLYBIRD"
+                         class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2.5 text-slate-100 font-mono font-bold uppercase tracking-wider outline-none">
+                </div>
+
+                <div>
+                  <label class="font-bold text-slate-300 block mb-1">Benefit Type</label>
+                  <select x-model="newPromo.code_type"
+                          class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2.5 text-slate-100 outline-none">
+                    <option value="discount_percent">Percentage Discount (%)</option>
+                    <option value="free_pass">Free Pass (Full Pro Access)</option>
+                  </select>
+                </div>
+
+                <!-- If Discount % -->
+                <div x-show="newPromo.code_type === 'discount_percent'">
+                  <label class="font-bold text-slate-300 block mb-1">Discount Percentage (%)</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" min="1" max="100" x-model.number="newPromo.discount_percent"
+                           class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-slate-100 font-mono font-bold outline-none">
+                    <span class="text-slate-400 font-bold">%</span>
+                  </div>
+                </div>
+
+                <!-- If Free Pass -->
+                <div x-show="newPromo.code_type === 'free_pass'">
+                  <label class="font-bold text-slate-300 block mb-1">Free Access Duration (Days)</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" min="1" max="365" x-model.number="newPromo.free_days"
+                           class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-slate-100 font-mono font-bold outline-none">
+                    <span class="text-slate-400 font-bold">Days</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="font-bold text-slate-300 block mb-1">Target Plan</label>
+                    <select x-model="newPromo.target_plan"
+                            class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-slate-100 outline-none">
+                      <option value="any">All Plans (Any)</option>
+                      <option value="pro">Pro Plan Only</option>
+                      <option value="elite">Elite Plan Only</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="font-bold text-slate-300 block mb-1">Max Uses (0 = ∞)</label>
+                    <input type="number" min="0" x-model.number="newPromo.max_uses"
+                           class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-slate-100 font-mono outline-none">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="font-bold text-slate-300 block mb-1">Expiration Date (Optional)</label>
+                  <input type="date" x-model="newPromo.expires_at"
+                         class="w-full bg-slate-950 border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-slate-100 outline-none">
+                </div>
+              </div>
+
+              <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button type="button" @click="showCreatePromoModal = false" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">
+                  Cancel
+                </button>
+                <button type="button" @click="createAdminPromo()" :disabled="isCreatingPromo || !newPromo.code.trim()"
+                        class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs disabled:opacity-40 flex items-center justify-center gap-1.5 shadow-lg shadow-pink-600/30">
+                  <span x-text="isCreatingPromo ? 'Creating...' : 'Create Code'"></span>
+                </button>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 10: EMAIL DELIVERY QUEUE & AUTO-RETRY ENGINE                       -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'emails'" class="space-y-6">
+        <!-- Header Banner -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold">
+              <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+              <span>High-Reliability Transactional Outbox</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-100">Email Delivery Queue & Auto-Retry Engine</h2>
+            <p class="text-xs text-slate-400">
+              Guarantees zero-loss email delivery. When SMTP or network issues arise, emails are persisted and retried with exponential backoff.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button @click="loadEmailQueue()" :disabled="isLoadingEmailQueue"
+              class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-2 border border-slate-700 transition">
+              <i data-lucide="refresh-cw" class="w-4 h-4" :class="{ 'animate-spin': isLoadingEmailQueue }"></i>
+              <span>Refresh</span>
+            </button>
+
+            <button @click="retryAllQueuedEmails()" :disabled="isRetryingQueue"
+              class="px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-lg shadow-cyan-600/30 flex items-center gap-2 transition disabled:opacity-50">
+              <i data-lucide="send" class="w-4 h-4" :class="{ 'animate-spin': isRetryingQueue }"></i>
+              <span x-text="isRetryingQueue ? 'Flushing Outbox...' : 'Flush & Retry All Pending'"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Metrics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Total -->
+          <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-lg">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Total In Queue</span>
+              <div class="p-2 rounded-xl bg-slate-800 text-slate-300">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-white font-mono" x-text="emailQueueStats.total">0</div>
+            <div class="text-[11px] text-slate-500 mt-1">Total queued / audited messages</div>
+          </div>
+
+          <!-- Pending / Retrying -->
+          <div class="bg-slate-900/90 border border-amber-500/30 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex items-center justify-between text-amber-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Pending / Retrying</span>
+              <div class="p-2 rounded-xl bg-amber-500/15 text-amber-400">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-amber-300 font-mono" x-text="emailQueueStats.pending">0</div>
+            <div class="text-[11px] text-amber-400/70 mt-1">Automatic backoff active</div>
+          </div>
+
+          <!-- Successfully Sent -->
+          <div class="bg-slate-900/90 border border-emerald-500/30 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex items-center justify-between text-emerald-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Delivered</span>
+              <div class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-emerald-300 font-mono" x-text="emailQueueStats.sent">0</div>
+            <div class="text-[11px] text-emerald-400/70 mt-1">Confirmed SMTP delivery</div>
+          </div>
+
+          <!-- Permanently Failed -->
+          <div class="bg-slate-900/90 border border-rose-500/30 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-rose-500/5 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex items-center justify-between text-rose-400 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Failed (Exhausted)</span>
+              <div class="p-2 rounded-xl bg-rose-500/15 text-rose-400">
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-rose-300 font-mono" x-text="emailQueueStats.failed">0</div>
+            <div class="text-[11px] text-rose-400/70 mt-1">Exceeded max retry attempts</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <button @click="emailQueueFilter = 'all'; loadEmailQueue()"
+              :class="emailQueueFilter === 'all' ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition">
+              All Statuses (<span x-text="emailQueueStats.total"></span>)
+            </button>
+            <button @click="emailQueueFilter = 'pending'; loadEmailQueue()"
+              :class="emailQueueFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition">
+              Pending / Retrying (<span x-text="emailQueueStats.pending"></span>)
+            </button>
+            <button @click="emailQueueFilter = 'sent'; loadEmailQueue()"
+              :class="emailQueueFilter === 'sent' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition">
+              Delivered (<span x-text="emailQueueStats.sent"></span>)
+            </button>
+            <button @click="emailQueueFilter = 'failed'; loadEmailQueue()"
+              :class="emailQueueFilter === 'failed' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-200'"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition">
+              Permanently Failed (<span x-text="emailQueueStats.failed"></span>)
+            </button>
+          </div>
+
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-64">
+              <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+              <input type="text" x-model="emailQueueSearch" placeholder="Search recipient or subject..."
+                class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 outline-none">
+            </div>
+            <div class="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-400 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Worker: 60s background loop</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emails Queue Table -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">#ID</th>
+                  <th class="py-3 px-4">Recipient</th>
+                  <th class="py-3 px-4">Subject</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4">Attempts</th>
+                  <th class="py-3 px-4">Next Retry / Delivered</th>
+                  <th class="py-3 px-4">Last Error Preview</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 font-medium">
+                <template x-for="item in filteredEmailQueue" :key="item.id">
+                  <tr class="hover:bg-slate-800/30 transition-colors">
+                    <!-- ID -->
+                    <td class="py-3.5 px-4 font-mono font-bold text-slate-400" x-text="'#' + item.id"></td>
+
+                    <!-- Recipient -->
+                    <td class="py-3.5 px-4">
+                      <div class="font-bold text-white max-w-[180px] truncate" x-text="item.recipient_email"></div>
+                      <div class="text-[10px] text-slate-500 font-mono" x-text="formatDate(item.created_at)"></div>
+                    </td>
+
+                    <!-- Subject -->
+                    <td class="py-3.5 px-4">
+                      <div class="font-semibold text-slate-200 max-w-[220px] truncate" x-text="item.subject"></div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3.5 px-4">
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                        :class="{
+                          'bg-amber-500/15 text-amber-300 border border-amber-500/30': item.status === 'pending' || item.status === 'processing',
+                          'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': item.status === 'sent',
+                          'bg-rose-500/15 text-rose-300 border border-rose-500/30': item.status === 'failed'
+                        }">
+                        <span class="w-1.5 h-1.5 rounded-full"
+                          :class="{
+                            'bg-amber-400 animate-ping': item.status === 'pending' || item.status === 'processing',
+                            'bg-emerald-400': item.status === 'sent',
+                            'bg-rose-400': item.status === 'failed'
+                          }"></span>
+                        <span x-text="item.status"></span>
+                      </span>
+                    </td>
+
+                    <!-- Attempts -->
+                    <td class="py-3.5 px-4 font-mono">
+                      <span class="font-bold" :class="item.attempts > 1 ? 'text-amber-300' : 'text-slate-300'" x-text="item.attempts"></span>
+                      <span class="text-slate-500" x-text="' / ' + item.max_attempts"></span>
+                    </td>
+
+                    <!-- Next Retry / Delivered -->
+                    <td class="py-3.5 px-4 font-mono text-[11px]">
+                      <template x-if="item.status === 'sent'">
+                        <span class="text-emerald-400" x-text="formatDate(item.sent_at)"></span>
+                      </template>
+                      <template x-if="item.status !== 'sent'">
+                        <span :class="new Date(item.next_retry_at) <= new Date() ? 'text-amber-400 font-bold' : 'text-slate-400'"
+                              x-text="formatDate(item.next_retry_at)"></span>
+                      </template>
+                    </td>
+
+                    <!-- Error Preview -->
+                    <td class="py-3.5 px-4 max-w-[200px]">
+                      <template x-if="item.last_error">
+                        <span class="text-[11px] font-mono text-rose-400 truncate block cursor-pointer hover:underline"
+                              :title="item.last_error"
+                              @click="selectedPreviewEmail = item"
+                              x-text="item.last_error"></span>
+                      </template>
+                      <template x-if="!item.last_error">
+                        <span class="text-slate-600 text-xs italic">None</span>
+                      </template>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3.5 px-4 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <!-- View details modal button -->
+                        <button @click="selectedPreviewEmail = item"
+                          class="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-slate-800 transition"
+                          title="View Message Payload & Traceback">
+                          <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+
+                        <!-- Retry button -->
+                        <button @click="retrySingleEmail(item.id)" :disabled="retryingEmailId === item.id"
+                          class="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition disabled:opacity-40"
+                          title="Retry Sending Now">
+                          <i data-lucide="rotate-cw" class="w-4 h-4" :class="{ 'animate-spin': retryingEmailId === item.id }"></i>
+                        </button>
+
+                        <!-- Delete button -->
+                        <button @click="deleteQueuedEmail(item.id)"
+                          class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                          title="Delete from Queue">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+
+                <!-- Empty State -->
+                <template x-if="filteredEmailQueue.length === 0">
+                  <tr>
+                    <td colspan="8" class="py-12 text-center text-slate-500 text-xs">
+                      <i data-lucide="inbox" class="w-8 h-8 text-slate-600 mx-auto mb-2 opacity-50"></i>
+                      <p>No queued emails found for the current filter criteria.</p>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View Email Details & Payload Modal -->
+        <div x-show="selectedPreviewEmail" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col" @click.outside="selectedPreviewEmail = null">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <i data-lucide="mail" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-100 text-sm" x-text="'Queued Message #' + (selectedPreviewEmail?.id || '')"></h3>
+                  <p class="text-[11px] text-slate-400" x-text="selectedPreviewEmail?.recipient_email"></p>
+                </div>
+              </div>
+              <button @click="selectedPreviewEmail = null" class="text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+              <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-bold">Subject:</span>
+                  <span class="font-bold text-white" x-text="selectedPreviewEmail?.subject"></span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-bold">Delivery Status:</span>
+                  <span class="font-bold uppercase font-mono"
+                    :class="{
+                      'text-amber-400': selectedPreviewEmail?.status === 'pending',
+                      'text-emerald-400': selectedPreviewEmail?.status === 'sent',
+                      'text-rose-400': selectedPreviewEmail?.status === 'failed'
+                    }"
+                    x-text="selectedPreviewEmail?.status"></span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-bold">Created At:</span>
+                  <span class="text-slate-300 font-mono" x-text="formatDate(selectedPreviewEmail?.created_at)"></span>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[10px] uppercase font-bold">Attempts:</span>
+                  <span class="text-slate-300 font-mono" x-text="(selectedPreviewEmail?.attempts || 0) + ' / ' + (selectedPreviewEmail?.max_attempts || 5)"></span>
+                </div>
+              </div>
+
+              <!-- Last Error Box if present -->
+              <template x-if="selectedPreviewEmail?.last_error">
+                <div class="rounded-xl bg-rose-950/40 border border-rose-500/30 p-3.5 space-y-1">
+                  <div class="flex items-center gap-1.5 font-bold text-rose-400 text-xs">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span>Failure Reason / Exception:</span>
+                  </div>
+                  <pre class="text-[11px] font-mono text-rose-200 whitespace-pre-wrap bg-slate-950/60 p-2.5 rounded-lg border border-rose-500/20 overflow-x-auto" x-text="selectedPreviewEmail?.last_error"></pre>
+                </div>
+              </template>
+
+              <!-- Email Content Tabs (Plain / HTML) -->
+              <div>
+                <span class="text-slate-400 font-bold block mb-1">Message Content Payload</span>
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 max-h-60 overflow-y-auto">
+                  <div class="text-slate-300 font-mono text-[11px] whitespace-pre-wrap" x-text="selectedPreviewEmail?.plain_body || 'No plain text representation available.'"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button type="button" @click="selectedPreviewEmail = null" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">
+                Close
+              </button>
+              <button type="button" @click="retrySingleEmail(selectedPreviewEmail?.id); selectedPreviewEmail = null"
+                      class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/30">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                <span>Retry Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Admin Footer -->
@@ -1336,6 +1891,14 @@
         discountsSaveMsg: '',
         payhereSubscriptions: [],
         isLoadingSubscriptions: false,
+        emailQueueList: [],
+        emailQueueStats: { total: 0, pending: 0, sent: 0, failed: 0 },
+        emailQueueFilter: 'all',
+        emailQueueSearch: '',
+        isLoadingEmailQueue: false,
+        isRetryingQueue: false,
+        retryingEmailId: null,
+        selectedPreviewEmail: null,
 
         get pendingSlipsCount() {
           return this.bankSlipsList.filter(s => s.status === 'pending').length;
@@ -1353,6 +1916,26 @@
             (u.email && u.email.toLowerCase().includes(q)) ||
             (u.full_name && u.full_name.toLowerCase().includes(q))
           );
+        },
+
+        get filteredEmailQueue() {
+          let list = this.emailQueueList || [];
+          if (this.emailQueueFilter !== 'all') {
+            if (this.emailQueueFilter === 'pending') {
+              list = list.filter(item => item.status === 'pending' || item.status === 'processing');
+            } else {
+              list = list.filter(item => item.status === this.emailQueueFilter);
+            }
+          }
+          if (this.emailQueueSearch && this.emailQueueSearch.trim()) {
+            const q = this.emailQueueSearch.trim().toLowerCase();
+            list = list.filter(item =>
+              (item.recipient_email && item.recipient_email.toLowerCase().includes(q)) ||
+              (item.subject && item.subject.toLowerCase().includes(q)) ||
+              String(item.id).includes(q)
+            );
+          }
+          return list;
         },
 
         async init() {
@@ -1392,7 +1975,9 @@
               this.loadPayHereConfig(),
               this.loadPayHereOrders(),
               this.loadAdminDiscounts(),
-              this.loadPayHereSubscriptions()
+              this.loadPayHereSubscriptions(),
+              this.loadAdminPromos(),
+              this.loadEmailQueue()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -1955,6 +2540,215 @@
             }
           } catch (e) {
             alert('Payments Query Error: ' + e.message);
+          }
+        },
+
+        promoCodesList: [],
+        isLoadingPromos: false,
+        showCreatePromoModal: false,
+        isCreatingPromo: false,
+        newPromo: {
+          code: '',
+          code_type: 'discount_percent',
+          discount_percent: 20,
+          free_days: 7,
+          target_plan: 'any',
+          max_uses: 0,
+          expires_at: ''
+        },
+
+        async loadAdminPromos() {
+          this.isLoadingPromos = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/promos', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.promoCodesList = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (e) {
+            console.error('Failed to load promo codes:', e);
+          } finally {
+            this.isLoadingPromos = false;
+          }
+        },
+
+        async createAdminPromo() {
+          const code = (this.newPromo.code || '').trim().toUpperCase();
+          if (!code || code.length < 3) {
+            alert('Promo code must be at least 3 characters.');
+            return;
+          }
+          this.isCreatingPromo = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/promos', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                code: code,
+                code_type: this.newPromo.code_type,
+                discount_percent: Number(this.newPromo.discount_percent || 0),
+                free_days: Number(this.newPromo.free_days || 0),
+                target_plan: this.newPromo.target_plan || 'any',
+                max_uses: Number(this.newPromo.max_uses || 0),
+                expires_at: this.newPromo.expires_at ? this.newPromo.expires_at : null
+              })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data.detail || 'Could not create promo code.');
+            }
+            alert(`✅ Promo Code '${data.code}' created successfully!`);
+            this.showCreatePromoModal = false;
+            this.newPromo = {
+              code: '',
+              code_type: 'discount_percent',
+              discount_percent: 20,
+              free_days: 7,
+              target_plan: 'any',
+              max_uses: 0,
+              expires_at: ''
+            };
+            await this.loadAdminPromos();
+          } catch (err) {
+            alert('Create Promo Error: ' + err.message);
+          } finally {
+            this.isCreatingPromo = false;
+          }
+        },
+
+        async toggleAdminPromo(promoId) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/promos/${promoId}/toggle`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              await this.loadAdminPromos();
+            }
+          } catch (e) {
+            alert('Toggle Error: ' + e.message);
+          }
+        },
+
+        async deleteAdminPromo(promoId, code) {
+          if (!confirm(`Are you sure you want to permanently delete promo code '${code}'?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/promos/${promoId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              await this.loadAdminPromos();
+            }
+          } catch (e) {
+            alert('Delete Error: ' + e.message);
+          }
+        },
+
+        async loadEmailQueue() {
+          this.isLoadingEmailQueue = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const params = new URLSearchParams({ limit: '100' });
+            if (this.emailQueueFilter !== 'all') {
+              params.append('status', this.emailQueueFilter);
+            }
+            const res = await fetch(`/api/admin/email-queue?${params.toString()}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.emailQueueStats = data.stats || { total: 0, pending: 0, sent: 0, failed: 0 };
+              this.emailQueueList = data.items || [];
+            }
+          } catch (e) {
+            console.error('Error loading email queue:', e);
+          } finally {
+            this.isLoadingEmailQueue = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async retryAllQueuedEmails() {
+          if (!confirm('Flush outbox and retry all pending and failed emails right now?')) return;
+          this.isRetryingQueue = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/email-queue/retry', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            alert(data.message || 'Email queue flush completed.');
+            await this.loadEmailQueue();
+          } catch (e) {
+            alert('Retry error: ' + e.message);
+          } finally {
+            this.isRetryingQueue = false;
+          }
+        },
+
+        async retrySingleEmail(emailId) {
+          if (!emailId) return;
+          this.retryingEmailId = emailId;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/email-queue/${emailId}/retry`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            alert(data.message || (data.success ? 'Email sent successfully!' : 'Retry failed.'));
+            await this.loadEmailQueue();
+          } catch (e) {
+            alert('Retry error: ' + e.message);
+          } finally {
+            this.retryingEmailId = null;
+          }
+        },
+
+        async deleteQueuedEmail(emailId) {
+          if (!emailId) return;
+          if (!confirm(`Delete queued email record #${emailId}? This action cannot be undone.`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/email-queue/${emailId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              await this.loadEmailQueue();
+            } else {
+              const data = await res.json();
+              alert('Delete failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Delete error: ' + e.message);
+          }
+        },
+
+        formatDate(iso) {
+          if (!iso) return '—';
+          try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return String(iso);
+            return d.toLocaleString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch(e) {
+            return String(iso);
           }
         }
       };

@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- PRIMARY SEARCH ENGINE METADATA -->
-  <title>DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio</title>
-  <meta name="description" content="Tailor your resume to any job description with AI. 100% ATS score optimization, visual photo CVs, AI cover letters, and live developer portfolios. Free forever.">
+  <title>{{ page_title | default('DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio') }}</title>
+  <meta name="description" content="{{ page_description | default('Tailor your resume to any job description with AI. 100% ATS score optimization, visual photo CVs, AI cover letters, and live developer portfolios. Free forever.') }}">
   <meta name="keywords" content="AI resume builder, ATS resume checker, ATS friendly CV maker, free resume builder, resume tailor AI, job description keyword matcher, executive CV designer, visual photo CV, AI cover letter generator, software engineer resume, developer portfolio generator, CV maker Sri Lanka, ATS score booster, resume optimizer online, best AI resume builder 2026, free CV maker online, PDF resume builder, modern CV templates, custom domain portfolio, online CV maker">
-  <link rel="canonical" href="https://dreemfolio.com/">
+  <link rel="canonical" href="{{ canonical_url | default('https://dreemfolio.com/') }}">
   
   <!-- SEARCH ENGINE ROBOTS & CRAWLERS -->
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -28,9 +28,9 @@
   <!-- OPEN GRAPH / FACEBOOK / LINKEDIN / DISCORD -->
   <meta property="og:site_name" content="DreemFolio AI">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://dreemfolio.com/">
-  <meta property="og:title" content="DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio">
-  <meta property="og:description" content="Beat applicant tracking systems with AI. Optimize resumes to job descriptions, create executive photo CVs, generate cover letters, and launch custom web portfolios.">
+  <meta property="og:url" content="{{ canonical_url | default('https://dreemfolio.com/') }}">
+  <meta property="og:title" content="{{ page_title | default('DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio') }}">
+  <meta property="og:description" content="{{ page_description | default('Beat applicant tracking systems with AI. Optimize resumes to job descriptions, create executive photo CVs, generate cover letters, and launch custom web portfolios.') }}">
   <meta property="og:image" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta property="og:image:secure_url" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta property="og:image:type" content="image/jpeg">
@@ -43,9 +43,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@DreemFolio">
   <meta name="twitter:creator" content="@DreemFolio">
-  <meta name="twitter:url" content="https://dreemfolio.com/">
-  <meta name="twitter:title" content="DreemFolio AI - 100% ATS Resume Builder & Career Operating System">
-  <meta name="twitter:description" content="Tailor your resume to any job description with AI. Beat ATS screening, design visual CVs, and publish custom portfolios. Free starter access.">
+  <meta name="twitter:url" content="{{ canonical_url | default('https://dreemfolio.com/') }}">
+  <meta name="twitter:title" content="{{ page_title | default('DreemFolio AI - 100% ATS Resume Builder & Career Operating System') }}">
+  <meta name="twitter:description" content="{{ page_description | default('Tailor your resume to any job description with AI. Beat ATS screening, design visual CVs, and publish custom portfolios. Free starter access.') }}">
   <meta name="twitter:image" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta name="twitter:image:alt" content="DreemFolio AI 3D Platform Preview">
 
@@ -925,6 +925,24 @@
           this.$nextTick(() => {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
               window.lucide.createIcons();
+            }
+
+            // High-converting Auto-Scroll to Target Section for SEO routes (/pricing, /features, /faq)
+            const path = window.location.pathname.toLowerCase();
+            const hash = window.location.hash.toLowerCase();
+            let targetId = null;
+            if (path.includes('/pricing') || hash === '#pricing') targetId = 'pricing';
+            else if (path.includes('/features') || hash === '#features') targetId = 'features';
+            else if (path.includes('/faq') || hash === '#faq') targetId = 'faq';
+            else if (path.includes('/how-it-works') || hash === '#how-it-works') targetId = 'how-it-works';
+
+            if (targetId) {
+              setTimeout(() => {
+                const el = document.getElementById(targetId);
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 150);
             }
           });
         },

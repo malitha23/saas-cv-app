@@ -10,15 +10,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.database import get_db
-from app.models import User, BankPaymentSlip, OnlinePaymentOrder
+from app.models import User, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage
 from app.schemas import (
     SubscriptionUpgradeRequest, SubscriptionStatusResponse, UserResponse,
     PayHereInitiateRequest, PayHereInitiateResponse, CheckoutRequest,
     PlansConfigResponse, CountryPricingResponse, PlanItemConfig,
-    UserRefundRequest
+    UserRefundRequest, ValidatePromoRequest, ValidatePromoResponse, RedeemFreePromoRequest
 )
 from app.auth import (
-    get_current_user, check_and_update_subscription, get_saas_setting,
+    get_current_user, get_optional_user, check_and_update_subscription, get_saas_setting,
     DEFAULT_FREE_DAILY_AI_LIMIT, DEFAULT_FREE_DAILY_PDF_LIMIT
 )
 from app.state import build_user_response
@@ -487,6 +487,39 @@ async def initiate_payhere_payment(
 
     verified_amount = PayHereGateway.get_plan_price(plan, currency, billing_cycle=billing_cycle, db=db)
 
+    # -----------------------------------------
+    # Server-Side Promo Code Discount Security
+    # -----------------------------------------
+    applied_promo_code = None
+    discount_amount = 0.0
+    final_checkout_amount = verified_amount
+
+    if req.promo_code and req.promo_code.strip():
+        code_clean = req.promo_code.strip().upper()
+        promo = db.scalars(select(PromoCode).where(PromoCode.code == code_clean)).first()
+        if promo and promo.is_active:
+            is_valid_promo = True
+            if promo.expires_at and promo.expires_at < datetime.utcnow():
+                is_valid_promo = False
+            elif promo.max_uses > 0 and promo.times_used >= promo.max_uses:
+                is_valid_promo = False
+            else:
+                existing_use = db.scalars(
+                    select(PromoCodeUsage).where(
+                        PromoCodeUsage.promo_code_id == promo.id,
+                        PromoCodeUsage.user_id == current_user.id
+                    )
+                ).first()
+                if existing_use:
+                    is_valid_promo = False
+
+            if is_valid_promo and (promo.target_plan == "any" or promo.target_plan == plan):
+                if promo.code_type == "discount_percent" and promo.discount_percent > 0:
+                    discount_amount = round(verified_amount * (promo.discount_percent / 100.0), 2)
+                    # Safe minimum charge of at least 10 units
+                    final_checkout_amount = max(10.0, round(verified_amount - discount_amount, 2))
+                    applied_promo_code = promo.code
+
     # Unique Order Reference
     order_id = f"ORD-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -497,7 +530,7 @@ async def initiate_payhere_payment(
     else:
         base_url = str(request.base_url).rstrip("/")
 
-    # Prepare signed payload
+    # Prepare signed payload with discounted amount if promo applied
     payload = PayHereGateway.prepare_checkout_payload(
         order_id=order_id,
         plan_tier=plan,
@@ -510,6 +543,7 @@ async def initiate_payhere_payment(
         phone=req.phone,
         address=req.address,
         city=req.city,
+        amount_override=final_checkout_amount if applied_promo_code else None,
         db=db
     )
 
@@ -519,10 +553,12 @@ async def initiate_payhere_payment(
         user_id=current_user.id,
         target_plan=plan,
         billing_cycle=billing_cycle,
-        amount=verified_amount,
+        amount=final_checkout_amount,
         currency=currency,
         gateway="payhere",
-        status="initiated"
+        status="initiated",
+        promo_code=applied_promo_code,
+        discount_amount=discount_amount
     )
     db.add(order)
     db.commit()
@@ -534,7 +570,7 @@ async def initiate_payhere_payment(
         action_url=payload["action_url"],
         params=payload["params"],
         mode=payload["mode"],
-        amount=verified_amount,
+        amount=final_checkout_amount,
         currency=currency,
         plan=plan,
         billing_cycle=billing_cycle
@@ -690,6 +726,28 @@ async def payhere_ipn_notify(
             candidate.subscription_status = "active"
             candidate.subscription_started_at = now
             logger.info("Candidate %s successfully upgraded to %s via PayHere (Order %s, Payment ID %s, Cycle %s)", candidate.email, candidate.plan_tier.upper(), order_id, payment_id, cycle)
+
+            # Record Promo Code usage if order used a promo code
+            if getattr(order, "promo_code", None):
+                p_code = order.promo_code.strip().upper()
+                promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
+                if promo_obj:
+                    existing_usage = db.scalars(
+                        select(PromoCodeUsage).where(
+                            PromoCodeUsage.promo_code_id == promo_obj.id,
+                            PromoCodeUsage.user_id == candidate.id
+                        )
+                    ).first()
+                    if not existing_usage:
+                        new_usage = PromoCodeUsage(
+                            promo_code_id=promo_obj.id,
+                            user_id=candidate.id,
+                            order_id=order.order_id
+                        )
+                        db.add(new_usage)
+                        promo_obj.times_used = (promo_obj.times_used or 0) + 1
+                        db.commit()
+                        logger.info("Recorded promo code usage %s for candidate %s on order %s", p_code, candidate.email, order.order_id)
 
             # Auto-supersede any pending bank transfer slips for this candidate
             pending_slips = db.scalars(
@@ -1052,3 +1110,147 @@ async def get_country_subscription_plans(
         plans=[PlanItemConfig(**p) for p in matched_config.get("plans", [])],
         available_countries=available_countries_list
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROMO CODE VALIDATION & FREE PASS REDEMPTION
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.post("/api/promo/validate", response_model=ValidatePromoResponse)
+async def validate_promo_code(
+    payload: ValidatePromoRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Validates a coupon / promo code before checkout or free redemption.
+    Returns calculated discount amount and discounted final price securely from server.
+    """
+    code_clean = (payload.code or "").strip().upper()
+    if not code_clean:
+        return ValidatePromoResponse(valid=False, message="Please enter a promo code.")
+
+    promo = db.scalars(select(PromoCode).where(PromoCode.code == code_clean)).first()
+    if not promo or not promo.is_active:
+        return ValidatePromoResponse(valid=False, message="Invalid promo code.")
+
+    if promo.expires_at and promo.expires_at < datetime.utcnow():
+        return ValidatePromoResponse(valid=False, message="This promo code has expired.")
+
+    if promo.max_uses > 0 and promo.times_used >= promo.max_uses:
+        return ValidatePromoResponse(valid=False, message="This promo code has reached its maximum redemptions.")
+
+    plan = (payload.target_plan or "pro").lower().strip()
+    if promo.target_plan != "any" and promo.target_plan != plan:
+        return ValidatePromoResponse(
+            valid=False,
+            message=f"This promo code is only valid for the {promo.target_plan.upper()} plan."
+        )
+
+    if current_user:
+        existing_use = db.scalars(
+            select(PromoCodeUsage).where(
+                PromoCodeUsage.promo_code_id == promo.id,
+                PromoCodeUsage.user_id == current_user.id
+            )
+        ).first()
+        if existing_use:
+            return ValidatePromoResponse(valid=False, message="You have already redeemed this promo code.")
+
+    # Calculate discount / benefits
+    cycle = (payload.billing_cycle or "1m").lower().strip()
+    base_price = PayHereGateway.get_plan_price(plan, "LKR", billing_cycle=cycle, db=db)
+
+    discount_amount = 0.0
+    final_amount = base_price
+
+    if promo.code_type == "discount_percent":
+        discount_amount = round(base_price * (promo.discount_percent / 100.0), 2)
+        final_amount = max(10.0, round(base_price - discount_amount, 2))
+        msg = f"🎉 {int(promo.discount_percent)}% discount applied! You save Rs. {int(discount_amount)}."
+    elif promo.code_type == "free_pass":
+        final_amount = 0.0
+        msg = f"🎁 Free Pass unlocked! Get {promo.free_days} days of {promo.target_plan.upper() if promo.target_plan != 'any' else 'PRO'} completely free."
+    else:
+        msg = "Promo code verified successfully."
+
+    return ValidatePromoResponse(
+        valid=True,
+        message=msg,
+        code=promo.code,
+        code_type=promo.code_type,
+        discount_percent=promo.discount_percent,
+        free_days=promo.free_days,
+        discount_amount=discount_amount,
+        final_amount=final_amount,
+        currency="LKR"
+    )
+
+
+@router.post("/api/promo/redeem-free", response_model=UserResponse)
+async def redeem_free_promo_code(
+    payload: RedeemFreePromoRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Instantly activates a Free Pass promo code directly to the authenticated candidate account.
+    Bypasses payment gateways with zero transaction fees.
+    """
+    code_clean = (payload.code or "").strip().upper()
+    if not code_clean:
+        raise HTTPException(status_code=400, detail="Please enter a promo code.")
+
+    promo = db.scalars(select(PromoCode).where(PromoCode.code == code_clean)).first()
+    if not promo or not promo.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or inactive promo code.")
+
+    if promo.code_type != "free_pass":
+        raise HTTPException(
+            status_code=400,
+            detail="This code is a discount coupon, not a free pass. Please apply it during regular checkout."
+        )
+
+    if promo.expires_at and promo.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="This promo code has expired.")
+
+    if promo.max_uses > 0 and promo.times_used >= promo.max_uses:
+        raise HTTPException(status_code=400, detail="This promo code has reached its maximum redemptions.")
+
+    # Single-use security check
+    existing_use = db.scalars(
+        select(PromoCodeUsage).where(
+            PromoCodeUsage.promo_code_id == promo.id,
+            PromoCodeUsage.user_id == current_user.id
+        )
+    ).first()
+    if existing_use:
+        raise HTTPException(status_code=400, detail="You have already redeemed this promo code.")
+
+    # Activate free days
+    now = datetime.utcnow()
+    tier = promo.target_plan if promo.target_plan in ["pro", "elite"] else "pro"
+    current_user.plan_tier = tier
+
+    if current_user.subscription_expires_at and current_user.subscription_expires_at > now:
+        current_user.subscription_expires_at = current_user.subscription_expires_at + timedelta(days=promo.free_days)
+    else:
+        current_user.subscription_expires_at = now + timedelta(days=promo.free_days)
+
+    current_user.subscription_status = "active"
+    if not current_user.subscription_started_at:
+        current_user.subscription_started_at = now
+
+    # Record promo code usage
+    usage = PromoCodeUsage(
+        promo_code_id=promo.id,
+        user_id=current_user.id
+    )
+    db.add(usage)
+    promo.times_used = (promo.times_used or 0) + 1
+    db.commit()
+    db.refresh(current_user)
+
+    logger.info("Candidate %s successfully redeemed free pass code %s (+%d days)", current_user.email, promo.code, promo.free_days)
+    return build_user_response(current_user, db)
+

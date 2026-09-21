@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, ForeignKey, Float, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -36,6 +36,14 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     reset_password_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     reset_password_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # VIRAL GROWTH & REFERRAL ENGINE
+    # ═══════════════════════════════════════════════════════════════════════════
+    referral_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, index=True, nullable=True)
+    referred_by_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    referral_bonus_downloads: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationship to user's saved resumes
@@ -191,6 +199,10 @@ class OnlinePaymentOrder(Base):
     refund_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     refund_request_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # Promo Code Tracking
+    promo_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    discount_amount: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -199,4 +211,78 @@ class OnlinePaymentOrder(Base):
 
     def __repr__(self) -> str:
         return f"<OnlinePaymentOrder(order_id='{self.order_id}', user_id={self.user_id}, plan='{self.target_plan}', status='{self.status}')>"
+
+
+class PromoCode(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Admin Promo Codes, Discounts & Free Campaign Passes.
+    """
+    __tablename__ = "promo_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)  # Uppercase e.g. SLIIT2026
+    code_type: Mapped[str] = mapped_column(String(30), default="discount_percent", nullable=False)  # 'discount_percent', 'free_pass'
+    discount_percent: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)  # e.g. 20.0, 50.0, 100.0
+    free_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # e.g. 7, 14, 30 days
+    target_plan: Mapped[str] = mapped_column(String(50), default="any", nullable=False)  # 'any', 'pro', 'elite'
+    max_uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # 0 = unlimited
+    times_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_by_admin: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Relationship to redemption records
+    usages: Mapped[List["PromoCodeUsage"]] = relationship(
+        "PromoCodeUsage", back_populates="promo_code", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<PromoCode(code='{self.code}', type='{self.code_type}', discount={self.discount_percent}%, free_days={self.free_days})>"
+
+
+class PromoCodeUsage(Base):
+    """
+    Audit log of promo code redemptions to prevent double-spending per user.
+    """
+    __tablename__ = "promo_code_usages"
+    __table_args__ = (UniqueConstraint("promo_code_id", "user_id", name="uq_promo_code_user"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    promo_code_id: Mapped[int] = mapped_column(Integer, ForeignKey("promo_codes.id", ondelete="CASCADE"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    discount_applied: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    free_days_granted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    used_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    promo_code: Mapped["PromoCode"] = relationship("PromoCode", back_populates="usages")
+    user: Mapped["User"] = relationship("User")
+
+    def __repr__(self) -> str:
+        return f"<PromoCodeUsage(promo_id={self.promo_code_id}, user_id={self.user_id}, used_at='{self.used_at}')>"
+
+
+class QueuedEmail(Base):
+    """
+    Transactional email outbox queue with exponential backoff retries.
+    Ensures zero email loss during SMTP / network connectivity outages.
+    """
+    __tablename__ = "queued_emails"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    recipient_email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    html_body: Mapped[str] = mapped_column(Text, nullable=False)
+    plain_body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True, nullable=False)  # pending, processing, sent, failed
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    next_retry_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<QueuedEmail(id={self.id}, to='{self.recipient_email}', status='{self.status}', attempts={self.attempts})>"
+
 

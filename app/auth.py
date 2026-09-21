@@ -272,17 +272,20 @@ def check_ats_pdf_quota(
         except ValueError:
             limit = DEFAULT_FREE_LIFETIME_ATS_LIMIT
 
+        bonus = getattr(current_user, "referral_bonus_downloads", 0) or 0
+        effective_limit = limit + bonus
+
         count = getattr(current_user, "lifetime_ats_downloads_count", 0) or 0
-        if count >= limit:
+        if count >= effective_limit:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={
                     "error": "ats_quota_exceeded",
                     "error_code": "ats_quota_exceeded",
                     "plan": "free",
-                    "lifetime_limit": limit,
+                    "lifetime_limit": effective_limit,
                     "downloads_used": count,
-                    "message": f"You have reached your Free Starter limit of {limit} Classic ATS PDF downloads. Upgrade to Pro ($9/mo) for unlimited downloads of all formats!",
+                    "message": f"You have reached your Free Starter limit of {effective_limit} Classic ATS PDF downloads. Invite friends with your referral link to earn +1 Free Clean Download or upgrade to Pro!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )

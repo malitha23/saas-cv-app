@@ -101,12 +101,23 @@ def init_engine():
                 ("avatar_url", "VARCHAR(500) NULL"),
                 ("auth_provider", "VARCHAR(50) NOT NULL DEFAULT 'email'"),
                 ("reset_password_token", "VARCHAR(255) NULL"),
-                ("reset_password_expires_at", "DATETIME NULL")
+                ("reset_password_expires_at", "DATETIME NULL"),
+                ("referral_code", "VARCHAR(50) NULL"),
+                ("referred_by_id", "INT NULL"),
+                ("referral_bonus_downloads", "INT NOT NULL DEFAULT 0")
             ]
             with engine.connect() as mig_conn:
                 for col_name, col_def in needed_cols:
                     if col_name not in user_cols:
                         mig_conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}"))
+
+                if insp.has_table("online_payment_orders"):
+                    order_cols = {c["name"] for c in insp.get_columns("online_payment_orders")}
+                    if "promo_code" not in order_cols:
+                        mig_conn.execute(text("ALTER TABLE online_payment_orders ADD COLUMN promo_code VARCHAR(50) NULL"))
+                    if "discount_amount" not in order_cols:
+                        mig_conn.execute(text("ALTER TABLE online_payment_orders ADD COLUMN discount_amount FLOAT NOT NULL DEFAULT 0.0"))
+
                 mig_conn.commit()
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)

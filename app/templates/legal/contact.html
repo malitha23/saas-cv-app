@@ -1,0 +1,141 @@
+{% extends "legal/layout.html" %}
+
+{% block title %}Contact & Enterprise Support — DreemFolio AI{% endblock %}
+{% block meta_description %}Contact DreemFolio AI support. Get quick assistance with ATS resume tailoring, bank slip verification, PayHere subscriptions, and university partnerships.{% endblock %}
+
+{% block legal_content %}
+<div class="legal-card bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+  
+  <!-- Header -->
+  <div class="border-b border-slate-800 pb-6 space-y-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Support Desk Active • Response Time < 2 Hours
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        Direct Human & Technical Assistance
+      </span>
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">Contact & Candidate Support</h1>
+    <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+      Have questions about your ATS resume score, need assistance with bank slip approvals, or inquiring about university campus partnerships? Our support team is here to help you succeed.
+    </p>
+  </div>
+
+  <!-- Primary Support Channels Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+    
+    <!-- Channel 1: Primary Email -->
+    <div class="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 flex flex-col justify-between shadow-lg">
+      <div class="space-y-2">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+          <i data-lucide="mail" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-100">Direct Support Email</h3>
+        <p class="text-slate-400 leading-relaxed">
+          For candidate inquiries, resume tailoring assistance, payment queries, and subscription management.
+        </p>
+        <div class="pt-2">
+          <code class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 font-mono text-indigo-300 font-bold text-xs inline-block">
+            support@dreemfolio.com
+          </code>
+        </div>
+      </div>
+
+      <div class="pt-4 flex items-center gap-2">
+        <a href="mailto:support@dreemfolio.com"
+           class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition">
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          <span>Send an Email</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Channel 2: Billing & Bank Slips -->
+    <div class="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 flex flex-col justify-between shadow-lg">
+      <div class="space-y-2">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-100">Billing & Payment Verification</h3>
+        <p class="text-slate-400 leading-relaxed">
+          Bank slip uploads are verified and activated within 10 to 30 minutes. If your plan activation is delayed, email us with your Order ID or registered email.
+        </p>
+        <div class="text-[11px] text-emerald-400/90 font-mono pt-1 flex items-center gap-1.5">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+          <span>Sri Lanka Banking Hours: 8:30 AM – 10:00 PM Daily</span>
+        </div>
+      </div>
+
+      <div class="pt-4 flex items-center gap-2">
+        <a href="/profile"
+           class="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-center gap-2 border border-slate-700 transition">
+          <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
+          <span>View Billing & Receipts</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Inquiry Categories List -->
+  <div class="space-y-4 pt-2">
+    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">How We Can Assist You</h3>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      
+      <div class="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-slate-200">
+          <i data-lucide="file-check-2" class="w-4 h-4 text-cyan-400"></i>
+          <span>ATS Resume & Formatting</span>
+        </div>
+        <p class="text-slate-400 text-[11px] leading-relaxed">
+          Questions regarding recruiter ATS keyword density, formatting guidelines, or ReportLab PDF rendering.
+        </p>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-slate-200">
+          <i data-lucide="graduation-cap" class="w-4 h-4 text-purple-400"></i>
+          <span>Universities & Campuses</span>
+        </div>
+        <p class="text-slate-400 text-[11px] leading-relaxed">
+          Bulk student career packages, university hackathon sponsorships, and career guidance workshops.
+        </p>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-slate-200">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400"></i>
+          <span>Security & Data Privacy</span>
+        </div>
+        <p class="text-slate-400 text-[11px] leading-relaxed">
+          Inquiries regarding your personal data rights under PDPA & GDPR, account deletion, or security disclosures.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Security & Fast Response SLA Commitment -->
+  <div class="p-5 rounded-2xl bg-gradient-to-r from-indigo-950/40 via-slate-900 to-slate-950 border border-indigo-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div class="space-y-1">
+      <h4 class="text-sm font-bold text-white flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+        <span>Our Support Promise to Every Candidate</span>
+      </h4>
+      <p class="text-xs text-slate-400">
+        Every message is reviewed by technical specialists. We never sell your contact info or train public AI models on your CVs.
+      </p>
+    </div>
+    <a href="/app"
+       class="shrink-0 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 flex items-center gap-2 transition">
+      <span>Open AI Resume Builder</span>
+      <i data-lucide="arrow-right" class="w-4 h-4"></i>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

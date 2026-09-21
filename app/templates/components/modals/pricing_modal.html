@@ -33,23 +33,25 @@
 
   <!-- SaaS Subscription Plans / Monetization Modal -->
   <div x-show="showPricingModal" x-cloak
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto">
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
+    @keydown.escape.window="showPricingModal = false">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl space-y-6 my-auto max-h-[92vh] flex flex-col overflow-y-auto"
+      @click.outside="showPricingModal = false">
 
       <!-- Modal Header with Dynamic Currency Selector -->
-      <div class="flex items-start justify-between border-b border-slate-800 pb-5">
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-800 pb-5">
         <div class="space-y-1">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
             <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
             <span>Enterprise SaaS Subscription Plans</span>
           </div>
-          <h3 class="font-black text-slate-100 text-2xl tracking-tight">Supercharge Your Career & Applications</h3>
+          <h3 class="font-black text-slate-100 text-xl sm:text-2xl tracking-tight">Supercharge Your Career & Applications</h3>
           <p class="text-xs sm:text-sm text-slate-400">Choose the perfect tier for tailored ATS resumes, cloud auto-save, and hosted portfolios.</p>
         </div>
 
-        <div class="flex items-center gap-2.5">
-          <!-- Currency Switcher Pill inside Pricing Modal -->
-          <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div class="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
+          <!-- Currency Switcher Pill inside Pricing Modal (Active when payhereLiteMode is false) -->
+          <div x-show="!payhereLiteMode" class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             <template x-for="c in availableCountries" :key="c.code">
               <button @click="selectCountryCurrency(c.code)"
                 class="px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 text-[11px]"
@@ -58,6 +60,12 @@
                 <span x-text="c.currency"></span>
               </button>
             </template>
+          </div>
+
+          <!-- PayHere Lite Mode Badge (Active when payhereLiteMode is true) -->
+          <div x-show="payhereLiteMode" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 font-bold shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>LKR (Rs.) • Prepaid Passes</span>
           </div>
 
           <button @click="showPricingModal = false" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition">
@@ -497,13 +505,97 @@
           <span x-text="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' ? '⏳ Pass Payment In Progress' : ('7-Day Sprint Pass (' + (activeSprintPrice || '$4.99') + ')')"></span>
         </button>
       </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <!-- PROMO CODE & DISCOUNT COUPON BOX                                    -->
+      <!-- ═══════════════════════════════════════════════════════════════════ -->
+      <div class="p-4 bg-slate-950/90 border border-slate-800/90 rounded-2xl space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
+              <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-slate-200">Have a Promo Code or Campus Coupon?</span>
+              <p class="text-[10px] text-slate-400">Enter your code to unlock instant percentage discounts or free promotional access.</p>
+            </div>
+          </div>
+
+          <template x-if="appliedPromo">
+            <button @click="clearPromoCode()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold underline">
+              Remove Code
+            </button>
+          </template>
+        </div>
+
+        <!-- Input & Apply Form -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <input type="text"
+                   x-model="promoInputCode"
+                   :disabled="appliedPromo !== null"
+                   @keydown.enter.prevent="applyPromoCode()"
+                   placeholder="Enter code (e.g. SLIIT2026, EARLYBIRD)"
+                   class="w-full bg-slate-900 border border-slate-800 focus:border-pink-500 rounded-xl px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-100 placeholder-slate-500 outline-none disabled:opacity-60">
+            <template x-if="appliedPromo">
+              <span class="absolute right-3 top-2 text-emerald-400 font-bold text-xs flex items-center gap-1">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Applied
+              </span>
+            </template>
+          </div>
+
+          <template x-if="!appliedPromo">
+            <button @click="applyPromoCode()"
+                    :disabled="isApplyingPromo || !promoInputCode.trim()"
+                    class="px-5 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-pink-600/20 disabled:opacity-40 transition flex items-center gap-1.5 shrink-0">
+              <template x-if="isApplyingPromo">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+              </template>
+              <template x-if="!isApplyingPromo">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </template>
+              <span>Apply</span>
+            </button>
+          </template>
+
+          <!-- Claim Free Pass CTA (When promo is a free_pass) -->
+          <template x-if="appliedPromo && appliedPromo.code_type === 'free_pass'">
+            <button @click="claimFreePass()"
+                    :disabled="isClaimingFreePass"
+                    class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-purple-600/30 transition flex items-center gap-1.5 shrink-0">
+              <template x-if="isClaimingFreePass">
+                <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+              </template>
+              <template x-if="!isClaimingFreePass">
+                <i data-lucide="gift" class="w-3.5 h-3.5"></i>
+              </template>
+              <span>Claim Free Pass</span>
+            </button>
+          </template>
+        </div>
+
+        <!-- Success or Error Feedback Messages -->
+        <template x-if="promoMessage">
+          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4 shrink-0 text-emerald-400"></i>
+            <span x-text="promoMessage"></span>
+          </div>
+        </template>
+        <template x-if="promoError">
+          <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-400"></i>
+            <span x-text="promoError"></span>
+          </div>
+        </template>
+      </div>
+
       </div>
 
       <!-- Security Guarantee Footer -->
       <div class="border-t border-slate-800 pt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
         <span class="flex items-center gap-1.5">
           <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-          100% Secure Checkout via Stripe & PayHere • Instant Automated Activation • Cancel Anytime
+          100% Secure Checkout via Official PayHere Gateway Partner • Instant Automated Activation • One-Time Prepaid Passes
         </span>
         <button @click="showPricingModal = false" class="hover:text-slate-300 underline font-medium">Close</button>
       </div>

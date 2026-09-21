@@ -7,18 +7,23 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder
+from app.models import User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage, QueuedEmail
 from app.schemas import (
     AdminOverviewResponse, AdminSettingItem, AdminUpdateSettingsRequest,
     AdminUserListItem, AdminUpdateUserPlanRequest,
     AdminRefundRequest, AdminRefundResponse,
-    AdminUpdateCountryPricingRequest, UpdatePlansConfigRequest
+    AdminUpdateCountryPricingRequest, UpdatePlansConfigRequest,
+    AdminCreatePromoCodeRequest, AdminPromoCodeItem,
+    QueuedEmailItem, EmailQueueListResponse, EmailQueueStatsResponse
 )
 from app.auth import require_admin, get_saas_setting
 from app.state import build_user_response
 from app.pricing import _get_country_pricing_dict
 from app.payhere import PayHereGateway
-from app.email_service import send_user_refund_processed, send_admin_refund_alert
+from app.email_service import (
+    send_user_refund_processed, send_admin_refund_alert,
+    process_email_queue, retry_single_queued_email, retry_all_queued_emails
+)
 
 logger = logging.getLogger("dreemfolio.admin")
 
@@ -757,4 +762,228 @@ async def admin_cancel_payhere_subscription(
     if res.get("status") == -1:
         raise HTTPException(status_code=400, detail=res.get("msg", "Subscription could not be cancelled."))
     return res
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROMO CODE & CAMPAIGN MANAGEMENT ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/admin/promos", response_model=List[AdminPromoCodeItem])
+async def admin_list_promo_codes(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """List all created promo codes with usage metrics."""
+    promos = db.scalars(select(PromoCode).order_by(PromoCode.id.desc())).all()
+    results = []
+    for p in promos:
+        exp_str = p.expires_at.strftime("%Y-%m-%d") if p.expires_at else None
+        results.append(AdminPromoCodeItem(
+            id=p.id,
+            code=p.code,
+            code_type=p.code_type,
+            discount_percent=p.discount_percent,
+            free_days=p.free_days,
+            target_plan=p.target_plan,
+            max_uses=p.max_uses,
+            times_used=p.times_used,
+            is_active=p.is_active,
+            expires_at=exp_str,
+            created_at=p.created_at.strftime("%Y-%m-%d %H:%M"),
+            created_by_admin=p.created_by_admin
+        ))
+    return results
+
+
+@router.post("/api/admin/promos", response_model=AdminPromoCodeItem)
+async def admin_create_promo_code(
+    payload: AdminCreatePromoCodeRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Create a new discount percentage or free pass coupon code."""
+    code_clean = payload.code.strip().upper()
+    if not code_clean or len(code_clean) < 3:
+        raise HTTPException(status_code=400, detail="Promo code must be at least 3 characters.")
+
+    existing = db.scalars(select(PromoCode).where(PromoCode.code == code_clean)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Promo code '{code_clean}' already exists.")
+
+    expires_dt = None
+    if payload.expires_at:
+        try:
+            expires_dt = datetime.datetime.strptime(payload.expires_at.strip(), "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid expiration date format. Use YYYY-MM-DD.")
+
+    new_promo = PromoCode(
+        code=code_clean,
+        code_type=payload.code_type,
+        discount_percent=max(0.0, min(100.0, float(payload.discount_percent))),
+        free_days=max(0, int(payload.free_days)),
+        target_plan=payload.target_plan.strip().lower() if payload.target_plan else "any",
+        max_uses=max(0, int(payload.max_uses)),
+        times_used=0,
+        is_active=True,
+        expires_at=expires_dt,
+        created_by_admin=current_user.email
+    )
+    db.add(new_promo)
+    db.commit()
+    db.refresh(new_promo)
+
+    exp_str = new_promo.expires_at.strftime("%Y-%m-%d") if new_promo.expires_at else None
+    return AdminPromoCodeItem(
+        id=new_promo.id,
+        code=new_promo.code,
+        code_type=new_promo.code_type,
+        discount_percent=new_promo.discount_percent,
+        free_days=new_promo.free_days,
+        target_plan=new_promo.target_plan,
+        max_uses=new_promo.max_uses,
+        times_used=new_promo.times_used,
+        is_active=new_promo.is_active,
+        expires_at=exp_str,
+        created_at=new_promo.created_at.strftime("%Y-%m-%d %H:%M"),
+        created_by_admin=new_promo.created_by_admin
+    )
+
+
+@router.patch("/api/admin/promos/{promo_id}/toggle")
+async def admin_toggle_promo_code(
+    promo_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Toggle promo code active / inactive state."""
+    promo = db.get(PromoCode, promo_id)
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo code not found.")
+    promo.is_active = not promo.is_active
+    db.commit()
+    return {"success": True, "id": promo.id, "code": promo.code, "is_active": promo.is_active}
+
+
+@router.delete("/api/admin/promos/{promo_id}")
+async def admin_delete_promo_code(
+    promo_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Permanently delete a promo code."""
+    promo = db.get(PromoCode, promo_id)
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo code not found.")
+    db.delete(promo)
+    db.commit()
+    return {"success": True, "message": f"Promo code '{promo.code}' deleted."}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EMAIL QUEUE & OUTBOX AUDIT ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/admin/email-queue", response_model=EmailQueueListResponse)
+async def admin_get_email_queue(
+    status: Optional[str] = Query(None, description="Filter by status: 'pending', 'sent', 'failed'"),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Retrieve paginated delivery queue items and aggregate delivery stats."""
+    # Compute aggregate stats
+    all_items = db.scalars(select(QueuedEmail)).all()
+    total = len(all_items)
+    pending = sum(1 for e in all_items if e.status in ("pending", "processing"))
+    sent = sum(1 for e in all_items if e.status == "sent")
+    failed = sum(1 for e in all_items if e.status == "failed")
+
+    query = select(QueuedEmail)
+    if status and status.strip():
+        clean_status = status.strip().lower()
+        if clean_status == "pending":
+            query = query.where(QueuedEmail.status.in_(["pending", "processing"]))
+        else:
+            query = query.where(QueuedEmail.status == clean_status)
+
+    query = query.order_by(QueuedEmail.created_at.desc()).limit(limit)
+    items = list(db.scalars(query).all())
+
+    return EmailQueueListResponse(
+        stats=EmailQueueStatsResponse(
+            total=total,
+            pending=pending,
+            sent=sent,
+            failed=failed
+        ),
+        items=items
+    )
+
+
+@router.get("/api/admin/email-queue/stats", response_model=EmailQueueStatsResponse)
+async def admin_get_email_queue_stats(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Retrieve quick aggregate counts of email queue items."""
+    all_items = db.scalars(select(QueuedEmail.status)).all()
+    total = len(all_items)
+    pending = sum(1 for s in all_items if s in ("pending", "processing"))
+    sent = sum(1 for s in all_items if s == "sent")
+    failed = sum(1 for s in all_items if s == "failed")
+    return EmailQueueStatsResponse(
+        total=total,
+        pending=pending,
+        sent=sent,
+        failed=failed
+    )
+
+
+@router.post("/api/admin/email-queue/retry")
+async def admin_retry_all_queued_emails(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Resets all pending & failed emails to be immediately due and triggers a batch send."""
+    reset_count = retry_all_queued_emails(db=db)
+    batch_stats = process_email_queue(batch_size=50, db=db)
+    return {
+        "success": True,
+        "reset_count": reset_count,
+        "batch_stats": batch_stats,
+        "message": f"Processed {batch_stats.get('processed', 0)} emails: {batch_stats.get('sent', 0)} sent, {batch_stats.get('failed', 0)} failed."
+    }
+
+
+@router.post("/api/admin/email-queue/{email_id}/retry")
+async def admin_retry_single_email(
+    email_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Forces an immediate retry attempt for a specific queued email."""
+    success = retry_single_queued_email(email_id, db=db)
+    if success:
+        return {"success": True, "message": f"Email #{email_id} was successfully delivered!"}
+    else:
+        item = db.get(QueuedEmail, email_id)
+        last_err = item.last_error if item else "Unknown error"
+        return {"success": False, "message": f"Email #{email_id} delivery failed: {last_err}"}
+
+
+@router.delete("/api/admin/email-queue/{email_id}")
+async def admin_delete_queued_email(
+    email_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Removes an email record from the outbox queue."""
+    item = db.get(QueuedEmail, email_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Queued email record not found.")
+    db.delete(item)
+    db.commit()
+    return {"success": True, "message": f"Queued email #{email_id} removed."}
+
 
