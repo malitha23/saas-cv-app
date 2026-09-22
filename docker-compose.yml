@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_network
+
+  fastapi_app_1:
+    build: .
+    container_name: fastapi_app_1
+    restart: always
+    ports:
+      - "127.0.0.1:8001:7860" # Maps VPS port 8001 -> Container port 7860
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+  fastapi_app_2:
+    build: .
+    container_name: fastapi_app_2
+    restart: always
+    ports:
+      - "127.0.0.1:8002:7860" # Maps VPS port 8002 -> Container port 7860
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+volumes:
+  mysql_data:
+
+networks:
+  app_network:
+    driver: bridge
