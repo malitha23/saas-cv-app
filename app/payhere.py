@@ -5,11 +5,14 @@ import re
 import json
 import base64
 import time
+import logging
 from typing import Dict, Any, Optional
 import httpx
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+
+logger = logging.getLogger("dreemfolio.payhere")
 
 # Official PayHere Gateway Checkout URLs
 PAYHERE_SANDBOX_URL = "https://sandbox.payhere.lk/pay/checkout"
