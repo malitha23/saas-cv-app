@@ -695,13 +695,13 @@ Return ONLY valid JSON matching this schema:
 
     raw_json = None
     last_error = None
-    models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
+    models_to_try = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
 
-    # 1. Try official google.genai client with active models (with strict 20s timeout)
+    # 1. Try official google.genai client with active models (with strict 12s timeout)
     try:
         from google import genai
         from google.genai import types
-        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=20000))
+        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=12000))
         for model_name in models_to_try:
             try:
                 response = client.models.generate_content(
@@ -735,7 +735,7 @@ Return ONLY valid JSON matching this schema:
                     "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
                     "generationConfig": {"responseMimeType": "application/json"}
                 }
-                res = requests.post(url, json=payload, timeout=15)
+                res = requests.post(url, json=payload, timeout=12)
                 if res.status_code == 200:
                     resp_data = res.json()
                     candidates = resp_data.get("candidates", [])
@@ -797,7 +797,7 @@ def generate_gemini_text(prompt: str, api_key: Optional[str] = None, max_tokens:
     k = api_key or os.getenv("GEMINI_API_KEY")
     if not k:
         return ""
-    models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
+    models_to_try = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
     try:
         from google import genai
         from google.genai import types
@@ -1783,7 +1783,7 @@ Rules:
 
     # Try Gemini API if key available
     if active_key and len(active_key) >= 20:
-        models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
+        models_to_try = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
         
         # Build prompt from conversation
         conversation_history = "\n".join([f"{m.role.capitalize()}: {m.content}" for m in messages[-6:]])
