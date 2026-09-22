@@ -347,19 +347,9 @@ def retry_all_queued_emails(db: Optional[Session] = None) -> int:
 
 
 def dispatch_email_in_background(to_email: str, subject: str, html_body: str, background_tasks=None):
-    """Dispatches email asynchronously via FastAPI BackgroundTasks or asyncio thread pool."""
-    if background_tasks is not None:
-        background_tasks.add_task(send_raw_email, to_email, subject, html_body)
-    else:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                asyncio.create_task(asyncio.to_thread(send_raw_email, to_email, subject, html_body))
-            else:
-                send_raw_email(to_email, subject, html_body)
-        except Exception:
-            import threading
-            threading.Thread(target=send_raw_email, args=(to_email, subject, html_body), daemon=True).start()
+    """Dispatches email asynchronously in a detached daemon thread so the client HTTP response is never blocked."""
+    import threading
+    threading.Thread(target=send_raw_email, args=(to_email, subject, html_body), daemon=True).start()
 
 
 # ─────────────────────────────────────────────────────────────────────────────

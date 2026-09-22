@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /app
+Allow: /pricing
+Allow: /features
+Allow: /contact
+Allow: /support
+Allow: /privacy
+Allow: /terms
+Allow: /refund
+Allow: /refund-policy
+Allow: /security
+Allow: /static/
+Disallow: /api/
+Disallow: /admin
+Disallow: /paneladmin
+Disallow: /portfolio/preview/
+
+# Search Engine Sitemaps
+Sitemap: https://www.dreemfolio.com/sitemap.xml
+Host: https://www.dreemfolio.com

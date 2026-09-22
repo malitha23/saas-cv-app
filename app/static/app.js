@@ -2306,6 +2306,7 @@ function resumeApp() {
     async handleGoogleCredentialResponse(googleResponse) {
       if (!googleResponse || !googleResponse.credential) {
         this.authError = 'Google authentication response did not contain a valid credential.';
+        this.isSubmittingGoogleAuth = false;
         return;
       }
 

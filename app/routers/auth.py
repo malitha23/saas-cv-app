@@ -115,9 +115,12 @@ async def auth_with_google(
             if req.referral_code:
                 process_referral_signup(user, req.referral_code, db)
 
-            base_url = str(request.base_url).rstrip("/")
-            send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
-            send_admin_new_user_alert(user.email, user.full_name, "Google", base_url, db, background_tasks)
+            try:
+                base_url = str(request.base_url).rstrip("/")
+                send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
+                send_admin_new_user_alert(user.email, user.full_name, "Google", base_url, db, background_tasks)
+            except Exception as notify_err:
+                logger.warning("Notification error during Google signup: %s", notify_err)
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your account has been deactivated.")
@@ -142,31 +145,35 @@ def generate_unique_referral_code(db: Session) -> str:
 
 def process_referral_signup(new_user: User, raw_ref_code: Optional[str], db: Session) -> bool:
     """Link referred user and reward inviter with +1 clean ATS download with anti-fraud protection."""
-    if not raw_ref_code or not raw_ref_code.strip():
-        return False
-    ref_clean = raw_ref_code.strip()
-    
-    referrer = None
-    if ref_clean.upper().startswith("DF-"):
-        referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
-    elif ref_clean.startswith("portfolio_"):
-        slug = ref_clean.replace("portfolio_", "").strip().lower()
-        users = db.scalars(select(User)).all()
-        for u in users:
-            clean_u = re.sub(r'[^a-zA-Z0-9]', '-', u.full_name.lower()).strip('-')
-            if clean_u == slug:
-                referrer = u
-                break
-    else:
-        referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
+    try:
+        if not raw_ref_code or not raw_ref_code.strip():
+            return False
+        ref_clean = raw_ref_code.strip()
+        
+        referrer = None
+        if ref_clean.upper().startswith("DF-"):
+            referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
+        elif ref_clean.startswith("portfolio_"):
+            slug = ref_clean.replace("portfolio_", "").strip().lower()
+            users = db.scalars(select(User)).all()
+            for u in users:
+                clean_u = re.sub(r'[^a-zA-Z0-9]', '-', u.full_name.lower()).strip('-')
+                if clean_u == slug:
+                    referrer = u
+                    break
+        else:
+            referrer = db.scalars(select(User).where(User.referral_code == ref_clean.upper())).first()
 
-    # Anti-fraud: cannot refer oneself
-    if referrer and referrer.id != new_user.id:
-        new_user.referred_by_id = referrer.id
-        referrer.referral_bonus_downloads = (getattr(referrer, "referral_bonus_downloads", 0) or 0) + 1
-        db.commit()
-        return True
-    return False
+        # Anti-fraud: cannot refer oneself
+        if referrer and referrer.id != new_user.id:
+            new_user.referred_by_id = referrer.id
+            referrer.referral_bonus_downloads = (getattr(referrer, "referral_bonus_downloads", 0) or 0) + 1
+            db.commit()
+            return True
+        return False
+    except Exception as e:
+        logger.warning("Error processing referral signup: %s", e)
+        return False
 
 
 @router.post("/api/auth/register", response_model=TokenResponse)

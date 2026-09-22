@@ -131,11 +131,13 @@ Allow: /security
 Allow: /static/
 Disallow: /api/
 Disallow: /admin
+Disallow: /paneladmin
 Disallow: /portfolio/preview/
 
 # Search Engine Sitemaps
+Sitemap: https://www.dreemfolio.com/sitemap.xml
 Sitemap: https://dreemfolio.com/sitemap.xml
-Host: https://dreemfolio.com
+Host: https://www.dreemfolio.com
 """
     return Response(content=content, media_type="text/plain")
 

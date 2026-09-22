@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   fastapi_app_1:
     build: .
@@ -7,6 +9,15 @@ services:
     command: uvicorn app.main:app --host 127.0.0.1 --port 8001
     env_file:
       - .env
+    volumes:
+      - .:/app  # Local code changes container ekatath sync wenna (optional)
+      # Oyalage app eke uploads / PDFs save wen directory ekak thiyanawanam meka danna:
+      # - ./uploads:/app/uploads
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   fastapi_app_2:
     build: .
@@ -16,3 +27,11 @@ services:
     command: uvicorn app.main:app --host 127.0.0.1 --port 8002
     env_file:
       - .env
+    volumes:
+      - .:/app
+      # - ./uploads:/app/uploads
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
