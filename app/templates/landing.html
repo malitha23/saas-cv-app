@@ -2,20 +2,31 @@
 <html lang="en" class="h-full bg-slate-950 text-slate-100 scroll-smooth">
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9K8HE8EJ3W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-9K8HE8EJ3W');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- PRIMARY SEARCH ENGINE METADATA -->
   <title>{{ page_title | default('DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio') }}</title>
-  <meta name="description" content="{{ page_description | default('Tailor your resume to any job description with AI. 100% ATS score optimization, visual photo CVs, AI cover letters, and live developer portfolios. Free forever.') }}">
-  <meta name="keywords" content="AI resume builder, ATS resume checker, ATS friendly CV maker, free resume builder, resume tailor AI, job description keyword matcher, executive CV designer, visual photo CV, AI cover letter generator, software engineer resume, developer portfolio generator, CV maker Sri Lanka, ATS score booster, resume optimizer online, best AI resume builder 2026, free CV maker online, PDF resume builder, modern CV templates, custom domain portfolio, online CV maker">
+  <meta name="description"
+    content="{{ page_description | default('Tailor your resume to any job description with AI. 100% ATS score optimization, visual photo CVs, AI cover letters, and live developer portfolios. Free forever.') }}">
+  <meta name="keywords"
+    content="AI resume builder, ATS resume checker, ATS friendly CV maker, free resume builder, resume tailor AI, job description keyword matcher, executive CV designer, visual photo CV, AI cover letter generator, software engineer resume, developer portfolio generator, CV maker Sri Lanka, ATS score booster, resume optimizer online, best AI resume builder 2026, free CV maker online, PDF resume builder, modern CV templates, custom domain portfolio, online CV maker">
   <link rel="canonical" href="{{ canonical_url | default('https://dreemfolio.com/') }}">
-  
+
   <!-- SEARCH ENGINE ROBOTS & CRAWLERS -->
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large">
-  
+
   <!-- AUTHOR & GEOGRAPHY -->
   <meta name="author" content="DreemFolio AI Technology Solutions">
   <meta name="publisher" content="DreemFolio AI">
@@ -29,8 +40,10 @@
   <meta property="og:site_name" content="DreemFolio AI">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ canonical_url | default('https://dreemfolio.com/') }}">
-  <meta property="og:title" content="{{ page_title | default('DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio') }}">
-  <meta property="og:description" content="{{ page_description | default('Beat applicant tracking systems with AI. Optimize resumes to job descriptions, create executive photo CVs, generate cover letters, and launch custom web portfolios.') }}">
+  <meta property="og:title"
+    content="{{ page_title | default('DreemFolio AI - Free AI Resume Builder, ATS Checker & Portfolio Studio') }}">
+  <meta property="og:description"
+    content="{{ page_description | default('Beat applicant tracking systems with AI. Optimize resumes to job descriptions, create executive photo CVs, generate cover letters, and launch custom web portfolios.') }}">
   <meta property="og:image" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta property="og:image:secure_url" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta property="og:image:type" content="image/jpeg">
@@ -44,8 +57,10 @@
   <meta name="twitter:site" content="@DreemFolio">
   <meta name="twitter:creator" content="@DreemFolio">
   <meta name="twitter:url" content="{{ canonical_url | default('https://dreemfolio.com/') }}">
-  <meta name="twitter:title" content="{{ page_title | default('DreemFolio AI - 100% ATS Resume Builder & Career Operating System') }}">
-  <meta name="twitter:description" content="{{ page_description | default('Tailor your resume to any job description with AI. Beat ATS screening, design visual CVs, and publish custom portfolios. Free starter access.') }}">
+  <meta name="twitter:title"
+    content="{{ page_title | default('DreemFolio AI - 100% ATS Resume Builder & Career Operating System') }}">
+  <meta name="twitter:description"
+    content="{{ page_description | default('Tailor your resume to any job description with AI. Beat ATS screening, design visual CVs, and publish custom portfolios. Free starter access.') }}">
   <meta name="twitter:image" content="https://dreemfolio.com/static/images/hero_showcase.jpg">
   <meta name="twitter:image:alt" content="DreemFolio AI 3D Platform Preview">
 
@@ -183,7 +198,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
 
   <!-- Lucide Icons (Locally Hosted) -->
   <script src="/static/vendor/lucide.min.js"></script>
@@ -192,30 +209,39 @@
   <script defer src="/static/vendor/alpine.min.js"></script>
 
   <style>
-    [x-cloak] { display: none !important; }
-    body { font-family: 'Inter', sans-serif; }
+    [x-cloak] {
+      display: none !important;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
     .bg-grid-pattern {
       background-size: 40px 40px;
       background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
     }
   </style>
 </head>
 
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-600 selection:text-white"
-      x-data="landingPage()" x-init="initLanding()">
+<body
+  class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-600 selection:text-white"
+  x-data="landingPage()" x-init="initLanding()">
 
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <!-- NAVBAR -->
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-      
+
       <!-- Brand Logo -->
       <a href="/" class="flex items-center space-x-3 group">
-        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-10 h-10 object-contain shrink-0 group-hover:scale-105 transition filter drop-shadow-sm">
+        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo"
+          class="w-10 h-10 object-contain shrink-0 group-hover:scale-105 transition filter drop-shadow-sm">
         <div class="flex flex-col">
-          <span class="font-black text-xl tracking-tight text-white">Dreem<span class="text-indigo-400">Folio</span></span>
+          <span class="font-black text-xl tracking-tight text-white">Dreem<span
+              class="text-indigo-400">Folio</span></span>
           <span class="text-[10px] text-slate-400 tracking-wider font-medium uppercase">Career OS & ATS Studio</span>
         </div>
       </a>
@@ -232,18 +258,21 @@
         <!-- Logged In State -->
         <template x-if="token">
           <div class="flex items-center space-x-2 sm:space-x-3">
-            <span class="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 shadow-sm">
+            <span
+              class="hidden sm:inline-flex items-center gap-2 text-xs font-medium text-slate-300 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 shadow-sm">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>Welcome, <strong class="text-white" x-text="userName"></strong></span>
-              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" x-text="userPlan" x-show="userPlan"></span>
+              <span
+                class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                x-text="userPlan" x-show="userPlan"></span>
             </span>
             <a href="/app"
-               class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition flex items-center gap-2">
+              class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 transition flex items-center gap-2">
               <i data-lucide="layout" class="w-4 h-4"></i>
               <span>Go to Workspace</span>
             </a>
             <button @click="logout()" title="Sign Out"
-                    class="p-2 sm:p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition">
+              class="p-2 sm:p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition">
               <i data-lucide="log-out" class="w-4 h-4"></i>
             </button>
           </div>
@@ -252,12 +281,11 @@
         <!-- Logged Out State -->
         <template x-if="!token">
           <div class="flex items-center space-x-2 sm:space-x-4">
-            <a href="/app"
-               class="px-3 py-2 text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition">
+            <a href="/app" class="px-3 py-2 text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition">
               Sign In
             </a>
             <a href="/app"
-               class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+              class="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
               <span>Get Started Free</span>
               <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </a>
@@ -272,15 +300,20 @@
   <!-- HERO SECTION -->
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section class="relative pt-16 pb-20 sm:pt-24 sm:pb-32 overflow-hidden bg-grid-pattern">
-    
+
     <!-- Background Gradient Glows -->
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="absolute top-1/3 right-10 w-[400px] h-[400px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div
+      class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/15 rounded-full blur-3xl pointer-events-none -z-10">
+    </div>
+    <div
+      class="absolute top-1/3 right-10 w-[400px] h-[400px] bg-pink-600/10 rounded-full blur-3xl pointer-events-none -z-10">
+    </div>
 
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      
+
       <!-- Top Badge -->
-      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs sm:text-sm font-medium mb-6 shadow-sm">
+      <div
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs sm:text-sm font-medium mb-6 shadow-sm">
         <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span class="text-indigo-400 font-semibold">DreemFolio 2.0</span>
         <span class="text-slate-600">•</span>
@@ -297,7 +330,8 @@
 
       <!-- Subtitle -->
       <p class="max-w-2xl mx-auto text-base sm:text-xl text-slate-300 mb-10 leading-relaxed font-normal">
-        Tailor your CV to any job description in under 10 seconds. Generate recruiter-approved single-column ATS PDFs, targeted executive cover letters, and modern web portfolios.
+        Tailor your CV to any job description in under 10 seconds. Generate recruiter-approved single-column ATS PDFs,
+        targeted executive cover letters, and modern web portfolios.
       </p>
 
       <!-- CTA Buttons Group -->
@@ -306,13 +340,13 @@
         <template x-if="token">
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <a href="/app"
-               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
               <i data-lucide="rocket" class="w-5 h-5"></i>
               <span>Open AI Workspace</span>
               <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
             <a href="/app?openPricing=true"
-               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
               <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
               <span>Subscription & Plans</span>
             </a>
@@ -323,14 +357,14 @@
         <template x-if="!token">
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
             <a href="/app"
-               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
               <i data-lucide="sparkles" class="w-5 h-5"></i>
               <span>Get Started for Free</span>
               <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
 
             <a href="/app?demo=true"
-               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
               <i data-lucide="play" class="w-4 h-4 text-indigo-400"></i>
               <span>View Live Demo</span>
             </a>
@@ -361,7 +395,7 @@
     <!-- ───────────────────────────────────────────────────────────────────────────── -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
       <div class="rounded-2xl border border-slate-800 bg-slate-900/60 shadow-2xl overflow-hidden backdrop-blur">
-        
+
         <!-- Mock Browser Top Bar -->
         <div class="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
           <div class="flex items-center space-x-2">
@@ -369,7 +403,8 @@
             <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
             <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
           </div>
-          <div class="px-4 py-1 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center gap-2">
+          <div
+            class="px-4 py-1 rounded-md bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center gap-2">
             <i data-lucide="lock" class="w-3 h-3 text-emerald-400"></i>
             <span>dreemfolio.com/app</span>
           </div>
@@ -378,15 +413,17 @@
 
         <!-- 3D Platform Showcase Banner -->
         <div class="relative overflow-hidden bg-slate-950 border-b border-slate-800">
-          <img src="/static/images/hero_showcase.jpg" alt="DreemFolio 3D Platform Showcase" 
-               class="w-full h-auto max-h-[480px] object-cover object-center shadow-2xl transition duration-700 hover:scale-[1.01]" 
-               loading="eager">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+          <img src="/static/images/hero_showcase.jpg" alt="DreemFolio 3D Platform Showcase"
+            class="w-full h-auto max-h-[480px] object-cover object-center shadow-2xl transition duration-700 hover:scale-[1.01]"
+            loading="eager">
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none">
+          </div>
         </div>
 
         <!-- Showcase Body Content -->
         <div class="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          
+
           <!-- Column 1: Match Score Gauge -->
           <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-col justify-between">
             <div>
@@ -395,7 +432,8 @@
                 <span class="text-4xl font-extrabold text-emerald-400">98%</span>
                 <span class="text-xs text-slate-400 font-semibold">Match Score</span>
               </div>
-              <p class="text-xs text-slate-300 mt-2">Passed strict Taleo, Workday & Lever recruiter screening algorithms.</p>
+              <p class="text-xs text-slate-300 mt-2">Passed strict Taleo, Workday & Lever recruiter screening
+                algorithms.</p>
             </div>
             <div class="mt-4 space-y-2">
               <div class="flex justify-between text-[11px] text-slate-400 font-medium">
@@ -411,13 +449,19 @@
           <!-- Column 2: ATS Resume PDF Engine -->
           <div class="p-5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-col justify-between">
             <div>
-              <span class="text-[11px] uppercase font-bold text-indigo-400 tracking-wider">ReportLab Vector Geometry</span>
+              <span class="text-[11px] uppercase font-bold text-indigo-400 tracking-wider">ReportLab Vector
+                Geometry</span>
               <h3 class="text-sm font-bold text-white mt-2">Single-Column PDF Output</h3>
-              <p class="text-xs text-slate-300 mt-2">Engineered with standard Helvetica typography and 0.5-inch margins for error-free OCR scanning.</p>
+              <p class="text-xs text-slate-300 mt-2">Engineered with standard Helvetica typography and 0.5-inch margins
+                for error-free OCR scanning.</p>
             </div>
             <div class="mt-4 flex items-center gap-2">
-              <span class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">Workday Ready</span>
-              <span class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">Greenhouse Ready</span>
+              <span
+                class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">Workday
+                Ready</span>
+              <span
+                class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">Greenhouse
+                Ready</span>
             </div>
           </div>
 
@@ -426,7 +470,8 @@
             <div>
               <span class="text-[11px] uppercase font-bold text-pink-400 tracking-wider">Interactive Web Studio</span>
               <h3 class="text-sm font-bold text-white mt-2">Live Developer Portfolio</h3>
-              <p class="text-xs text-slate-300 mt-2">8 stunning responsive themes (Bento Grid, Swiss, Terminal Dev) published to your own domain in 1 click.</p>
+              <p class="text-xs text-slate-300 mt-2">8 stunning responsive themes (Bento Grid, Swiss, Terminal Dev)
+                published to your own domain in 1 click.</p>
             </div>
             <div class="mt-4">
               <a href="/app" class="text-xs text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1">
@@ -448,7 +493,7 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section id="how-it-works" class="py-20 bg-slate-900/40 border-y border-slate-800/60">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      
+
       <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Streamlined Workflow</span>
       <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2 mb-4">How DreemFolio AI Works in 3 Steps</h2>
       <p class="text-slate-400 max-w-xl mx-auto text-sm sm:text-base mb-16">
@@ -456,37 +501,43 @@
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left relative">
-        
+
         <!-- Step 1 -->
         <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 relative hover:border-slate-700 transition">
-          <div class="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl mb-5">
+          <div
+            class="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl mb-5">
             1
           </div>
           <h3 class="text-lg font-bold text-white mb-2">Upload Your CV</h3>
           <p class="text-slate-400 text-sm leading-relaxed">
-            Drag and drop your current resume as a PDF, Word DOCX, or raw text. Our engine instantly extracts your experience.
+            Drag and drop your current resume as a PDF, Word DOCX, or raw text. Our engine instantly extracts your
+            experience.
           </p>
         </div>
 
         <!-- Step 2 -->
         <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 relative hover:border-slate-700 transition">
-          <div class="w-12 h-12 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xl mb-5">
+          <div
+            class="w-12 h-12 rounded-xl bg-violet-600/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xl mb-5">
             2
           </div>
           <h3 class="text-lg font-bold text-white mb-2">Paste Target Job</h3>
           <p class="text-slate-400 text-sm leading-relaxed">
-            Paste the job description. Our AI analyzes the JD keywords and reformulates your bullets with quantified metrics.
+            Paste the job description. Our AI analyzes the JD keywords and reformulates your bullets with quantified
+            metrics.
           </p>
         </div>
 
         <!-- Step 3 -->
         <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 relative hover:border-slate-700 transition">
-          <div class="w-12 h-12 rounded-xl bg-pink-600/10 border border-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xl mb-5">
+          <div
+            class="w-12 h-12 rounded-xl bg-pink-600/10 border border-pink-500/20 text-pink-400 flex items-center justify-center font-bold text-xl mb-5">
             3
           </div>
           <h3 class="text-lg font-bold text-white mb-2">Download & Get Hired</h3>
           <p class="text-slate-400 text-sm leading-relaxed">
-            Download your ATS-compliant PDF resume, copy your matching cover letter, and launch your live portfolio website.
+            Download your ATS-compliant PDF resume, copy your matching cover letter, and launch your live portfolio
+            website.
           </p>
         </div>
 
@@ -494,7 +545,7 @@
 
       <div class="mt-12">
         <a href="/app"
-           class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition">
+          class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition">
           <span>Start Building Your Resume Now</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
@@ -508,7 +559,7 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section id="features" class="py-20">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      
+
       <div class="text-center mb-16">
         <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Everything You Need</span>
         <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2 mb-4">Built for Top-Tier Job Seekers</h2>
@@ -518,35 +569,40 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        
+
         <!-- Feature 1 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-indigo-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4">
               <i data-lucide="file-check" class="w-5 h-5"></i>
             </div>
             <h3 class="text-base font-bold text-white mb-2">100% ATS Compliant PDFs</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Standard vector PDF generation using ReportLab ensures perfect readability across all automated HR scanning systems.
+              Standard vector PDF generation using ReportLab ensures perfect readability across all automated HR
+              scanning systems.
             </p>
           </div>
         </div>
 
         <!-- Feature 2 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-400 flex items-center justify-center mb-4">
               <i data-lucide="mail" class="w-5 h-5"></i>
             </div>
             <h3 class="text-base font-bold text-white mb-2">AI Cover Letter Generator</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Personalized 3-paragraph executive cover letters highlighting relevant experience tailored to the hiring team.
+              Personalized 3-paragraph executive cover letters highlighting relevant experience tailored to the hiring
+              team.
             </p>
           </div>
         </div>
 
         <!-- Feature 3 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-pink-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-pink-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center mb-4">
               <i data-lucide="globe" class="w-5 h-5"></i>
@@ -559,7 +615,8 @@
         </div>
 
         <!-- Feature 4 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
               <i data-lucide="cloud-check" class="w-5 h-5"></i>
@@ -572,27 +629,31 @@
         </div>
 
         <!-- Feature 5 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4">
               <i data-lucide="coins" class="w-5 h-5"></i>
             </div>
             <h3 class="text-base font-bold text-white mb-2">Fair Country PPP Pricing</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Localized purchasing power parity rates (Rs. 990 in Sri Lanka / $9 globally) make premium features affordable anywhere.
+              Localized purchasing power parity rates (Rs. 990 in Sri Lanka / $9 globally) make premium features
+              affordable anywhere.
             </p>
           </div>
         </div>
 
         <!-- Feature 6 -->
-        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 transition flex flex-col justify-between">
+        <div
+          class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 transition flex flex-col justify-between">
           <div>
             <div class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4">
               <i data-lucide="shield-check" class="w-5 h-5"></i>
             </div>
             <h3 class="text-base font-bold text-white mb-2">Enterprise Zero-Trust Security</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Full defense against XSS, SSRF, LFI, and credential abuse with automatic session protection and encryption.
+              Full defense against XSS, SSRF, LFI, and credential abuse with automatic session protection and
+              encryption.
             </p>
           </div>
         </div>
@@ -607,7 +668,7 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section id="pricing" class="py-20 bg-slate-900/40 border-t border-slate-800/60">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      
+
       <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Simple Transparent Pricing</span>
       <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2 mb-4">Invest in Your Career</h2>
       <p class="text-slate-400 max-w-xl mx-auto text-sm sm:text-base mb-12">
@@ -615,7 +676,7 @@
       </p>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-        
+
         <!-- Tier 1: Free Starter -->
         <div class="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between">
           <div>
@@ -625,7 +686,7 @@
               <span class="text-xs text-slate-400 font-semibold">/ forever</span>
             </div>
             <p class="text-xs text-slate-400 mb-6">Ideal for quick job applications with essential ATS optimization.</p>
-            
+
             <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -648,15 +709,17 @@
 
           <div class="mt-8">
             <a href="/app"
-               class="w-full block py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm text-center transition border border-slate-700">
+              class="w-full block py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm text-center transition border border-slate-700">
               Get Started Free
             </a>
           </div>
         </div>
 
         <!-- Tier 2: Pro Career (Highlighted) -->
-        <div class="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-indigo-950/60 via-slate-900 to-slate-900 border-2 border-indigo-500 relative flex flex-col justify-between shadow-2xl shadow-indigo-600/20">
-          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-indigo-600 text-white font-bold text-[10px] uppercase tracking-wider">
+        <div
+          class="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-indigo-950/60 via-slate-900 to-slate-900 border-2 border-indigo-500 relative flex flex-col justify-between shadow-2xl shadow-indigo-600/20">
+          <div
+            class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-indigo-600 text-white font-bold text-[10px] uppercase tracking-wider">
             Most Popular
           </div>
 
@@ -667,7 +730,7 @@
               <span class="text-xs text-slate-400 font-semibold" x-text="'/ ' + billingCycle">/ month</span>
             </div>
             <p class="text-xs text-slate-400 mb-6">For active job hunters applying to competitive roles.</p>
-            
+
             <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -694,7 +757,7 @@
 
           <div class="mt-8">
             <a href="/app"
-               class="w-full block py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm text-center shadow-lg shadow-indigo-600/30 transition">
+              class="w-full block py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm text-center shadow-lg shadow-indigo-600/30 transition">
               Upgrade to Pro
             </a>
           </div>
@@ -709,7 +772,7 @@
               <span class="text-xs text-slate-400 font-semibold">/ month</span>
             </div>
             <p class="text-xs text-slate-400 mb-6">Designed for senior leads and executive engineering talent.</p>
-            
+
             <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -732,7 +795,7 @@
 
           <div class="mt-8">
             <a href="/app"
-               class="w-full block py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm text-center transition border border-slate-700">
+              class="w-full block py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm text-center transition border border-slate-700">
               Get Executive Access
             </a>
           </div>
@@ -748,59 +811,75 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section id="faq" class="py-20 scroll-mt-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      
+
       <div class="text-center mb-12">
-        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Frequently Asked Questions & Help Center</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Frequently Asked Questions & Help
+          Center</span>
         <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-2">Got Questions? We Have Answers.</h2>
       </div>
 
       <div class="space-y-4">
-        
+
         <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
-          <button @click="toggleFaq(1)" class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
+          <button @click="toggleFaq(1)"
+            class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
             <span>What makes DreemFolio resumes 100% ATS compliant?</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" :class="{'rotate-180': openFaq === 1}"></i>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"
+              :class="{'rotate-180': openFaq === 1}"></i>
           </button>
-          <div x-show="openFaq === 1" x-cloak class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
-            Our engine uses ReportLab vector geometry to render single-column layouts with standard fonts and proper hierarchy. This eliminates parsing errors commonly caused by multi-column or graphic-heavy CV templates.
+          <div x-show="openFaq === 1" x-cloak
+            class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
+            Our engine uses ReportLab vector geometry to render single-column layouts with standard fonts and proper
+            hierarchy. This eliminates parsing errors commonly caused by multi-column or graphic-heavy CV templates.
           </div>
         </div>
 
         <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
-          <button @click="toggleFaq(2)" class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
+          <button @click="toggleFaq(2)"
+            class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
             <span>Is my personal data safe? Do you train AI on my resume?</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" :class="{'rotate-180': openFaq === 2}"></i>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"
+              :class="{'rotate-180': openFaq === 2}"></i>
           </button>
-          <div x-show="openFaq === 2" x-cloak class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
-            Never. We operate a strict Zero-Retention AI Policy. Your resume and job description details are only processed in RAM during generation and are never used to train public LLMs or sold to third parties.
+          <div x-show="openFaq === 2" x-cloak
+            class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
+            Never. We operate a strict Zero-Retention AI Policy. Your resume and job description details are only
+            processed in RAM during generation and are never used to train public LLMs or sold to third parties.
           </div>
         </div>
 
         <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
-          <button @click="toggleFaq(3)" class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
+          <button @click="toggleFaq(3)"
+            class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
             <span>Can I try the service before upgrading?</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" :class="{'rotate-180': openFaq === 3}"></i>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"
+              :class="{'rotate-180': openFaq === 3}"></i>
           </button>
-          <div x-show="openFaq === 3" x-cloak class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
-            Yes! Every free account receives 2 classic ATS downloads, 1 visual CV download, and 3 AI cover letters with automatic cloud saving without requiring any credit card.
+          <div x-show="openFaq === 3" x-cloak
+            class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed">
+            Yes! Every free account receives 2 classic ATS downloads, 1 visual CV download, and 3 AI cover letters with
+            automatic cloud saving without requiring any credit card.
           </div>
         </div>
 
       </div>
 
       <!-- Help Center Contact Card -->
-      <div class="mt-8 p-5 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm">
+      <div
+        class="mt-8 p-5 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm">
         <div class="flex items-center gap-3 text-slate-300">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+          <div
+            class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
             <i data-lucide="headphones" class="w-4 h-4 text-indigo-400"></i>
           </div>
           <div>
             <div class="font-semibold text-white">Need more assistance?</div>
-            <div class="text-slate-400 text-xs">Our support team is always available to help you with your resume questions.</div>
+            <div class="text-slate-400 text-xs">Our support team is always available to help you with your resume
+              questions.</div>
           </div>
         </div>
-        <a href="mailto:support@dreemfolio.com" 
-           class="px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 font-bold border border-indigo-500/30 transition flex items-center gap-2 shrink-0">
+        <a href="mailto:support@dreemfolio.com"
+          class="px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 font-bold border border-indigo-500/30 transition flex items-center gap-2 shrink-0">
           <i data-lucide="mail" class="w-4 h-4"></i>
           <span>support@dreemfolio.com</span>
         </a>
@@ -812,7 +891,8 @@
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <!-- BOTTOM CTA BANNER -->
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
-  <section class="py-16 bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border-t border-slate-800 text-center">
+  <section
+    class="py-16 bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border-t border-slate-800 text-center">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-3xl sm:text-4xl font-black text-white mb-4">Ready to Get More Interviews?</h2>
       <p class="text-slate-300 text-sm sm:text-base mb-8 max-w-lg mx-auto">
@@ -820,7 +900,7 @@
       </p>
       <template x-if="token">
         <a href="/app"
-           class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
           <i data-lucide="rocket" class="w-5 h-5"></i>
           <span>Continue to AI Workspace</span>
           <i data-lucide="arrow-right" class="w-5 h-5"></i>
@@ -828,7 +908,7 @@
       </template>
       <template x-if="!token">
         <a href="/app"
-           class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
+          class="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 transition">
           <span>Get Started Now — It's Free</span>
           <i data-lucide="arrow-right" class="w-5 h-5"></i>
         </a>
@@ -855,7 +935,7 @@
           const u = JSON.parse(cachedUserStr);
           initialName = u.full_name ? u.full_name.split(' ')[0] : (u.email ? u.email.split('@')[0] : 'Member');
           initialPlan = (u.plan_tier || 'free').toUpperCase();
-        } catch(e) {}
+        } catch (e) { }
       }
 
       return {
@@ -920,7 +1000,7 @@
                 }
               }
             })
-            .catch(() => {});
+            .catch(() => { });
 
           this.$nextTick(() => {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
@@ -973,4 +1053,5 @@
   </script>
 
 </body>
+
 </html>
