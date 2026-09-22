@@ -559,7 +559,7 @@ def check_conference_quota(
     db: Session
 ) -> tuple[bool, int, str]:
     """
-    Checks session allowance for Real-Time AI Video Conference & Live Mistake Coaching ("Waradi Kiyala Denna").
+    Checks session allowance for Real-Time AI Video Conference & Live Mistake Coaching (Real-Time Error Detection).
     - Pro / Elite: Unlimited live video conference sessions with real-time HUD error coaching.
     - Free registered user: 1 conference practice session per day.
     - Requires authenticated user account.

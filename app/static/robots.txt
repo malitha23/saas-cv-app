@@ -3,6 +3,8 @@ Allow: /
 Allow: /app
 Allow: /pricing
 Allow: /features
+Allow: /guide
+Allow: /support/guide
 Allow: /contact
 Allow: /support
 Allow: /privacy

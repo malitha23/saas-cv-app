@@ -232,7 +232,7 @@ async def conference_turn_endpoint(
     db: Session = Depends(get_db)
 ):
     """
-    Two-way real-time conversational conference turn with live mistake detection ("Waradi Kiyala Denna").
+    Two-way real-time conversational conference turn with live mistake detection (Real-Time Error Detection).
     Analyzes candidate's spoken speech, flags technical vagueness, pacing, filler words,
     and returns realistic spoken responses from the AI Interviewer avatar.
     Guarded by check_conference_quota: requires authenticated user.

@@ -4572,7 +4572,7 @@ function resumeApp() {
           this.conferenceMistakes.push(...data.mistakes_detected);
         }
 
-        // Display live floating HUD coaching alert ("Waradi Kiyala Denna")
+        // Display live floating HUD coaching alert (Real-Time Mistake Feedback)
         if (data.live_coaching_nudge) {
           this.activeCoachingNudge = data.live_coaching_nudge;
           setTimeout(() => {

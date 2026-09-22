@@ -32,6 +32,14 @@
         <span class="hidden xl:inline">Home</span>
       </a>
 
+      <!-- Support & Quota Guide Link (Opens in new tab) -->
+      <a href="/guide" target="_blank"
+        class="px-2.5 py-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 hover:bg-slate-700/70 text-slate-300 hover:text-white transition text-xs font-semibold flex items-center gap-1.5"
+        title="View Support & Quota Guide (Opens in new tab)">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span class="hidden xl:inline">Guide</span>
+      </a>
+
       <!-- Quick Tour Button -->
       <button @click="startOnboardingTour()"
         class="px-2.5 py-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm"
@@ -883,6 +891,16 @@
           </span>
           <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">5 Steps</span>
         </button>
+
+        <!-- Feature & Quotas Guide (Mobile) -->
+        <a href="/guide" target="_blank"
+          class="w-full p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-left transition flex items-center justify-between text-xs text-slate-200 shadow-sm">
+          <span class="flex items-center gap-2.5">
+            <i data-lucide="book-open" class="w-4 h-4 text-indigo-400"></i>
+            <span class="font-bold">Feature & Quota Guide</span>
+          </span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">How-To ↗</span>
+        </a>
       </div>
 
       <!-- Quick Demo Profiles -->

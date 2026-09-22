@@ -11,6 +11,8 @@ from app.database import get_db
 from app.models import OnlinePaymentOrder
 from app.state import templates
 from app.routers.payments import sync_order_status_from_payhere
+from app.guide_service import get_dynamic_guide_catalog
+from app.pricing import _get_country_pricing_dict
 
 router = APIRouter(tags=["Pages & Public Views"])
 
@@ -77,6 +79,46 @@ async def serve_contact_page(request: Request):
     return templates.TemplateResponse(request=request, name="legal/contact.html", context={"active_page": "contact"})
 
 
+@router.get("/guide", response_class=HTMLResponse)
+@router.get("/support/guide", response_class=HTMLResponse)
+async def serve_feature_guide_page(
+    request: Request,
+    country: Optional[str] = Query("LK"),
+    db: Session = Depends(get_db)
+):
+    """
+    Dedicated, dynamic Feature & Quota Support Guide (Google Support Docs style).
+    Binds live DB quotas and subscription plans with zero hardcoding.
+    """
+    country_code = (country or "LK").upper()
+    guide_data = get_dynamic_guide_catalog(db, country_code=country_code)
+    all_country_pricing = _get_country_pricing_dict(db)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="guide.html",
+        context={
+            "guide": guide_data,
+            "all_country_pricing": all_country_pricing,
+            "active_country": country_code,
+            "active_page": "guide",
+            "page_title": "DreemFolio AI Feature Guide & Support Documentation — Step-by-Step Instructions & Plan Quotas",
+            "page_description": "Comprehensive, step-by-step user guide for DreemFolio AI ATS resume builder, cover letters, mock interviews, and live portfolios. Detailed breakdown of Free, Pro, and Elite quotas.",
+            "canonical_url": "https://dreemfolio.com/guide"
+        }
+    )
+
+
+@router.get("/api/guide/data")
+async def get_guide_api_data(
+    country: Optional[str] = Query("LK"),
+    db: Session = Depends(get_db)
+):
+    """API returning the dynamic guide catalog in JSON format for client-side filtering."""
+    country_code = (country or "LK").upper()
+    return get_dynamic_guide_catalog(db, country_code=country_code)
+
+
 @router.get("/pricing", response_class=HTMLResponse)
 async def serve_pricing_page(request: Request):
     """
@@ -121,6 +163,8 @@ Allow: /
 Allow: /app
 Allow: /pricing
 Allow: /features
+Allow: /guide
+Allow: /support/guide
 Allow: /contact
 Allow: /support
 Allow: /privacy
@@ -153,6 +197,12 @@ async def serve_sitemap_xml():
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://dreemfolio.com/guide</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
     <loc>https://dreemfolio.com/pricing</loc>

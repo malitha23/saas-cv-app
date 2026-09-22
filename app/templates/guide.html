@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 scroll-smooth">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9K8HE8EJ3W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-9K8HE8EJ3W');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ page_description }}">
+  <link rel="canonical" href="{{ canonical_url }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph / Meta -->
+  <meta property="og:site_name" content="DreemFolio AI">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:image" content="https://dreemfolio.com/static/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_description }}">
+  <meta name="theme-color" content="#4f46e5">
+
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
+  <link rel="apple-touch-icon" href="/static/images/logo.png?v=2">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="/static/vendor/lucide.min.js"></script>
+
+  <!-- Alpine.js -->
+  <script defer src="/static/vendor/alpine.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    ::selection { background: #4f46e5; color: #ffffff; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-950 font-sans text-slate-100 antialiased"
+      x-data="guideApp()"
+      x-init="initGuide()">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TOP STICKY APPBAR (Google Support / Cloud Console Style) -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/90">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Documentation Title -->
+      <div class="flex items-center gap-3 shrink-0">
+        <a href="/" class="flex items-center gap-2.5 group">
+          <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-8 h-8 object-contain group-hover:scale-105 transition">
+          <span class="font-black text-lg tracking-tight text-slate-100">
+            Dreem<span class="text-indigo-400">Folio</span>
+          </span>
+        </a>
+        <div class="h-4 w-px bg-slate-800 hidden sm:block"></div>
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-[11px] font-semibold text-slate-400">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Support & Quotas Guide</span>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar (Header center) -->
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text"
+                 x-model="searchQuery"
+                 placeholder="Search features, quotas, or how-to steps (e.g. ATS, Video, PDF)..."
+                 class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-8 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+          <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Actions: Country Currency Switcher + Open App -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Currency Dropdown -->
+        <div class="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
+          <a href="/guide?country=LK"
+             class="px-2.5 py-1 rounded font-bold text-[11px] transition flex items-center gap-1 {{ 'bg-indigo-600 text-white shadow' if active_country == 'LK' else 'text-slate-400 hover:text-slate-200' }}">
+            <span>Rs.</span>
+            <span>LKR</span>
+          </a>
+          <a href="/guide?country=DEFAULT"
+             class="px-2.5 py-1 rounded font-bold text-[11px] transition flex items-center gap-1 {{ 'bg-indigo-600 text-white shadow' if active_country != 'LK' else 'text-slate-400 hover:text-slate-200' }}">
+            <span>$</span>
+            <span>USD</span>
+          </a>
+        </div>
+
+        <a href="/app"
+           class="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-1.5">
+          <span>Launch App</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- HERO BANNER -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section class="border-b border-slate-800/80 bg-gradient-to-b from-slate-900/60 via-slate-950 to-slate-950 py-10 sm:py-14">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      
+      <div class="max-w-3xl space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-400 text-xs font-semibold">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          <span>Live Verified SaaS Engine • Zero Hardcoded Quotas</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
+          DreemFolio AI Support & Feature Documentation
+        </h1>
+        <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+          Detailed step-by-step instructions, technical enforcement rules, and current quota allocations for every feature in the DreemFolio AI career acceleration suite.
+        </p>
+      </div>
+
+      <!-- Mobile Search Input (Visible only on mobile) -->
+      <div class="block md:hidden">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text"
+                 x-model="searchQuery"
+                 placeholder="Search features, quotas, or how-to steps..."
+                 class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-8 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <!-- Dynamic Plans Quick Cards (Values dynamically fed from DB) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        {% for plan in guide.plans %}
+        <div class="rounded-2xl border p-4 sm:p-5 transition flex flex-col justify-between
+          {% if plan.is_popular %}
+            bg-gradient-to-b from-indigo-950/40 via-slate-900/80 to-slate-950 border-indigo-500/40 shadow-xl shadow-indigo-950/30 ring-1 ring-indigo-500/30
+          {% else %}
+            bg-slate-900/60 border-slate-800 hover:border-slate-700
+          {% endif %}">
+          
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <h2 class="font-bold text-slate-200 text-base">{{ plan.title }}</h2>
+              <span class="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold
+                {% if plan.is_popular %} bg-indigo-500/20 text-indigo-300 border border-indigo-500/30
+                {% elif plan.plan_key == 'elite' %} bg-amber-500/20 text-amber-300 border border-amber-500/30
+                {% else %} bg-slate-800 text-slate-400 border border-slate-700
+                {% endif %}">
+                {{ plan.badge }}
+              </span>
+            </div>
+
+            <div class="flex items-baseline gap-1.5 pt-1">
+              <span class="text-2xl font-black text-white tracking-tight">{{ plan.price_display }}</span>
+              <span class="text-xs text-slate-400 font-medium">{{ plan.period_display }}</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">{{ plan.description }}</p>
+          </div>
+
+          <div class="pt-4 mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+            <button @click="filterByPlan('{{ plan.plan_key }}')"
+                    class="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 text-[11px]">
+              <span>View {{ plan.title }} Features</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+            <a href="/app" class="text-slate-400 hover:text-white text-[11px]">Open &rarr;</a>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Quick Filter Bar: Plan Selector Pills & Category Chips -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <!-- Plan Pills -->
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+          <span class="text-slate-500 font-semibold mr-1 text-[11px]">Plan Filter:</span>
+          <button @click="selectedPlan = 'all'"
+                  :class="selectedPlan === 'all' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+                  class="px-3 py-1.5 rounded-lg font-bold transition text-[11px]">
+            All Plans ({{ guide.total_features }})
+          </button>
+          <button @click="selectedPlan = 'free'"
+                  :class="selectedPlan === 'free' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+                  class="px-3 py-1.5 rounded-lg font-bold transition text-[11px]">
+            Free Starter
+          </button>
+          <button @click="selectedPlan = 'pro'"
+                  :class="selectedPlan === 'pro' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+                  class="px-3 py-1.5 rounded-lg font-bold transition text-[11px]">
+            Pro Career
+          </button>
+          <button @click="selectedPlan = 'elite'"
+                  :class="selectedPlan === 'elite' ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+                  class="px-3 py-1.5 rounded-lg font-bold transition text-[11px]">
+            Executive Elite
+          </button>
+        </div>
+
+        <!-- Jump to Matrix Button -->
+        <a href="#matrix-table"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition">
+          <i data-lucide="table" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>Full Comparison Matrix</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN DOCUMENTATION BODY: SIDEBAR + CONTENT AREA -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- ─────────────────────────────────────────────────────────────────── -->
+      <!-- LEFT SIDEBAR: CATEGORIES & QUICK NAV (Sticky on desktop) -->
+      <!-- ─────────────────────────────────────────────────────────────────── -->
+      <aside class="lg:col-span-3 lg:sticky lg:top-24 space-y-6">
+        
+        <!-- Category Filter Widget -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1 flex items-center justify-between">
+            <span>Feature Categories</span>
+            <button x-show="selectedCategory !== 'all'" @click="selectedCategory = 'all'" class="text-indigo-400 hover:underline normal-case text-[10.5px]">Clear</button>
+          </h3>
+
+          <nav class="space-y-1">
+            <button @click="selectedCategory = 'all'"
+                    :class="selectedCategory === 'all' ? 'bg-indigo-600/15 border-indigo-500/40 text-indigo-300 font-bold' : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
+                    class="w-full text-left px-3 py-2 rounded-xl border text-xs transition flex items-center justify-between">
+              <span class="flex items-center gap-2">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>All Categories</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">{{ guide.total_features }}</span>
+            </button>
+
+            {% for cat in guide.categories %}
+            <button @click="selectedCategory = '{{ cat.id }}'"
+                    :class="selectedCategory === '{{ cat.id }}' ? 'bg-indigo-600/15 border-indigo-500/40 text-indigo-300 font-bold' : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'"
+                    class="w-full text-left px-3 py-2 rounded-xl border text-xs transition flex items-center justify-between">
+              <span class="flex items-center gap-2 truncate">
+                <i data-lucide="{{ cat.icon }}" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+                <span class="truncate">{{ cat.name }}</span>
+              </span>
+            </button>
+            {% endfor %}
+          </nav>
+        </div>
+
+        <!-- Quick Quota Summary Card (Dynamic DB values) -->
+        <div class="bg-gradient-to-br from-indigo-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center gap-2 text-indigo-300 text-xs font-bold">
+            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+            <span>Current Free Quota Limits</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            Live database settings enforced across all free starter accounts:
+          </p>
+          <ul class="space-y-1.5 text-[11px] text-slate-300">
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Daily AI Tailoring:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_daily_ai }} runs/day</span>
+            </li>
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Classic ATS PDFs:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_lifetime_ats }} lifetime</span>
+            </li>
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Visual Photo CV:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_lifetime_visual }} lifetime</span>
+            </li>
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Cover Letters:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_lifetime_cover_letter }} lifetime</span>
+            </li>
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Copilot Kits:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_daily_copilot_kits }} kit/day</span>
+            </li>
+            <li class="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span class="text-slate-400">Tracked Jobs:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_max_tracked_jobs }} jobs max</span>
+            </li>
+            <li class="flex items-center justify-between">
+              <span class="text-slate-400">Video / Voice Mock:</span>
+              <span class="font-bold text-indigo-300 font-mono">{{ guide.quotas.free_daily_interview }} session/day</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Help Support Card -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
+          <h4 class="font-bold text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="life-buoy" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Need Assistance?</span>
+          </h4>
+          <p class="text-[11px] text-slate-400">
+            Our Colombo engineering and career coaching team is available on business days.
+          </p>
+          <div class="pt-1 space-y-1 text-[11px]">
+            <a href="mailto:support@dreemfolio.com" class="text-indigo-400 hover:underline block truncate">
+              ✉ support@dreemfolio.com
+            </a>
+            <a href="tel:+94112345678" class="text-slate-300 hover:text-white block font-mono">
+              ☎ +94 11 234 5678
+            </a>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ─────────────────────────────────────────────────────────────────── -->
+      <!-- RIGHT MAIN CONTENT: SEARCH RESULTS & FEATURE GUIDE CARDS -->
+      <!-- ─────────────────────────────────────────────────────────────────── -->
+      <section class="lg:col-span-9 space-y-8">
+        
+        <!-- Active Filter Indicator Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-400">
+          <div class="flex items-center gap-2">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>Showing:</span>
+            <span class="font-bold text-slate-200" x-text="filteredFeaturesCount + ' features'"></span>
+            <template x-if="searchQuery">
+              <span class="text-indigo-400" x-text="'matching \'' + searchQuery + '\''"></span>
+            </template>
+          </div>
+          <button x-show="searchQuery || selectedCategory !== 'all' || selectedPlan !== 'all'"
+                  @click="resetFilters()"
+                  class="text-indigo-400 hover:underline text-[11px] font-semibold">
+            Reset all filters
+          </button>
+        </div>
+
+        <!-- Dynamic Feature Cards (Rendered and filtered client-side via Alpine data) -->
+        <div class="space-y-8">
+          {% for feature in guide.feature_guides %}
+          <article id="{{ feature.id }}"
+                   x-show="matchesFeature('{{ feature.id }}', '{{ feature.category_id }}', '{{ feature.min_plan }}', '{{ feature.title | escape }}', '{{ feature.tagline | escape }}')"
+                   class="feature-card bg-slate-900/80 border border-slate-800/90 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl transition hover:border-slate-700/80">
+            
+            <!-- 1. Header: Icon, Category, Title, Badge, Action Button -->
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-800/80 pb-5">
+              <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold shrink-0 shadow-inner">
+                  <i data-lucide="{{ feature.icon }}" class="w-5 h-5"></i>
+                </div>
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">
+                      {{ feature.category_name }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                      {% if feature.badge == 'Core AI' or feature.badge == 'Game Changer' %} bg-indigo-500/20 text-indigo-300 border border-indigo-500/30
+                      {% elif feature.badge == 'Executive Elite' %} bg-amber-500/20 text-amber-300 border border-amber-500/30
+                      {% else %} bg-slate-800 text-slate-300 border border-slate-700
+                      {% endif %}">
+                      {{ feature.badge }}
+                    </span>
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-black text-slate-100 tracking-tight">
+                    {{ feature.title }}
+                  </h3>
+                  <p class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-2xl">
+                    {{ feature.tagline }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Direct Action Link into /app -->
+              <a href="{{ feature.action_url }}"
+                 class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white font-bold text-xs transition shadow-sm">
+                <span>{{ feature.action_label }}</span>
+                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-indigo-400"></i>
+              </a>
+            </div>
+
+            <!-- 2. Step-by-Step How-To Instructions (Google Support Help Style) -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="list-ordered" class="w-4 h-4 text-indigo-400"></i>
+                <span>How to Use (Step-by-Step Guide)</span>
+              </h4>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {% for step in feature.how_to_use %}
+                <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-1.5 flex flex-col justify-start">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 font-bold text-[11px] flex items-center justify-center font-mono shrink-0">
+                      {{ step.step }}
+                    </span>
+                    <h5 class="font-bold text-slate-200">{{ step.title }}</h5>
+                  </div>
+                  <p class="text-[11.5px] text-slate-400 leading-relaxed pl-7">
+                    {{ step.instruction }}
+                  </p>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- 3. Dynamic Plan Quotas & Usage Limits Box (Live from DB) -->
+            <div class="rounded-2xl bg-slate-950/80 border border-slate-800 p-4 space-y-3">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="gauge" class="w-4 h-4 text-amber-400"></i>
+                  <span>Plan Quotas & Allocations (Live Database Settings)</span>
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">Enforced Server-Side</span>
+              </h4>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                
+                <!-- Free Tier Box -->
+                <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase">Free Starter</span>
+                    <span class="text-[10px] font-bold text-slate-500">{{ guide.plans_by_key['free']['price_display'] }}</span>
+                  </div>
+                  <p class="text-[11.5px] font-semibold text-slate-200">
+                    {{ feature.quotas.free }}
+                  </p>
+                </div>
+
+                <!-- Pro Tier Box -->
+                <div class="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-indigo-400 uppercase">Pro Career</span>
+                    <span class="text-[10px] font-bold text-indigo-300">{{ guide.plans_by_key['pro']['price_display'] }}/mo</span>
+                  </div>
+                  <p class="text-[11.5px] font-bold text-indigo-200">
+                    {{ feature.quotas.pro }}
+                  </p>
+                </div>
+
+                <!-- Elite Tier Box -->
+                <div class="p-3 rounded-xl bg-amber-950/25 border border-amber-500/30 space-y-1">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-amber-400 uppercase">Executive Elite</span>
+                    <span class="text-[10px] font-bold text-amber-300">{{ guide.plans_by_key['elite']['price_display'] }}/mo</span>
+                  </div>
+                  <p class="text-[11.5px] font-bold text-amber-200">
+                    {{ feature.quotas.elite }}
+                  </p>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- 4. Security, Pro Tip & Backend Guard Metadata Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              
+              <!-- Backend Enforcement -->
+              <div class="p-3 rounded-xl bg-slate-950/50 border border-slate-800/70 space-y-1">
+                <div class="flex items-center gap-1.5 text-slate-300 font-bold text-[11px]">
+                  <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Backend Guard</span>
+                </div>
+                <p class="text-[10.5px] text-slate-400 font-mono leading-tight">
+                  {{ feature.backend_enforcement }}
+                </p>
+              </div>
+
+              <!-- Security Assurance -->
+              <div class="p-3 rounded-xl bg-slate-950/50 border border-slate-800/70 space-y-1">
+                <div class="flex items-center gap-1.5 text-slate-300 font-bold text-[11px]">
+                  <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Security Assurance</span>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-tight">
+                  {{ feature.security_privacy }}
+                </p>
+              </div>
+
+              <!-- Insider Pro Tip -->
+              <div class="p-3 rounded-xl bg-slate-950/50 border border-slate-800/70 space-y-1">
+                <div class="flex items-center gap-1.5 text-amber-300 font-bold text-[11px]">
+                  <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>Pro Tip</span>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-tight">
+                  {{ feature.pro_tip }}
+                </p>
+              </div>
+
+            </div>
+
+          </article>
+          {% endfor %}
+        </div>
+
+        <!-- No Results Empty State -->
+        <div x-show="filteredFeaturesCount === 0" x-cloak
+             class="text-center py-16 px-4 rounded-3xl bg-slate-900/40 border border-slate-800 space-y-3">
+          <i data-lucide="search-x" class="w-10 h-10 text-slate-600 mx-auto"></i>
+          <h3 class="text-base font-bold text-slate-200">No matching features found</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto">
+            Try adjusting your search terms or clearing your current plan or category filters.
+          </p>
+          <button @click="resetFilters()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow">
+            Reset Filters
+          </button>
+        </div>
+
+        <!-- ───────────────────────────────────────────────────────────────── -->
+        <!-- LIVE PLANS & QUOTAS COMPARISON MATRIX TABLE (Google Workspace Style) -->
+        <!-- ───────────────────────────────────────────────────────────────── -->
+        <section id="matrix-table" class="pt-8 space-y-6">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-semibold">
+              <i data-lucide="table" class="w-3.5 h-3.5"></i>
+              <span>Matrix Overview</span>
+            </div>
+            <h2 class="text-2xl font-black text-slate-100 tracking-tight">Complete Plan Quota Comparison Matrix</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Side-by-side comparison across all feature gates and operational thresholds.</p>
+          </div>
+
+          <div class="overflow-x-auto rounded-3xl border border-slate-800 shadow-2xl bg-slate-900/90">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 bg-slate-950">
+                  <th class="p-4 sm:p-5 font-bold text-slate-200 uppercase tracking-wider text-[11px] min-w-[220px]">
+                    Feature / Quota Guard
+                  </th>
+                  <th class="p-4 sm:p-5 font-bold text-slate-400 uppercase tracking-wider text-[11px] min-w-[160px]">
+                    Free Starter
+                    <span class="block text-[10px] text-slate-500 font-mono normal-case font-normal">{{ guide.plans_by_key['free']['price_display'] }}</span>
+                  </th>
+                  <th class="p-4 sm:p-5 font-bold text-indigo-400 uppercase tracking-wider text-[11px] min-w-[170px] bg-indigo-950/20">
+                    Pro Career
+                    <span class="block text-[10px] text-indigo-300 font-mono normal-case font-normal">{{ guide.plans_by_key['pro']['price_display'] }}/mo</span>
+                  </th>
+                  <th class="p-4 sm:p-5 font-bold text-amber-400 uppercase tracking-wider text-[11px] min-w-[170px]">
+                    Executive Elite
+                    <span class="block text-[10px] text-amber-300 font-mono normal-case font-normal">{{ guide.plans_by_key['elite']['price_display'] }}/mo</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/80">
+                {% for row in guide.comparison_matrix %}
+                <tr class="hover:bg-slate-800/40 transition {% if row.highlight %}bg-slate-900/30{% endif %}">
+                  <td class="p-4 sm:p-5 font-medium text-slate-200">
+                    {{ row.feature }}
+                  </td>
+                  <td class="p-4 sm:p-5 text-slate-400 font-mono text-[11px]">
+                    {{ row.free }}
+                  </td>
+                  <td class="p-4 sm:p-5 text-indigo-300 font-bold font-mono text-[11px] bg-indigo-950/15">
+                    {{ row.pro }}
+                  </td>
+                  <td class="p-4 sm:p-5 text-amber-300 font-bold font-mono text-[11px]">
+                    {{ row.elite }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- BOTTOM CONTACT & CTA SECTION -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <section class="border-t border-slate-800/80 bg-slate-900/40 py-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+      <h2 class="text-2xl font-black text-slate-100 tracking-tight">Ready to Land Your Dream Job?</h2>
+      <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+        Start for free with 100% ATS score tailoring, or upgrade to Pro for unbranded high-res exports and hosted portfolio websites.
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <a href="/app"
+           class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Open DreemFolio Studio</span>
+        </a>
+        <a href="/contact"
+           class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition">
+          Contact Human Support
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- FOOTER COMPONENT -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  {% include "components/footer.html" %}
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- ALPINE.JS CONTROLLER SCRIPT -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <script>
+    function guideApp() {
+      return {
+        searchQuery: '',
+        selectedCategory: 'all',
+        selectedPlan: 'all',
+        allFeatures: {{ guide.feature_guides | tojson }},
+        filteredFeaturesCount: {{ guide.total_features }},
+
+        initGuide() {
+          this.$watch('searchQuery', () => this.recalculateCount());
+          this.$watch('selectedCategory', () => this.recalculateCount());
+          this.$watch('selectedPlan', () => this.recalculateCount());
+
+          // Re-render Lucide icons
+          this.$nextTick(() => {
+            if (typeof lucide !== 'undefined') {
+              lucide.createIcons();
+            }
+          });
+        },
+
+        filterByPlan(planKey) {
+          this.selectedPlan = planKey;
+          const target = document.querySelector('.feature-card');
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        },
+
+        resetFilters() {
+          this.searchQuery = '';
+          this.selectedCategory = 'all';
+          this.selectedPlan = 'all';
+          this.recalculateCount();
+        },
+
+        matchesFeature(id, categoryId, minPlan, title, tagline) {
+          // Category check
+          if (this.selectedCategory !== 'all' && this.selectedCategory !== categoryId) {
+            return false;
+          }
+
+          // Plan check
+          if (this.selectedPlan === 'free') {
+            if (minPlan !== 'free') return false;
+          } else if (this.selectedPlan === 'pro') {
+            if (minPlan === 'elite') return false;
+          } else if (this.selectedPlan === 'elite') {
+            // elite covers everything
+          }
+
+          // Search query check
+          if (this.searchQuery && this.searchQuery.trim() !== '') {
+            const q = this.searchQuery.toLowerCase().trim();
+            const combined = (title + ' ' + tagline + ' ' + id).toLowerCase();
+            if (!combined.includes(q)) {
+              return false;
+            }
+          }
+
+          return true;
+        },
+
+        recalculateCount() {
+          let count = 0;
+          for (const f of this.allFeatures) {
+            if (this.matchesFeature(f.id, f.category_id, f.min_plan, f.title, f.tagline)) {
+              count++;
+            }
+          }
+          this.filteredFeaturesCount = count;
+          this.$nextTick(() => {
+            if (typeof lucide !== 'undefined') {
+              lucide.createIcons();
+            }
+          });
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>

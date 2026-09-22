@@ -39,7 +39,7 @@
       <template x-if="liveCoachingEnabled">
         <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 text-[11px] font-semibold border border-violet-500/30">
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-400"></i>
-          <span>Live Mistake Interventions (Waradi) ON</span>
+          <span>Live Error Interventions ON</span>
         </div>
       </template>
 
@@ -208,7 +208,7 @@
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════════════ -->
-      <!-- FLOATING HUD: LIVE MISTAKE NOTIFICATION ("WARADI KIYALA DENNA")     -->
+      <!-- FLOATING HUD: LIVE MISTAKE NOTIFICATION (REAL-TIME ERROR DETECTION) -->
       <!-- ═══════════════════════════════════════════════════════════════════ -->
       <div x-show="liveCoachingEnabled && activeCoachingNudge"
            x-transition:enter="transition ease-out duration-300 transform"
@@ -429,7 +429,7 @@
         </svg>
       </button>
 
-      <!-- Toggle Live Mistake Coaching (Waradi) HUD -->
+      <!-- Toggle Live Mistake Coaching HUD -->
       <button @click="liveCoachingEnabled = !liveCoachingEnabled"
               :class="liveCoachingEnabled ? 'bg-violet-600 text-white shadow-violet-600/30' : 'bg-slate-800 text-slate-400'"
               title="Toggle Live Mistake Intervention HUD"
@@ -516,7 +516,7 @@
            x-text="conferenceDebriefData?.executive_summary"></p>
       </div>
 
-      <!-- Identified Mistakes & Corrective Actions (Waradi Kiyala Dima) -->
+      <!-- Identified Mistakes & Corrective Actions -->
       <div class="space-y-3">
         <h4 class="font-bold text-sm text-white flex items-center gap-2">
           <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>

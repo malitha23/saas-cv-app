@@ -294,7 +294,7 @@ The pinnacle of DreemFolio AI — a real-time, zero-latency technical video inte
 3. Grant camera and microphone permissions when prompted by your browser.
 4. **Mobile Users**: Tap the **"🔊 Tap to Hear / Replay"** button once upon joining to unlock your mobile browser's Web Audio API.
 
-### Live Mistake Interventions ("Waradi Kiyala Denna")
+### Live Mistake Interventions & Real-Time Corrections
 - As you explain technical concepts, the AI listens actively.
 - If you state an incorrect specification, miss a critical step, or explain a bug incorrectly, a **Floating HUD Alert** drops down on your screen in real time:
   > *"💡 Technical Intervention: You recommended replacing the motor controller without verifying the CAN-Bus termination resistor! Mention signal integrity checking first."*

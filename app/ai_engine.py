@@ -695,7 +695,7 @@ Return ONLY valid JSON matching this schema:
 
     raw_json = None
     last_error = None
-    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+    models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
 
     # 1. Try official google.genai client with active models
     try:
@@ -709,7 +709,8 @@ Return ONLY valid JSON matching this schema:
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=ATS_SYSTEM_PROMPT,
-                        response_mime_type="application/json"
+                        response_mime_type="application/json",
+                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
                     )
                 )
                 if response.text and response.text.strip():
@@ -734,7 +735,7 @@ Return ONLY valid JSON matching this schema:
                     "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
                     "generationConfig": {"responseMimeType": "application/json"}
                 }
-                res = requests.post(url, json=payload, timeout=55)
+                res = requests.post(url, json=payload, timeout=20)
                 if res.status_code == 200:
                     resp_data = res.json()
                     candidates = resp_data.get("candidates", [])
@@ -752,11 +753,23 @@ Return ONLY valid JSON matching this schema:
     if not raw_json:
         raise RuntimeError(f"All Gemini models failed. Last error: {last_error}")
 
-    if raw_json.startswith("```"):
-        raw_json = re.sub(r"^```(?:json)?\n", "", raw_json)
-        raw_json = re.sub(r"\n```$", "", raw_json)
-        
-    data = json.loads(raw_json)
+    clean_json = raw_json.strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", clean_json)
+    if match:
+        clean_json = match.group(1).strip()
+    else:
+        start_idx = clean_json.find('{')
+        end_idx = clean_json.rfind('}')
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            clean_json = clean_json[start_idx:end_idx+1].strip()
+
+    try:
+        data = json.loads(clean_json)
+    except Exception:
+        # Sanitize trailing commas before closing braces/brackets
+        sanitized = re.sub(r",\s*([}\]])", r"\1", clean_json)
+        data = json.loads(sanitized)
+
     data["template_style"] = template_style
     data["role_archetype"] = archetype
     if not data.get("section_order"):
@@ -784,7 +797,7 @@ def generate_gemini_text(prompt: str, api_key: Optional[str] = None, max_tokens:
     k = api_key or os.getenv("GEMINI_API_KEY")
     if not k:
         return ""
-    models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+    models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
     try:
         from google import genai
         from google.genai import types
@@ -796,7 +809,8 @@ def generate_gemini_text(prompt: str, api_key: Optional[str] = None, max_tokens:
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         max_output_tokens=max_tokens,
-                        temperature=temperature
+                        temperature=temperature,
+                        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
                     )
                 )
                 if res and res.text and res.text.strip():
@@ -1769,7 +1783,7 @@ Rules:
 
     # Try Gemini API if key available
     if active_key and len(active_key) >= 20:
-        models_to_try = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+        models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
         
         # Build prompt from conversation
         conversation_history = "\n".join([f"{m.role.capitalize()}: {m.content}" for m in messages[-6:]])
@@ -1786,7 +1800,8 @@ Rules:
                         contents=full_prompt,
                         config=types.GenerateContentConfig(
                             system_instruction=system_persona,
-                            temperature=0.7
+                            temperature=0.7,
+                            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True)
                         )
                     )
                     if response.text and response.text.strip():
@@ -2394,7 +2409,7 @@ def process_conference_conversation_turn(
     api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Two-way real-time conversational turn engine with live error correction ("Waradi Kiyala Denna").
+    Two-way real-time conversational turn engine with live error correction (Live Error Interventions).
     Analyzes candidate's spoken speech, flags technical/speech mistakes, generates floating HUD tips,
     and returns natural conversational speech for the AI interviewer.
     """
