@@ -1,6 +1,7 @@
 import re
 import json
 import datetime
+import asyncio
 from typing import Optional, List
 from fastapi import APIRouter, File, UploadFile, HTTPException, Response, Depends
 from sqlalchemy.orm import Session
@@ -72,7 +73,7 @@ async def upload_resume(file: UploadFile = File(...)):
                 detail="Unsupported file extension. Only .pdf, .docx, and .txt files are supported."
             )
 
-        text, detected_sections = parse_resume_file(filename, content)
+        text, detected_sections = await asyncio.to_thread(parse_resume_file, filename, content)
         
         if not text.strip():
             raise HTTPException(
@@ -121,7 +122,8 @@ async def tailor_resume(
         raise HTTPException(status_code=400, detail="Job description cannot be empty.")
         
     try:
-        result = generate_with_gemini(
+        result = await asyncio.to_thread(
+            generate_with_gemini,
             resume_text=payload.resume_text,
             job_description=payload.job_description,
             api_key=payload.api_key,
@@ -170,7 +172,7 @@ async def create_resume_pdf(
             check_ats_pdf_quota(current_user, db)
 
     try:
-        pdf_bytes = generate_resume_pdf(resume)
+        pdf_bytes = await asyncio.to_thread(generate_resume_pdf, resume)
         safe_name = resume.personal_info.full_name.replace(" ", "_")
         filename = f"{safe_name}_ATS_Resume_{resume.template_style}.pdf"
         
@@ -205,7 +207,7 @@ async def create_cover_letter_pdf(
         used_count = getattr(current_user, "lifetime_cover_letter_downloads_count", 1)
         apply_watermark = is_free and (used_count > 1)
         
-        pdf_bytes = generate_cover_letter_pdf(resume, is_free_watermarked=apply_watermark)
+        pdf_bytes = await asyncio.to_thread(generate_cover_letter_pdf, resume, is_free_watermarked=apply_watermark)
         safe_name = (resume.personal_info.full_name or "Candidate").replace(" ", "_")
         company = (resume.target_company or "Company").replace(" ", "_")
         filename = f"{safe_name}_Cover_Letter_{company}.pdf"

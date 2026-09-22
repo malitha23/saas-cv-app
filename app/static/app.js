@@ -2232,7 +2232,7 @@ function resumeApp() {
 
     async triggerGoogleSignIn() {
       this.authError = '';
-      if (this.isSubmittingGoogleAuth) return;
+      if (this.isSubmittingGoogleAuth || this._googleAuthInFlight) return;
       this.isSubmittingGoogleAuth = true;
 
       // Method 2: Launch Google OAuth2 Token Client Popup (Official browser popup window)
@@ -2260,7 +2260,7 @@ function resumeApp() {
               }
             });
             tokenClient.requestAccessToken({ prompt: 'select_account' });
-            setTimeout(() => { this.isSubmittingGoogleAuth = false; }, 30000);
+            setTimeout(() => { if (!this._googleAuthInFlight) this.isSubmittingGoogleAuth = false; }, 30000);
             return;
           } catch (oauthErr) {
             console.warn('OAuth token client init failed, trying ID prompt:', oauthErr);
@@ -2310,6 +2310,11 @@ function resumeApp() {
         return;
       }
 
+      if (this._googleAuthInFlight) {
+        console.warn('Google auth request already in flight. Ignoring duplicate invocation.');
+        return;
+      }
+      this._googleAuthInFlight = true;
       this.isSubmittingGoogleAuth = true;
       this.authError = '';
 
@@ -2364,6 +2369,7 @@ function resumeApp() {
         alert(err.message || 'Google authentication error.');
       } finally {
         this.isSubmittingGoogleAuth = false;
+        this._googleAuthInFlight = false;
       }
     },
 

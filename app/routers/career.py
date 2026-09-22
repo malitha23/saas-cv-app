@@ -1,6 +1,7 @@
 import os
 import json
 import datetime
+import asyncio
 from collections import defaultdict
 from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, WebSocket
@@ -58,7 +59,8 @@ async def search_jobs_endpoint(
         if user_tier == "free" and effective_limit > 4:
             effective_limit = 4
 
-        return search_live_jobs(
+        return await asyncio.to_thread(
+            search_live_jobs,
             keywords=payload.keywords,
             location=payload.location or "Remote",
             work_mode=payload.work_mode or "all",
@@ -83,7 +85,8 @@ async def create_application_kit_endpoint(
     """
     check_copilot_kit_quota(current_user, db)
     try:
-        return generate_application_kit(
+        return await asyncio.to_thread(
+            generate_application_kit,
             job_title=payload.job_title,
             company_name=payload.company_name,
             job_description=payload.job_description,
@@ -117,7 +120,8 @@ async def chat_copilot_endpoint(
 
     try:
         api_key = os.getenv("GEMINI_API_KEY")
-        return chat_with_career_copilot(
+        return await asyncio.to_thread(
+            chat_with_career_copilot,
             messages=payload.messages,
             resume_context=payload.resume_context,
             target_job_title=payload.target_job_title,

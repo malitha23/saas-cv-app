@@ -678,36 +678,58 @@ def verify_google_credential_token(credential: str, expected_client_id: Optional
 
     # 2. Query Google's tokeninfo endpoint (ID token or OAuth2 access token)
     payload = None
-    is_access_token = False
-    try:
-        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
-        req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
-        with urllib.request.urlopen(req, timeout=8) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except Exception:
-        # Check if credential is an OAuth2 access token from popup flow
+    is_access_token = credential.startswith("ya29.")
+
+    if is_access_token:
         try:
             url = f"https://oauth2.googleapis.com/tokeninfo?access_token={credential}"
             req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
-            with urllib.request.urlopen(req, timeout=8) as response:
+            with urllib.request.urlopen(req, timeout=5) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-                is_access_token = True
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Google token verification failed: {str(e)}"
+                detail=f"Google access token verification failed: {str(e)}"
             )
 
-    # If access token was supplied, fetch user profile for name and avatar
-    if is_access_token:
+        # Fetch user profile for name and avatar with fast timeout
         try:
             u_url = "https://www.googleapis.com/oauth2/v3/userinfo"
             u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {credential}", "User-Agent": "DreemFolio-OAuth/1.0"})
-            with urllib.request.urlopen(u_req, timeout=8) as u_res:
+            with urllib.request.urlopen(u_req, timeout=5) as u_res:
                 u_data = json.loads(u_res.read().decode("utf-8"))
                 payload.update(u_data)
         except Exception:
             pass
+    else:
+        try:
+            url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+            req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except Exception:
+            # Fallback in case credential is an OAuth2 access token from popup flow without ya29 prefix
+            try:
+                url = f"https://oauth2.googleapis.com/tokeninfo?access_token={credential}"
+                req = urllib.request.Request(url, headers={"User-Agent": "DreemFolio-OAuth/1.0"})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                    is_access_token = True
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Google token verification failed: {str(e)}"
+                )
+
+        if is_access_token:
+            try:
+                u_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+                u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {credential}", "User-Agent": "DreemFolio-OAuth/1.0"})
+                with urllib.request.urlopen(u_req, timeout=5) as u_res:
+                    u_data = json.loads(u_res.read().decode("utf-8"))
+                    payload.update(u_data)
+            except Exception:
+                pass
 
     # 3. Check for error in payload
     if "error" in payload or "error_description" in payload:

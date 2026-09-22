@@ -695,13 +695,13 @@ Return ONLY valid JSON matching this schema:
 
     raw_json = None
     last_error = None
-    models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
+    models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
 
-    # 1. Try official google.genai client with active models
+    # 1. Try official google.genai client with active models (with strict 20s timeout)
     try:
         from google import genai
         from google.genai import types
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=20000))
         for model_name in models_to_try:
             try:
                 response = client.models.generate_content(
@@ -735,7 +735,7 @@ Return ONLY valid JSON matching this schema:
                     "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
                     "generationConfig": {"responseMimeType": "application/json"}
                 }
-                res = requests.post(url, json=payload, timeout=20)
+                res = requests.post(url, json=payload, timeout=15)
                 if res.status_code == 200:
                     resp_data = res.json()
                     candidates = resp_data.get("candidates", [])
@@ -793,15 +793,15 @@ Return ONLY valid JSON matching this schema:
 
 
 def generate_gemini_text(prompt: str, api_key: Optional[str] = None, max_tokens: int = 250, temperature: float = 0.6) -> str:
-    """Helper to query Gemini models with automatic fallback across 3.6-flash, 3.5-flash, and REST."""
+    """Helper to query Gemini models with automatic fallback across 3.5-flash-lite, 3.1-flash-lite, and REST."""
     k = api_key or os.getenv("GEMINI_API_KEY")
     if not k:
         return ""
-    models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
+    models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
     try:
         from google import genai
         from google.genai import types
-        client = genai.Client(api_key=k)
+        client = genai.Client(api_key=k, http_options=types.HttpOptions(timeout=15000))
         for m in models_to_try:
             try:
                 res = client.models.generate_content(
@@ -1783,7 +1783,7 @@ Rules:
 
     # Try Gemini API if key available
     if active_key and len(active_key) >= 20:
-        models_to_try = ['gemini-3.6-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest']
+        models_to_try = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.6-flash']
         
         # Build prompt from conversation
         conversation_history = "\n".join([f"{m.role.capitalize()}: {m.content}" for m in messages[-6:]])
@@ -1792,7 +1792,7 @@ Rules:
         try:
             from google import genai
             from google.genai import types
-            client = genai.Client(api_key=active_key)
+            client = genai.Client(api_key=active_key, http_options=types.HttpOptions(timeout=15000))
             for model_name in models_to_try:
                 try:
                     response = client.models.generate_content(

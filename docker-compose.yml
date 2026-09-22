@@ -6,7 +6,7 @@ services:
     container_name: fastapi_app_1
     restart: always
     network_mode: "host"
-    command: uvicorn app.main:app --host 127.0.0.1 --port 8001
+    command: uvicorn app.main:app --host 127.0.0.1 --port 8001 --workers 4
     env_file:
       - .env
     volumes:
@@ -24,7 +24,7 @@ services:
     container_name: fastapi_app_2
     restart: always
     network_mode: "host"
-    command: uvicorn app.main:app --host 127.0.0.1 --port 8002
+    command: uvicorn app.main:app --host 127.0.0.1 --port 8002 --workers 4
     env_file:
       - .env
     volumes:

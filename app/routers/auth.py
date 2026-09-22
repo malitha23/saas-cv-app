@@ -6,7 +6,8 @@ import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
+from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models import User
@@ -60,67 +61,99 @@ async def auth_with_google(
         expected_client_id=client_id if client_id else None
     )
 
-    google_sub = google_info["sub"]
-    google_email = google_info["email"]
-    google_name = google_info.get("name") or "Candidate"
+    google_sub = str(google_info["sub"]).strip()
+    google_email = str(google_info["email"]).strip().lower()
+    google_name = str(google_info.get("name") or "Candidate").strip()
     google_picture = google_info.get("picture")
 
-    # 1. Lookup by google_id
-    stmt = select(User).where(User.google_id == google_sub)
+    # 1. Lookup by google_id OR by email (case-insensitive & trimmed for safe account linking)
+    stmt = select(User).where(
+        or_(
+            User.google_id == google_sub,
+            func.lower(func.trim(User.email)) == google_email
+        )
+    )
     user = db.scalars(stmt).first()
 
-    if not user:
-        # 2. Lookup by email for safe account linking (Google verified the email!)
-        stmt_email = select(User).where(User.email == google_email)
-        user = db.scalars(stmt_email).first()
-
-        if user:
-            # Safe account linking: Link Google ID to existing account
+    if user:
+        # Safe account linking: Link Google ID to existing account
+        needs_commit = False
+        if not user.google_id:
             user.google_id = google_sub
-            if google_picture and not user.avatar_url:
-                user.avatar_url = google_picture
-            if not user.auth_provider or user.auth_provider == "email":
-                user.auth_provider = "google"
-            db.commit()
-            db.refresh(user)
-        else:
-            # 3. Create brand new user
-            now = datetime.datetime.utcnow()
-            random_pw = secrets.token_urlsafe(32)
-            my_ref_code = generate_unique_referral_code(db)
-            user = User(
-                email=google_email,
-                hashed_password=hash_password(random_pw),
-                full_name=google_name,
-                plan_tier="free",
-                subscription_status="active",
-                subscription_started_at=now,
-                daily_ai_generations_count=0,
-                daily_pdf_downloads_count=0,
-                daily_cover_letter_downloads_count=0,
-                lifetime_ats_downloads_count=0,
-                lifetime_visual_downloads_count=0,
-                lifetime_cover_letter_downloads_count=0,
-                google_id=google_sub,
-                avatar_url=google_picture,
-                auth_provider="google",
-                is_admin=False,
-                is_active=True,
-                referral_code=my_ref_code
-            )
+            needs_commit = True
+        if google_picture and not user.avatar_url:
+            user.avatar_url = google_picture
+            needs_commit = True
+        if not user.auth_provider or user.auth_provider == "email":
+            user.auth_provider = "google"
+            needs_commit = True
+        if needs_commit:
+            try:
+                db.commit()
+                db.refresh(user)
+            except IntegrityError:
+                db.rollback()
+                user = db.scalars(stmt).first()
+    else:
+        # 2. Create brand new user
+        now = datetime.datetime.utcnow()
+        random_pw = secrets.token_urlsafe(32)
+        my_ref_code = generate_unique_referral_code(db)
+        user = User(
+            email=google_email,
+            hashed_password=hash_password(random_pw),
+            full_name=google_name,
+            plan_tier="free",
+            subscription_status="active",
+            subscription_started_at=now,
+            daily_ai_generations_count=0,
+            daily_pdf_downloads_count=0,
+            daily_cover_letter_downloads_count=0,
+            lifetime_ats_downloads_count=0,
+            lifetime_visual_downloads_count=0,
+            lifetime_cover_letter_downloads_count=0,
+            google_id=google_sub,
+            avatar_url=google_picture,
+            auth_provider="google",
+            is_admin=False,
+            is_active=True,
+            referral_code=my_ref_code
+        )
+        try:
             db.add(user)
             db.commit()
             db.refresh(user)
+        except Exception as db_err:
+            # Concurrency / duplicate race-condition safeguard:
+            # Another concurrent request or previous session already inserted this user!
+            db.rollback()
+            user = db.scalars(
+                select(User).where(
+                    or_(
+                        User.google_id == google_sub,
+                        func.lower(func.trim(User.email)) == google_email
+                    )
+                )
+            ).first()
+            if not user:
+                logger.error("Failed to insert or locate user during Google signup: %s", db_err)
+                raise HTTPException(
+                    status_code=409,
+                    detail="An account with this email address already exists. Please log in."
+                )
 
-            if req.referral_code:
-                process_referral_signup(user, req.referral_code, db)
-
+        if req.referral_code:
             try:
-                base_url = str(request.base_url).rstrip("/")
-                send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
-                send_admin_new_user_alert(user.email, user.full_name, "Google", base_url, db, background_tasks)
-            except Exception as notify_err:
-                logger.warning("Notification error during Google signup: %s", notify_err)
+                process_referral_signup(user, req.referral_code, db)
+            except Exception as ref_err:
+                logger.warning("Referral processing error: %s", ref_err)
+
+        try:
+            base_url = str(request.base_url).rstrip("/")
+            send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
+            send_admin_new_user_alert(user.email, user.full_name, "Google", base_url, db, background_tasks)
+        except Exception as notify_err:
+            logger.warning("Notification error during Google signup: %s", notify_err)
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your account has been deactivated.")
@@ -203,9 +236,16 @@ async def register_user(
         subscription_status="active",
         referral_code=my_referral_code
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="An account with this email address already exists. Please log in."
+        )
 
     # Process Referral attribution if provided
     if req.referral_code:

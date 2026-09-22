@@ -13,6 +13,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 
 from app.database import Base, get_engine
@@ -62,6 +63,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
+
+# Enable GZip compression (compresses JS/CSS/HTML responses >1KB by up to 80% for fast page loads)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +119,7 @@ async def add_security_headers(request: Request, call_next):
     """
     Apply hardened OWASP security headers to all HTTP responses.
     Protects against Clickjacking, MIME-sniffing, XSS, and Referrer leakage.
+    Adds caching headers for static assets (JS, CSS, images).
     """
     response = await call_next(request)
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -122,6 +127,11 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+
+    # Static assets cache header (speeds up subsequent loads dramatically)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+
     return response
 
 
