@@ -8,26 +8,32 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH to CloudPanel Server
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy files to VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "."
+          target: "/home/dreemfolio/htdocs/www.dreemfolio.com"
+          rm: false 
+
+      - name: Build and Run Docker Containers via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }} # e.g. dreemfolio or root
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             cd /home/dreemfolio/htdocs/www.dreemfolio.com
             
-            # 1. Fix Git dubious ownership issue
-            git config --global --add safe.directory /home/dreemfolio/htdocs/www.dreemfolio.com
-            
-            # 2. Pull latest code from GitHub
-            git pull origin main
-            
-            # 3. Build & Reload containers seamlessly (Zero Downtime)
             docker compose up -d --build --remove-orphans
             
-            # 4. Cleanup old dangling images to save server disk space
             docker image prune -f
             
-            echo "🚀 DreemFolio SaaS Deployment Completed Successfully!"
+            echo " DreemFolio SaaS Deployment Completed Successfully!"
