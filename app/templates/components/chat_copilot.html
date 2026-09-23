@@ -38,6 +38,7 @@
 
 <!-- Expandable Glassmorphic Chatbot Window -->
 <div x-show="showChatBot"
+  id="copilot-window"
   x-transition:enter="transition ease-out duration-300 transform"
   x-transition:enter-start="opacity-0 translate-y-6 scale-95"
   x-transition:enter-end="opacity-100 translate-y-0 scale-100"
@@ -48,7 +49,7 @@
   class="fixed bottom-28 lg:bottom-20 right-3 sm:right-6 z-50 w-[94vw] sm:w-[450px] max-w-[460px] h-[580px] max-h-[82vh] bg-slate-900/95 backdrop-blur-2xl border border-indigo-500/30 rounded-3xl shadow-2xl shadow-indigo-950/80 flex flex-col overflow-hidden">
 
   <!-- Chat Header -->
-  <div class="px-4 py-3.5 bg-gradient-to-r from-slate-950/90 via-indigo-950/40 to-slate-950/90 border-b border-slate-800 flex items-center justify-between">
+  <div class="copilot-header px-4 py-3.5 bg-gradient-to-r from-slate-950/90 via-indigo-950/40 to-slate-950/90 border-b border-slate-800 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <!-- Bot Avatar with Status Ring -->
       <div class="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-pink-600 p-0.5 shadow-md shadow-indigo-500/20 flex-shrink-0">
@@ -95,7 +96,7 @@
     <!-- Welcome Card (Shown if no user messages yet) -->
     <template x-if="chatMessages.length === 0">
       <div class="space-y-4 my-2">
-        <div class="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
+        <div class="copilot-welcome-card p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 space-y-2">
           <div class="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
             <i data-lucide="bot" class="w-4 h-4 text-indigo-400"></i>
             <span>Executive Career Coach & Technical Partner</span>
@@ -112,7 +113,7 @@
         <div class="grid grid-cols-1 gap-2">
           <!-- Voice Mock Interview Launcher -->
           <button @click="openVoiceInterviewModal()"
-            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-violet-950/80 via-indigo-950/70 to-purple-950/80 hover:from-violet-900/70 hover:to-indigo-900/70 border border-violet-500/40 hover:border-violet-400 text-white transition flex items-center justify-between group shadow-sm">
+            class="copilot-voice-btn w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-violet-950/80 via-indigo-950/70 to-purple-950/80 hover:from-violet-900/70 hover:to-indigo-900/70 border border-violet-500/40 hover:border-violet-400 text-white transition flex items-center justify-between group shadow-sm">
             <span class="flex items-center gap-2">
               <span class="text-base">🎙️</span>
               <span class="font-bold text-[11px] text-violet-200 group-hover:text-white">AI Voice Mock Interview Studio</span>
@@ -122,7 +123,7 @@
 
           <!-- Real-Time AI Video Conference Launcher -->
           <button @click="startRealtimeConference('Technical & Behavioral Interview', 'Target Company')"
-            class="w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/80 via-pink-950/70 to-indigo-950/80 hover:from-rose-900/70 hover:to-pink-900/70 border border-rose-500/40 hover:border-rose-400 text-white transition flex items-center justify-between group shadow-sm">
+            class="copilot-video-btn w-full text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/80 via-pink-950/70 to-indigo-950/80 hover:from-rose-900/70 hover:to-pink-900/70 border border-rose-500/40 hover:border-rose-400 text-white transition flex items-center justify-between group shadow-sm">
             <span class="flex items-center gap-2">
               <span class="text-base">📹</span>
               <span class="font-bold text-[11px] text-rose-200 group-hover:text-white">AI Video Conference & Live Coaching</span>
@@ -131,7 +132,7 @@
           </button>
 
           <button @click="sendChatMessage('Conduct a realistic technical mock interview for my profile. Ask me 1 question at a time!')"
-            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            class="copilot-starter-btn w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
             <span class="flex items-center gap-2">
               <span class="text-base">🎯</span>
               <span class="font-medium text-[11px]">Start Interactive Mock Interview</span>
@@ -140,7 +141,7 @@
           </button>
 
           <button @click="sendChatMessage('Critique my current resume bullet points using the Google XYZ formula and suggest quantified metric improvements.')"
-            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            class="copilot-starter-btn w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
             <span class="flex items-center gap-2">
               <span class="text-base">✨</span>
               <span class="font-medium text-[11px]">Polish My Resume Bullets (XYZ Formula)</span>
@@ -149,7 +150,7 @@
           </button>
 
           <button @click="sendChatMessage('Write a personalized, high-converting LinkedIn DM to send to a Hiring Manager or Technical Recruiter.')"
-            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            class="copilot-starter-btn w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
             <span class="flex items-center gap-2">
               <span class="text-base">✉️</span>
               <span class="font-medium text-[11px]">Draft Cold LinkedIn / Email Outreach</span>
@@ -158,7 +159,7 @@
           </button>
 
           <button @click="sendChatMessage('Give me a strategic salary negotiation script and counter-offer framework for my senior role.')"
-            class="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
+            class="copilot-starter-btn w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/50 text-slate-200 hover:text-white transition flex items-center justify-between group">
             <span class="flex items-center gap-2">
               <span class="text-base">💰</span>
               <span class="font-medium text-[11px]">Salary Negotiation Scripts</span>
@@ -178,7 +179,7 @@
         <div class="p-3.5 rounded-2xl max-w-[88%] shadow-md leading-relaxed transition-all"
           :class="msg.role === 'user' 
             ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-xs' 
-            : 'bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-xs'">
+            : 'copilot-assistant-bubble bg-slate-800/90 text-slate-100 border border-slate-700/60 rounded-tl-xs'">
           
           <!-- Message text with formatting -->
           <div class="prose prose-invert prose-xs max-w-none break-words leading-relaxed text-[12px]"
@@ -227,7 +228,7 @@
 
   <!-- Dynamic Suggested Next-Step Chips -->
   <template x-if="suggestedPrompts && suggestedPrompts.length > 0 && !isChatLoading">
-    <div class="px-3 py-2 border-t border-slate-800/80 bg-slate-950/70 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
+    <div class="copilot-chips-bar px-3 py-2 border-t border-slate-800/80 bg-slate-950/70 overflow-x-auto flex items-center gap-1.5 no-scrollbar">
       <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider flex-shrink-0 flex items-center gap-1">
         <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i>
         <span>Try:</span>
@@ -243,7 +244,7 @@
 
   <!-- Input Form -->
   <form @submit.prevent="sendChatMessage()"
-    class="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+    class="copilot-input-form p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
     
     <input type="text"
       x-model="chatInput"
