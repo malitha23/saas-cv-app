@@ -20,7 +20,8 @@ from app.portfolio_generator import (
 from app.state import (
     PUBLISHED_PORTFOLIOS, PUBLISHED_RESUMES,
     CUSTOM_DOMAINS, PIN_ATTEMPT_STORE, _get_client_ip,
-    save_published_portfolio, save_custom_domain_mapping, get_published_portfolio
+    save_published_portfolio, save_custom_domain_mapping, get_published_portfolio,
+    resolve_custom_domain_slug
 )
 
 router = APIRouter(tags=["Portfolio & Branding"])
@@ -333,9 +334,32 @@ async def verify_custom_domain(
                 "status": "Alternative"
             }
         ],
-        "ssl_status": "Auto-provisioned Cloudflare SSL for SaaS",
+        "ssl_status": "Auto-provisioned Cloudflare / Caddy On-Demand SSL",
         "message": f"Domain {domain_clean} mapped successfully to {req.slug}!"
     }
+
+
+@router.get("/api/domain/check-allowed")
+async def check_domain_allowed(domain: str = Query(...)):
+    """
+    On-Demand TLS security check endpoint for Caddy or automated SSL reverse proxies.
+    Returns HTTP 200 if the domain is authorized to obtain an automated SSL certificate,
+    or HTTP 403 to prevent certificate issuance abuse / rate limit exhaustion.
+    """
+    d = domain.strip().lower().replace("https://", "").replace("http://", "").rstrip('/')
+    if not d:
+        raise HTTPException(status_code=400, detail="Domain required")
+
+    # 1. Allow our main host and all subdomains
+    if d in ["dreemfolio.com", "www.dreemfolio.com"] or d.endswith(".dreemfolio.com"):
+        return Response(content="Authorized", status_code=200)
+
+    # 2. Check if any candidate has registered this custom domain
+    slug = resolve_custom_domain_slug(d)
+    if slug:
+        return Response(content="Authorized", status_code=200)
+
+    raise HTTPException(status_code=403, detail="Domain not registered on DreemFolio")
 
 
 @router.get("/p/{slug}", response_class=HTMLResponse)
