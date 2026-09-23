@@ -10,6 +10,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --workers 4
     env_file:
       - .env
@@ -30,6 +32,8 @@ services:
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --workers 4
     env_file:
       - .env
@@ -40,7 +44,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
 
 
 # version: '3.8'
