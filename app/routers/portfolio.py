@@ -1,9 +1,14 @@
+import os
 import re
 import time
 import hmac
+import logging
 from typing import Optional
+import httpx
 from fastapi import APIRouter, HTTPException, Response, Request, Depends, Query
 from fastapi.responses import HTMLResponse
+
+logger = logging.getLogger("dreemfolio.portfolio")
 
 from app.models import User
 from app.schemas import TailoredResume, VerifyPinRequest, VerifyPinResponse, DomainVerifyRequest
@@ -19,6 +24,49 @@ from app.state import (
 )
 
 router = APIRouter(tags=["Portfolio & Branding"])
+
+
+async def provision_cloudflare_custom_hostname(domain: str) -> dict:
+    """
+    Automated SSL provisioner using Cloudflare for SaaS (Custom Hostnames).
+    Enables free Edge SSL termination for user-connected 3rd-party custom domains.
+    """
+    zone_id = os.getenv("CLOUDFLARE_ZONE_ID", "").strip()
+    api_token = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
+    if not zone_id or not api_token:
+        return {"status": "skipped", "message": "Cloudflare API token or Zone ID not set in .env"}
+
+    url = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/custom_hostnames"
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "hostname": domain,
+        "ssl": {
+            "method": "http",
+            "type": "dv",
+            "settings": {
+                "http2": "on",
+                "min_tls_version": "1.2"
+            }
+        }
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.post(url, json=payload, headers=headers)
+            data = res.json()
+            if data.get("success"):
+                return {"status": "provisioned", "data": data.get("result", {})}
+            errors = data.get("errors", [])
+            for err in errors:
+                if err.get("code") == 1406:
+                    return {"status": "already_active", "message": "Hostname already registered on Cloudflare"}
+            return {"status": "error", "errors": errors}
+    except Exception as e:
+        logger.warning(f"Cloudflare custom hostname provisioning exception: {e}")
+        return {"status": "error", "message": str(e)}
+
 
 
 @router.post("/api/generate-portfolio")
@@ -262,14 +310,18 @@ async def verify_custom_domain(
     safe_slug = re.sub(r'[^a-zA-Z0-9_-]', '', req.slug)
     save_custom_domain_mapping(domain_clean, safe_slug)
     
+    cf_res = await provision_cloudflare_custom_hostname(domain_clean)
+    fallback_target = os.getenv("CLOUDFLARE_FALLBACK_ORIGIN", "cname.dreemfolio.com")
+
     return {
         "success": True,
         "domain": domain_clean,
+        "cloudflare_provisioning": cf_res,
         "dns_records": [
             {
                 "type": "CNAME",
                 "name": "@" if domain_clean.count(".") == 1 else domain_clean.split(".")[0],
-                "target": "cname.dreemfolio.com",
+                "target": fallback_target,
                 "ttl": "3600",
                 "status": "Ready to configure"
             },
@@ -281,7 +333,7 @@ async def verify_custom_domain(
                 "status": "Alternative"
             }
         ],
-        "ssl_status": "Auto-provisioned Let's Encrypt SSL",
+        "ssl_status": "Auto-provisioned Cloudflare SSL for SaaS",
         "message": f"Domain {domain_clean} mapped successfully to {req.slug}!"
     }
 
