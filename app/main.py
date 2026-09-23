@@ -1,13 +1,15 @@
 import os
 import sys
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import time
 import asyncio
 import logging
+import socket
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -16,16 +18,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 
+old_getaddrinfo = socket.getaddrinfo
+
+
+def new_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return old_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+
+socket.getaddrinfo = new_getaddrinfo
+
 from app.database import Base, get_engine
 from app.state import (
-    templates, templates_dir,
-    PUBLISHED_PORTFOLIOS, PUBLISHED_RESUMES, CUSTOM_DOMAINS,
-    RATE_LIMIT_RULES, RATE_LIMIT_STORE, PIN_ATTEMPT_STORE,
-    _get_client_ip, build_user_response
+    templates,
+    templates_dir,
+    PUBLISHED_PORTFOLIOS,
+    PUBLISHED_RESUMES,
+    CUSTOM_DOMAINS,
+    RATE_LIMIT_RULES,
+    RATE_LIMIT_STORE,
+    PIN_ATTEMPT_STORE,
+    _get_client_ip,
+    build_user_response,
 )
 from app.pricing import (
-    DEFAULT_COUNTRY_PRICING_DATA, DEFAULT_PLANS_CONFIG_DATA,
-    _get_country_pricing_dict
+    DEFAULT_COUNTRY_PRICING_DATA,
+    DEFAULT_PLANS_CONFIG_DATA,
+    _get_country_pricing_dict,
 )
 from app.routers.payments import sync_order_status_from_payhere
 from app.routers import auth, resume, portfolio, payments, career, admin, pages
@@ -42,12 +60,14 @@ load_dotenv()
 app = FastAPI(
     title="ATS-Friendly AI Resume, Cover Letter & Custom Portfolio SaaS",
     description="Micro-SaaS to optimize resumes, generate ATS PDFs, and publish modern custom developer portfolios",
-    version="1.3.0"
+    version="1.3.0",
 )
 
 # Hardened CORS configuration (rejects wildcards with credentials to prevent cross-origin hijacking)
 ALLOWED_ORIGINS = [
-    origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
 ] or [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
@@ -92,7 +112,11 @@ async def rate_limiting_middleware(request: Request, call_next):
 
         # Memory garbage collection: Prune empty IPs if store grows beyond 3000 entries
         if len(RATE_LIMIT_STORE) > 3000:
-            stale_ips = [ip for ip, paths in list(RATE_LIMIT_STORE.items()) if not any(paths.values())]
+            stale_ips = [
+                ip
+                for ip, paths in list(RATE_LIMIT_STORE.items())
+                if not any(paths.values())
+            ]
             for ip in stale_ips:
                 RATE_LIMIT_STORE.pop(ip, None)
 
@@ -101,9 +125,13 @@ async def rate_limiting_middleware(request: Request, call_next):
                 status_code=429,
                 content={
                     "detail": "Too many requests. Please slow down and try again later.",
-                    "retry_after_seconds": int(window_secs - (now - valid_timestamps[0])) if valid_timestamps else window_secs
+                    "retry_after_seconds": (
+                        int(window_secs - (now - valid_timestamps[0]))
+                        if valid_timestamps
+                        else window_secs
+                    ),
                 },
-                headers={"Retry-After": str(window_secs)}
+                headers={"Retry-After": str(window_secs)},
             )
 
         RATE_LIMIT_STORE[client_ip][path].append(now)
@@ -130,7 +158,9 @@ async def add_security_headers(request: Request, call_next):
 
     # Static assets cache header (speeds up subsequent loads dramatically)
     if request.url.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=86400, stale-while-revalidate=604800"
+        response.headers["Cache-Control"] = (
+            "public, max-age=86400, stale-while-revalidate=604800"
+        )
 
     return response
 
@@ -140,9 +170,11 @@ async def add_security_headers(request: Request, call_next):
 # ─────────────────────────────────────────────────────────────────────────────
 _email_worker_running = True
 
+
 async def email_queue_worker_loop():
     """Background task cycling every 60 seconds to retry failed/pending emails."""
     from app.email_service import process_email_queue
+
     logger.info("🚀 Email queue auto-retry background worker started.")
     while _email_worker_running:
         try:
@@ -154,6 +186,7 @@ async def email_queue_worker_loop():
             break
         except Exception as e:
             logger.error("Error in email queue worker loop: %s", e)
+
 
 @app.on_event("startup")
 def on_startup():
@@ -170,6 +203,7 @@ def on_startup():
         asyncio.create_task(email_queue_worker_loop())
     except Exception as worker_err:
         logger.warning("Failed to start email queue worker: %s", worker_err)
+
 
 @app.on_event("shutdown")
 def on_shutdown():
