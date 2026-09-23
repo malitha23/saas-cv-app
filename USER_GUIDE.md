@@ -201,18 +201,59 @@ DreemFolio provides two distinct export engines designed for different hiring st
 
 ## 8. Interactive Developer Portfolio Studio & Custom Domains
 
-Every resume can instantly become a live, hosted web portfolio:
+Every resume in DreemFolio AI can instantly become a standalone, high-performance web portfolio with its own private custom domain and free automated SSL.
 
-1. Switch to the **Portfolio** tab.
-2. Select a layout theme:
-   - `Bento Grid`: Modern Apple/Linear style cards.
+### 8.1 Customizing & Publishing Themes
+1. Switch to the **Portfolio** tab in the editor.
+2. Select your layout aesthetic:
+   - `Bento Grid`: Modern Apple/Linear style interactive cards.
    - `Split Sidebar`: Left fixed profile with right scrolling showcase.
-   - `Terminal Dev`: Cyberpunk / CLI dark mode for developers.
+   - `Terminal Dev`: Cyberpunk / CLI dark mode for software developers.
    - `Editorial Swiss`: High-typography minimalist magazine style.
-   - `Neon Glass`: Glassmorphism with glowing gradients.
-3. Configure **Contact Form**, **Project Showcases**, and **Proof-of-Work galleries**.
-4. **Publishing**: Click **"Publish Portfolio"** to get an instant public URL (`http://localhost:8000/portfolio/<slug>`).
-5. **Custom Domain**: Connect your personal domain (e.g. `yourname.com`) by creating a CNAME DNS record and verifying it in the Domain modal.
+   - `Neon Glass`: Glassmorphism with glowing vibrant gradients.
+3. Configure your **Proof-of-Work Projects**, **Experience Timeline**, and **Social Media Handles**.
+4. Click **"Publish Live Portfolio"** to activate your live web page (`https://dreemfolio.com/p/<your-slug>`).
+
+---
+
+### 8.2 Connecting a Custom Private Domain (Step-by-Step Guide)
+
+DreemFolio AI supports custom private domains (e.g., `malitha.dev`, `portfolio.mycompany.com`, or `johnsmith.io`) with **100% Free Automated Let's Encrypt SSL (HTTPS 🔒)**.
+
+#### Step 1: Add a DNS Record in your Domain Registrar
+Log in to wherever you manage your domain (cPanel, Cloudflare, Namecheap, GoDaddy, Hostinger):
+
+* **Option A: Subdomain (Recommended, e.g., `portfolio.yourname.com` or `malitha.tourglobalhub.com`)**
+  | Record Type | Name / Host | Target / Points To | Proxy Status |
+  | :--- | :--- | :--- | :--- |
+  | **CNAME** | `portfolio` *(or your subdomain prefix)* | **`cname.dreemfolio.com`** | DNS Only (Grey Cloud ⚪) |
+
+* **Option B: Root / Apex Domain (e.g., `yourname.dev` or `yourname.com`)**
+  | Record Type | Name / Host | Target / Points To |
+  | :--- | :--- | :--- |
+  | **CNAME / ALIAS** | `@` (or `www`) | **`cname.dreemfolio.com`** |
+  | *Alternative A Record* | `@` | **`206.72.195.250`** |
+
+#### Step 2: Connect in DreemFolio AI Editor
+1. In the Portfolio Editor, find the **Private Custom Domain** box (or click **DNS Guide**).
+2. Enter your full domain name (e.g. `portfolio.yourname.com` or `malitha.dev`).
+3. Click **"Verify & Connect"**.
+
+#### Step 3: Zero-Touch Automated SSL Provisioning
+* Once DNS resolves, DreemFolio's automated SSL daemon generates a genuine Let's Encrypt SSL certificate within **30–60 seconds**.
+* Your portfolio will immediately be secured with HTTPS and a green padlock (`🔒`).
+* Certificates automatically renew forever at $0 zero cost with zero maintenance.
+
+#### Step 4: Publish
+* Click **"Publish Live Portfolio"** to make sure your latest CV data and project edits are live on your custom domain!
+
+---
+
+#### Domain Registrar Quick Reference:
+* **cPanel**: Go to *Zone Editor* ➔ Click *Manage* on your domain ➔ Click *Add Record* ➔ Type: `CNAME` ➔ Name: `portfolio` ➔ Record: `cname.dreemfolio.com`.
+* **Cloudflare**: Go to *DNS Records* ➔ Click *Add Record* ➔ Type: `CNAME` ➔ Name: `portfolio` ➔ Target: `cname.dreemfolio.com` ➔ Ensure Proxy is **DNS Only (Grey Cloud ⚪)**.
+* **GoDaddy**: Go to *DNS Management* ➔ *Add New Record* ➔ Type: `CNAME` ➔ Name: `portfolio` ➔ Value: `cname.dreemfolio.com`.
+* **Namecheap**: Go to *Advanced DNS* ➔ *Add New Record* ➔ Type: `CNAME Record` ➔ Host: `portfolio` ➔ Target: `cname.dreemfolio.com`.
 
 ---
 
