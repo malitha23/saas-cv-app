@@ -2,6 +2,26 @@
 <html lang="en" class="h-full bg-slate-950 text-slate-100">
 
 <head>
+  <!-- Critical Anti-Flicker Theme Detection (Must execute before any stylesheets, fonts, or scripts to prevent theme flash) -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('dreemfolio_theme');
+        if (t === 'light') {
+          document.documentElement.classList.add('light-mode');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.backgroundColor = '#f1f5f9';
+          document.documentElement.style.color = '#0f172a';
+        } else {
+          document.documentElement.classList.remove('light-mode');
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#020617';
+          document.documentElement.style.color = '#f1f5f9';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-9K8HE8EJ3W"></script>
   <script>

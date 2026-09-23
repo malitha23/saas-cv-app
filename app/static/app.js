@@ -59,7 +59,13 @@ function resumeApp() {
     sampleJD: '',
     copied: false,
     debounceTimer: null,
-    darkMode: true,
+    darkMode: (function() {
+      try {
+        return localStorage.getItem('dreemfolio_theme') !== 'light';
+      } catch(e) {
+        return true;
+      }
+    })(),
     newSkillInputs: {},
 
     // SaaS Auth & MySQL Cloud State
@@ -396,7 +402,23 @@ function resumeApp() {
     },
 
     async init() {
-      // Check stored SaaS authentication token
+      // 1. Restore theme preference immediately (Zero-latency before any async network operations)
+      const savedTheme = localStorage.getItem('dreemfolio_theme');
+      if (savedTheme === 'light') {
+        this.darkMode = false;
+        document.documentElement.classList.add('light-mode');
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.backgroundColor = '#f1f5f9';
+        document.documentElement.style.color = '#0f172a';
+      } else {
+        this.darkMode = true;
+        document.documentElement.classList.remove('light-mode');
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.backgroundColor = '#020617';
+        document.documentElement.style.color = '#f1f5f9';
+      }
+
+      // 2. Check stored SaaS authentication token
       const token = localStorage.getItem('saas_token');
       if (token) {
         try {
@@ -419,15 +441,6 @@ function resumeApp() {
         }
       } else {
         this.isAuthChecking = false;
-      }
-
-      // Restore theme preference
-      const savedTheme = localStorage.getItem('dreemfolio_theme');
-      if (savedTheme === 'light') {
-        this.darkMode = false;
-        document.documentElement.classList.add('light-mode');
-        document.documentElement.style.backgroundColor = '#f1f5f9';
-        document.documentElement.style.color = '#0f172a';
       }
 
       // Fetch dynamic subscription plans from MySQL
