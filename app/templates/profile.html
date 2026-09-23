@@ -30,10 +30,241 @@
   <script defer src="/static/vendor/alpine.min.js"></script>
   <script src="/static/vendor/lucide.min.js"></script>
 
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Prevent Theme Flash -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('dreemfolio_theme');
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('light-mode');
+        document.documentElement.style.backgroundColor = '#f1f5f9';
+        document.documentElement.style.color = '#0f172a';
+      } else {
+        document.documentElement.classList.remove('light-mode');
+        document.documentElement.style.backgroundColor = '#020617';
+        document.documentElement.style.color = '#f1f5f9';
+      }
+    })();
+  </script>
+
   <style>
     [x-cloak] { display: none !important; }
     body { font-family: 'Inter', sans-serif; }
     code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Light Mode Overrides ───────────────────────────────────────── */
+    .light-mode {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    .light-mode body {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    /* Top Navigation Header */
+    .light-mode header {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+    .light-mode header .text-white {
+      color: #0f172a !important;
+    }
+
+    /* Main Card Panels */
+    .light-mode .bg-slate-900\/80,
+    .light-mode .bg-slate-900 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    /* Nested Inner Cards & Meter Boxes */
+    .light-mode .bg-slate-950,
+    .light-mode .bg-slate-950\/70,
+    .light-mode .bg-slate-950\/60,
+    .light-mode .bg-slate-950\/50,
+    .light-mode .bg-slate-950\/40 {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Viral Referral Banner in Light Mode */
+    .light-mode .bg-gradient-to-br.from-indigo-950\/40 {
+      background: linear-gradient(135deg, rgba(238, 242, 255, 0.95) 0%, #ffffff 50%, rgba(250, 245, 255, 0.9) 100%) !important;
+      border-color: #c7d2fe !important;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08) !important;
+    }
+    .light-mode .bg-gradient-to-br.from-indigo-950\/40 .text-white {
+      color: #0f172a !important;
+    }
+
+    /* Borders */
+    .light-mode .border-slate-800,
+    .light-mode .border-slate-800\/80,
+    .light-mode .border-slate-800\/60 {
+      border-color: #e2e8f0 !important;
+    }
+
+    .light-mode .border-slate-700 {
+      border-color: #cbd5e1 !important;
+    }
+
+    /* Typography */
+    .light-mode .text-slate-100 {
+      color: #0f172a !important;
+    }
+    .light-mode .text-slate-200 {
+      color: #0f172a !important;
+    }
+    .light-mode .text-slate-300 {
+      color: #1e293b !important;
+    }
+    .light-mode .text-slate-400 {
+      color: #475569 !important;
+    }
+    .light-mode .text-slate-500 {
+      color: #64748b !important;
+    }
+    .light-mode h2.text-white,
+    .light-mode h3.text-white,
+    .light-mode h4.text-slate-100 {
+      color: #0f172a !important;
+    }
+
+    /* Slate Buttons in Light Mode */
+    .light-mode .bg-slate-800,
+    .light-mode .bg-slate-800\/80 {
+      background-color: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .light-mode .bg-slate-800:hover,
+    .light-mode .bg-slate-800\/80:hover,
+    .light-mode .hover\:bg-slate-700:hover {
+      background-color: #f1f5f9 !important;
+      border-color: #94a3b8 !important;
+      color: #0f172a !important;
+    }
+
+    /* Table Styling */
+    .light-mode thead.bg-slate-950\/60 {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+    }
+    .light-mode thead th {
+      color: #475569 !important;
+      font-weight: 700 !important;
+    }
+    .light-mode tbody tr.hover\:bg-slate-800\/30:hover {
+      background-color: #f8fafc !important;
+    }
+    .light-mode tbody td {
+      color: #334155 !important;
+    }
+    .light-mode tbody td .text-white {
+      color: #0f172a !important;
+    }
+    .light-mode .divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Tab Switcher Pills */
+    .light-mode .bg-slate-950.p-1.rounded-xl {
+      background-color: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    .light-mode .bg-slate-950.p-1.rounded-xl button.text-slate-400 {
+      color: #475569 !important;
+    }
+    .light-mode .bg-slate-950.p-1.rounded-xl button.text-slate-400:hover {
+      color: #0f172a !important;
+      background-color: #e2e8f0 !important;
+    }
+
+    /* Retain Solid Action Button White Text */
+    .light-mode .bg-indigo-600,
+    .light-mode .bg-emerald-600,
+    .light-mode .bg-rose-600 {
+      color: #ffffff !important;
+    }
+
+    /* WCAG AA Status Badges */
+    .light-mode .text-emerald-300,
+    .light-mode .text-emerald-400 {
+      color: #047857 !important;
+    }
+    .light-mode .text-indigo-300,
+    .light-mode .text-indigo-400 {
+      color: #4338ca !important;
+    }
+    .light-mode .text-amber-300,
+    .light-mode .text-amber-400 {
+      color: #b45309 !important;
+    }
+    .light-mode .text-rose-300,
+    .light-mode .text-rose-400 {
+      color: #b91c1c !important;
+    }
+    .light-mode .bg-emerald-500\/15,
+    .light-mode .bg-emerald-500\/20 {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+    }
+    .light-mode .bg-amber-500\/15,
+    .light-mode .bg-amber-500\/20 {
+      background-color: #fffbeb !important;
+      border-color: #fde68a !important;
+    }
+    .light-mode .bg-indigo-500\/15,
+    .light-mode .bg-indigo-500\/20 {
+      background-color: #eef2ff !important;
+      border-color: #c7d2fe !important;
+    }
+    .light-mode .bg-rose-500\/10,
+    .light-mode .bg-rose-500\/15,
+    .light-mode .bg-rose-500\/20 {
+      background-color: #fef2f2 !important;
+      border-color: #fecaca !important;
+    }
+
+    /* Inputs, Form & Modals */
+    .light-mode textarea,
+    .light-mode input[type="text"] {
+      background-color: #ffffff !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    .light-mode textarea:focus,
+    .light-mode input:focus {
+      border-color: #4f46e5 !important;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
+    }
+    .light-mode .bg-slate-950\/85 {
+      background-color: rgba(15, 23, 42, 0.45) !important;
+    }
+    .light-mode .bg-slate-900.p-6.sm\:p-7 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    }
   </style>
 </head>
 
@@ -57,7 +288,14 @@
         </div>
       </a>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <!-- Dark / Light Mode Toggle Button -->
+        <button @click="toggleDarkMode()" :title="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          class="p-2 rounded-xl border border-slate-700/80 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center justify-center shrink-0">
+          <i x-show="darkMode" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+          <i x-show="!darkMode" data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
+        </button>
+
         <a href="/app" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm">
           <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-400"></i>
           <span>App Workspace</span>
@@ -622,6 +860,27 @@
         bankSlips: [],
         activeHistoryTab: 'online',
 
+        // Dark / Light Theme State
+        darkMode: localStorage.getItem('dreemfolio_theme') !== 'light',
+
+        toggleDarkMode() {
+          this.darkMode = !this.darkMode;
+          const html = document.documentElement;
+          if (this.darkMode) {
+            html.classList.remove('light-mode');
+            html.style.backgroundColor = '#020617';
+            html.style.color = '#f1f5f9';
+          } else {
+            html.classList.add('light-mode');
+            html.style.backgroundColor = '#f1f5f9';
+            html.style.color = '#0f172a';
+          }
+          localStorage.setItem('dreemfolio_theme', this.darkMode ? 'dark' : 'light');
+          this.$nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        },
+
         // Refund Request Modal State
         showRefundModal: false,
         selectedRefundOrder: null,
@@ -630,6 +889,20 @@
         toastMessage: '',
 
         async init() {
+          // Restore theme preference
+          const savedTheme = localStorage.getItem('dreemfolio_theme');
+          if (savedTheme === 'light') {
+            this.darkMode = false;
+            document.documentElement.classList.add('light-mode');
+            document.documentElement.style.backgroundColor = '#f1f5f9';
+            document.documentElement.style.color = '#0f172a';
+          } else {
+            this.darkMode = true;
+            document.documentElement.classList.remove('light-mode');
+            document.documentElement.style.backgroundColor = '#020617';
+            document.documentElement.style.color = '#f1f5f9';
+          }
+
           const token = localStorage.getItem('saas_token');
           if (!token) {
             window.location.href = '/app';
