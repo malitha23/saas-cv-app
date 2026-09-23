@@ -2702,6 +2702,8 @@ function resumeApp() {
             { label: 'System Uptime', value: '99.98%' },
             { label: 'Stack Skills', value: '25+' }
           ];
+        }
+
         if (loadedResume.personal_info?.custom_domain) {
           this.customDomainInput = loadedResume.personal_info.custom_domain;
           localStorage.setItem('dreemfolio_custom_domain', loadedResume.personal_info.custom_domain);
