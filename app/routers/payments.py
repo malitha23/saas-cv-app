@@ -145,7 +145,7 @@ async def get_bank_transfer_config(db: Session = Depends(get_db)):
         "bank_name": get_saas_setting(db, "bank_name", "Commercial Bank of Ceylon"),
         "account_name": get_saas_setting(db, "bank_account_name", "Malitha Sayuranga"),
         "account_number": get_saas_setting(db, "bank_account_number", "800123456789"),
-        "branch": get_saas_setting(db, "bank_branch", "Colombo Main Branch"),
+        "branch": get_saas_setting(db, "bank_branch", "Hambanthota Branch"),
         "instructions": get_saas_setting(db, "bank_transfer_instructions", "Please deposit or transfer the exact amount and enter your registered email or phone number as the payment reference or remark. Upload a clear screenshot or photo of the payment slip below.")
     }
 

@@ -342,7 +342,7 @@ function resumeApp() {
       bank_name: 'Commercial Bank of Ceylon',
       account_name: 'Malitha Sayuranga',
       account_number: '800123456789',
-      branch: 'Colombo Main Branch',
+      branch: 'Hambanthota Branch',
       instructions: 'Please deposit or transfer the exact amount and enter your registered email or phone number in the transaction remarks.'
     },
     selectedBankPlan: 'pro',

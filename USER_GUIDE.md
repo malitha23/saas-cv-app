@@ -235,7 +235,7 @@ DreemFolio bridges offline and online networking:
 ## 10. AI Job Hunter, Application Copilot & Kanban Tracker
 
 1. Switch to the **Job Hunter** workspace.
-2. Enter your desired **Job Title** and **Location** (e.g., *"Full Stack Developer"*, *"Remote"* or *"Colombo, Sri Lanka"*).
+2. Enter your desired **Job Title** and **Location** (e.g., *"Full Stack Developer"*, *"Remote"* or *"Hambanthota, Sri Lanka"*).
 3. The AI scans real-time listings and scores each opportunity against your uploaded resume.
 4. **Generate Application Kit**:
    - 1-Click generates a customized outreach message, elevator pitch, and tailored cover letter specifically tailored for that specific job posting.
