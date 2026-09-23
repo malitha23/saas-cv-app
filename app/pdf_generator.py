@@ -347,6 +347,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
 
     if font_scale == "compact":
         margin = 26
+        top_margin = 20
         body_font_size = 8.5
         body_leading = 11.5
         hdr_font_size = 10.2
@@ -355,6 +356,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         spacer_gap = 2.0
     elif font_scale == "large":
         margin = 38
+        top_margin = 26
         body_font_size = 9.8
         body_leading = 13.6
         hdr_font_size = 11.5
@@ -363,6 +365,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         spacer_gap = 3.8
     elif font_scale == "spacious":
         margin = 42
+        top_margin = 28
         body_font_size = 10.5
         body_leading = 14.5
         hdr_font_size = 12.2
@@ -371,6 +374,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         spacer_gap = 4.5
     else:  # standard
         margin = 36
+        top_margin = 24
         body_font_size = 9.2
         body_leading = 12.8
         hdr_font_size = 11.0
@@ -405,7 +409,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         pagesize=letter,
         leftMargin=margin,
         rightMargin=margin,
-        topMargin=margin,
+        topMargin=top_margin,
         bottomMargin=margin
     )
 

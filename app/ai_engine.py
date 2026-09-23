@@ -592,11 +592,11 @@ INSTRUCTIONS:
    - CRITICAL: Candidate Full Name is NEVER an educational institution (like Cardiff Metropolitan University), school, company, or address. Extract the candidate's actual human name (e.g. 'Malitha Sayuranga').
 2. Accurately detect the target job title and target organization/employer from the provided target job description or context.
 3. Extract ALL REAL work experience entries across all pages (Job Titles, Company/Workshop/Organization names, Dates, Locations, Bullet points). Do NOT drop or truncate any past employer, internship, or freelance work.
-4. Refine the candidate's actual bullet points with role-appropriate action verbs and measurable impact without inventing non-existent experience.
+4. Refine the candidate's actual bullet points with role-appropriate action verbs and measurable impact without inventing non-existent experience (keep 2-3 crisp, high-impact bullet points per role to maintain strict single-to-two-page ATS density).
 5. Extract ALL REAL education & certifications across all pages (Degrees, NVQ levels, Diplomas, School exams like A/L or O/L, Institutions, Years, Certificate Numbers).
 6. Group ALL the candidate's real skills, programming languages, frameworks, libraries, databases, and tools into clean, logical industry-appropriate categories.
 7. Extract ALL real projects mentioned in the CV with their names, technologies, and bullet points.
-8. Generate ATS match analysis and a tailored {cover_letter_tone} cover letter.
+8. Generate ATS match analysis and a tailored {cover_letter_tone} cover letter (keep 'matched_jobs' concise with 2 top roles; the backend enriches further).
 
 Return ONLY valid JSON matching this schema:
 {{

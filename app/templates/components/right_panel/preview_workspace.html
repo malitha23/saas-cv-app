@@ -321,19 +321,54 @@
             </div>
           </template>
 
-          <!-- Loading State -->
+          <!-- Loading State with Dynamic 0-100% Animated Progress Bar -->
           <template x-if="isTailoring">
-            <div class="text-center p-8 space-y-4">
+            <div class="p-6 sm:p-8 max-w-lg mx-auto my-auto text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
+              <!-- Animated Glowing Orb -->
               <div class="relative w-16 h-16 mx-auto">
-                <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin">
-                </div>
+                <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-indigo-500/30 to-purple-500/30 blur-lg animate-pulse"></div>
+                <div class="relative w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 border-r-purple-500 rounded-full animate-spin"></div>
                 <div class="absolute inset-0 flex items-center justify-center text-indigo-400">
                   <i data-lucide="sparkles" class="w-6 h-6 animate-pulse"></i>
                 </div>
               </div>
-              <div>
-                <h4 class="text-sm font-semibold text-slate-200">Gemini Flash Processing</h4>
-                <p class="text-xs text-slate-400 mt-1" x-text="tailorStatusText">Generating documents...</p>
+
+              <!-- Title & Milestone Status Text -->
+              <div class="space-y-1.5">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[11px] font-semibold text-indigo-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+                  <span>AI Engine Optimization</span>
+                </div>
+                <h4 class="text-base font-bold text-slate-100">Generating Tailored Documents</h4>
+                <p class="text-xs text-slate-400 min-h-[18px] transition-all duration-200" x-text="tailorStatusText">Analyzing candidate experience...</p>
+              </div>
+
+              <!-- Modern 0-100% Progress Bar -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs px-1">
+                  <span class="text-slate-400 text-[11px] font-medium">ATS Optimization Progress</span>
+                  <span class="font-mono font-bold text-indigo-400 text-xs" x-text="(tailorProgress || 0) + '%'">0%</span>
+                </div>
+                <div class="w-full bg-slate-900/90 rounded-full h-2.5 p-0.5 border border-slate-700/80 overflow-hidden shadow-inner">
+                  <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full rounded-full transition-all duration-200 ease-out shadow-sm shadow-indigo-500/50"
+                       :style="'width: ' + Math.max(tailorProgress || 8, 4) + '%'"></div>
+                </div>
+              </div>
+
+              <!-- Trust & Verification Badges -->
+              <div class="pt-2 grid grid-cols-3 gap-2 text-[10px] text-slate-400 border-t border-slate-800/80">
+                <div class="flex items-center justify-center gap-1 bg-slate-900/60 py-1.5 px-1 rounded-lg border border-slate-800">
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+                  <span class="truncate">Zero Hallucinations</span>
+                </div>
+                <div class="flex items-center justify-center gap-1 bg-slate-900/60 py-1.5 px-1 rounded-lg border border-slate-800">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i>
+                  <span class="truncate">95%+ ATS Score</span>
+                </div>
+                <div class="flex items-center justify-center gap-1 bg-slate-900/60 py-1.5 px-1 rounded-lg border border-slate-800">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400 shrink-0"></i>
+                  <span class="truncate">High-DPI Output</span>
+                </div>
               </div>
             </div>
           </template>
@@ -377,7 +412,7 @@
               </div>
 
               <!-- Canvas Pages Viewport -->
-              <div id="pdf-preview-scroll-container" class="flex-1 overflow-y-auto overflow-x-auto p-2 sm:p-5 flex flex-col items-center justify-start min-h-[480px]">
+              <div id="pdf-preview-scroll-container" class="flex-1 overflow-y-auto overflow-x-auto px-2 sm:px-4 pt-1 sm:pt-2 pb-6 flex flex-col items-center justify-start min-h-[480px]">
                 
                 <!-- Loading State -->
                 <div x-show="isRenderingPdf" class="my-auto py-16 text-center space-y-3">

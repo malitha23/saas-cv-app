@@ -35,6 +35,7 @@ function resumeApp() {
     isDownloading: false,
     isPublishing: false,
     tailorStatusText: 'Analyzing keywords & extracting real achievements...',
+    tailorProgress: 0,
     showRawText: false,
     showApiModal: false,
     showPricingModal: false,
@@ -694,21 +695,34 @@ function resumeApp() {
       }
 
       this.isTailoring = true;
-      this.tailorStatusText = 'Extracting candidate background & target keywords...';
+      this.tailorProgress = 12;
+      this.tailorStatusText = 'Analyzing candidate background & job requirements...';
 
-      const statusSteps = [
-        'Extracting candidate background & target keywords...',
-        'Synthesizing quantifiable achievement metrics...',
-        'Rewriting experience bullets with active verbs...',
-        'Generating 100% ATS single-column & Visual Designer PDFs...',
-        'Designing responsive Personal Portfolio Website...',
-        'Drafting tailored 3-paragraph cover letter...'
+      const statusMilestones = [
+        { progress: 28, text: 'Extracting key achievements & target role metrics...' },
+        { progress: 48, text: 'Aligning high-impact keywords with ATS scoring filters...' },
+        { progress: 68, text: 'Synthesizing quantifiable bullets with action verbs...' },
+        { progress: 82, text: 'Structuring ATS resume & Visual Designer formats...' },
+        { progress: 90, text: 'Crafting tailored executive cover letter & portfolio profile...' },
+        { progress: 95, text: 'Finalizing typography, layout & high-DPI document preview...' }
       ];
-      let stepIdx = 0;
-      const statusInterval = setInterval(() => {
-        stepIdx = (stepIdx + 1) % statusSteps.length;
-        this.tailorStatusText = statusSteps[stepIdx];
-      }, 1500);
+
+      let milestoneIdx = 0;
+      const progressTimer = setInterval(() => {
+        if (this.tailorProgress < 94) {
+          const currentTarget = statusMilestones[milestoneIdx]?.progress || 94;
+          if (this.tailorProgress < currentTarget) {
+            this.tailorProgress += 1;
+          } else if (milestoneIdx < statusMilestones.length - 1) {
+            milestoneIdx++;
+            this.tailorStatusText = statusMilestones[milestoneIdx].text;
+          } else {
+            if (this.tailorProgress < 96 && Math.random() > 0.6) {
+              this.tailorProgress += 1;
+            }
+          }
+        }
+      }, 90);
 
       try {
         const payload = {
@@ -831,6 +845,11 @@ function resumeApp() {
         await this.renderPdfPreview();
         await this.renderPortfolioPreview();
 
+        // 100% completion milestone transition
+        this.tailorProgress = 100;
+        this.tailorStatusText = 'Optimization complete! Loading high-DPI document preview...';
+        await new Promise(r => setTimeout(r, 380));
+
         // Switch to preview mode on mobile devices so user immediately sees their tailored resume!
         if (window.innerWidth < 1024) {
           this.mobileWorkspaceTab = 'preview';
@@ -870,8 +889,9 @@ function resumeApp() {
           alert('Optimization Error: ' + err.message);
         }
       } finally {
-        clearInterval(statusInterval);
+        clearInterval(progressTimer);
         this.isTailoring = false;
+        this.tailorProgress = 0;
         this.$nextTick(() => {
           if (window.lucide) window.lucide.createIcons();
         });
@@ -1089,15 +1109,15 @@ function resumeApp() {
 
         const scrollContainer = document.getElementById('pdf-preview-scroll-container');
         const containerWidth = scrollContainer ? scrollContainer.clientWidth : window.innerWidth;
-        const padding = window.innerWidth < 640 ? 16 : 48;
+        const padding = window.innerWidth < 640 ? 12 : 24;
         const availableWidth = Math.max(containerWidth - padding, 260);
 
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
           const unscaledViewport = page.getViewport({ scale: 1.0 });
 
-          // Determine responsive fit scale (cap at 760px for readability on large screens)
-          const targetWidth = Math.min(availableWidth, 760);
+          // Determine responsive fit scale (cap at 840px for comfortable readability on large screens)
+          const targetWidth = Math.min(availableWidth, 840);
           const fitScale = targetWidth / unscaledViewport.width;
           const userZoom = this.pdfZoom || 1.0;
           const effectiveScale = fitScale * userZoom;
@@ -1107,7 +1127,7 @@ function resumeApp() {
           const renderViewport = page.getViewport({ scale: effectiveScale * dpr });
 
           const pageWrapper = document.createElement('div');
-          pageWrapper.className = 'relative flex flex-col items-center mb-5 shadow-2xl rounded-xl border border-slate-700/80 bg-white overflow-hidden transition-all duration-150 max-w-full';
+          pageWrapper.className = 'relative flex flex-col items-center mt-1 mb-5 shadow-2xl rounded-xl border border-slate-700/80 bg-white overflow-hidden transition-all duration-150 max-w-full';
           pageWrapper.style.width = Math.round(unscaledViewport.width * effectiveScale) + 'px';
 
           const canvas = document.createElement('canvas');
