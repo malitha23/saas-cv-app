@@ -803,9 +803,9 @@ Return ONLY valid JSON matching this schema:
     raw_json = None
     last_error = None
     models_to_try = [
-        "gemini-3.8-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
     ]
     # 1. Try official google.genai client with active models (with strict 15s timeout)
     try:
@@ -956,9 +956,9 @@ def generate_gemini_text(
     if not k:
         return ""
     models_to_try = [
-        "gemini-3.8-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
     ]
     try:
         from google import genai
@@ -2335,10 +2335,9 @@ Current Candidate Context:
 
     if active_key and len(active_key) >= 20:
         models_to_try = [
-            "gemini-3.8-flash",
             "gemini-3.5-flash-lite",
             "gemini-3.1-flash-lite",
-            "gemini-3.0-flash",
+            "gemini-3.8-flash",
         ]
         conversation_history = "\n".join(
             [f"{m.role.capitalize()}: {m.content}" for m in messages[-6:]]
