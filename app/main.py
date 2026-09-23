@@ -13,7 +13,7 @@ import socket
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
@@ -86,6 +86,47 @@ app.add_middleware(
 
 # Enable GZip compression (compresses JS/CSS/HTML responses >1KB by up to 80% for fast page loads)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CUSTOM DOMAIN ROUTING MIDDLEWARE
+# ─────────────────────────────────────────────────────────────────────────────
+@app.middleware("http")
+async def custom_domain_router_middleware(request: Request, call_next):
+    """
+    Dynamically resolve requests coming from user-connected custom domains (e.g. malitha.dev)
+    or personalized subdomains (e.g. malith.dreemfolio.com).
+    Serves the published live portfolio HTML directly when accessed via custom domain/subdomain.
+    """
+    raw_host = request.headers.get("host", "").split(":")[0].strip().lower()
+    default_hosts = {
+        "dreemfolio.com",
+        "www.dreemfolio.com",
+        "cname.dreemfolio.com",
+        "localhost",
+        "127.0.0.1",
+        "testserver",
+    }
+    if raw_host and raw_host not in default_hosts:
+        # 1. Exact match in registered custom domains
+        slug = CUSTOM_DOMAINS.get(raw_host)
+
+        # 2. Subdomain auto-resolution (e.g. malith.dreemfolio.com -> slug 'malith' or 'malith-...')
+        if not slug and raw_host.endswith(".dreemfolio.com"):
+            sub = raw_host[:-len(".dreemfolio.com")].strip()
+            if sub:
+                if sub in PUBLISHED_PORTFOLIOS:
+                    slug = sub
+                else:
+                    for p_slug in PUBLISHED_PORTFOLIOS.keys():
+                        if p_slug == sub or p_slug.startswith(f"{sub}-") or sub in p_slug:
+                            slug = p_slug
+                            break
+
+        if slug and slug in PUBLISHED_PORTFOLIOS:
+            if request.url.path in ["/", ""]:
+                return HTMLResponse(content=PUBLISHED_PORTFOLIOS[slug])
+    return await call_next(request)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
