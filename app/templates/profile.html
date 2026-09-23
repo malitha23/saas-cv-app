@@ -257,13 +257,19 @@
       border-color: #4f46e5 !important;
       box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
     }
-    .light-mode .bg-slate-950\/85 {
-      background-color: rgba(15, 23, 42, 0.45) !important;
+    .light-mode .bg-slate-950\/85,
+    .light-mode .bg-black\/85 {
+      background-color: rgba(15, 23, 42, 0.55) !important;
     }
-    .light-mode .bg-slate-900.p-6.sm\:p-7 {
+    .light-mode .bg-slate-900.p-6.sm\:p-7,
+    .light-mode .bg-slate-900.rounded-3xl {
       background-color: #ffffff !important;
       border-color: #e2e8f0 !important;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    }
+    .light-mode .bg-slate-950\/80 {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
     }
   </style>
 </head>
@@ -840,6 +846,9 @@
     </div>
   </div>
 
+  <!-- Logout Confirmation Modal (Matching Dashboard) -->
+  {% include 'components/modals/logout_modal.html' %}
+
   <!-- Toast Notification -->
   <div x-show="toastMessage" x-cloak
     x-transition:enter="transition ease-out duration-200"
@@ -886,6 +895,9 @@
             if (window.lucide) window.lucide.createIcons();
           });
         },
+
+        // Logout Modal State
+        showLogoutModal: false,
 
         // Refund Request Modal State
         showRefundModal: false,
@@ -1009,11 +1021,17 @@
         },
 
         signOut() {
-          if (confirm('Are you sure you want to sign out?')) {
-            localStorage.removeItem('saas_token');
-            localStorage.removeItem('saas_user');
-            window.location.href = '/app';
-          }
+          this.showLogoutModal = true;
+          this.$nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        },
+
+        confirmLogout() {
+          this.showLogoutModal = false;
+          localStorage.removeItem('saas_token');
+          localStorage.removeItem('saas_user');
+          window.location.href = '/app';
         },
 
         copiedReferral: false,
