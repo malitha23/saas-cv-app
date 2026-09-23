@@ -3,11 +3,11 @@
 <!-- ═══════════════════════════════════════════════════════════════════ -->
 
 <div x-show="showQrCardModal" x-cloak
-  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-  <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8 relative">
+  class="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-3 sm:p-4 flex items-start sm:items-center justify-center">
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col relative">
     
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <!-- Modal Header (Pinned) -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
       <div class="flex items-center space-x-2.5">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-500/20">
           <i data-lucide="qr-code" class="w-4 h-4 text-white"></i>
@@ -25,8 +25,8 @@
       </button>
     </div>
 
-    <!-- 2 Minimalist Tabs -->
-    <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs">
+    <!-- 2 Minimalist Tabs (Pinned) -->
+    <div class="flex rounded-xl bg-slate-950 p-1 border border-slate-800 text-xs shrink-0">
       <button @click="activeQrTab = 'card'"
         :class="activeQrTab === 'card' ? 'bg-gradient-to-r from-amber-500 to-pink-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
         class="flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5">
@@ -42,6 +42,9 @@
           x-text="(tailoredData && tailoredData.proof_of_work ? tailoredData.proof_of_work.length : 0)">0</span>
       </button>
     </div>
+
+    <!-- Scrollable Tab Content Container -->
+    <div class="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
 
     <!-- TAB 1: QR SMART CARD (Digital NFC / QR Business Card) -->
     <div x-show="activeQrTab === 'card'" class="space-y-4">
@@ -265,8 +268,10 @@
       </div>
     </div>
 
-    <!-- Modal Footer -->
-    <div class="flex items-center justify-between border-t border-slate-800 pt-3">
+    </div>
+
+    <!-- Modal Footer (Pinned) -->
+    <div class="flex items-center justify-between border-t border-slate-800 pt-3 shrink-0">
       <span class="text-[11px] text-slate-500">Auto-synced with your public live portfolio.</span>
       <button @click="showQrCardModal = false"
         class="px-4 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition">

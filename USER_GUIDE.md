@@ -231,8 +231,7 @@ Log in to wherever you manage your domain (cPanel, Cloudflare, Namecheap, GoDadd
 * **Option B: Root / Apex Domain (e.g., `yourname.dev` or `yourname.com`)**
   | Record Type | Name / Host | Target / Points To |
   | :--- | :--- | :--- |
-  | **CNAME / ALIAS** | `@` (or `www`) | **`cname.dreemfolio.com`** |
-  | *Alternative A Record* | `@` | **`206.72.195.250`** |
+  | **CNAME / ALIAS** | `@` (or `www`) | **`cname.dreemfolio.com`** (Zero IP required) |
 
 #### Step 2: Connect in DreemFolio AI Editor
 1. In the Portfolio Editor, find the **Private Custom Domain** box (or click **DNS Guide**).

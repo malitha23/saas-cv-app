@@ -320,18 +320,11 @@ async def verify_custom_domain(
         "cloudflare_provisioning": cf_res,
         "dns_records": [
             {
-                "type": "CNAME",
+                "type": "CNAME / ALIAS",
                 "name": "@" if domain_clean.count(".") == 1 else domain_clean.split(".")[0],
                 "target": fallback_target,
                 "ttl": "3600",
-                "status": "Ready to configure"
-            },
-            {
-                "type": "A",
-                "name": "@",
-                "target": "206.72.195.250",
-                "ttl": "3600",
-                "status": "Alternative"
+                "status": "Ready to configure (Zero IP Required)"
             }
         ],
         "ssl_status": "Auto-provisioned Cloudflare / Caddy On-Demand SSL",
