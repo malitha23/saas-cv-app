@@ -31,7 +31,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Job Application Tracker (Up to 3 Jobs)",
                     "AI Career Copilot Chat (3 Free Prompts/day)",
                     "Interactive Web Portfolio Studio (Live Preview)",
-                    "MySQL Cloud Auto-Save (Restoring requires Pro)"
+                    "Cloud Auto-Save (Restoring drafts requires Pro)"
                 ],
                 "is_popular": False,
                 "button_text": "Current Plan"
@@ -50,7 +50,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
                     "Photo & Digital Signature Upload",
                     "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
-                    "MySQL Cloud Auto-Save & Instant Version Restore",
+                    "Cloud Auto-Save & Instant Version Restore",
                     "✨ Unlimited AI Job Recommendations & Re-Tailoring",
                     "⚡ Unlimited AI Job Hunter with LinkedIn Easy Apply",
                     "🚀 Unlimited 1-Click Application Screening Kits",
@@ -109,7 +109,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Job Application Tracker (Up to 3 Jobs)",
                     "AI Career Copilot Chat (3 Free Prompts/day)",
                     "Interactive Web Portfolio Studio (Live Preview)",
-                    "MySQL Cloud Auto-Save (Restoring requires Pro)"
+                    "Cloud Auto-Save (Restoring drafts requires Pro)"
                 ],
                 "is_popular": False,
                 "button_text": "Current Plan"
@@ -128,7 +128,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
                     "Photo & Digital Signature Upload",
                     "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
-                    "MySQL Cloud Auto-Save & Instant Version Restore",
+                    "Cloud Auto-Save & Instant Version Restore",
                     "✨ Unlimited AI Job Recommendations & Re-Tailoring",
                     "⚡ Unlimited AI Job Hunter with LinkedIn Easy Apply",
                     "🚀 Unlimited 1-Click Application Screening Kits",

@@ -260,7 +260,7 @@ function resumeApp() {
           "Visual Photo CV Formats (1 Lifetime Free Download)",
           "3 AI Cover Letters (1st Clean • 2nd & 3rd Watermarked)",
           "Interactive Web Portfolio Studio (Preview & Test • Live Hosting requires Pro)",
-          "MySQL Cloud Auto-Save (Included • Pro required to load/restore)"
+          "Cloud Auto-Save (Included • Pro required to load/restore)"
         ],
         is_popular: false,
         button_text: "Current Plan"
@@ -279,7 +279,7 @@ function resumeApp() {
           "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
           "Photo & Digital Signature Upload",
           "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
-          "MySQL Cloud Auto-Save & Revision Archive"
+          "Cloud Auto-Save & Revision Archive"
         ],
         is_popular: true,
         button_text: "Upgrade to Pro ($9/mo)"
@@ -1300,7 +1300,7 @@ function resumeApp() {
       }
 
       try {
-        const title = `${this.tailoredData.target_job_title || 'Resume'} - ${this.tailoredData.target_company || 'MySQL Auto-Save'}`;
+        const title = `${this.tailoredData.target_job_title || 'Resume'} - ${this.tailoredData.target_company || 'Cloud Auto-Save'}`;
         const res = await fetch('/api/user/resumes', {
           method: 'POST',
           headers: {
@@ -2615,7 +2615,7 @@ function resumeApp() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Failed to save resume');
 
-        alert(`✅ Success! Your resume was securely auto-saved to MySQL Cloud Database (ID: #${data.resume_id}).`);
+        alert(`✅ Success! Your resume was securely saved to your Cloud Account (ID: #${data.resume_id}).`);
       } catch (err) {
         alert('Save Error: ' + err.message);
       } finally {
@@ -2679,7 +2679,7 @@ function resumeApp() {
           this.openProRestoreModal(found || { title: 'Saved Resume' });
           return;
         }
-        if (!res.ok) throw new Error('Could not load resume from MySQL');
+        if (!res.ok) throw new Error('Could not load resume from Cloud');
 
         const result = await res.json();
         const loadedResume = result.resume_data || result;
@@ -2720,7 +2720,7 @@ function resumeApp() {
     },
 
     async deleteSavedResume(id) {
-      if (!confirm('Are you sure you want to delete this resume from MySQL?')) return;
+      if (!confirm('Are you sure you want to delete this resume from your cloud account?')) return;
       const token = localStorage.getItem('saas_token');
       try {
         const res = await fetch(`/api/user/resumes/${id}`, {
@@ -3360,7 +3360,7 @@ function resumeApp() {
       if (!job) return;
       const token = localStorage.getItem('saas_token');
       if (!token) {
-        this.openAuthModal('login', 'Please sign in to save and track your job applications in MySQL!');
+        this.openAuthModal('login', 'Please sign in to save and track your job applications in your cloud account!');
         return;
       }
 

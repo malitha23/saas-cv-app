@@ -104,7 +104,7 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
             "id": "cloud_security",
             "name": "Cloud Persistence & Enterprise Security",
             "icon": "shield-check",
-            "description": "Real-time MySQL cloud auto-save, multi-device sync, version rollbacks, and zero data training."
+            "description": "Real-time cloud auto-save, multi-device sync, version rollbacks, and zero data training."
         }
     ]
 
@@ -590,16 +590,16 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
             "action_label": "Build Portfolio"
         },
         {
-            "id": "mysql-cloud-autosave",
+            "id": "cloud-autosave",
             "category_id": "cloud_security",
             "category_name": "Cloud Persistence & Enterprise Security",
-            "title": "MySQL Cloud Auto-Save & Instant Version Restore",
+            "title": "Real-Time Cloud Auto-Save & Instant Version Restore",
             "tagline": "Continuous cloud backup prevents work loss with multi-device synchronization and rollback capability.",
             "badge": "Cloud Sync",
             "min_plan": "free",
             "icon": "cloud",
             "quotas": {
-                "free": "Continuous MySQL Auto-Save (Restoring previous drafts requires Pro)",
+                "free": "Continuous Cloud Auto-Save (Restoring previous drafts requires Pro)",
                 "pro": "Unlimited Cloud Saves & Instant 1-Click Version History Restore",
                 "elite": "Unlimited Cloud Saves & Instant 1-Click Version History Restore"
             },
@@ -810,7 +810,7 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
             "highlight": True
         },
         {
-            "feature": "MySQL Cloud Auto-Save & Version Restore",
+            "feature": "Real-Time Cloud Auto-Save & Version Restore",
             "free": "Auto-Save Active (Restore requires Pro)",
             "pro": "Instant 1-Click Version Restore",
             "elite": "Instant 1-Click Version Restore",

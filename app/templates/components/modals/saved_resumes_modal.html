@@ -9,7 +9,7 @@
           </div>
           <div>
             <h3 class="font-bold text-slate-100 text-base">My Saved Resumes</h3>
-            <p class="text-xs text-slate-400">Stored safely in your MySQL database</p>
+            <p class="text-xs text-slate-400">Stored safely in your secure cloud account</p>
           </div>
         </div>
         <button @click="showSavedResumesModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
@@ -22,15 +22,15 @@
         <template x-if="isLoadingSavedResumes">
           <div class="flex flex-col items-center justify-center p-8 space-y-2 text-slate-400">
             <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            <span class="text-xs">Fetching your resumes from MySQL...</span>
+            <span class="text-xs">Fetching your saved resumes from cloud...</span>
           </div>
         </template>
 
         <template x-if="!isLoadingSavedResumes && userSavedResumes.length === 0">
           <div class="text-center p-8 space-y-2 text-slate-400 border border-dashed border-slate-800 rounded-xl">
             <i data-lucide="file-x" class="w-8 h-8 text-slate-600 mx-auto"></i>
-            <p class="text-xs font-medium">No saved resumes found in your MySQL account yet.</p>
-            <p class="text-[11px] text-slate-500">Tailor a resume and click <b>"Save to MySQL"</b> in the top header!</p>
+            <p class="text-xs font-medium">No saved resumes found in your cloud account yet.</p>
+            <p class="text-[11px] text-slate-500">Tailor a resume and click <b>"Save to Cloud"</b> in the top header!</p>
           </div>
         </template>
 
@@ -74,7 +74,7 @@
       </div>
 
       <div class="flex justify-between items-center pt-3 border-t border-slate-800 text-xs">
-        <span class="text-slate-500">MySQL Connection: <b class="text-emerald-400">Active</b></span>
+        <span class="text-slate-500">Cloud Storage: <b class="text-emerald-400">Active & Protected</b></span>
         <button @click="showSavedResumesModal = false" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg">Close</button>
       </div>
     </div>

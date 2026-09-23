@@ -282,7 +282,7 @@ async def save_user_resume(
             "success": True,
             "resume_id": target_resume.id,
             "title": target_resume.title,
-            "message": "Resume updated in MySQL!"
+            "message": "Resume updated in Cloud!"
         }
     else:
         new_resume = UserResume(
@@ -299,7 +299,7 @@ async def save_user_resume(
             "success": True,
             "resume_id": new_resume.id,
             "title": new_resume.title,
-            "message": "Resume successfully created in MySQL!"
+            "message": "Resume successfully saved in Cloud!"
         }
 
 
@@ -357,4 +357,4 @@ async def delete_user_resume(
 
     db.delete(resume)
     db.commit()
-    return {"success": True, "message": "Resume deleted successfully from MySQL."}
+    return {"success": True, "message": "Resume deleted successfully from Cloud."}
