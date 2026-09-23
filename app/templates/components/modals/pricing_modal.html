@@ -76,7 +76,7 @@
 
       <!-- Comprehensive Support & Quota Guide CTA Banner (Opens in new tab) -->
       <a href="/guide" target="_blank"
-        class="group p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-violet-950/60 border border-indigo-500/30 hover:border-indigo-500/60 flex items-center justify-between gap-3 transition shadow-sm">
+        class="pricing-guide-banner group p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-violet-950/60 border border-indigo-500/30 hover:border-indigo-500/60 flex items-center justify-between gap-3 transition shadow-sm">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/30">
             <i data-lucide="book-open" class="w-4 h-4"></i>
@@ -254,35 +254,35 @@
         </template>
 
         <!-- Bank Details and Plan Selector Card -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bank-transfer-grid">
 
           <!-- 1. Bank Account Details Card -->
-          <div class="p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-emerald-500/30 shadow-xl space-y-4">
+          <div class="bank-details-card p-6 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-emerald-500/30 shadow-xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+              <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs bank-card-title">
                 <i data-lucide="building-2" class="w-4 h-4"></i>
                 <span>Official Deposit Bank Account</span>
               </div>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Verified</span>
+              <span class="bank-verified-badge px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Verified</span>
             </div>
 
             <div class="space-y-3 text-xs">
               <div>
-                <p class="text-[11px] text-slate-400">Bank Name</p>
+                <p class="text-[11px] text-slate-400 font-medium">Bank Name</p>
                 <p class="font-bold text-slate-100 text-sm" x-text="bankTransferConfig.bank_name || 'Commercial Bank of Ceylon'"></p>
               </div>
 
               <div>
-                <p class="text-[11px] text-slate-400">Account Name (Beneficiary)</p>
+                <p class="text-[11px] text-slate-400 font-medium">Account Name (Beneficiary)</p>
                 <p class="font-bold text-slate-100 text-sm" x-text="bankTransferConfig.account_name || 'Malitha Sayuranga'"></p>
               </div>
 
               <div>
-                <p class="text-[11px] text-slate-400">Account Number</p>
-                <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 mt-1">
-                  <span class="font-mono font-bold text-emerald-300 text-sm tracking-wider" x-text="bankTransferConfig.account_number || '800123456789'"></span>
+                <p class="text-[11px] text-slate-400 font-medium">Account Number</p>
+                <div class="bank-acc-box flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 mt-1">
+                  <span class="bank-acc-num font-mono font-bold text-emerald-300 text-sm tracking-wider" x-text="bankTransferConfig.account_number || '800123456789'"></span>
                   <button @click="copyToClipboard(bankTransferConfig.account_number || '800123456789', 'Account number copied!')"
-                          class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
+                          class="bank-copy-btn px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition flex items-center gap-1">
                     <i data-lucide="copy" class="w-3 h-3 text-emerald-400"></i>
                     <span>Copy</span>
                   </button>
@@ -290,13 +290,13 @@
               </div>
 
               <div>
-                <p class="text-[11px] text-slate-400">Branch</p>
+                <p class="text-[11px] text-slate-400 font-medium">Branch</p>
                 <p class="font-bold text-slate-200" x-text="bankTransferConfig.branch || 'Hambanthota Branch'"></p>
               </div>
             </div>
 
-            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <p class="font-bold text-slate-300 flex items-center gap-1">
+            <div class="bank-instructions-box p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+              <p class="bank-instructions-title font-bold text-slate-300 flex items-center gap-1">
                 <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i> Payment Remark / Reference:
               </p>
               <p x-text="bankTransferConfig.instructions || 'Please enter your registered email or phone number in the transaction remarks.'"></p>
@@ -304,10 +304,10 @@
           </div>
 
           <!-- 2. Step 2: Choose Plan & Upload Slip Form -->
-          <div class="p-6 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 flex flex-col justify-between">
+          <div class="bank-upload-card p-6 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 flex flex-col justify-between">
             <div class="space-y-4">
               <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span class="text-xs font-bold text-slate-200">Select Plan & Upload Receipt</span>
+                <span class="bank-step-title text-xs font-bold text-slate-200">Select Plan & Upload Receipt</span>
                 <span class="text-[11px] text-slate-400 font-mono">Step 2 of 2</span>
               </div>
 
@@ -317,12 +317,12 @@
                 <div class="grid grid-cols-2 gap-2.5 text-xs">
                   <template x-for="p in dynamicPlans.filter(pl => pl.plan_key !== 'free')" :key="p.plan_key">
                     <button type="button" @click="selectedBankPlan = p.plan_key; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
-                            class="p-3 rounded-xl border text-center transition font-bold relative overflow-hidden"
+                            class="bank-plan-btn p-3 rounded-xl border text-center transition font-bold relative overflow-hidden"
                             :class="selectedBankPlan === p.plan_key 
                               ? (p.plan_key === 'pro' 
-                                  ? 'border-indigo-500 bg-indigo-500/20 text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-500/60' 
-                                  : 'border-amber-500 bg-amber-500/20 text-white shadow-lg shadow-amber-500/20 ring-2 ring-amber-500/60') 
-                              : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 hover:border-slate-700'">
+                                  ? 'border-indigo-500 bg-indigo-500/20 text-white shadow-lg shadow-indigo-500/20 ring-2 ring-indigo-500/60 bank-plan-selected-pro' 
+                                  : 'border-amber-500 bg-amber-500/20 text-white shadow-lg shadow-amber-500/20 ring-2 ring-amber-500/60 bank-plan-selected-elite') 
+                              : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 hover:border-slate-700 bank-plan-unselected'">
                       <div class="flex items-center justify-center gap-1.5">
                         <i :data-lucide="p.plan_key === 'pro' ? 'zap' : 'crown'" class="w-3.5 h-3.5"
                            :class="p.plan_key === 'pro' ? 'text-indigo-400' : 'text-amber-400'"></i>
@@ -337,24 +337,24 @@
               </div>
 
               <!-- Exact Payable Amount Highlight Card -->
-              <div class="p-3 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-indigo-950/40 border border-emerald-500/30 flex items-center justify-between">
+              <div class="bank-amount-card p-3 rounded-xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-indigo-950/40 border border-emerald-500/30 flex items-center justify-between">
                 <div>
-                  <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Exact Deposit Amount:</span>
-                  <div class="text-base font-black text-white font-mono mt-0.5"
+                  <span class="bank-amount-label text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Exact Deposit Amount:</span>
+                  <div class="bank-amount-val text-base font-black text-white font-mono mt-0.5"
                        x-text="getCalculatedPrice(selectedBankPlan).price_display"></div>
                 </div>
                 <div class="text-right">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                  <span class="bank-amount-badge px-2 py-0.5 rounded text-[10px] font-bold uppercase"
                         :class="selectedBankPlan === 'elite' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'"
                         x-text="(selectedBankPlan || 'pro').toUpperCase() + ' PLAN (' + (selectedBillingCycle === 'lifetime' ? 'LIFETIME 100Y' : (selectedBillingCycle === '12m' ? '365 DAYS' : (selectedBillingCycle === '6m' ? '180 DAYS' : (selectedBillingCycle === '3m' ? '90 DAYS' : '30 DAYS')))) + ')'"></span>
-                  <p class="text-[10px] text-slate-400 mt-0.5">Instant Activation After Verification</p>
+                  <p class="bank-amount-sub text-[10px] text-slate-400 mt-0.5">Instant Activation After Verification</p>
                 </div>
               </div>
 
               <!-- Upload Drag & Drop Area -->
               <div class="space-y-2">
                 <label class="text-[11px] font-bold text-slate-400">Upload Deposit Slip / Transfer Screenshot:</label>
-                <div class="relative border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50 group"
+                <div class="bank-dropzone relative border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer transition bg-slate-900/50 group"
                      @click="$refs.slipFileInput.click()">
                   <input type="file" x-ref="slipFileInput" class="hidden" accept="image/png,image/jpeg,image/webp,application/pdf"
                          @change="handleSlipFileSelect($event)">
@@ -362,8 +362,8 @@
                   <template x-if="!bankSlipPreview && !bankSlipFileName">
                     <div class="space-y-1 py-2">
                       <i data-lucide="upload-cloud" class="w-8 h-8 text-slate-500 group-hover:text-indigo-400 mx-auto transition"></i>
-                      <p class="text-xs font-semibold text-slate-300">Click to browse or drop your slip here</p>
-                      <p class="text-[10px] text-slate-500">PNG, JPG, WEBP, or PDF (Max 5MB)</p>
+                      <p class="bank-dropzone-title text-xs font-semibold text-slate-300">Click to browse or drop your slip here</p>
+                      <p class="bank-dropzone-sub text-[10px] text-slate-500">PNG, JPG, WEBP, or PDF (Max 5MB)</p>
                     </div>
                   </template>
 
@@ -377,7 +377,7 @@
                           <i data-lucide="file-text" class="w-8 h-8 text-indigo-400"></i>
                         </template>
                         <div class="text-xs">
-                          <p class="font-bold text-slate-200 max-w-[180px] truncate" x-text="bankSlipFileName"></p>
+                          <p class="bank-dropzone-filename font-bold text-slate-200 max-w-[180px] truncate" x-text="bankSlipFileName"></p>
                           <p class="text-[10px] text-emerald-400 font-semibold">Ready for upload</p>
                         </div>
                       </div>
@@ -393,7 +393,7 @@
               <div class="space-y-1">
                 <label class="text-[11px] font-bold text-slate-400">Bank Reference / Remarks (Optional):</label>
                 <input type="text" x-model="bankTransferReference" placeholder="e.g. Bank Ref # or Mobile number"
-                       class="w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none">
+                       class="bank-remarks-input w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none">
               </div>
             </div>
 
@@ -530,7 +530,7 @@
       <!-- ═══════════════════════════════════════════════════════════════════ -->
       <!-- PROMO CODE & DISCOUNT COUPON BOX                                    -->
       <!-- ═══════════════════════════════════════════════════════════════════ -->
-      <div class="p-4 bg-slate-950/90 border border-slate-800/90 rounded-2xl space-y-3">
+      <div class="promo-code-card p-4 bg-slate-950/90 border border-slate-800/90 rounded-2xl space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center">
@@ -557,7 +557,7 @@
                    :disabled="appliedPromo !== null"
                    @keydown.enter.prevent="applyPromoCode()"
                    placeholder="Enter code (e.g. SLIIT2026, EARLYBIRD)"
-                   class="w-full bg-slate-900 border border-slate-800 focus:border-pink-500 rounded-xl px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-100 placeholder-slate-500 outline-none disabled:opacity-60">
+                   class="promo-code-input w-full bg-slate-900 border border-slate-800 focus:border-pink-500 rounded-xl px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-slate-100 placeholder-slate-500 outline-none disabled:opacity-60">
             <template x-if="appliedPromo">
               <span class="absolute right-3 top-2 text-emerald-400 font-bold text-xs flex items-center gap-1">
                 <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Applied
