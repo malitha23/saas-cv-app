@@ -66,42 +66,58 @@
         class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden min-h-[640px]">
 
         <!-- Tab Switcher, Template Selector & Actions Bar -->
-        <div class="p-2.5 sm:p-3.5 border-b border-slate-800 flex flex-col gap-2.5 bg-slate-900/95">
+        <div class="workspace-header-bar p-2 sm:p-3 border-b border-slate-800 flex flex-col gap-2.5 bg-slate-900/95">
 
           <!-- Row 1: Primary Workspace Tabs & Quick Actions -->
           <div class="flex items-center justify-between gap-2 min-w-0">
-            <!-- 5 Tabs (Smooth Horizontal Scroll on Mobile & Laptop) -->
-            <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto no-scrollbar flex-1 min-w-0">
+            <!-- 5 Tabs (Adaptive & Responsive with Clean Tooltips) -->
+            <div class="workspace-tabs-container flex items-center space-x-0.5 sm:space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto no-scrollbar flex-1 min-w-0">
+              <!-- Tab 1: PDF Resume -->
               <button @click="activeTab = 'resume'; renderPdfPreview()"
                 :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'resume', 'text-slate-400 hover:text-slate-200': activeTab !== 'resume'}"
-                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
+                title="ATS & Visual Resume Preview">
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                <span>PDF Resume</span>
+                <span class="hidden 2xl:inline">PDF </span><span>Resume</span>
               </button>
+
+              <!-- Tab 2: Cover Letter -->
               <button @click="activeTab = 'cover_letter'; renderPdfPreview()"
                 :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'cover_letter', 'text-slate-400 hover:text-slate-200': activeTab !== 'cover_letter'}"
-                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
+                title="AI Tailored Cover Letter">
                 <i data-lucide="mail" class="w-3.5 h-3.5"></i>
-                <span>Cover Letter</span>
+                <span class="hidden lg:inline 2xl:hidden">Letter</span>
+                <span class="lg:hidden 2xl:inline">Cover Letter</span>
               </button>
+
+              <!-- Tab 3: Portfolio Web (Pro) -->
               <button @click="activeTab = 'portfolio'; renderPortfolioPreview()"
                 :class="{'bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-semibold shadow': activeTab === 'portfolio', 'text-slate-400 hover:text-slate-200': activeTab !== 'portfolio'}"
-                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
+                title="Live Hosted Web Portfolio (Pro)">
                 <i data-lucide="globe" class="w-3.5 h-3.5 text-pink-300"></i>
-                <span>Portfolio Web</span>
+                <span>Portfolio</span>
+                <span class="hidden 2xl:inline"> Web</span>
                 <span class="px-1.5 py-0.2 bg-amber-400/20 text-amber-300 text-[9px] font-bold rounded uppercase">Pro</span>
               </button>
+
+              <!-- Tab 4: Plain Text -->
               <button @click="activeTab = 'text'"
                 :class="{'bg-indigo-600 text-white font-semibold shadow': activeTab === 'text', 'text-slate-400 hover:text-slate-200': activeTab !== 'text'}"
-                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
+                title="Plain Text Format">
                 <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
-                <span>Plain Text</span>
+                <span class="hidden xl:inline">Plain </span><span>Text</span>
               </button>
+
+              <!-- Tab 5: Matched Jobs -->
               <button @click="activeTab = 'jobs'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
                 :class="{'bg-emerald-600 text-white font-semibold shadow': activeTab === 'jobs', 'text-slate-400 hover:text-slate-200': activeTab !== 'jobs'}"
-                class="px-2.5 sm:px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-xs shrink-0">
+                class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
+                title="Matched Jobs & Opportunities">
                 <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-300"></i>
-                <span>Matched Jobs</span>
+                <span class="hidden xl:inline">Matched </span><span>Jobs</span>
                 <template x-if="tailoredData && tailoredData.matched_jobs && tailoredData.matched_jobs.length > 0">
                   <span class="px-1.5 py-0.2 bg-emerald-400/20 text-emerald-300 text-[9px] font-bold rounded-full" x-text="tailoredData.matched_jobs.length"></span>
                 </template>
@@ -112,19 +128,22 @@
             <div class="hidden sm:flex items-center space-x-1.5 xl:space-x-2 shrink-0 ml-auto">
               <template x-if="activeTab === 'resume'">
                 <button id="downloadResumeButton" @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
-                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition shrink-0">
+                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition shrink-0"
+                  title="Download Resume in PDF Format">
                   <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
-                  <span class="hidden xl:inline" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
-                  <span class="xl:hidden" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual' : 'Download ATS'"></span>
+                  <span class="hidden 2xl:inline" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+                  <span class="2xl:hidden" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(currentTemplate) ? 'Visual PDF' : 'ATS PDF'"></span>
                 </button>
               </template>
 
               <template x-if="activeTab === 'cover_letter'">
                 <button id="downloadCoverLetterButton" @click="downloadCoverLetterPdf()" :disabled="!tailoredData || isDownloading"
-                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition shrink-0">
+                  class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-violet-600/20 flex items-center gap-1.5 transition shrink-0"
+                  title="Download Tailored Cover Letter in PDF Format">
                   <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
-                  <span class="hidden xl:inline">Download Cover Letter (PDF)</span>
-                  <span class="xl:hidden">Download Cover Letter</span>
+                  <span class="hidden 2xl:inline">Download Cover Letter (PDF)</span>
+                  <span class="hidden md:inline 2xl:hidden">Download Letter</span>
+                  <span class="md:hidden">Letter PDF</span>
                 </button>
               </template>
 
@@ -160,7 +179,7 @@
 
           <!-- Row 2: Format & Template Switcher (Horizontal Touch Scroll on Mobile & Desktop) -->
           <template x-if="tailoredData && activeTab === 'resume'">
-            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+            <div class="format-switcher-container flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
               <span class="text-[9px] text-slate-400 px-1 font-bold uppercase shrink-0">ATS:</span>
               <button @click="setTemplate('classic')"
                 :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
@@ -203,7 +222,7 @@
 
           <!-- Portfolio Theme Selector -->
           <template x-if="tailoredData && activeTab === 'portfolio'">
-            <div class="flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+            <div class="format-switcher-container flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
               <span class="text-[9px] text-pink-400 px-1 font-bold uppercase shrink-0">Theme:</span>
               <button @click="setPortfolioTheme('aurora_white')"
                 :class="{'bg-sky-400 text-slate-950 font-bold shadow': portfolioTheme === 'aurora_white', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'aurora_white'}"
