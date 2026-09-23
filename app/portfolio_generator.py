@@ -3011,6 +3011,8 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
     full_name = safe_resume.personal_info.full_name or "Professional Portfolio"
     role_title = safe_resume.target_job_title or "Portfolio"
     summary = safe_resume.professional_summary or ""
+    safe_summary = sanitize_text(summary[:160]) if summary else f"{full_name}'s professional portfolio and verified credentials powered by DreemFolio AI."
+    og_img = safe_resume.personal_info.avatar_url if (safe_resume.personal_info.avatar_url and not safe_resume.personal_info.avatar_url.startswith("data:")) else "https://dreemfolio.com/static/images/hero_showcase.jpg"
 
     return f"""<!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
@@ -3019,7 +3021,17 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{full_name} — {role_title} | Portfolio</title>
   
-  <meta name="description" content="{summary[:160]}">
+  <meta name="description" content="{safe_summary}">
+  <meta property="og:site_name" content="DreemFolio AI">
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="{full_name} — {role_title} | Portfolio">
+  <meta property="og:description" content="{safe_summary}">
+  <meta property="og:image" content="{og_img}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{full_name} — {role_title} | Portfolio">
+  <meta name="twitter:description" content="{safe_summary}">
+  <meta name="twitter:image" content="{og_img}">
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

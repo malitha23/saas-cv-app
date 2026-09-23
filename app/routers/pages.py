@@ -179,9 +179,9 @@ Disallow: /paneladmin
 Disallow: /portfolio/preview/
 
 # Search Engine Sitemaps
-Sitemap: https://www.dreemfolio.com/sitemap.xml
 Sitemap: https://dreemfolio.com/sitemap.xml
-Host: https://www.dreemfolio.com
+Sitemap: https://www.dreemfolio.com/sitemap.xml
+Host: dreemfolio.com
 """
     return Response(content=content, media_type="text/plain")
 
