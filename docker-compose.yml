@@ -5,18 +5,14 @@ services:
     build: .
     container_name: fastapi_app_1
     restart: always
-    ports:
-      - "8001:8001"
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --workers 4
+    network_mode: "host"
+    command: uvicorn app.main:app --host 127.0.0.1 --port 8001 --workers 4
     env_file:
       - .env
     volumes:
-      - .:/app
+      - .:/app  # Local code changes container ekatath sync wenna (optional)
+      # Oyalage app eke uploads / PDFs save wen directory ekak thiyanawanam meka danna:
+      # - ./uploads:/app/uploads
     logging:
       driver: "json-file"
       options:
@@ -27,59 +23,15 @@ services:
     build: .
     container_name: fastapi_app_2
     restart: always
-    ports:
-      - "8002:8002"
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --workers 4
+    network_mode: "host"
+    command: uvicorn app.main:app --host 127.0.0.1 --port 8002 --workers 4
     env_file:
       - .env
     volumes:
       - .:/app
+      # - ./uploads:/app/uploads
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-
-
-# version: '3.8'
-
-# services:
-#   fastapi_app_1:
-#     build: .
-#     container_name: fastapi_app_1
-#     restart: always
-#     network_mode: "host"
-#     command: uvicorn app.main:app --host 127.0.0.1 --port 8001 --workers 4
-#     env_file:
-#       - .env
-#     volumes:
-#       - .:/app  # Local code changes container ekatath sync wenna (optional)
-#       # Oyalage app eke uploads / PDFs save wen directory ekak thiyanawanam meka danna:
-#       # - ./uploads:/app/uploads
-#     logging:
-#       driver: "json-file"
-#       options:
-#         max-size: "10m"
-#         max-file: "3"
-
-#   fastapi_app_2:
-#     build: .
-#     container_name: fastapi_app_2
-#     restart: always
-#     network_mode: "host"
-#     command: uvicorn app.main:app --host 127.0.0.1 --port 8002 --workers 4
-#     env_file:
-#       - .env
-#     volumes:
-#       - .:/app
-#       # - ./uploads:/app/uploads
-#     logging:
-#       driver: "json-file"
-#       options:
-#         max-size: "10m"
-#         max-file: "3"
