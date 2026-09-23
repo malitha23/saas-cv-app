@@ -803,10 +803,10 @@ Return ONLY valid JSON matching this schema:
     raw_json = None
     last_error = None
     models_to_try = [
-        "gemini-3.1-flash-lite",
         "gemini-3.5-flash-lite",
         "gemini-flash-lite-latest",
-        "gemini-3.6-flash",
+        "gemini-3.8-flash",
+        "gemini-flash-latest",
     ]
 
     # 1. Try official google.genai client with active models (with strict 12s timeout)
@@ -815,7 +815,7 @@ Return ONLY valid JSON matching this schema:
         from google.genai import types
 
         client = genai.Client(
-            api_key=api_key, http_options=types.HttpOptions(timeout=60000)
+            api_key=api_key, http_options=types.HttpOptions(timeout=12000)
         )
         for model_name in models_to_try:
             try:
@@ -853,7 +853,7 @@ Return ONLY valid JSON matching this schema:
                     "systemInstruction": {"parts": [{"text": ATS_SYSTEM_PROMPT}]},
                     "generationConfig": {"responseMimeType": "application/json"},
                 }
-                res = requests.post(url, json=payload, timeout=60)
+                res = requests.post(url, json=payload, timeout=12)
                 if res.status_code == 200:
                     resp_data = res.json()
                     candidates = resp_data.get("candidates", [])
@@ -948,16 +948,16 @@ def generate_gemini_text(
     if not k:
         return ""
     models_to_try = [
-        "gemini-3.1-flash-lite",
         "gemini-3.5-flash-lite",
         "gemini-flash-lite-latest",
-        "gemini-3.6-flash",
+        "gemini-3.8-flash",
+        "gemini-flash-latest",
     ]
     try:
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=k, http_options=types.HttpOptions(timeout=60000))
+        client = genai.Client(api_key=k, http_options=types.HttpOptions(timeout=15000))
         for m in models_to_try:
             try:
                 res = client.models.generate_content(
@@ -991,7 +991,7 @@ def generate_gemini_text(
                     "temperature": temperature,
                 },
             }
-            res = requests.post(url, json=payload, timeout=60)
+            res = requests.post(url, json=payload, timeout=12)
             if res.status_code == 200:
                 data = res.json()
                 parts = (
@@ -2523,10 +2523,10 @@ Rules:
     # Try Gemini API if key available
     if active_key and len(active_key) >= 20:
         models_to_try = [
-            "gemini-3.1-flash-lite",
             "gemini-3.5-flash-lite",
             "gemini-flash-lite-latest",
-            "gemini-3.6-flash",
+            "gemini-3.8-flash",
+            "gemini-flash-latest",
         ]
 
         # Build prompt from conversation
@@ -2540,7 +2540,7 @@ Rules:
             from google.genai import types
 
             client = genai.Client(
-                api_key=active_key, http_options=types.HttpOptions(timeout=60000)
+                api_key=active_key, http_options=types.HttpOptions(timeout=15000)
             )
             for model_name in models_to_try:
                 try:
@@ -2579,7 +2579,7 @@ Rules:
                     "systemInstruction": {"parts": [{"text": system_persona}]},
                     "generationConfig": {"temperature": 0.7},
                 }
-                res = requests.post(url, json=payload, timeout=60)
+                res = requests.post(url, json=payload, timeout=25)
                 if res.status_code == 200:
                     resp_data = res.json()
                     candidates = resp_data.get("candidates", [])
