@@ -40,7 +40,7 @@ function resumeApp() {
     showApiModal: false,
     showPricingModal: false,
     showDomainModal: false,
-    customDomainInput: '',
+    customDomainInput: (typeof localStorage !== 'undefined' ? localStorage.getItem('dreemfolio_custom_domain') : '') || '',
     editorTab: 'resume', // 'resume', 'design', 'cover_letter', 'portfolio'
     userApiKey: '',
     activeTab: 'resume', // 'resume', 'cover_letter', 'portfolio', 'text', 'jobs'
@@ -544,6 +544,15 @@ function resumeApp() {
         }
       } catch (err) {
         console.warn('Could not fetch sample data:', err);
+      }
+
+      // Restore cached custom domain
+      const cachedDomain = localStorage.getItem('dreemfolio_custom_domain');
+      if (cachedDomain) {
+        this.customDomainInput = cachedDomain;
+        if (this.tailoredData?.personal_info && !this.tailoredData.personal_info.custom_domain) {
+          this.tailoredData.personal_info.custom_domain = cachedDomain;
+        }
       }
 
       // Check first-time visitor tour
@@ -1610,9 +1619,20 @@ function resumeApp() {
     },
 
     // Custom Domain Manager
+    openDomainModal() {
+      if (this.tailoredData?.personal_info?.custom_domain) {
+        this.customDomainInput = this.tailoredData.personal_info.custom_domain;
+      } else {
+        const cached = localStorage.getItem('dreemfolio_custom_domain');
+        if (cached) this.customDomainInput = cached;
+      }
+      this.showDomainModal = true;
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
     async verifyDomain() {
       if (!this.customDomainInput.trim()) {
-        alert('Please enter your domain name (e.g. malitha.dev)');
+        alert('Please enter your domain name (e.g. malitha.dev or malith.dreemfolio.com)');
         return;
       }
       const slug = (this.tailoredData?.personal_info.full_name || 'developer').toLowerCase().replace(/\s+/g, '-');
@@ -1624,7 +1644,7 @@ function resumeApp() {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ domain: this.customDomainInput, slug: slug })
+          body: JSON.stringify({ domain: this.customDomainInput.trim(), slug: slug })
         });
 
         if (!res.ok) {
@@ -1645,10 +1665,14 @@ function resumeApp() {
 
         const data = await res.json();
         if (this.tailoredData) {
+          if (!this.tailoredData.personal_info) this.tailoredData.personal_info = {};
           this.tailoredData.personal_info.custom_domain = data.domain;
+          this.customDomainInput = data.domain;
           this.refreshAllPreviews();
+          await this.performAutoSave();
         }
-        alert(`✅ Domain "${data.domain}" verified!\nPoint your CNAME record to: cname.dreemfolio.com`);
+        localStorage.setItem('dreemfolio_custom_domain', data.domain);
+        alert(`✅ Domain "${data.domain}" verified!\nPoint your CNAME record to: cname.dreemfolio.com\n\nMake sure to click "Publish Live Portfolio" to activate your website!`);
         this.showDomainModal = false;
       } catch (err) {
         alert('Domain Error: ' + err.message);
@@ -1656,11 +1680,12 @@ function resumeApp() {
     },
 
     async verifyAndConnectDomain() {
-      if (!this.tailoredData?.personal_info.custom_domain) {
-        alert('Please enter your custom domain name');
+      const d = (this.tailoredData?.personal_info?.custom_domain || this.customDomainInput || '').trim();
+      if (!d) {
+        alert('Please enter your custom domain name (e.g. malitha.dev or malith.dreemfolio.com)');
         return;
       }
-      this.customDomainInput = this.tailoredData.personal_info.custom_domain;
+      this.customDomainInput = d;
       await this.verifyDomain();
     },
 
@@ -1712,7 +1737,9 @@ function resumeApp() {
         const data = await res.json();
         this.publishedLiveUrl = data.live_url;
         this.publishedSlug = data.slug;
-        alert(`🎉 Awesome! Your portfolio is now published live at:\n${window.location.origin}${data.live_url}`);
+        const dom = this.tailoredData?.personal_info?.custom_domain || this.customDomainInput;
+        const liveDomainUrl = dom ? `https://${dom}` : `${window.location.origin}${data.live_url}`;
+        alert(`🎉 Awesome! Your portfolio is now published live!\n\n🌐 Live Link: ${liveDomainUrl}\n🔗 Default Link: ${window.location.origin}${data.live_url}`);
       } catch (err) {
         alert('Publish Error: ' + err.message);
       } finally {
@@ -2675,6 +2702,12 @@ function resumeApp() {
             { label: 'System Uptime', value: '99.98%' },
             { label: 'Stack Skills', value: '25+' }
           ];
+        if (loadedResume.personal_info?.custom_domain) {
+          this.customDomainInput = loadedResume.personal_info.custom_domain;
+          localStorage.setItem('dreemfolio_custom_domain', loadedResume.personal_info.custom_domain);
+        } else if (this.customDomainInput) {
+          if (!loadedResume.personal_info) loadedResume.personal_info = {};
+          loadedResume.personal_info.custom_domain = this.customDomainInput;
         }
 
         this.showSavedResumesModal = false;

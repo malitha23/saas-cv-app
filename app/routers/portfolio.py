@@ -14,7 +14,8 @@ from app.portfolio_generator import (
 )
 from app.state import (
     PUBLISHED_PORTFOLIOS, PUBLISHED_RESUMES,
-    CUSTOM_DOMAINS, PIN_ATTEMPT_STORE, _get_client_ip
+    CUSTOM_DOMAINS, PIN_ATTEMPT_STORE, _get_client_ip,
+    save_published_portfolio, save_custom_domain_mapping, get_published_portfolio
 )
 
 router = APIRouter(tags=["Portfolio & Branding"])
@@ -83,14 +84,9 @@ async def publish_portfolio(
         slug = clean_name or "developer"
         
         html_code = generate_portfolio_html(resume, theme=theme, slug=slug)
-        PUBLISHED_PORTFOLIOS[slug] = html_code
+        save_published_portfolio(slug, html_code, resume.personal_info.custom_domain)
         PUBLISHED_RESUMES[slug] = resume
         
-        # If custom domain attached
-        if resume.personal_info.custom_domain:
-            domain_clean = resume.personal_info.custom_domain.strip().lower().replace("https://", "").replace("http://", "").rstrip('/')
-            CUSTOM_DOMAINS[domain_clean] = slug
-            
         live_url = f"/p/{slug}"
         
         return {
@@ -264,7 +260,7 @@ async def verify_custom_domain(
         raise HTTPException(status_code=400, detail="Please enter a valid domain format (e.g. 'malitha.dev' or 'portfolio.mybrand.com').")
 
     safe_slug = re.sub(r'[^a-zA-Z0-9_-]', '', req.slug)
-    CUSTOM_DOMAINS[domain_clean] = safe_slug
+    save_custom_domain_mapping(domain_clean, safe_slug)
     
     return {
         "success": True,
@@ -280,7 +276,7 @@ async def verify_custom_domain(
             {
                 "type": "A",
                 "name": "@",
-                "target": "76.76.21.21",
+                "target": "206.72.195.250",
                 "ttl": "3600",
                 "status": "Alternative"
             }
@@ -293,6 +289,7 @@ async def verify_custom_domain(
 @router.get("/p/{slug}", response_class=HTMLResponse)
 async def view_public_portfolio(slug: str):
     """Publicly accessible live candidate portfolio webpage."""
-    if slug in PUBLISHED_PORTFOLIOS:
-        return HTMLResponse(content=PUBLISHED_PORTFOLIOS[slug])
+    content = get_published_portfolio(slug)
+    if content:
+        return HTMLResponse(content=content)
     raise HTTPException(status_code=404, detail="Portfolio not found. Please publish it first from the dashboard.")

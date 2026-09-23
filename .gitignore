@@ -25,3 +25,7 @@ cv_saas_local.db
 scratch/
 .system_generated/
 *.log
+
+# Generated user portfolios
+app/static/published_portfolios/*.html
+app/static/published_portfolios/custom_domains.json

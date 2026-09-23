@@ -24,12 +24,112 @@ from app.auth import (
 templates_dir = os.path.join(os.path.dirname(__file__), "templates")
 templates = Jinja2Templates(directory=templates_dir)
 
+import json
+
 # ─────────────────────────────────────────────────────────────────────────────
-# IN-MEMORY CACHES & PUBLISHED DATA STORES
+# IN-MEMORY CACHES & PERSISTENT DATA STORES
 # ─────────────────────────────────────────────────────────────────────────────
 PUBLISHED_PORTFOLIOS: Dict[str, str] = {}
 PUBLISHED_RESUMES: Dict[str, TailoredResume] = {}
 CUSTOM_DOMAINS: Dict[str, str] = {}  # domain -> slug
+
+PORTFOLIO_STORAGE_DIR = os.path.join(os.path.dirname(__file__), "static", "published_portfolios")
+os.makedirs(PORTFOLIO_STORAGE_DIR, exist_ok=True)
+DOMAIN_MAP_FILE = os.path.join(PORTFOLIO_STORAGE_DIR, "custom_domains.json")
+
+
+def save_custom_domain_mapping(domain: str, slug: str):
+    """Persist custom domain to slug mapping across worker processes and restarts."""
+    if not domain:
+        return
+    domain_clean = domain.strip().lower().replace("https://", "").replace("http://", "").rstrip('/')
+    if not domain_clean:
+        return
+    CUSTOM_DOMAINS[domain_clean] = slug
+    if "." not in domain_clean:
+        CUSTOM_DOMAINS[f"{domain_clean}.dreemfolio.com"] = slug
+    elif domain_clean.endswith(".dreemfolio.com"):
+        sub = domain_clean[:-len(".dreemfolio.com")].strip()
+        if sub:
+            CUSTOM_DOMAINS[sub] = slug
+    try:
+        current_map = {}
+        if os.path.exists(DOMAIN_MAP_FILE):
+            with open(DOMAIN_MAP_FILE, "r", encoding="utf-8") as f:
+                current_map = json.load(f)
+        current_map[domain_clean] = slug
+        if "." not in domain_clean:
+            current_map[f"{domain_clean}.dreemfolio.com"] = slug
+        elif domain_clean.endswith(".dreemfolio.com"):
+            sub = domain_clean[:-len(".dreemfolio.com")].strip()
+            if sub:
+                current_map[sub] = slug
+        with open(DOMAIN_MAP_FILE, "w", encoding="utf-8") as f:
+            json.dump(current_map, f, indent=2)
+    except Exception as e:
+        print("[Domain Mapping Save Warning]", e)
+
+
+def save_published_portfolio(slug: str, html_content: str, domain: Optional[str] = None):
+    """Save published HTML to memory and disk, persisting across workers and restarts."""
+    PUBLISHED_PORTFOLIOS[slug] = html_content
+    try:
+        file_path = os.path.join(PORTFOLIO_STORAGE_DIR, f"{slug}.html")
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+    except Exception as e:
+        print("[Portfolio File Save Warning]", e)
+    if domain:
+        save_custom_domain_mapping(domain, slug)
+
+
+def get_published_portfolio(slug: str) -> Optional[str]:
+    """Retrieve published portfolio HTML from memory cache or shared disk storage."""
+    if slug in PUBLISHED_PORTFOLIOS:
+        return PUBLISHED_PORTFOLIOS[slug]
+    file_path = os.path.join(PORTFOLIO_STORAGE_DIR, f"{slug}.html")
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                PUBLISHED_PORTFOLIOS[slug] = content
+                return content
+        except Exception:
+            pass
+    return None
+
+
+def resolve_custom_domain_slug(domain: str) -> Optional[str]:
+    """Resolve a custom domain or personalized subdomain to its corresponding portfolio slug."""
+    domain_clean = domain.strip().lower().replace("https://", "").replace("http://", "").rstrip('/')
+    if domain_clean in CUSTOM_DOMAINS:
+        return CUSTOM_DOMAINS[domain_clean]
+    if os.path.exists(DOMAIN_MAP_FILE):
+        try:
+            with open(DOMAIN_MAP_FILE, "r", encoding="utf-8") as f:
+                current_map = json.load(f)
+                for d, s in current_map.items():
+                    CUSTOM_DOMAINS[d] = s
+                if domain_clean in CUSTOM_DOMAINS:
+                    return CUSTOM_DOMAINS[domain_clean]
+        except Exception:
+            pass
+
+    # Subdomain auto-resolution (e.g. malith.dreemfolio.com -> check 'malith' or 'malith-*')
+    if domain_clean.endswith(".dreemfolio.com"):
+        sub = domain_clean[:-len(".dreemfolio.com")].strip()
+        if sub:
+            # Check direct slug
+            if get_published_portfolio(sub):
+                return sub
+            # Check any file starting with sub
+            if os.path.exists(PORTFOLIO_STORAGE_DIR):
+                for fname in os.listdir(PORTFOLIO_STORAGE_DIR):
+                    if fname.endswith(".html"):
+                        base_slug = fname[:-5]
+                        if base_slug == sub or base_slug.startswith(f"{sub}-") or sub in base_slug:
+                            return base_slug
+    return None
 
 # Sensitive endpoints rate limits: (max_requests, window_seconds)
 RATE_LIMIT_RULES: Dict[str, tuple[int, int]] = {
