@@ -3012,7 +3012,7 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
     role_title = safe_resume.target_job_title or "Portfolio"
     summary = safe_resume.professional_summary or ""
     safe_summary = sanitize_text(summary[:160]) if summary else f"{full_name}'s professional portfolio and verified credentials powered by DreemFolio AI."
-    og_img = safe_resume.personal_info.avatar_url if (safe_resume.personal_info.avatar_url and not safe_resume.personal_info.avatar_url.startswith("data:")) else "https://dreemfolio.com/static/images/hero_showcase.jpg"
+    og_img = safe_resume.personal_info.avatar_url if (safe_resume.personal_info.avatar_url and not safe_resume.personal_info.avatar_url.startswith("data:")) else "https://www.dreemfolio.com/static/images/hero_showcase.jpg"
 
     return f"""<!DOCTYPE html>
 <html lang="en" class="scroll-smooth">

@@ -113,7 +113,7 @@ async def serve_feature_guide_page(
             "active_page": "guide",
             "page_title": "DreemFolio AI Feature Guide & Support Documentation — Step-by-Step Instructions & Plan Quotas",
             "page_description": "Comprehensive, step-by-step user guide for DreemFolio AI ATS resume builder, cover letters, mock interviews, and live portfolios. Detailed breakdown of Free, Pro, and Elite quotas.",
-            "canonical_url": "https://dreemfolio.com/guide"
+            "canonical_url": "https://www.dreemfolio.com/guide"
         }
     )
 
@@ -165,9 +165,8 @@ Disallow: /paneladmin
 Disallow: /portfolio/preview/
 
 # Search Engine Sitemaps
-Sitemap: https://dreemfolio.com/sitemap.xml
 Sitemap: https://www.dreemfolio.com/sitemap.xml
-Host: dreemfolio.com
+Host: www.dreemfolio.com
 """
     return Response(content=content, media_type="text/plain")
 
@@ -179,49 +178,49 @@ async def serve_sitemap_xml():
     sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://dreemfolio.com/</loc>
+    <loc>https://www.dreemfolio.com/</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/app</loc>
+    <loc>https://www.dreemfolio.com/app</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/guide</loc>
+    <loc>https://www.dreemfolio.com/guide</loc>
     <lastmod>{today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/contact</loc>
+    <loc>https://www.dreemfolio.com/contact</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/security</loc>
+    <loc>https://www.dreemfolio.com/security</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/privacy</loc>
+    <loc>https://www.dreemfolio.com/privacy</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/terms</loc>
+    <loc>https://www.dreemfolio.com/terms</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/refund</loc>
+    <loc>https://www.dreemfolio.com/refund</loc>
     <lastmod>{today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
