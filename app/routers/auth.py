@@ -142,9 +142,10 @@ async def auth_with_google(
                     detail="An account with this email address already exists. Please log in."
                 )
 
-        if req.referral_code:
+        incoming_ref = (req.referral_code or request.cookies.get("dreemfolio_ref") or "").strip()
+        if incoming_ref:
             try:
-                process_referral_signup(user, req.referral_code, db)
+                process_referral_signup(user, incoming_ref, db)
             except Exception as ref_err:
                 logger.warning("Referral processing error: %s", ref_err)
 
@@ -247,9 +248,10 @@ async def register_user(
             detail="An account with this email address already exists. Please log in."
         )
 
-    # Process Referral attribution if provided
-    if req.referral_code:
-        process_referral_signup(user, req.referral_code, db)
+    # Process Referral attribution if provided (or via 30-day cookie)
+    incoming_ref = (req.referral_code or request.cookies.get("dreemfolio_ref") or "").strip()
+    if incoming_ref:
+        process_referral_signup(user, incoming_ref, db)
 
     base_url = str(request.base_url).rstrip("/")
     send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)

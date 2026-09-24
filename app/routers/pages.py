@@ -357,14 +357,37 @@ async def serve_landing(request: Request):
     if payment_param:
         order_id = request.query_params.get("order_id", "")
         return RedirectResponse(url=f"/payment/status?order_id={order_id}&status={payment_param}", status_code=303)
-    return templates.TemplateResponse(request=request, name="landing.html")
+
+    response = templates.TemplateResponse(request=request, name="landing.html")
+    ref_param = request.query_params.get("ref")
+    if ref_param and ref_param.strip():
+        response.set_cookie(
+            key="dreemfolio_ref",
+            value=ref_param.strip(),
+            max_age=30 * 24 * 3600,  # 30-day affiliate attribution window
+            httponly=False,
+            samesite="lax",
+            path="/"
+        )
+    return response
 
 
 @router.get("/app", response_class=HTMLResponse)
 @router.get("/app/", response_class=HTMLResponse)
 async def serve_app(request: Request):
     """Serve the complete ATS AI Resume Builder, Editor & Portfolio Studio application."""
-    return templates.TemplateResponse(request=request, name="index.html")
+    response = templates.TemplateResponse(request=request, name="index.html")
+    ref_param = request.query_params.get("ref")
+    if ref_param and ref_param.strip():
+        response.set_cookie(
+            key="dreemfolio_ref",
+            value=ref_param.strip(),
+            max_age=30 * 24 * 3600,  # 30-day affiliate attribution window
+            httponly=False,
+            samesite="lax",
+            path="/"
+        )
+    return response
 
 
 @router.get("/builder")

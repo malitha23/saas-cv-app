@@ -254,6 +254,17 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
     started_str = user.subscription_started_at.strftime("%B %d, %Y") if user.subscription_started_at else None
     exp_str = user.subscription_expires_at.strftime("%B %d, %Y") if user.subscription_expires_at else None
 
+    # Ensure user has a unique referral code
+    ref_code = getattr(user, "referral_code", None)
+    if not ref_code and db is not None:
+        try:
+            from app.routers.auth import generate_unique_referral_code
+            ref_code = generate_unique_referral_code(db)
+            user.referral_code = ref_code
+            db.commit()
+        except Exception:
+            pass
+
     # Calculate referrals count
     referrals_count = 0
     if db is not None:

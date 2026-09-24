@@ -223,6 +223,21 @@
         linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
     }
   </style>
+
+  <!-- Immediate Referral Tracking Engine -->
+  <script>
+    (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var ref = params.get('ref');
+        if (ref && ref.trim()) {
+          var cleanRef = ref.trim();
+          localStorage.setItem('dreemfolio_ref', cleanRef);
+          document.cookie = "dreemfolio_ref=" + encodeURIComponent(cleanRef) + "; path=/; max-age=" + (30 * 24 * 60 * 60) + "; SameSite=Lax";
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body
@@ -1023,6 +1038,20 @@
           this.$nextTick(() => {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
               window.lucide.createIcons();
+            }
+
+            // Preserve active referral code across all app links
+            const activeRef = localStorage.getItem('dreemfolio_ref');
+            if (activeRef) {
+              document.querySelectorAll('a[href^="/app"]').forEach(link => {
+                try {
+                  const url = new URL(link.href, window.location.origin);
+                  if (!url.searchParams.has('ref')) {
+                    url.searchParams.set('ref', activeRef);
+                    link.href = url.pathname + url.search;
+                  }
+                } catch(e) {}
+              });
             }
 
             // High-converting Auto-Scroll to Target Section for SEO routes (/pricing, /features, /faq)

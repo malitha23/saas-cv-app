@@ -241,6 +241,13 @@ def get_user_affiliate_summary(user: User, db: Session) -> Dict[str, Any]:
     expire_stale_commissions(db)
     settings = get_affiliate_settings(db)
 
+    # Ensure user has a valid referral code
+    if not user.referral_code:
+        from app.routers.auth import generate_unique_referral_code
+        user.referral_code = generate_unique_referral_code(db)
+        db.commit()
+        db.refresh(user)
+
     # 1. Total referred registered users
     total_referrals_stmt = select(func.count(User.id)).where(User.referred_by_id == user.id)
     total_referrals_count = db.scalar(total_referrals_stmt) or 0

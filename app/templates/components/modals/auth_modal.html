@@ -31,6 +31,15 @@
         </button>
       </div>
 
+      <!-- Referral Invitation Badge when Ref Code detected -->
+      <div x-show="authMode === 'register' && getActiveReferralCode()" class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+          <i data-lucide="gift" class="w-4 h-4 text-pink-400 shrink-0"></i>
+          <span>Referral Link Applied: <strong class="font-mono text-emerald-200 font-bold" x-text="getActiveReferralCode()"></strong></span>
+        </div>
+        <span class="text-[10px] font-black uppercase bg-emerald-500/25 text-emerald-300 px-2 py-0.5 rounded-full">+1 Bonus</span>
+      </div>
+
       <!-- Prompt Alert when triggered by action -->
       <template x-if="authPromptMessage && authMode !== 'forgot'">
         <div class="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs flex items-center gap-2">

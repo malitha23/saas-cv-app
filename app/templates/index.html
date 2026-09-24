@@ -22,6 +22,21 @@
     })();
   </script>
 
+  <!-- Immediate Referral Tracking Engine -->
+  <script>
+    (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var ref = params.get('ref');
+        if (ref && ref.trim()) {
+          var cleanRef = ref.trim();
+          localStorage.setItem('dreemfolio_ref', cleanRef);
+          document.cookie = "dreemfolio_ref=" + encodeURIComponent(cleanRef) + "; path=/; max-age=" + (30 * 24 * 60 * 60) + "; SameSite=Lax";
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-9K8HE8EJ3W"></script>
   <script>

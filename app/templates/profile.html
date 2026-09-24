@@ -482,7 +482,7 @@
           <div class="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 shrink-0">
             <div class="text-center px-3 border-r border-slate-800">
               <span class="text-[10px] text-slate-400 uppercase font-bold block">Referral Code</span>
-              <span class="font-mono font-black text-indigo-300 text-sm" x-text="currentUser?.referral_code || 'DF-2026'"></span>
+              <span class="font-mono font-black text-indigo-300 text-sm" x-text="affiliateStats?.referral_code || currentUser?.referral_code || 'DF-2026'"></span>
             </div>
             <div class="text-center px-3">
               <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads</span>
@@ -1398,7 +1398,7 @@
         copiedReferral: false,
 
         getReferralUrl() {
-          const code = this.currentUser?.referral_code || '';
+          const code = this.affiliateStats?.referral_code || this.currentUser?.referral_code || '';
           const base = window.location.origin;
           return `${base}/?ref=${code}`;
         },

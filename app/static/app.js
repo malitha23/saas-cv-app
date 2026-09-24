@@ -2139,6 +2139,24 @@ function resumeApp() {
     // SAAS AUTHENTICATION & MYSQL CLOUD METHODS
     // ─────────────────────────────────────────────────────────────────────────
 
+    getActiveReferralCode() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRef = urlParams.get('ref');
+        if (urlRef && urlRef.trim()) {
+          localStorage.setItem('dreemfolio_ref', urlRef.trim());
+          return urlRef.trim();
+        }
+        const stored = localStorage.getItem('dreemfolio_ref');
+        if (stored && stored.trim()) return stored.trim();
+        const match = document.cookie.match(/(?:^|;\s*)dreemfolio_ref=([^;]+)/);
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]).trim();
+        }
+      } catch (e) {}
+      return null;
+    },
+
     openAuthModal(mode = 'login', promptMessage = '') {
       this.authMode = mode;
       this.authError = '';
@@ -2162,9 +2180,9 @@ function resumeApp() {
       };
       if (this.authMode === 'register') {
         payload.full_name = this.authForm.full_name || 'Candidate';
-        const refStored = localStorage.getItem('dreemfolio_ref');
-        if (refStored && refStored.trim()) {
-          payload.referral_code = refStored.trim();
+        const refStored = this.getActiveReferralCode();
+        if (refStored) {
+          payload.referral_code = refStored;
         }
       }
 
@@ -2379,14 +2397,14 @@ function resumeApp() {
       this.authError = '';
 
       try {
-        const refStored = localStorage.getItem('dreemfolio_ref');
+        const refStored = this.getActiveReferralCode();
         const res = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             credential: googleResponse.credential,
             client_id: this.googleClientId || null,
-            referral_code: (refStored && refStored.trim()) ? refStored.trim() : null
+            referral_code: refStored || null
           })
         });
 
