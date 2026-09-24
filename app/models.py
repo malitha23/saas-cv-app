@@ -62,6 +62,13 @@ class User(Base):
     online_orders: Mapped[List["OnlinePaymentOrder"]] = relationship(
         "OnlinePaymentOrder", back_populates="user", cascade="all, delete-orphan"
     )
+    # Relationships to affiliate commissions & payout requests
+    earned_commissions: Mapped[List["AffiliateCommission"]] = relationship(
+        "AffiliateCommission", foreign_keys="[AffiliateCommission.referrer_id]", back_populates="referrer", cascade="all, delete-orphan"
+    )
+    affiliate_withdrawals: Mapped[List["AffiliateWithdrawal"]] = relationship(
+        "AffiliateWithdrawal", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}', plan='{self.plan_tier}', admin={self.is_admin})>"
@@ -284,5 +291,62 @@ class QueuedEmail(Base):
 
     def __repr__(self) -> str:
         return f"<QueuedEmail(id={self.id}, to='{self.recipient_email}', status='{self.status}', attempts={self.attempts})>"
+
+
+class AffiliateCommission(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Referral & Affiliate Commissions.
+    Tracks earnings generated when referred users upgrade or purchase subscriptions.
+    Includes automated balance expiration protection (e.g. 90 days validity).
+    """
+    __tablename__ = "affiliate_commissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    referrer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    buyer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    order_id: Mapped[Optional[str]] = mapped_column(String(100), index=True, nullable=True)
+    order_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    commission_rate: Mapped[float] = mapped_column(Float, nullable=False, default=20.0)
+    commission_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    status: Mapped[str] = mapped_column(String(30), default="active", index=True, nullable=False)  # active, withdrawn, expired, revoked
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    expired_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    referrer: Mapped["User"] = relationship("User", foreign_keys=[referrer_id], back_populates="earned_commissions")
+    buyer: Mapped["User"] = relationship("User", foreign_keys=[buyer_id])
+
+    def __repr__(self) -> str:
+        return f"<AffiliateCommission(id={self.id}, referrer={self.referrer_id}, buyer={self.buyer_id}, amount={self.commission_amount}, status='{self.status}')>"
+
+
+class AffiliateWithdrawal(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Affiliate Payout Requests.
+    Enables candidates to request bank transfers when exceeding the withdrawal limit.
+    Includes admin approval, rejection with reason, and bank transaction tracking.
+    """
+    __tablename__ = "affiliate_withdrawals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    account_holder_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    branch_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True, nullable=False)  # pending, paid, rejected
+    payout_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Bank ref no / slip ID
+    admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    requested_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    processed_by_admin: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="affiliate_withdrawals")
+
+    def __repr__(self) -> str:
+        return f"<AffiliateWithdrawal(id={self.id}, user_id={self.user_id}, amount={self.amount}, status='{self.status}')>"
+
 
 

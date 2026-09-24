@@ -159,6 +159,16 @@
                 class="px-2 py-0.5 rounded-full bg-amber-500 text-[10px] font-black text-slate-950 animate-pulse"
                 x-text="emailQueueStats.pending"></span>
         </button>
+
+        <button @click="activeTab = 'affiliate'; loadAdminAffiliate()"
+          :class="activeTab === 'affiliate' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="share-2" class="w-4 h-4"></i>
+          <span>Affiliate & Referrals (විකුණුම් කොමිස්)</span>
+          <span x-show="affiliateData?.pending_withdrawals && affiliateData.pending_withdrawals.length > 0"
+                class="px-2 py-0.5 rounded-full bg-rose-500 text-[10px] font-black text-white animate-pulse"
+                x-text="affiliateData?.pending_withdrawals ? affiliateData.pending_withdrawals.length : 0"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -1814,6 +1824,353 @@
           </div>
         </div>
       </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 9: AFFILIATE & VIRAL REFERRAL ENGINE (CASH COMMISSIONS)           -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'affiliate'" class="space-y-6">
+        <!-- Header Banner -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-emerald-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-semibold">
+              <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              <span>Viral Growth & Partner Operations</span>
+            </div>
+            <h2 class="text-xl font-black text-white tracking-tight">Affiliate Program & Payouts Center</h2>
+            <p class="text-xs text-slate-400">Configure revenue-share commissions, manage bank withdrawals, and automate balance expiry.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button @click="runAdminExpiryJob()" :disabled="isRunningExpiryJob"
+                    class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2 transition disabled:opacity-50">
+              <i data-lucide="clock" class="w-4 h-4" :class="{'animate-spin': isRunningExpiryJob}"></i>
+              <span x-text="isRunningExpiryJob ? 'Evaluating...' : 'Run Expiry Sweep Now'"></span>
+            </button>
+
+            <button @click="loadAdminAffiliate()" :disabled="isLoadingAffiliate"
+                    class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition">
+              <i data-lucide="refresh-cw" class="w-4 h-4" :class="{'animate-spin': isLoadingAffiliate}"></i>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 KPI Metrics Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Metric 1: Active Liability -->
+          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Active Liability Balance</span>
+            <div class="text-2xl font-black text-emerald-400 font-mono">
+              LKR <span x-text="Number(affiliateData?.metrics?.active_liability_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+            </div>
+            <p class="text-[11px] text-slate-500">Unclaimed with-drawable candidate balance</p>
+          </div>
+
+          <!-- Metric 2: Pending Withdrawals -->
+          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1"
+               :class="{'border-amber-500/40 bg-amber-950/20': affiliateData?.metrics?.pending_payout_count > 0}">
+            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Pending Bank Payouts</span>
+            <div class="text-2xl font-black font-mono" :class="affiliateData?.metrics?.pending_payout_count > 0 ? 'text-amber-400' : 'text-slate-300'">
+              LKR <span x-text="Number(affiliateData?.metrics?.pending_payout_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-bold" x-text="(affiliateData?.metrics?.pending_payout_count || 0) + ' requests awaiting transfer'"></p>
+          </div>
+
+          <!-- Metric 3: Total Paid Out -->
+          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Total Transferred Payouts</span>
+            <div class="text-2xl font-black text-indigo-300 font-mono">
+              LKR <span x-text="Number(affiliateData?.metrics?.total_paid_out || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+            </div>
+            <p class="text-[11px] text-slate-500">All-time settled bank payouts</p>
+          </div>
+
+          <!-- Metric 4: Expired Protected Amount -->
+          <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1">
+            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Protected Expired Balance</span>
+            <div class="text-2xl font-black text-slate-300 font-mono">
+              LKR <span x-text="Number(affiliateData?.metrics?.total_expired_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+            </div>
+            <p class="text-[11px] text-slate-500">Safeguarded company liabilities past expiry</p>
+          </div>
+        </div>
+
+        <!-- Dynamic Configuration Panel -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                <i data-lucide="sliders" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-base">Affiliate & Commission Engine Parameters</h3>
+                <p class="text-xs text-slate-400">Configure global revenue-share, expiry duration, and payout thresholds</p>
+              </div>
+            </div>
+
+            <button @click="saveAdminAffiliateSettings()" :disabled="isSavingAffiliateSettings"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition disabled:opacity-50">
+              <i data-lucide="save" class="w-4 h-4" :class="{'animate-spin': isSavingAffiliateSettings}"></i>
+              <span x-text="isSavingAffiliateSettings ? 'Saving...' : 'Save Settings'"></span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
+            <!-- Setting 1: Program Status -->
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <label class="block font-bold text-slate-300">Program Status</label>
+              <div class="flex items-center gap-3 pt-1">
+                <input type="checkbox" id="affiliate_enabled_toggle" x-model="affiliateForm.enabled"
+                       class="w-5 h-5 rounded bg-slate-900 border-slate-700 text-emerald-600 focus:ring-0 cursor-pointer">
+                <label for="affiliate_enabled_toggle" class="cursor-pointer font-bold"
+                       :class="affiliateForm.enabled ? 'text-emerald-400' : 'text-slate-500'"
+                       x-text="affiliateForm.enabled ? 'Enabled (Active)' : 'Disabled (Paused)'"></label>
+              </div>
+              <p class="text-[10px] text-slate-500">Toggle whether candidates can earn commissions</p>
+            </div>
+
+            <!-- Setting 2: Commission Rate -->
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <label class="block font-bold text-slate-300">Commission Rate (%)</label>
+              <div class="relative">
+                <input type="number" step="0.5" min="1" max="100" x-model.number="affiliateForm.commission_rate"
+                       class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-emerald-500 outline-none">
+                <span class="absolute right-3 top-2 text-slate-500 font-bold">%</span>
+              </div>
+              <p class="text-[10px] text-slate-500">% of paid plan price awarded to referrer</p>
+            </div>
+
+            <!-- Setting 3: Min Withdrawal -->
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <label class="block font-bold text-slate-300">Min. Withdrawal Limit</label>
+              <div class="relative">
+                <span class="absolute left-3 top-2 text-slate-500 font-bold">LKR</span>
+                <input type="number" step="100" min="500" x-model.number="affiliateForm.min_withdrawal"
+                       class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-12 pr-3 py-2 text-white font-mono font-bold focus:border-emerald-500 outline-none">
+              </div>
+              <p class="text-[10px] text-slate-500">Threshold required before payout unlock</p>
+            </div>
+
+            <!-- Setting 4: Expiry Days -->
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <label class="block font-bold text-slate-300">Earnings Expiry (Days)</label>
+              <div class="relative">
+                <input type="number" min="7" max="365" x-model.number="affiliateForm.expiry_days"
+                       class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-emerald-500 outline-none">
+                <span class="absolute right-3 top-2 text-slate-500 font-bold">Days</span>
+              </div>
+              <p class="text-[10px] text-slate-500">Auto-expires unclaimed earnings after X days</p>
+            </div>
+
+            <!-- Setting 5: Commission Scope -->
+            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <label class="block font-bold text-slate-300">Commission Scope</label>
+              <select x-model="affiliateForm.commission_rule"
+                      class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:border-emerald-500 outline-none font-bold">
+                <option value="first_purchase">First Paid Plan Only</option>
+                <option value="all_purchases">All Future Purchases (Lifetime)</option>
+              </select>
+              <p class="text-[10px] text-slate-500">Rule for attribution of upgrades</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Bank Transfer Withdrawals Table -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-xl space-y-4">
+          <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                <i data-lucide="landmark" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-sm">Pending Withdrawal Requests (බැංකු ගෙවීම් සඳහා ඉල්ලීම්)</h3>
+                <p class="text-[11px] text-slate-400">Transfer funds to candidate's bank and confirm with transaction reference</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold"
+                  :class="affiliateData?.pending_withdrawals?.length > 0 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-slate-800 text-slate-400'"
+                  x-text="(affiliateData?.pending_withdrawals?.length || 0) + ' Pending'"></span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Req # / Date</th>
+                  <th class="py-3 px-4">Candidate</th>
+                  <th class="py-3 px-4">Requested Amount</th>
+                  <th class="py-3 px-4">Bank & Branch</th>
+                  <th class="py-3 px-4">Account Number & Name</th>
+                  <th class="py-3 px-4">Contact Phone</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <template x-for="w in (affiliateData?.pending_withdrawals || [])" :key="w.id">
+                  <tr class="hover:bg-slate-950/50">
+                    <td class="py-3.5 px-4 font-mono text-[11px]">
+                      <span class="font-bold text-white" x-text="'#' + w.id"></span>
+                      <span class="block text-slate-500" x-text="w.requested_at"></span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <div class="font-bold text-white" x-text="w.user_name"></div>
+                      <div class="text-[11px] text-slate-400 font-mono" x-text="w.user_email"></div>
+                    </td>
+                    <td class="py-3.5 px-4 font-black text-emerald-400 font-mono text-sm">
+                      LKR <span x-text="Number(w.amount).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <div class="font-bold text-white" x-text="w.bank_name"></div>
+                      <div class="text-[11px] text-slate-400" x-text="'Branch: ' + w.branch_name"></div>
+                    </td>
+                    <td class="py-3.5 px-4">
+                      <div class="font-mono font-bold text-indigo-300 text-sm" x-text="w.account_number"></div>
+                      <div class="text-[11px] text-slate-300" x-text="w.account_holder_name"></div>
+                    </td>
+                    <td class="py-3.5 px-4 font-mono" x-text="w.contact_phone || '—'"></td>
+                    <td class="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
+                      <button @click="openApprovePayoutModal(w)"
+                              class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition inline-flex items-center gap-1 shadow-lg shadow-emerald-600/20">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                        <span>Approve & Pay</span>
+                      </button>
+                      <button @click="rejectPayoutRequest(w.id)"
+                              class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 font-bold text-xs transition inline-flex items-center gap-1">
+                        <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                        <span>Reject</span>
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!affiliateData?.pending_withdrawals || affiliateData?.pending_withdrawals.length === 0">
+                  <td colspan="7" class="py-8 text-center text-slate-500 italic">
+                    <i data-lucide="check-circle" class="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-60"></i>
+                    <p>No pending payout requests. All partner withdrawals are settled!</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top Referrers Leaderboard -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-xl space-y-4">
+          <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                <i data-lucide="trophy" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-sm">Top Referrers & Affiliates Leaderboard</h3>
+                <p class="text-[11px] text-slate-400">Highest-performing candidates generating paid customer subscriptions</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Rank</th>
+                  <th class="py-3 px-4">Partner Name</th>
+                  <th class="py-3 px-4">Email</th>
+                  <th class="py-3 px-4">Paid Sales Generated</th>
+                  <th class="py-3 px-4 text-right">Total Commission Earned</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <template x-for="(r, idx) in (affiliateData?.top_referrers || [])" :key="r.id">
+                  <tr class="hover:bg-slate-950/50">
+                    <td class="py-3.5 px-4 font-mono font-black" :class="idx === 0 ? 'text-amber-400 text-sm' : (idx === 1 ? 'text-slate-300' : (idx === 2 ? 'text-amber-600' : 'text-slate-500'))">
+                      <span x-text="'#' + (idx + 1)"></span>
+                    </td>
+                    <td class="py-3.5 px-4 font-bold text-white" x-text="r.full_name"></td>
+                    <td class="py-3.5 px-4 font-mono text-slate-400" x-text="r.email"></td>
+                    <td class="py-3.5 px-4 font-black font-mono text-emerald-400">
+                      <span x-text="r.total_sales + ' upgrades'"></span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-black font-mono text-indigo-300">
+                      LKR <span x-text="Number(r.total_earned).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!affiliateData?.top_referrers || affiliateData?.top_referrers.length === 0">
+                  <td colspan="5" class="py-6 text-center text-slate-500 italic">
+                    No affiliate sales recorded yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Approve Payout Modal -->
+        <div x-show="selectedPayoutRequest" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4" @click.outside="selectedPayoutRequest = null">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-sm" x-text="'Confirm Payout #' + (selectedPayoutRequest?.id || '')"></h3>
+                  <p class="text-[11px] text-slate-400">Record bank transfer reference number and notify partner</p>
+                </div>
+              </div>
+              <button @click="selectedPayoutRequest = null" class="text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs space-y-2">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Candidate:</span>
+                <span class="font-bold text-white" x-text="selectedPayoutRequest?.user_name + ' (' + selectedPayoutRequest?.user_email + ')'"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Transfer Amount:</span>
+                <span class="font-black text-emerald-400 text-sm font-mono">LKR <span x-text="Number(selectedPayoutRequest?.amount || 0).toLocaleString()"></span></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Bank & Branch:</span>
+                <span class="font-bold text-white" x-text="selectedPayoutRequest?.bank_name + ' • ' + selectedPayoutRequest?.branch_name"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Account Number:</span>
+                <span class="font-mono font-bold text-indigo-300" x-text="selectedPayoutRequest?.account_number"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Account Holder:</span>
+                <span class="font-bold text-white" x-text="selectedPayoutRequest?.account_holder_name"></span>
+              </div>
+            </div>
+
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Bank Transfer Reference ID / Slip ID *</label>
+                <input type="text" x-model="payoutRefInput" placeholder="e.g. CEFT-847291 or SLIP-0924"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold focus:border-emerald-500 outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Admin Notes (Optional)</label>
+                <input type="text" x-model="payoutNotesInput" placeholder="Sent via Sampath Vishwa / Commercial Bank"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button type="button" @click="selectedPayoutRequest = null" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">
+                Cancel
+              </button>
+              <button type="button" @click="confirmApprovePayout()" :disabled="isApprovingPayout"
+                      class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 disabled:opacity-50">
+                <i data-lucide="check" class="w-3.5 h-3.5" :class="{'animate-spin': isApprovingPayout}"></i>
+                <span x-text="isApprovingPayout ? 'Processing...' : 'Mark as Transferred & Paid'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Admin Footer -->
@@ -1977,7 +2334,8 @@
               this.loadAdminDiscounts(),
               this.loadPayHereSubscriptions(),
               this.loadAdminPromos(),
-              this.loadEmailQueue()
+              this.loadEmailQueue(),
+              this.loadAdminAffiliate()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -2733,6 +3091,171 @@
             }
           } catch (e) {
             alert('Delete error: ' + e.message);
+          }
+        },
+
+        // ─────────────────────────────────────────────────────────────
+        // AFFILIATE & VIRAL REFERRAL ENGINE
+        // ─────────────────────────────────────────────────────────────
+        affiliateData: null,
+        isLoadingAffiliate: false,
+        isSavingAffiliateSettings: false,
+        isRunningExpiryJob: false,
+        isApprovingPayout: false,
+        selectedPayoutRequest: null,
+        payoutRefInput: '',
+        payoutNotesInput: '',
+        affiliateForm: {
+          enabled: true,
+          commission_rate: 20.0,
+          min_withdrawal: 2000.0,
+          expiry_days: 90,
+          commission_rule: 'first_purchase'
+        },
+
+        async loadAdminAffiliate() {
+          this.isLoadingAffiliate = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/affiliate/overview', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.affiliateData = data;
+              if (data.settings) {
+                this.affiliateForm.enabled = !!data.settings.enabled;
+                this.affiliateForm.commission_rate = data.settings.commission_rate;
+                this.affiliateForm.min_withdrawal = data.settings.min_withdrawal;
+                this.affiliateForm.expiry_days = data.settings.expiry_days;
+                this.affiliateForm.commission_rule = data.settings.commission_rule || 'first_purchase';
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to load affiliate overview:', e);
+          } finally {
+            this.isLoadingAffiliate = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async saveAdminAffiliateSettings() {
+          this.isSavingAffiliateSettings = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/affiliate/settings', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(this.affiliateForm)
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert('Affiliate program parameters saved successfully!');
+              await this.loadAdminAffiliate();
+            } else {
+              alert('Error saving settings: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Error connecting to server: ' + e.message);
+          } finally {
+            this.isSavingAffiliateSettings = false;
+          }
+        },
+
+        openApprovePayoutModal(withdrawal) {
+          this.selectedPayoutRequest = withdrawal;
+          this.payoutRefInput = '';
+          this.payoutNotesInput = '';
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        async confirmApprovePayout() {
+          if (!this.selectedPayoutRequest) return;
+          if (!this.payoutRefInput.trim()) {
+            alert('Please enter bank transfer reference ID / slip number.');
+            return;
+          }
+
+          this.isApprovingPayout = true;
+          const token = localStorage.getItem('saas_token');
+          const id = this.selectedPayoutRequest.id;
+
+          try {
+            const res = await fetch(`/api/admin/affiliate/withdrawals/${id}/approve`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                payout_reference: this.payoutRefInput.trim(),
+                admin_notes: this.payoutNotesInput.trim() || undefined
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(data.message || 'Payout approved and marked as Paid!');
+              this.selectedPayoutRequest = null;
+              await this.loadAdminAffiliate();
+            } else {
+              alert('Approval failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Server error: ' + e.message);
+          } finally {
+            this.isApprovingPayout = false;
+          }
+        },
+
+        async rejectPayoutRequest(withdrawalId) {
+          if (!withdrawalId) return;
+          const reason = prompt('Please enter the reason for rejecting this payout request (e.g. Invalid account number):');
+          if (!reason || !reason.trim()) return;
+
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/affiliate/withdrawals/${withdrawalId}/reject`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ reason: reason.trim() })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(data.message || 'Payout rejected. Balance returned to user.');
+              await this.loadAdminAffiliate();
+            } else {
+              alert('Rejection failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Error: ' + e.message);
+          }
+        },
+
+        async runAdminExpiryJob() {
+          this.isRunningExpiryJob = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/affiliate/run-expiry', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`Expiry sweep complete! Expired ${data.expired_commissions_count} commissions.`);
+              await this.loadAdminAffiliate();
+            } else {
+              alert('Expiry sweep failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (e) {
+            alert('Error: ' + e.message);
+          } finally {
+            this.isRunningExpiryJob = false;
           }
         },
 

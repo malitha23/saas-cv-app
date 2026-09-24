@@ -757,6 +757,18 @@ async def payhere_ipn_notify(
             for ps in pending_slips:
                 ps.admin_notes = f"Superseded: User activated {order.target_plan.upper()} ({cycle}) via PayHere card payment (Order: {order.order_id})"
 
+            # Affiliate Revenue-Share Engine: Record commission if user was referred
+            try:
+                from app.services.affiliate_service import record_commission_on_payment
+                record_commission_on_payment(
+                    buyer=candidate,
+                    order_amount=order.amount,
+                    order_id=order.order_id,
+                    db=db
+                )
+            except Exception as aff_err:
+                logger.warning("Affiliate commission hook warning (order %s): %s", order.order_id, aff_err)
+
             base_url = PayHereGateway.get_base_url()
 
             # Dispatch non-blocking background emails to customer & admin
@@ -925,6 +937,18 @@ def sync_order_status_from_payhere(
                 db=db,
                 background_tasks=background_tasks
             )
+
+            # Affiliate Revenue-Share Engine: Record commission if user was referred
+            try:
+                from app.services.affiliate_service import record_commission_on_payment
+                record_commission_on_payment(
+                    buyer=candidate,
+                    order_amount=order.amount,
+                    order_id=order.order_id,
+                    db=db
+                )
+            except Exception as aff_err:
+                logger.warning("Affiliate commission hook warning (order %s): %s", order.order_id, aff_err)
 
         db.commit()
         return "success"

@@ -48,7 +48,7 @@ from app.pricing import (
     _get_country_pricing_dict,
 )
 from app.routers.payments import sync_order_status_from_payhere
-from app.routers import auth, resume, portfolio, payments, career, admin, pages
+from app.routers import auth, resume, portfolio, payments, career, admin, pages, affiliate
 
 # Configure logging
 logger = logging.getLogger("dreemfolio.main")
@@ -261,5 +261,6 @@ app.include_router(resume.router)
 app.include_router(portfolio.router)
 app.include_router(payments.router)
 app.include_router(career.router)
+app.include_router(affiliate.router)
 app.include_router(admin.router)
 app.include_router(pages.router)

@@ -306,6 +306,18 @@ async def admin_approve_bank_slip(
     db.refresh(candidate)
     db.refresh(slip)
 
+    # Affiliate Revenue-Share Engine: Record commission if user was referred
+    try:
+        from app.services.affiliate_service import record_commission_on_payment
+        record_commission_on_payment(
+            buyer=candidate,
+            order_amount=slip.amount_paid,
+            order_id=f"BANK-SLIP-{slip.id}",
+            db=db
+        )
+    except Exception as aff_err:
+        logger.warning("Affiliate commission hook warning for bank slip %s: %s", slip.id, aff_err)
+
     return {
         "success": True,
         "message": f"Successfully activated {actual_tier.upper()} plan for {candidate.email} (+{days} days)! Slip marked approved.",

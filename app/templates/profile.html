@@ -460,32 +460,104 @@
       </div>
 
       <!-- ───────────────────────────────────────────────────────────── -->
-      <!-- VIRAL REFERRAL PROGRAM: REFER & EARN LIFETIME ATS DOWNLOADS    -->
+      <!-- VIRAL REFERRAL & PARTNER EARNING ENGINE (REFER & EARN CASH)     -->
       <!-- ───────────────────────────────────────────────────────────── -->
-      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-purple-950/30 border border-indigo-500/30 shadow-2xl space-y-5 relative overflow-hidden">
-        <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-purple-950/30 border border-indigo-500/30 shadow-2xl space-y-6 relative overflow-hidden">
+        <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
+        <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="space-y-1">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
-              <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i>
-              <span>Invite Friends & Earn Free ATS Downloads</span>
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i>
+              <span>DreemFolio AI Partner & Affiliate Program</span>
             </div>
-            <h3 class="text-xl font-black text-white tracking-tight">Your Unique Referral Invitation Link</h3>
+            <h3 class="text-xl font-black text-white tracking-tight">Refer Friends & Earn Cash Commissions</h3>
             <p class="text-xs text-slate-400 max-w-2xl">
-              Give your classmates and colleagues an edge! Every time someone signs up using your link, you automatically receive <b class="text-emerald-400">+1 Free ATS PDF Download</b> added directly to your account.
+              Invite your classmates and colleagues! When someone signs up, you get <b class="text-indigo-300">+1 ATS Download</b>. When they upgrade to any paid plan, you earn an instant <b class="text-emerald-400 font-bold" x-text="(affiliateStats?.commission_rate || 20) + '% Cash Commission'"></b> credited to your balance, withdrawable directly to your Sri Lankan bank account!
             </p>
           </div>
 
-          <!-- Referral Stats Badge -->
+          <!-- Referral Code Badge -->
           <div class="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 shrink-0">
             <div class="text-center px-3 border-r border-slate-800">
               <span class="text-[10px] text-slate-400 uppercase font-bold block">Referral Code</span>
               <span class="font-mono font-black text-indigo-300 text-sm" x-text="currentUser?.referral_code || 'DF-2026'"></span>
             </div>
             <div class="text-center px-3">
-              <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads Earned</span>
+              <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads</span>
               <span class="font-mono font-black text-emerald-400 text-sm" x-text="'+' + (currentUser?.referral_bonus_downloads || 0)"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Balance Cards Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          <!-- Card 1: Available Balance -->
+          <div class="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 relative overflow-hidden flex flex-col justify-between">
+            <div class="space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Available Balance</span>
+              <div class="text-2xl font-black text-emerald-400 font-mono">
+                LKR <span x-text="Number(affiliateStats?.available_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button @click="openWithdrawModal()"
+                      :disabled="!affiliateStats?.can_withdraw"
+                      class="w-full py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-lg"
+                      :class="affiliateStats?.can_withdraw ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'">
+                <i data-lucide="arrow-down-to-line" class="w-3.5 h-3.5"></i>
+                <span x-text="affiliateStats?.has_pending_withdrawal ? 'Payout Pending Review' : 'Request Payout'"></span>
+              </button>
+              <div class="text-[10px] text-slate-500 text-center mt-1 font-mono" x-show="!affiliateStats?.can_withdraw && !affiliateStats?.has_pending_withdrawal">
+                Min. LKR <span x-text="Number(affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()"></span> to withdraw
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Total Earned All Time -->
+          <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
+            <div class="space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Total Cash Earned</span>
+              <div class="text-2xl font-black text-indigo-300 font-mono">
+                LKR <span x-text="Number(affiliateStats?.total_earned || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2">
+              Paid Out: <span class="font-bold text-slate-200">LKR <span x-text="Number(affiliateStats?.total_paid_out || 0).toLocaleString()"></span></span>
+            </div>
+          </div>
+
+          <!-- Card 3: Total Referrals -->
+          <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between">
+            <div class="space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Friends Invited</span>
+              <div class="text-2xl font-black text-white font-mono">
+                <span x-text="affiliateStats?.total_referrals_count || 0"></span>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2">
+              Paid Upgrades: <span class="font-bold text-emerald-400" x-text="affiliateStats?.paid_referrals_count || 0"></span>
+            </div>
+          </div>
+
+          <!-- Card 4: Expiration Guard Notice -->
+          <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between"
+               :class="{'border-amber-500/40 bg-amber-950/20': affiliateStats?.days_until_earliest_expiry !== null && affiliateStats?.days_until_earliest_expiry <= 30}">
+            <div class="space-y-1">
+              <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Earnings Expiry</span>
+              <div class="text-lg font-black font-mono"
+                   :class="affiliateStats?.days_until_earliest_expiry !== null && affiliateStats?.days_until_earliest_expiry <= 14 ? 'text-rose-400' : 'text-amber-300'">
+                <template x-if="affiliateStats?.days_until_earliest_expiry !== null">
+                  <span x-text="affiliateStats?.days_until_earliest_expiry + ' days left'"></span>
+                </template>
+                <template x-if="affiliateStats?.days_until_earliest_expiry === null">
+                  <span class="text-slate-500 text-sm">No active expiry</span>
+                </template>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-2">
+              Valid for <span class="font-bold text-slate-300" x-text="(affiliateStats?.expiry_days_config || 90) + ' days'"></span> from award date.
             </div>
           </div>
         </div>
@@ -510,9 +582,207 @@
               <i data-lucide="share-2" class="w-4 h-4"></i>
               <span>WhatsApp</span>
             </a>
+
+            <!-- Toggle History -->
+            <button @click="showAffiliateHistory = !showAffiliateHistory"
+                    class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-2xl transition flex items-center gap-2 border border-slate-700">
+              <i data-lucide="history" class="w-4 h-4"></i>
+              <span x-text="showAffiliateHistory ? 'Hide History' : 'View History'"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Earnings & Payout History Section -->
+        <div x-show="showAffiliateHistory" x-cloak class="pt-4 border-t border-slate-800/80 space-y-4">
+          <div class="flex items-center gap-3">
+            <button @click="affiliateHistoryTab = 'commissions'"
+                    :class="affiliateHistoryTab === 'commissions' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800/80 text-slate-400 hover:text-white'"
+                    class="px-3.5 py-1.5 rounded-xl text-xs transition">
+              Commissions Log (<span x-text="affiliateStats?.commissions?.length || 0"></span>)
+            </button>
+            <button @click="affiliateHistoryTab = 'payouts'"
+                    :class="affiliateHistoryTab === 'payouts' ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-800/80 text-slate-400 hover:text-white'"
+                    class="px-3.5 py-1.5 rounded-xl text-xs transition">
+              Payout Requests (<span x-text="affiliateStats?.withdrawals?.length || 0"></span>)
+            </button>
+          </div>
+
+          <!-- Commissions Table -->
+          <div x-show="affiliateHistoryTab === 'commissions'" class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-2.5 px-4">Date</th>
+                  <th class="py-2.5 px-4">Friend</th>
+                  <th class="py-2.5 px-4">Plan Price</th>
+                  <th class="py-2.5 px-4">Your Commission</th>
+                  <th class="py-2.5 px-4">Status</th>
+                  <th class="py-2.5 px-4">Expires</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <template x-for="c in (affiliateStats?.commissions || [])" :key="c.id">
+                  <tr class="hover:bg-slate-900/40">
+                    <td class="py-2.5 px-4 text-slate-400 font-mono" x-text="c.created_at"></td>
+                    <td class="py-2.5 px-4 font-semibold text-white" x-text="c.buyer_name"></td>
+                    <td class="py-2.5 px-4 font-mono">LKR <span x-text="Number(c.order_amount).toLocaleString()"></span></td>
+                    <td class="py-2.5 px-4 font-bold text-emerald-400 font-mono">LKR <span x-text="Number(c.commission_amount).toLocaleString()"></span></td>
+                    <td class="py-2.5 px-4">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                            :class="{
+                              'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': c.status === 'active',
+                              'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30': c.status === 'withdrawn',
+                              'bg-rose-500/15 text-rose-300 border border-rose-500/30': c.status === 'expired'
+                            }"
+                            x-text="c.status"></span>
+                    </td>
+                    <td class="py-2.5 px-4 font-mono text-[11px]" :class="c.days_left <= 14 && c.status === 'active' ? 'text-amber-400 font-bold' : 'text-slate-400'">
+                      <span x-text="c.expires_at"></span>
+                      <span x-show="c.status === 'active'" class="text-[10px] block text-slate-500" x-text="'(' + c.days_left + 'd left)'"></span>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!affiliateStats?.commissions || affiliateStats?.commissions.length === 0">
+                  <td colspan="6" class="py-6 text-center text-slate-500 italic">
+                    No commissions earned yet. Share your invitation link with friends to get your first reward!
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Payouts Table -->
+          <div x-show="affiliateHistoryTab === 'payouts'" class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/60">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/80 text-slate-400 font-bold uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-2.5 px-4">Requested At</th>
+                  <th class="py-2.5 px-4">Amount</th>
+                  <th class="py-2.5 px-4">Bank Details</th>
+                  <th class="py-2.5 px-4">Status</th>
+                  <th class="py-2.5 px-4">Reference / Note</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <template x-for="w in (affiliateStats?.withdrawals || [])" :key="w.id">
+                  <tr class="hover:bg-slate-900/40">
+                    <td class="py-2.5 px-4 text-slate-400 font-mono" x-text="w.requested_at"></td>
+                    <td class="py-2.5 px-4 font-black text-emerald-400 font-mono">LKR <span x-text="Number(w.amount).toLocaleString()"></span></td>
+                    <td class="py-2.5 px-4">
+                      <div class="font-bold text-white" x-text="w.bank_name + ' (' + w.branch_name + ')'"></div>
+                      <div class="text-[11px] font-mono text-slate-400" x-text="w.account_holder_name + ' • ' + w.account_number_masked"></div>
+                    </td>
+                    <td class="py-2.5 px-4">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                            :class="{
+                              'bg-amber-500/15 text-amber-300 border border-amber-500/30': w.status === 'pending',
+                              'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': w.status === 'paid',
+                              'bg-rose-500/15 text-rose-300 border border-rose-500/30': w.status === 'rejected'
+                            }"
+                            x-text="w.status"></span>
+                    </td>
+                    <td class="py-2.5 px-4 font-mono text-[11px]">
+                      <span class="text-indigo-300 font-bold" x-text="w.payout_reference || '—'"></span>
+                      <span x-show="w.admin_notes" class="block text-[10px] text-slate-400 mt-0.5" x-text="w.admin_notes"></span>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!affiliateStats?.withdrawals || affiliateStats?.withdrawals.length === 0">
+                  <td colspan="5" class="py-6 text-center text-slate-500 italic">
+                    No withdrawal requests submitted yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- WITHDRAWAL REQUEST MODAL                                       -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <div x-show="showWithdrawModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5" @click.outside="showWithdrawModal = false">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="arrow-down-to-line" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-white text-base">Request Bank Payout</h3>
+                <p class="text-[11px] text-slate-400">Withdraw accumulated referral earnings</p>
+              </div>
+            </div>
+            <button @click="showWithdrawModal = false" class="text-slate-400 hover:text-white transition">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <div class="space-y-4 text-xs">
+            <!-- Amount Input -->
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Withdrawal Amount (LKR) *</label>
+              <div class="relative">
+                <span class="absolute left-3 top-2.5 text-slate-500 font-bold">LKR</span>
+                <input type="number" x-model.number="withdrawForm.amount"
+                       :min="affiliateStats?.min_withdrawal_limit || 2000"
+                       :max="affiliateStats?.available_balance || 0"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-2.5 text-white font-mono font-bold focus:border-emerald-500 outline-none">
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1">
+                Withdrawable: LKR <span class="font-bold text-emerald-400" x-text="Number(affiliateStats?.available_balance || 0).toLocaleString()"></span>
+                • Min: LKR <span x-text="Number(affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()"></span>
+              </p>
+            </div>
+
+            <!-- Bank Name & Branch -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Bank Name *</label>
+                <input type="text" x-model="withdrawForm.bank_name" placeholder="e.g. Commercial Bank"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Branch *</label>
+                <input type="text" x-model="withdrawForm.branch_name" placeholder="e.g. Kollupitiya"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+              </div>
+            </div>
+
+            <!-- Account Number & Account Holder Name -->
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Account Number *</label>
+              <input type="text" x-model="withdrawForm.account_number" placeholder="Enter bank account number"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-emerald-500 outline-none">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Account Holder Full Name *</label>
+              <input type="text" x-model="withdrawForm.account_holder_name" placeholder="As registered with your bank"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Contact Phone Number (Optional)</label>
+              <input type="text" x-model="withdrawForm.contact_phone" placeholder="07X XXX XXXX"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button type="button" @click="showWithdrawModal = false" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+              Cancel
+            </button>
+            <button type="button" @click="submitWithdrawalRequest()" :disabled="isSubmittingWithdrawal"
+                    class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition disabled:opacity-50">
+              <i data-lucide="check" class="w-4 h-4" :class="{'animate-spin': isSubmittingWithdrawal}"></i>
+              <span x-text="isSubmittingWithdrawal ? 'Submitting...' : 'Confirm Withdrawal'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
 
       <!-- ───────────────────────────────────────────────────────────── -->
       <!-- ROW 2: PAYMENT & SUBSCRIPTION BILLING HISTORY                 -->
@@ -962,6 +1232,9 @@
               this.onlineOrders = histData.online_orders || [];
               this.bankSlips = histData.bank_slips || [];
             }
+
+            // 3. Fetch affiliate stats & referral earnings
+            await this.loadAffiliateStats();
           } catch (err) {
             this.errorMessage = err.message || 'Error connecting to server';
           } finally {
@@ -969,6 +1242,90 @@
             this.$nextTick(() => {
               if (window.lucide) window.lucide.createIcons();
             });
+          }
+        },
+
+        // ─────────────────────────────────────────────────────────────
+        // REFERRAL & AFFILIATE LOGIC
+        // ─────────────────────────────────────────────────────────────
+        affiliateStats: null,
+        showAffiliateHistory: false,
+        affiliateHistoryTab: 'commissions',
+        showWithdrawModal: false,
+        isSubmittingWithdrawal: false,
+        withdrawForm: {
+          amount: 2000,
+          bank_name: '',
+          branch_name: '',
+          account_number: '',
+          account_holder_name: '',
+          contact_phone: ''
+        },
+
+        async loadAffiliateStats() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          try {
+            const res = await fetch('/api/affiliate/dashboard', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.affiliateStats = await res.json();
+            }
+          } catch (e) {
+            console.warn('Failed to load affiliate stats:', e);
+          }
+        },
+
+        openWithdrawModal() {
+          if (!this.affiliateStats?.can_withdraw) return;
+          this.withdrawForm.amount = this.affiliateStats.available_balance;
+          if (this.currentUser?.full_name) {
+            this.withdrawForm.account_holder_name = this.currentUser.full_name;
+          }
+          this.showWithdrawModal = true;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        async submitWithdrawalRequest() {
+          const f = this.withdrawForm;
+          if (!f.bank_name || !f.branch_name || !f.account_number || !f.account_holder_name) {
+            alert('Please fill in all mandatory bank details.');
+            return;
+          }
+          if (f.amount < (this.affiliateStats?.min_withdrawal_limit || 2000)) {
+            alert(`Minimum withdrawal amount is LKR ${(this.affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()}`);
+            return;
+          }
+          if (f.amount > (this.affiliateStats?.available_balance || 0)) {
+            alert('Requested amount exceeds your available balance.');
+            return;
+          }
+
+          this.isSubmittingWithdrawal = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/affiliate/withdraw', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(f)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data.detail || 'Withdrawal request failed');
+            }
+            this.showWithdrawModal = false;
+            this.showToast('Withdrawal request submitted! Our finance team will review and transfer the funds.');
+            await this.loadAffiliateStats();
+            this.showAffiliateHistory = true;
+            this.affiliateHistoryTab = 'payouts';
+          } catch (err) {
+            alert('Withdrawal Error: ' + err.message);
+          } finally {
+            this.isSubmittingWithdrawal = false;
           }
         },
 
