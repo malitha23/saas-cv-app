@@ -29,12 +29,14 @@ router = APIRouter(tags=["Refer & Earn / Affiliate Program"])
 # PYDANTIC SCHEMAS
 # ─────────────────────────────────────────────────────────────────────────────
 class WithdrawalRequestSchema(BaseModel):
-    amount: float = Field(..., gt=0, description="Amount to withdraw in LKR")
-    bank_name: str = Field(..., min_length=2, max_length=100, description="Name of the bank")
-    account_number: str = Field(..., min_length=4, max_length=50, description="Bank account number")
+    amount: float = Field(..., gt=0, description="Amount to withdraw (in LKR or USD)")
+    bank_name: str = Field(..., min_length=2, max_length=100, description="Name of the bank or payout method (e.g. PayPal, Wise)")
+    account_number: str = Field(..., min_length=2, max_length=150, description="Bank account number, IBAN, or PayPal/Wise email")
     account_holder_name: str = Field(..., min_length=2, max_length=150, description="Name of account holder")
-    branch_name: str = Field(..., min_length=2, max_length=100, description="Branch name")
+    branch_name: Optional[str] = Field("Main", max_length=100, description="Branch name or International")
     contact_phone: Optional[str] = Field(None, max_length=50, description="Contact phone number")
+    currency: Optional[str] = Field("LKR", max_length=10, description="Currency of request (LKR or USD)")
+    payout_method: Optional[str] = Field("bank", max_length=50, description="bank, paypal, wise, payoneer, crypto")
 
 
 class AdminUpdateAffiliateSettingsSchema(BaseModel):
@@ -101,11 +103,14 @@ async def submit_withdrawal_request(
             account_holder_name=req.account_holder_name,
             branch_name=req.branch_name,
             contact_phone=req.contact_phone,
+            currency=req.currency or "LKR",
+            payout_method=req.payout_method or "bank",
             db=db
         )
+        display_amt = f"${req.amount:,.2f} USD" if req.currency == "USD" else f"LKR {withdrawal.amount:,.2f}"
         return {
             "success": True,
-            "message": f"Withdrawal request for LKR {withdrawal.amount:,.2f} submitted successfully! Our finance team will review and transfer the funds to your account.",
+            "message": f"Withdrawal request for {display_amt} submitted successfully! Our finance team will review and transfer the funds.",
             "withdrawal_id": withdrawal.id
         }
     except ValueError as ve:

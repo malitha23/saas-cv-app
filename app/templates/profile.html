@@ -474,19 +474,38 @@
             </div>
             <h3 class="text-xl font-black text-white tracking-tight">Refer Friends & Earn Cash Commissions</h3>
             <p class="text-xs text-slate-400 max-w-2xl">
-              Invite your classmates and colleagues! When someone signs up, you get <b class="text-indigo-300">+1 ATS Download</b>. When they upgrade to any paid plan, you earn an instant <b class="text-emerald-400 font-bold" x-text="(affiliateStats?.commission_rate || 20) + '% Cash Commission'"></b> credited to your balance, withdrawable directly to your Sri Lankan bank account!
+              Invite your classmates and colleagues! When someone signs up, you get <b class="text-indigo-300">+1 ATS Download</b>. When they upgrade to any paid plan, you earn an instant <b class="text-emerald-400 font-bold" x-text="(affiliateStats?.commission_rate || 20) + '% Cash Commission'"></b> credited to your balance, <span x-text="selectedAffiliateCurrency === 'USD' ? 'withdrawable directly via PayPal, Wise, or International Bank Wire!' : 'withdrawable directly to your Sri Lankan bank account!'"></span>
             </p>
           </div>
 
-          <!-- Referral Code Badge -->
-          <div class="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 shrink-0">
-            <div class="text-center px-3 border-r border-slate-800">
-              <span class="text-[10px] text-slate-400 uppercase font-bold block">Referral Code</span>
-              <span class="font-mono font-black text-indigo-300 text-sm" x-text="affiliateStats?.referral_code || currentUser?.referral_code || 'DF-2026'"></span>
+          <!-- Currency Switcher & Referral Code Badge -->
+          <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+            <!-- Currency Switcher Pill -->
+            <div class="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-slate-800 text-[11px] font-bold">
+              <button type="button" @click="setAffiliateCurrency('LKR')"
+                      :class="selectedAffiliateCurrency === 'LKR' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                      class="px-2.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                <span>🇱🇰</span>
+                <span>LKR</span>
+              </button>
+              <button type="button" @click="setAffiliateCurrency('USD')"
+                      :class="selectedAffiliateCurrency === 'USD' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                      class="px-2.5 py-1.5 rounded-xl transition flex items-center gap-1.5">
+                <span>🌐</span>
+                <span>USD ($)</span>
+              </button>
             </div>
-            <div class="text-center px-3">
-              <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads</span>
-              <span class="font-mono font-black text-emerald-400 text-sm" x-text="'+' + (currentUser?.referral_bonus_downloads || 0)"></span>
+
+            <!-- Referral Code Badge -->
+            <div class="flex items-center gap-3 bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
+              <div class="text-center px-3 border-r border-slate-800">
+                <span class="text-[10px] text-slate-400 uppercase font-bold block">Referral Code</span>
+                <span class="font-mono font-black text-indigo-300 text-sm" x-text="affiliateStats?.referral_code || currentUser?.referral_code || 'DF-2026'"></span>
+              </div>
+              <div class="text-center px-3">
+                <span class="text-[10px] text-slate-400 uppercase font-bold block">Bonus Downloads</span>
+                <span class="font-mono font-black text-emerald-400 text-sm" x-text="'+' + (currentUser?.referral_bonus_downloads || 0)"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -498,7 +517,7 @@
             <div class="space-y-1">
               <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Available Balance</span>
               <div class="text-2xl font-black text-emerald-400 font-mono">
-                LKR <span x-text="Number(affiliateStats?.available_balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                <span x-text="formatAffiliateAmount(affiliateStats?.available_balance, affiliateStats?.available_balance_usd)"></span>
               </div>
             </div>
             <div class="mt-3">
@@ -510,7 +529,7 @@
                 <span x-text="affiliateStats?.has_pending_withdrawal ? 'Payout Pending Review' : 'Request Payout'"></span>
               </button>
               <div class="text-[10px] text-slate-500 text-center mt-1 font-mono" x-show="!affiliateStats?.can_withdraw && !affiliateStats?.has_pending_withdrawal">
-                Min. LKR <span x-text="Number(affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()"></span> to withdraw
+                Min. <span x-text="formatAffiliateAmount(affiliateStats?.min_withdrawal_limit, affiliateStats?.min_withdrawal_limit_usd)"></span> to withdraw
               </div>
             </div>
           </div>
@@ -520,11 +539,11 @@
             <div class="space-y-1">
               <span class="text-[11px] text-slate-400 uppercase font-bold tracking-wider block">Total Cash Earned</span>
               <div class="text-2xl font-black text-indigo-300 font-mono">
-                LKR <span x-text="Number(affiliateStats?.total_earned || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                <span x-text="formatAffiliateAmount(affiliateStats?.total_earned, affiliateStats?.total_earned_usd)"></span>
               </div>
             </div>
             <div class="text-[11px] text-slate-400 mt-2">
-              Paid Out: <span class="font-bold text-slate-200">LKR <span x-text="Number(affiliateStats?.total_paid_out || 0).toLocaleString()"></span></span>
+              Paid Out: <span class="font-bold text-slate-200" x-text="formatAffiliateAmount(affiliateStats?.total_paid_out, affiliateStats?.total_paid_out_usd)"></span>
             </div>
           </div>
 
@@ -701,6 +720,9 @@
       <!-- ───────────────────────────────────────────────────────────── -->
       <!-- WITHDRAWAL REQUEST MODAL                                       -->
       <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- ───────────────────────────────────────────────────────────── -->
+      <!-- WITHDRAWAL REQUEST MODAL (MULTI-CURRENCY & INTERNATIONAL)      -->
+      <!-- ───────────────────────────────────────────────────────────── -->
       <div x-show="showWithdrawModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5" @click.outside="showWithdrawModal = false">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -709,8 +731,8 @@
                 <i data-lucide="arrow-down-to-line" class="w-5 h-5"></i>
               </div>
               <div>
-                <h3 class="font-bold text-white text-base">Request Bank Payout</h3>
-                <p class="text-[11px] text-slate-400">Withdraw accumulated referral earnings</p>
+                <h3 class="font-bold text-white text-base" x-text="selectedAffiliateCurrency === 'USD' ? 'Request International Payout' : 'Request Bank Payout'"></h3>
+                <p class="text-[11px] text-slate-400" x-text="selectedAffiliateCurrency === 'USD' ? 'Withdraw earnings via PayPal, Wise, or Direct Wire' : 'Withdraw earnings to Sri Lankan bank account'"></p>
               </div>
             </div>
             <button @click="showWithdrawModal = false" class="text-slate-400 hover:text-white transition">
@@ -718,55 +740,146 @@
             </button>
           </div>
 
+          <!-- Currency & Method Selection for International -->
+          <div x-show="selectedAffiliateCurrency === 'USD'" class="space-y-2">
+            <label class="block font-bold text-slate-300 text-xs">Select Payout Method</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" @click="payoutMethod = 'paypal'; withdrawForm.bank_name = 'PayPal'"
+                      :class="payoutMethod === 'paypal' ? 'bg-indigo-600 border-indigo-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                      class="p-2.5 rounded-xl border text-center text-xs transition flex flex-col items-center gap-1">
+                <span class="font-bold">PayPal</span>
+                <span class="text-[10px] text-indigo-300">Fast & Global</span>
+              </button>
+              <button type="button" @click="payoutMethod = 'wise'; withdrawForm.bank_name = 'Wise'"
+                      :class="payoutMethod === 'wise' ? 'bg-indigo-600 border-indigo-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                      class="p-2.5 rounded-xl border text-center text-xs transition flex flex-col items-center gap-1">
+                <span class="font-bold">Wise</span>
+                <span class="text-[10px] text-emerald-300">Low Fee Bank</span>
+              </button>
+              <button type="button" @click="payoutMethod = 'bank'; withdrawForm.bank_name = ''"
+                      :class="payoutMethod === 'bank' ? 'bg-indigo-600 border-indigo-500 text-white font-bold' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'"
+                      class="p-2.5 rounded-xl border text-center text-xs transition flex flex-col items-center gap-1">
+                <span class="font-bold">Bank Wire</span>
+                <span class="text-[10px] text-slate-400">SWIFT / IBAN</span>
+              </button>
+            </div>
+          </div>
+
           <div class="space-y-4 text-xs">
             <!-- Amount Input -->
             <div>
-              <label class="block font-bold text-slate-300 mb-1">Withdrawal Amount (LKR) *</label>
+              <label class="block font-bold text-slate-300 mb-1" x-text="selectedAffiliateCurrency === 'USD' ? 'Withdrawal Amount (USD) *' : 'Withdrawal Amount (LKR) *'"></label>
               <div class="relative">
-                <span class="absolute left-3 top-2.5 text-slate-500 font-bold">LKR</span>
-                <input type="number" x-model.number="withdrawForm.amount"
-                       :min="affiliateStats?.min_withdrawal_limit || 2000"
-                       :max="affiliateStats?.available_balance || 0"
+                <span class="absolute left-3 top-2.5 text-slate-500 font-bold" x-text="selectedAffiliateCurrency === 'USD' ? '$' : 'LKR'"></span>
+                <input type="number" step="0.01" x-model.number="withdrawForm.amount"
+                       :min="selectedAffiliateCurrency === 'USD' ? (affiliateStats?.min_withdrawal_limit_usd || 7) : (affiliateStats?.min_withdrawal_limit || 2000)"
+                       :max="selectedAffiliateCurrency === 'USD' ? (affiliateStats?.available_balance_usd || 0) : (affiliateStats?.available_balance || 0)"
                        class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-12 pr-4 py-2.5 text-white font-mono font-bold focus:border-emerald-500 outline-none">
               </div>
               <p class="text-[11px] text-slate-500 mt-1">
-                Withdrawable: LKR <span class="font-bold text-emerald-400" x-text="Number(affiliateStats?.available_balance || 0).toLocaleString()"></span>
-                • Min: LKR <span x-text="Number(affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()"></span>
+                Withdrawable: <span class="font-bold text-emerald-400" x-text="formatAffiliateAmount(affiliateStats?.available_balance, affiliateStats?.available_balance_usd)"></span>
+                • Min: <span x-text="formatAffiliateAmount(affiliateStats?.min_withdrawal_limit, affiliateStats?.min_withdrawal_limit_usd)"></span>
               </p>
             </div>
 
-            <!-- Bank Name & Branch -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-300 mb-1">Bank Name *</label>
-                <input type="text" x-model="withdrawForm.bank_name" placeholder="e.g. Commercial Bank"
-                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+            <!-- Fields for International: PayPal -->
+            <template x-if="selectedAffiliateCurrency === 'USD' && payoutMethod === 'paypal'">
+              <div class="space-y-3">
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Your PayPal Account Email *</label>
+                  <input type="email" x-model="withdrawForm.account_number" placeholder="e.g. yourname@example.com"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                  <p class="text-[10px] text-slate-500 mt-1">Funds will be sent directly to this PayPal account.</p>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Account Holder Full Name *</label>
+                  <input type="text" x-model="withdrawForm.account_holder_name" placeholder="As shown on your PayPal profile"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                </div>
               </div>
-              <div>
-                <label class="block font-bold text-slate-300 mb-1">Branch *</label>
-                <input type="text" x-model="withdrawForm.branch_name" placeholder="e.g. Kollupitiya"
-                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+            </template>
+
+            <!-- Fields for International: Wise -->
+            <template x-if="selectedAffiliateCurrency === 'USD' && payoutMethod === 'wise'">
+              <div class="space-y-3">
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Wise Account Email or IBAN *</label>
+                  <input type="text" x-model="withdrawForm.account_number" placeholder="e.g. wise@email.com or GB33BUKB60161331926819"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Beneficiary Full Name *</label>
+                  <input type="text" x-model="withdrawForm.account_holder_name" placeholder="Full name registered on Wise"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                </div>
               </div>
-            </div>
+            </template>
 
-            <!-- Account Number & Account Holder Name -->
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">Account Number *</label>
-              <input type="text" x-model="withdrawForm.account_number" placeholder="Enter bank account number"
-                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-emerald-500 outline-none">
-            </div>
+            <!-- Fields for International: Bank Wire -->
+            <template x-if="selectedAffiliateCurrency === 'USD' && payoutMethod === 'bank'">
+              <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-300 mb-1">Bank Name *</label>
+                    <input type="text" x-model="withdrawForm.bank_name" placeholder="e.g. Barclays, JPMorgan"
+                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-300 mb-1">SWIFT / BIC Code *</label>
+                    <input type="text" x-model="withdrawForm.branch_name" placeholder="e.g. CHASUS33"
+                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white uppercase focus:border-indigo-500 outline-none">
+                  </div>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Account Number / IBAN *</label>
+                  <input type="text" x-model="withdrawForm.account_number" placeholder="Enter international account number or IBAN"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-indigo-500 outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Beneficiary Name *</label>
+                  <input type="text" x-model="withdrawForm.account_holder_name" placeholder="Full name on bank account"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
+                </div>
+              </div>
+            </template>
 
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">Account Holder Full Name *</label>
-              <input type="text" x-model="withdrawForm.account_holder_name" placeholder="As registered with your bank"
-                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
-            </div>
+            <!-- Fields for Sri Lanka (LKR) -->
+            <template x-if="selectedAffiliateCurrency === 'LKR'">
+              <div class="space-y-3">
+                <!-- Bank Name & Branch -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-300 mb-1">Bank Name *</label>
+                    <input type="text" x-model="withdrawForm.bank_name" placeholder="e.g. Commercial Bank"
+                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-300 mb-1">Branch *</label>
+                    <input type="text" x-model="withdrawForm.branch_name" placeholder="e.g. Kollupitiya"
+                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+                  </div>
+                </div>
+
+                <!-- Account Number & Account Holder Name -->
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Account Number *</label>
+                  <input type="text" x-model="withdrawForm.account_number" placeholder="Enter bank account number"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-emerald-500 outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-300 mb-1">Account Holder Full Name *</label>
+                  <input type="text" x-model="withdrawForm.account_holder_name" placeholder="As registered with your bank"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+                </div>
+              </div>
+            </template>
 
             <!-- Phone Number -->
             <div>
               <label class="block font-bold text-slate-300 mb-1">Contact Phone Number (Optional)</label>
-              <input type="text" x-model="withdrawForm.contact_phone" placeholder="07X XXX XXXX"
-                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
+              <input type="text" x-model="withdrawForm.contact_phone" placeholder="Contact number / WhatsApp"
+                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-indigo-500 outline-none">
             </div>
           </div>
 
@@ -1246,9 +1359,11 @@
         },
 
         // ─────────────────────────────────────────────────────────────
-        // REFERRAL & AFFILIATE LOGIC
+        // REFERRAL & AFFILIATE LOGIC (MULTI-CURRENCY SUPPORT)
         // ─────────────────────────────────────────────────────────────
         affiliateStats: null,
+        selectedAffiliateCurrency: localStorage.getItem('dreemfolio_affiliate_currency') || (localStorage.getItem('dreemfolio_country') === 'LK' ? 'LKR' : 'USD'),
+        payoutMethod: 'paypal', // for USD: 'paypal', 'wise', 'bank'
         showAffiliateHistory: false,
         affiliateHistoryTab: 'commissions',
         showWithdrawModal: false,
@@ -1259,7 +1374,29 @@
           branch_name: '',
           account_number: '',
           account_holder_name: '',
-          contact_phone: ''
+          contact_phone: '',
+          currency: 'LKR',
+          payout_method: 'bank'
+        },
+
+        setAffiliateCurrency(curr) {
+          this.selectedAffiliateCurrency = curr;
+          localStorage.setItem('dreemfolio_affiliate_currency', curr);
+          if (curr === 'USD') {
+            this.payoutMethod = 'paypal';
+          } else {
+            this.payoutMethod = 'bank';
+          }
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        formatAffiliateAmount(lkrVal, usdVal) {
+          if (this.selectedAffiliateCurrency === 'USD') {
+            const val = (usdVal !== undefined && usdVal !== null) ? usdVal : ((lkrVal || 0) / (this.affiliateStats?.usd_rate || 300));
+            return '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          } else {
+            return 'LKR ' + Number(lkrVal || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
         },
 
         async loadAffiliateStats() {
@@ -1271,6 +1408,11 @@
             });
             if (res.ok) {
               this.affiliateStats = await res.json();
+              // Auto-detect currency preference if user hasn't manually set one
+              if (!localStorage.getItem('dreemfolio_affiliate_currency')) {
+                const country = this.currentUser?.country_code || localStorage.getItem('dreemfolio_country') || 'LK';
+                this.selectedAffiliateCurrency = (country === 'LK') ? 'LKR' : 'USD';
+              }
             }
           } catch (e) {
             console.warn('Failed to load affiliate stats:', e);
@@ -1279,7 +1421,18 @@
 
         openWithdrawModal() {
           if (!this.affiliateStats?.can_withdraw) return;
-          this.withdrawForm.amount = this.affiliateStats.available_balance;
+          const isUsd = this.selectedAffiliateCurrency === 'USD';
+          this.withdrawForm.currency = isUsd ? 'USD' : 'LKR';
+          this.withdrawForm.payout_method = isUsd ? this.payoutMethod : 'bank';
+          this.withdrawForm.amount = isUsd ? (this.affiliateStats.available_balance_usd || 0) : this.affiliateStats.available_balance;
+          if (isUsd) {
+            this.withdrawForm.bank_name = this.payoutMethod === 'paypal' ? 'PayPal' : (this.payoutMethod === 'wise' ? 'Wise' : '');
+            this.withdrawForm.branch_name = 'International / Online';
+          } else {
+            this.withdrawForm.bank_name = '';
+            this.withdrawForm.branch_name = '';
+          }
+          this.withdrawForm.account_number = '';
           if (this.currentUser?.full_name) {
             this.withdrawForm.account_holder_name = this.currentUser.full_name;
           }
@@ -1289,17 +1442,60 @@
 
         async submitWithdrawalRequest() {
           const f = this.withdrawForm;
-          if (!f.bank_name || !f.branch_name || !f.account_number || !f.account_holder_name) {
-            alert('Please fill in all mandatory bank details.');
-            return;
-          }
-          if (f.amount < (this.affiliateStats?.min_withdrawal_limit || 2000)) {
-            alert(`Minimum withdrawal amount is LKR ${(this.affiliateStats?.min_withdrawal_limit || 2000).toLocaleString()}`);
-            return;
-          }
-          if (f.amount > (this.affiliateStats?.available_balance || 0)) {
-            alert('Requested amount exceeds your available balance.');
-            return;
+          const isUsd = this.selectedAffiliateCurrency === 'USD';
+          f.currency = isUsd ? 'USD' : 'LKR';
+          f.payout_method = isUsd ? this.payoutMethod : 'bank';
+
+          if (isUsd) {
+            if (this.payoutMethod === 'paypal') {
+              f.bank_name = 'PayPal';
+              f.branch_name = 'International';
+              if (!f.account_number || !f.account_number.includes('@')) {
+                alert('Please enter a valid PayPal Email Address.');
+                return;
+              }
+            } else if (this.payoutMethod === 'wise') {
+              f.bank_name = 'Wise';
+              f.branch_name = 'International';
+              if (!f.account_number) {
+                alert('Please enter your Wise Email Address or IBAN.');
+                return;
+              }
+            } else {
+              // Direct Wire
+              if (!f.bank_name || !f.account_number) {
+                alert('Please enter your Bank Name, SWIFT Code, and Account Number / IBAN.');
+                return;
+              }
+            }
+            if (!f.account_holder_name) {
+              alert('Please enter the recipient full name.');
+              return;
+            }
+            const minUsd = this.affiliateStats?.min_withdrawal_limit_usd || 7;
+            if (f.amount < minUsd) {
+              alert(`Minimum withdrawal amount is $${minUsd.toFixed(2)} USD`);
+              return;
+            }
+            if (f.amount > (this.affiliateStats?.available_balance_usd || 0)) {
+              alert('Requested amount exceeds your available balance.');
+              return;
+            }
+          } else {
+            // Sri Lanka LKR
+            if (!f.bank_name || !f.branch_name || !f.account_number || !f.account_holder_name) {
+              alert('Please fill in all mandatory bank details.');
+              return;
+            }
+            const minLkr = this.affiliateStats?.min_withdrawal_limit || 2000;
+            if (f.amount < minLkr) {
+              alert(`Minimum withdrawal amount is LKR ${minLkr.toLocaleString()}`);
+              return;
+            }
+            if (f.amount > (this.affiliateStats?.available_balance || 0)) {
+              alert('Requested amount exceeds your available balance.');
+              return;
+            }
           }
 
           this.isSubmittingWithdrawal = true;

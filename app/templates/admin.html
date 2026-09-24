@@ -2016,15 +2016,21 @@
                       <div class="font-bold text-white" x-text="w.user_name"></div>
                       <div class="text-[11px] text-slate-400 font-mono" x-text="w.user_email"></div>
                     </td>
-                    <td class="py-3.5 px-4 font-black text-emerald-400 font-mono text-sm">
-                      LKR <span x-text="Number(w.amount).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                    <td class="py-3.5 px-4 font-black font-mono text-sm" :class="w.currency === 'USD' ? 'text-indigo-400' : 'text-emerald-400'">
+                      <span x-text="w.currency === 'USD' ? ('$' + Number(w.amount_usd || (w.amount/300)).toFixed(2)) : ('LKR ' + Number(w.amount).toLocaleString('en-US', {minimumFractionDigits: 2}))"></span>
+                      <span x-show="w.currency === 'USD'" class="block text-[10px] text-slate-500 font-normal" x-text="'(Base: LKR ' + Number(w.amount).toLocaleString() + ')'"></span>
                     </td>
                     <td class="py-3.5 px-4">
-                      <div class="font-bold text-white" x-text="w.bank_name"></div>
-                      <div class="text-[11px] text-slate-400" x-text="'Branch: ' + w.branch_name"></div>
+                      <div class="flex items-center gap-1.5 font-bold text-white">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] uppercase font-mono font-bold"
+                              :class="w.payout_method === 'paypal' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : (w.payout_method === 'wise' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-300')"
+                              x-text="w.payout_method || 'bank'"></span>
+                        <span x-text="w.bank_name"></span>
+                      </div>
+                      <div class="text-[11px] text-slate-400" x-text="w.branch_name"></div>
                     </td>
                     <td class="py-3.5 px-4">
-                      <div class="font-mono font-bold text-indigo-300 text-sm" x-text="w.account_number"></div>
+                      <div class="font-mono font-bold text-indigo-300 text-sm select-all" x-text="w.account_number"></div>
                       <div class="text-[11px] text-slate-300" x-text="w.account_holder_name"></div>
                     </td>
                     <td class="py-3.5 px-4 font-mono" x-text="w.contact_phone || '—'"></td>
@@ -2114,7 +2120,7 @@
                 </div>
                 <div>
                   <h3 class="font-bold text-white text-sm" x-text="'Confirm Payout #' + (selectedPayoutRequest?.id || '')"></h3>
-                  <p class="text-[11px] text-slate-400">Record bank transfer reference number and notify partner</p>
+                  <p class="text-[11px] text-slate-400">Record bank or online transfer reference and notify partner</p>
                 </div>
               </div>
               <button @click="selectedPayoutRequest = null" class="text-slate-400 hover:text-white">
@@ -2128,32 +2134,38 @@
                 <span class="font-bold text-white" x-text="selectedPayoutRequest?.user_name + ' (' + selectedPayoutRequest?.user_email + ')'"></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-slate-500">Transfer Amount:</span>
-                <span class="font-black text-emerald-400 text-sm font-mono">LKR <span x-text="Number(selectedPayoutRequest?.amount || 0).toLocaleString()"></span></span>
+                <span class="text-slate-500">Payout Method:</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" x-text="(selectedPayoutRequest?.payout_method || 'bank') + ' (' + (selectedPayoutRequest?.currency || 'LKR') + ')'"></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-slate-500">Bank & Branch:</span>
+                <span class="text-slate-500">Transfer Amount:</span>
+                <span class="font-black text-emerald-400 text-sm font-mono">
+                  <span x-text="selectedPayoutRequest?.currency === 'USD' ? ('$' + Number(selectedPayoutRequest?.amount_usd || (selectedPayoutRequest?.amount/300)).toFixed(2) + ' USD (LKR ' + Number(selectedPayoutRequest?.amount).toLocaleString() + ')') : ('LKR ' + Number(selectedPayoutRequest?.amount || 0).toLocaleString())"></span>
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Destination / Bank:</span>
                 <span class="font-bold text-white" x-text="selectedPayoutRequest?.bank_name + ' • ' + selectedPayoutRequest?.branch_name"></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-slate-500">Account Number:</span>
-                <span class="font-mono font-bold text-indigo-300" x-text="selectedPayoutRequest?.account_number"></span>
+                <span class="text-slate-500" x-text="selectedPayoutRequest?.payout_method === 'paypal' ? 'PayPal Email:' : 'Account / IBAN:'"></span>
+                <span class="font-mono font-bold text-indigo-300 select-all" x-text="selectedPayoutRequest?.account_number"></span>
               </div>
               <div class="flex justify-between">
-                <span class="text-slate-500">Account Holder:</span>
+                <span class="text-slate-500">Beneficiary Name:</span>
                 <span class="font-bold text-white" x-text="selectedPayoutRequest?.account_holder_name"></span>
               </div>
             </div>
 
             <div class="space-y-3 text-xs">
               <div>
-                <label class="block font-bold text-slate-300 mb-1">Bank Transfer Reference ID / Slip ID *</label>
-                <input type="text" x-model="payoutRefInput" placeholder="e.g. CEFT-847291 or SLIP-0924"
+                <label class="block font-bold text-slate-300 mb-1">Transfer Reference ID / Transaction Ref *</label>
+                <input type="text" x-model="payoutRefInput" :placeholder="selectedPayoutRequest?.payout_method === 'paypal' ? 'e.g. PayPal Transaction ID (e.g. 5Y892401K...)' : 'e.g. CEFT-847291 or SLIP-0924'"
                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono font-bold focus:border-emerald-500 outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-300 mb-1">Admin Notes (Optional)</label>
-                <input type="text" x-model="payoutNotesInput" placeholder="Sent via Sampath Vishwa / Commercial Bank"
+                <input type="text" x-model="payoutNotesInput" placeholder="Sent via PayPal / Wise / Commercial Bank"
                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-emerald-500 outline-none">
               </div>
             </div>

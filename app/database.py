@@ -118,6 +118,13 @@ def init_engine():
                     if "discount_amount" not in order_cols:
                         mig_conn.execute(text("ALTER TABLE online_payment_orders ADD COLUMN discount_amount FLOAT NOT NULL DEFAULT 0.0"))
 
+                if insp.has_table("affiliate_withdrawals"):
+                    aw_cols = {c["name"] for c in insp.get_columns("affiliate_withdrawals")}
+                    if "currency" not in aw_cols:
+                        mig_conn.execute(text("ALTER TABLE affiliate_withdrawals ADD COLUMN currency VARCHAR(10) NOT NULL DEFAULT 'LKR'"))
+                    if "payout_method" not in aw_cols:
+                        mig_conn.execute(text("ALTER TABLE affiliate_withdrawals ADD COLUMN payout_method VARCHAR(50) NOT NULL DEFAULT 'bank'"))
+
                 mig_conn.commit()
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)

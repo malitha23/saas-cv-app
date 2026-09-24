@@ -332,10 +332,12 @@ class AffiliateWithdrawal(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    account_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(150), nullable=False)
     account_holder_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    branch_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    branch_name: Mapped[str] = mapped_column(String(100), default="Main", nullable=False)
     contact_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    currency: Mapped[str] = mapped_column(String(10), default="LKR", nullable=False)
+    payout_method: Mapped[str] = mapped_column(String(50), default="bank", nullable=False)
     status: Mapped[str] = mapped_column(String(30), default="pending", index=True, nullable=False)  # pending, paid, rejected
     payout_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Bank ref no / slip ID
     admin_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

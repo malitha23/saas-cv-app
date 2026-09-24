@@ -7,6 +7,7 @@ from sqlalchemy import select, func, and_, or_
 
 from app.models import User, SaasSetting, AffiliateCommission, AffiliateWithdrawal
 from app.email_service import enqueue_email, send_raw_email, get_admin_emails
+from app.auth import get_saas_setting
 
 logger = logging.getLogger("dreemfolio.affiliate")
 
@@ -317,6 +318,15 @@ def get_user_affiliate_summary(user: User, db: Session) -> Dict[str, Any]:
     min_limit = settings["min_withdrawal"]
     can_withdraw = (available_balance >= min_limit) and (not has_pending_withdrawal) and settings["enabled"]
 
+    # Dynamic Currency Conversion (USD Base Rate, default: 300.0 LKR = 1 USD)
+    usd_rate_str = get_saas_setting(db, "lkr_per_usd", "300.0")
+    try:
+        usd_rate = float(usd_rate_str)
+        if usd_rate <= 0:
+            usd_rate = 300.0
+    except (ValueError, TypeError):
+        usd_rate = 300.0
+
     # Format recent commissions (hide buyer identity for privacy)
     recent_commissions_data = []
     for c in sorted(all_commissions, key=lambda x: x.created_at, reverse=True)[:15]:
@@ -333,8 +343,10 @@ def get_user_affiliate_summary(user: User, db: Session) -> Dict[str, Any]:
             "id": c.id,
             "buyer_name": buyer_ref,
             "order_amount": c.order_amount,
+            "order_amount_usd": round(c.order_amount / usd_rate, 2),
             "commission_rate": c.commission_rate,
             "commission_amount": c.commission_amount,
+            "commission_amount_usd": round(c.commission_amount / usd_rate, 2),
             "status": c.status,
             "created_at": c.created_at.strftime("%Y-%m-%d %H:%M"),
             "expires_at": c.expires_at.strftime("%Y-%m-%d"),
@@ -344,9 +356,14 @@ def get_user_affiliate_summary(user: User, db: Session) -> Dict[str, Any]:
     # Format recent withdrawals
     recent_withdrawals_data = []
     for w in all_withdrawals[:10]:
+        w_curr = getattr(w, "currency", "LKR") or "LKR"
+        w_method = getattr(w, "payout_method", "bank") or "bank"
         recent_withdrawals_data.append({
             "id": w.id,
             "amount": w.amount,
+            "amount_usd": round(w.amount / usd_rate, 2),
+            "currency": w_curr,
+            "payout_method": w_method,
             "bank_name": w.bank_name,
             "account_number_masked": f"***{w.account_number[-4:]}" if len(w.account_number) >= 4 else w.account_number,
             "account_holder_name": w.account_holder_name,
@@ -366,16 +383,24 @@ def get_user_affiliate_summary(user: User, db: Session) -> Dict[str, Any]:
         "program_enabled": settings["enabled"],
         "commission_rate": settings["commission_rate"],
         "min_withdrawal_limit": min_limit,
+        "min_withdrawal_limit_usd": round(min_limit / usd_rate, 2),
         "expiry_days_config": settings["expiry_days"],
         "referral_code": getattr(user, "referral_code", None),
+        "usd_rate": usd_rate,
         "total_referrals_count": total_referrals_count,
         "paid_referrals_count": len(paid_referrals_set),
         "available_balance": available_balance,
+        "available_balance_usd": round(available_balance / usd_rate, 2),
         "active_earnings": round(active_earnings, 2),
+        "active_earnings_usd": round(active_earnings / usd_rate, 2),
         "pending_withdrawal_amount": round(pending_withdrawal_amount, 2),
+        "pending_withdrawal_amount_usd": round(pending_withdrawal_amount / usd_rate, 2),
         "total_earned": round(total_earned, 2),
+        "total_earned_usd": round(total_earned / usd_rate, 2),
         "total_paid_out": round(total_paid_out, 2),
+        "total_paid_out_usd": round(total_paid_out / usd_rate, 2),
         "total_expired": round(total_expired, 2),
+        "total_expired_usd": round(total_expired / usd_rate, 2),
         "can_withdraw": can_withdraw,
         "has_pending_withdrawal": has_pending_withdrawal,
         "days_until_earliest_expiry": days_until_earliest_expiry,
@@ -390,13 +415,16 @@ def request_affiliate_withdrawal(
     bank_name: str,
     account_number: str,
     account_holder_name: str,
-    branch_name: str,
-    contact_phone: Optional[str],
-    db: Session
+    branch_name: Optional[str] = None,
+    contact_phone: Optional[str] = None,
+    currency: str = "LKR",
+    payout_method: str = "bank",
+    db: Session = None
 ) -> AffiliateWithdrawal:
     """Submit a payout withdrawal request to be approved & transferred by Admin."""
     summary = get_user_affiliate_summary(user, db)
     settings = get_affiliate_settings(db)
+    usd_rate = summary.get("usd_rate", 300.0)
 
     if not settings["enabled"]:
         raise ValueError("The affiliate and referral program is currently paused.")
@@ -404,20 +432,39 @@ def request_affiliate_withdrawal(
     if summary["has_pending_withdrawal"]:
         raise ValueError("You already have a pending withdrawal request under review. Please wait until it is processed.")
 
-    amount_clean = round(float(amount), 2)
-    if amount_clean < settings["min_withdrawal"]:
-        raise ValueError(f"Minimum withdrawal limit is LKR {settings['min_withdrawal']:,.2f}.")
+    clean_curr = (currency or "LKR").strip().upper()
+    clean_method = (payout_method or "bank").strip().lower()
 
-    if amount_clean > summary["available_balance"]:
-        raise ValueError(f"Insufficient available balance. Your withdrawable balance is LKR {summary['available_balance']:,.2f}.")
+    if clean_curr == "USD":
+        # Converted to base LKR units
+        amount_lkr = round(float(amount) * usd_rate, 2)
+        min_usd = round(settings["min_withdrawal"] / usd_rate, 2)
+        if float(amount) < min_usd:
+            raise ValueError(f"Minimum withdrawal limit is ${min_usd:,.2f} USD (approx LKR {settings['min_withdrawal']:,.2f}).")
+    else:
+        amount_lkr = round(float(amount), 2)
+        if amount_lkr < settings["min_withdrawal"]:
+            raise ValueError(f"Minimum withdrawal limit is LKR {settings['min_withdrawal']:,.2f}.")
+
+    if amount_lkr > summary["available_balance"]:
+        if clean_curr == "USD":
+            raise ValueError(f"Insufficient available balance. Your balance is ${summary['available_balance_usd']:,.2f} USD.")
+        else:
+            raise ValueError(f"Insufficient available balance. Your balance is LKR {summary['available_balance']:,.2f}.")
+
+    clean_branch = (branch_name or "").strip()
+    if not clean_branch:
+        clean_branch = "International / Online" if clean_method in ["paypal", "wise", "payoneer", "crypto"] else "Main"
 
     withdrawal = AffiliateWithdrawal(
         user_id=user.id,
-        amount=amount_clean,
+        amount=amount_lkr,
+        currency=clean_curr,
+        payout_method=clean_method,
         bank_name=bank_name.strip(),
         account_number=account_number.strip(),
         account_holder_name=account_holder_name.strip(),
-        branch_name=branch_name.strip(),
+        branch_name=clean_branch,
         contact_phone=contact_phone.strip() if contact_phone else None,
         status="pending",
         requested_at=datetime.utcnow()
@@ -429,17 +476,19 @@ def request_affiliate_withdrawal(
     # Notify Admins via Email
     try:
         admin_emails = get_admin_emails(db)
-        admin_subject = f"💸 [Affiliate Payout Request] LKR {amount_clean:,.2f} from {user.email}"
+        display_amt = f"${float(amount):,.2f} USD" if clean_curr == "USD" else f"LKR {amount_lkr:,.2f}"
+        admin_subject = f"💸 [Affiliate Payout Request] {display_amt} via {clean_method.upper()} from {user.email}"
         admin_body = f"""
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b;">
             <h3 style="color: #4f46e5;">New Affiliate Withdrawal Request</h3>
             <p>Candidate <strong>{user.full_name} ({user.email})</strong> has requested an affiliate payout:</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                <tr><td style="padding: 6px; font-weight: bold; width: 140px;">Requested Amount:</td><td style="padding: 6px; color: #047857; font-weight: bold;">LKR {amount_clean:,.2f}</td></tr>
-                <tr><td style="padding: 6px; font-weight: bold;">Bank:</td><td style="padding: 6px;">{withdrawal.bank_name}</td></tr>
-                <tr><td style="padding: 6px; font-weight: bold;">Branch:</td><td style="padding: 6px;">{withdrawal.branch_name}</td></tr>
-                <tr><td style="padding: 6px; font-weight: bold;">Account No:</td><td style="padding: 6px; font-family: monospace;">{withdrawal.account_number}</td></tr>
-                <tr><td style="padding: 6px; font-weight: bold;">Account Name:</td><td style="padding: 6px;">{withdrawal.account_holder_name}</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold; width: 140px;">Requested Amount:</td><td style="padding: 6px; color: #047857; font-weight: bold;">{display_amt} (Base: LKR {amount_lkr:,.2f})</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold;">Payout Method:</td><td style="padding: 6px; text-transform: uppercase; font-weight: bold;">{clean_method}</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold;">Payment Destination / Bank:</td><td style="padding: 6px;">{withdrawal.bank_name}</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold;">Branch / Country:</td><td style="padding: 6px;">{withdrawal.branch_name}</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold;">Account / PayPal Email:</td><td style="padding: 6px; font-family: monospace; font-weight: bold; color: #4338ca;">{withdrawal.account_number}</td></tr>
+                <tr><td style="padding: 6px; font-weight: bold;">Beneficiary Name:</td><td style="padding: 6px;">{withdrawal.account_holder_name}</td></tr>
                 <tr><td style="padding: 6px; font-weight: bold;">Contact Phone:</td><td style="padding: 6px;">{withdrawal.contact_phone or 'N/A'}</td></tr>
             </table>
             <p style="margin-top: 20px;">
@@ -697,6 +746,9 @@ def get_admin_affiliate_overview(db: Session) -> Dict[str, Any]:
                 "user_email": w.user.email if w.user else "N/A",
                 "user_name": w.user.full_name if w.user else "N/A",
                 "amount": w.amount,
+                "amount_usd": round(w.amount / float(get_saas_setting(db, "lkr_per_usd", "300.0") or 300.0), 2),
+                "currency": getattr(w, "currency", "LKR") or "LKR",
+                "payout_method": getattr(w, "payout_method", "bank") or "bank",
                 "bank_name": w.bank_name,
                 "account_number": w.account_number,
                 "account_holder_name": w.account_holder_name,
