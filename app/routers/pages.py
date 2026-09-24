@@ -60,10 +60,15 @@ async def serve_terms_of_service(request: Request):
 
 
 @router.get("/refund", response_class=HTMLResponse)
-@router.get("/refund-policy", response_class=HTMLResponse)
 async def serve_refund_policy(request: Request):
     """Serve official Refund & Cancellation Policy."""
     return templates.TemplateResponse(request=request, name="legal/refund.html", context={"active_page": "refund"})
+
+
+@router.get("/refund-policy")
+async def redirect_refund_policy():
+    """Canonical 301 redirect for legacy refund policy alias."""
+    return RedirectResponse(url="/refund", status_code=301)
 
 
 @router.get("/security", response_class=HTMLResponse)
@@ -73,14 +78,18 @@ async def serve_security_whitepaper(request: Request):
 
 
 @router.get("/contact", response_class=HTMLResponse)
-@router.get("/support", response_class=HTMLResponse)
 async def serve_contact_page(request: Request):
     """Serve official Contact & Support page with human assistance channels."""
     return templates.TemplateResponse(request=request, name="legal/contact.html", context={"active_page": "contact"})
 
 
+@router.get("/support")
+async def redirect_support():
+    """Canonical 301 redirect for legacy support alias."""
+    return RedirectResponse(url="/contact", status_code=301)
+
+
 @router.get("/guide", response_class=HTMLResponse)
-@router.get("/support/guide", response_class=HTMLResponse)
 async def serve_feature_guide_page(
     request: Request,
     country: Optional[str] = Query("LK"),
@@ -109,6 +118,12 @@ async def serve_feature_guide_page(
     )
 
 
+@router.get("/support/guide")
+async def redirect_support_guide():
+    """Canonical 301 redirect for legacy guide alias."""
+    return RedirectResponse(url="/guide", status_code=301)
+
+
 @router.get("/api/guide/data")
 async def get_guide_api_data(
     country: Optional[str] = Query("LK"),
@@ -119,40 +134,16 @@ async def get_guide_api_data(
     return get_dynamic_guide_catalog(db, country_code=country_code)
 
 
-@router.get("/pricing", response_class=HTMLResponse)
-async def serve_pricing_page(request: Request):
-    """
-    Dedicated, high-converting Pricing route for search engines & direct traffic.
-    Serves the landing page with custom SEO metadata and auto-scrolls to #pricing.
-    """
-    return templates.TemplateResponse(
-        request=request,
-        name="landing.html",
-        context={
-            "page_title": "DreemFolio AI Pricing — Fair Country Plans, 7-Day Sprint & Lifetime Access",
-            "page_description": "Explore transparent, affordable pricing for DreemFolio AI. 100% ATS score tailoring, cover letters, and live developer portfolios. Special PPP discounts for Sri Lanka.",
-            "canonical_url": "https://dreemfolio.com/pricing",
-            "auto_scroll": "pricing"
-        }
-    )
+@router.get("/pricing")
+async def serve_pricing_page():
+    """Canonical 301 redirect to pricing section on authoritative homepage."""
+    return RedirectResponse(url="/#pricing", status_code=301)
 
 
-@router.get("/features", response_class=HTMLResponse)
-async def serve_features_page(request: Request):
-    """
-    Dedicated, high-converting Features route for search engines & direct traffic.
-    Serves the landing page with custom SEO metadata and auto-scrolls to #features.
-    """
-    return templates.TemplateResponse(
-        request=request,
-        name="landing.html",
-        context={
-            "page_title": "DreemFolio AI Features — 100% ATS Resume Tailor, Cover Letters & Live Web Portfolios",
-            "page_description": "Discover how DreemFolio AI tailors resumes to any job description, generates ATS-safe PDFs, builds modern photo CVs, drafts cover letters, and publishes developer portfolios.",
-            "canonical_url": "https://dreemfolio.com/features",
-            "auto_scroll": "features"
-        }
-    )
+@router.get("/features")
+async def serve_features_page():
+    """Canonical 301 redirect to features section on authoritative homepage."""
+    return RedirectResponse(url="/#features", status_code=301)
 
 
 @router.get("/robots.txt", response_class=Response)
@@ -161,16 +152,11 @@ async def serve_robots_txt():
     content = """User-agent: *
 Allow: /
 Allow: /app
-Allow: /pricing
-Allow: /features
 Allow: /guide
-Allow: /support/guide
 Allow: /contact
-Allow: /support
 Allow: /privacy
 Allow: /terms
 Allow: /refund
-Allow: /refund-policy
 Allow: /security
 Allow: /static/
 Disallow: /api/
@@ -199,27 +185,15 @@ async def serve_sitemap_xml():
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://dreemfolio.com/guide</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://dreemfolio.com/pricing</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://dreemfolio.com/features</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://dreemfolio.com/app</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://dreemfolio.com/guide</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
@@ -389,12 +363,18 @@ async def serve_landing(request: Request):
 
 @router.get("/app", response_class=HTMLResponse)
 @router.get("/app/", response_class=HTMLResponse)
-@router.get("/builder", response_class=HTMLResponse)
-@router.get("/builder/", response_class=HTMLResponse)
-@router.get("/workspace", response_class=HTMLResponse)
 async def serve_app(request: Request):
     """Serve the complete ATS AI Resume Builder, Editor & Portfolio Studio application."""
     return templates.TemplateResponse(request=request, name="index.html")
+
+
+@router.get("/builder")
+@router.get("/builder/")
+@router.get("/workspace")
+@router.get("/workspace/")
+async def redirect_legacy_app_routes():
+    """Canonical 301 redirect for legacy app workspace routes."""
+    return RedirectResponse(url="/app", status_code=301)
 
 
 @router.get("/reset-password", response_class=HTMLResponse)
