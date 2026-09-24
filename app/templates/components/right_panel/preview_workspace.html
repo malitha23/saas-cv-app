@@ -177,76 +177,91 @@
             </div>
           </div>
 
-          <!-- Row 2: Format & Template Switcher (Horizontal Touch Scroll on Mobile & Desktop) -->
+          <!-- Row 2: Format & Template Switcher (Fully Responsive Multi-Row & Wrapping Layout) -->
           <template x-if="tailoredData && activeTab === 'resume'">
-            <div class="format-switcher-container flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
-              <span class="text-[9px] text-slate-400 px-1 font-bold uppercase shrink-0">ATS:</span>
-              <button @click="setTemplate('classic')"
-                :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Classic</button>
-              <button @click="setTemplate('modern')"
-                :class="currentTemplate === 'modern' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Navy</button>
-              <button @click="setTemplate('minimal')"
-                :class="currentTemplate === 'minimal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2 py-1 rounded-lg text-[11px] whitespace-nowrap transition">Compact</button>
+            <div class="format-switcher-container flex flex-wrap items-center gap-1.5 text-xs bg-slate-950/90 p-1.5 rounded-xl border border-slate-800 w-full">
+              <!-- Subgroup 1: ATS Formats -->
+              <div class="format-switcher-subgroup flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800/80 shrink-0">
+                <span class="text-[10px] text-slate-400 font-bold uppercase pr-1 flex items-center gap-1 shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+                  ATS:
+                </span>
+                <button @click="setTemplate('classic')"
+                  :class="currentTemplate === 'classic' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition">Classic</button>
+                <button @click="setTemplate('modern')"
+                  :class="currentTemplate === 'modern' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition">Navy</button>
+                <button @click="setTemplate('minimal')"
+                  :class="currentTemplate === 'minimal' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition">Compact</button>
+              </div>
 
-              <span class="text-[9px] text-pink-400 px-1.5 font-bold uppercase border-l border-slate-800 ml-1 shrink-0">🎨 Visual Formats:</span>
-              <button @click="setTemplate('visual_sidebar')"
-                :class="currentTemplate === 'visual_sidebar' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
-                <span>Sidebar Photo</span>
-              </button>
-              <button @click="setTemplate('banner_periwinkle')"
-                :class="currentTemplate === 'banner_periwinkle' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
-                <span>Periwinkle</span>
-              </button>
-              <button @click="setTemplate('creative_gradient')"
-                :class="currentTemplate === 'creative_gradient' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
-                <span>Indigo Banner</span>
-              </button>
-              <button @click="setTemplate('emerald_prestige')"
-                :class="currentTemplate === 'emerald_prestige' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
-                <span>Emerald Prestige</span>
-              </button>
-              <button @click="setTemplate('tech_noir')"
-                :class="currentTemplate === 'tech_noir' ? 'bg-pink-600 text-white font-bold shadow' : 'text-pink-300 hover:text-white'"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition flex items-center gap-1">
-                <span>Tech Noir</span>
-              </button>
+              <!-- Subgroup 2: Visual Formats -->
+              <div class="format-switcher-subgroup flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800/80 flex-wrap flex-1 min-w-[280px]">
+                <span class="text-[10px] text-pink-400 font-bold uppercase pr-1 flex items-center gap-1 shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-pink-400 inline-block"></span>
+                  🎨 Visual:
+                </span>
+                <button @click="setTemplate('visual_sidebar')"
+                  :class="currentTemplate === 'visual_sidebar' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Sidebar Photo</span>
+                </button>
+                <button @click="setTemplate('banner_periwinkle')"
+                  :class="currentTemplate === 'banner_periwinkle' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Periwinkle</span>
+                </button>
+                <button @click="setTemplate('creative_gradient')"
+                  :class="currentTemplate === 'creative_gradient' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Indigo Banner</span>
+                </button>
+                <button @click="setTemplate('emerald_prestige')"
+                  :class="currentTemplate === 'emerald_prestige' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Emerald Prestige</span>
+                </button>
+                <button @click="setTemplate('tech_noir')"
+                  :class="currentTemplate === 'tech_noir' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Tech Noir</span>
+                </button>
+              </div>
             </div>
           </template>
 
           <!-- Portfolio Theme Selector -->
           <template x-if="tailoredData && activeTab === 'portfolio'">
-            <div class="format-switcher-container flex items-center space-x-1 text-xs bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar max-w-full">
-              <span class="text-[9px] text-pink-400 px-1 font-bold uppercase shrink-0">Theme:</span>
+            <div class="format-switcher-container flex flex-wrap items-center gap-1 text-xs bg-slate-950/90 p-1.5 rounded-xl border border-slate-800 w-full">
+              <span class="text-[10px] text-pink-400 px-1.5 font-bold uppercase shrink-0 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-pink-400 inline-block"></span>
+                Theme:
+              </span>
               <button @click="setPortfolioTheme('aurora_white')"
-                :class="{'bg-sky-400 text-slate-950 font-bold shadow': portfolioTheme === 'aurora_white', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'aurora_white'}"
+                :class="{'bg-sky-400 text-slate-950 font-bold shadow-sm': portfolioTheme === 'aurora_white', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'aurora_white'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🤍 White</button>
               <button @click="setPortfolioTheme('motion_zenith')"
-                :class="{'bg-amber-500 text-slate-950 font-bold shadow': portfolioTheme === 'motion_zenith', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'motion_zenith'}"
+                :class="{'bg-amber-500 text-slate-950 font-bold shadow-sm': portfolioTheme === 'motion_zenith', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'motion_zenith'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">✨ Motion</button>
               <button @click="setPortfolioTheme('galaxy_canvas')"
-                :class="{'bg-cyan-500 text-slate-950 font-bold shadow': portfolioTheme === 'galaxy_canvas', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'galaxy_canvas'}"
+                :class="{'bg-cyan-500 text-slate-950 font-bold shadow-sm': portfolioTheme === 'galaxy_canvas', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'galaxy_canvas'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🚀 Galaxy</button>
               <button @click="setPortfolioTheme('bento_grid')"
-                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'bento_grid', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'bento_grid'}"
+                :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'bento_grid', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'bento_grid'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🍱 Bento</button>
               <button @click="setPortfolioTheme('split_sidebar')"
-                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'split_sidebar', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'split_sidebar'}"
+                :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'split_sidebar', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'split_sidebar'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📑 Split</button>
               <button @click="setPortfolioTheme('terminal_dev')"
-                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'terminal_dev', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'terminal_dev'}"
+                :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'terminal_dev', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'terminal_dev'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">💻 Terminal</button>
               <button @click="setPortfolioTheme('editorial_swiss')"
-                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'editorial_swiss', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'editorial_swiss'}"
+                :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'editorial_swiss', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'editorial_swiss'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📰 Swiss</button>
               <button @click="setPortfolioTheme('neon_glass')"
-                :class="{'bg-pink-600 text-white font-bold shadow': portfolioTheme === 'neon_glass', 'text-slate-400 hover:text-slate-200': portfolioTheme !== 'neon_glass'}"
+                :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'neon_glass', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'neon_glass'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">🌌 Neon</button>
             </div>
           </template>

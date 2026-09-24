@@ -613,18 +613,31 @@
       </div>
 
       <!-- Security Guarantee Footer -->
-      <div class="border-t border-slate-800 pt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span class="flex items-center gap-1.5">
-          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-          100% Secure Checkout via Official PayHere Gateway Partner • Instant Automated Activation • One-Time Prepaid Passes
-        </span>
-        <div class="flex items-center gap-3">
-          <a href="/guide" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 transition">
-            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-            <span>Feature Guide & Quotas ↗</span>
-          </a>
-          <span class="text-slate-700">•</span>
-          <button @click="showPricingModal = false" class="hover:text-slate-300 underline font-medium">Close</button>
+      <div class="border-t border-slate-800 pt-4 flex flex-col gap-2.5 text-[11px] text-slate-500">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            100% Secure Checkout via Official PayHere Gateway Partner • Instant Automated Activation • One-Time Prepaid Passes
+          </span>
+          <div class="flex items-center gap-3">
+            <a href="/guide" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 transition">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+              <span>Feature Guide & Quotas ↗</span>
+            </a>
+            <span class="text-slate-700">•</span>
+            <button @click="showPricingModal = false" class="hover:text-slate-300 underline font-medium">Close</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800 text-[10.5px] text-slate-400">
+          <span class="flex items-center gap-1.5 text-slate-300">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <strong>Money-Back Guarantee:</strong> The refund will be given to the payment initiated media itself.
+          </span>
+          <div class="flex items-center gap-2 text-indigo-400 font-medium">
+            <a href="/refund" target="_blank" class="hover:underline">Refund Policy &rarr;</a>
+            <span class="text-slate-700">•</span>
+            <a href="/terms" target="_blank" class="hover:underline">Terms of Service &rarr;</a>
+          </div>
         </div>
       </div>
 

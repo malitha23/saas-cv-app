@@ -862,6 +862,24 @@
           </div>
         </div>
 
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+          <button @click="toggleFaq(4)"
+            class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
+            <span>What is your refund and cancellation policy?</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"
+              :class="{'rotate-180': openFaq === 4}"></i>
+          </button>
+          <div x-show="openFaq === 4" x-cloak
+            class="px-5 pb-4 text-xs sm:text-sm text-slate-400 border-t border-slate-800/80 pt-3 leading-relaxed space-y-2">
+            <p>
+              We provide a fair 7 to 14-day Money-Back Guarantee. In strict compliance with PayHere Merchant Guidelines, <strong>the refund will be given to the payment initiated media itself</strong> (the original debit card, credit card, or payment account used during checkout).
+            </p>
+            <p>
+              Approved refunds are credited back within 3 to 7 business days. You can submit a refund request directly from your account profile or email <a href="mailto:billing@dreemfolio.com" class="text-indigo-400 hover:underline">billing@dreemfolio.com</a>. Read our full <a href="/refund" class="text-indigo-400 hover:underline font-semibold">Refund & Cancellation Policy</a>.
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- Help Center Contact Card -->
