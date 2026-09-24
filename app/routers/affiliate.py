@@ -16,7 +16,8 @@ from app.services.affiliate_service import (
     admin_approve_payout,
     admin_reject_payout,
     get_admin_affiliate_overview,
-    expire_stale_commissions
+    expire_stale_commissions,
+    get_overdue_commissions_preview
 )
 
 logger = logging.getLogger("dreemfolio.affiliate_router")
@@ -245,6 +246,25 @@ async def admin_reject_withdrawal_endpoint(
     except Exception as e:
         logger.error("Failed to reject withdrawal #%d: %s", withdrawal_id, e, exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to reject withdrawal.")
+
+
+@router.get("/api/admin/affiliate/expiry-preview")
+async def admin_get_expiry_preview(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Dry-run preview: Shows count and total amount of commissions that are currently past due date,
+    without making any changes to the database.
+    """
+    settings = get_affiliate_settings(db)
+    preview = get_overdue_commissions_preview(db)
+    return {
+        "due_count": preview["count"],
+        "due_amount": preview["total_amount"],
+        "expiry_days": settings["expiry_days"],
+        "message": f"{preview['count']} commissions (LKR {preview['total_amount']:,.2f}) are past due date." if preview["count"] > 0 else "All commissions are within their validity period. None currently due for expiry."
+    }
 
 
 @router.post("/api/admin/affiliate/run-expiry")

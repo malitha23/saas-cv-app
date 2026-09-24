@@ -75,6 +75,26 @@ def update_affiliate_settings(
     return get_affiliate_settings(db)
 
 
+def get_overdue_commissions_preview(db: Session) -> Dict[str, Any]:
+    """
+    Preview count and sum of commissions currently past their expiration date without modifying DB.
+    Enables safe dry-run audit before executing real expiry sweeps.
+    """
+    now = datetime.utcnow()
+    stmt = (
+        select(AffiliateCommission)
+        .where(
+            AffiliateCommission.status == "active",
+            AffiliateCommission.expires_at <= now
+        )
+    )
+    overdue = db.scalars(stmt).all()
+    return {
+        "count": len(overdue),
+        "total_amount": round(sum(c.commission_amount for c in overdue), 2)
+    }
+
+
 def expire_stale_commissions(db: Session) -> int:
     """
     Automated Balance Expiry Engine.

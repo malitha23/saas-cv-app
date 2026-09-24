@@ -1841,10 +1841,10 @@
           </div>
 
           <div class="flex items-center gap-3">
-            <button @click="runAdminExpiryJob()" :disabled="isRunningExpiryJob"
-                    class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2 transition disabled:opacity-50">
-              <i data-lucide="clock" class="w-4 h-4" :class="{'animate-spin': isRunningExpiryJob}"></i>
-              <span x-text="isRunningExpiryJob ? 'Evaluating...' : 'Run Expiry Sweep Now'"></span>
+            <button @click="openExpiryConfirmModal()" :disabled="isLoadingExpiryPreview || isRunningExpiryJob"
+                    class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-2 transition disabled:opacity-50 shadow-sm">
+              <i data-lucide="clock" class="w-4 h-4" :class="{'animate-spin': isLoadingExpiryPreview || isRunningExpiryJob}"></i>
+              <span x-text="isLoadingExpiryPreview ? 'Checking Due...' : 'Run Expiry Sweep Now'"></span>
             </button>
 
             <button @click="loadAdminAffiliate()" :disabled="isLoadingAffiliate"
@@ -2166,6 +2166,71 @@
                       class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 disabled:opacity-50">
                 <i data-lucide="check" class="w-3.5 h-3.5" :class="{'animate-spin': isApprovingPayout}"></i>
                 <span x-text="isApprovingPayout ? 'Processing...' : 'Mark as Transferred & Paid'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Safety Confirmation Modal for Commission Expiry Sweep -->
+        <div x-show="showExpiryConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5" @click.outside="if (!isRunningExpiryJob) showExpiryConfirmModal = false">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                  <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">Safety Audit: Commission Expiry Sweep</h3>
+                  <p class="text-xs text-slate-400">Dry-run preview before committing balance changes</p>
+                </div>
+              </div>
+              <button @click="showExpiryConfirmModal = false" :disabled="isRunningExpiryJob" class="text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 text-xs space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Configured Retention Period:</span>
+                <span class="font-mono font-bold text-indigo-400" x-text="(expiryPreviewData?.expiry_days || 90) + ' Days'"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Overdue Unclaimed Commissions:</span>
+                <span class="font-mono font-black text-sm" :class="expiryPreviewData?.due_count > 0 ? 'text-rose-400' : 'text-emerald-400'" x-text="expiryPreviewData?.due_count || 0"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Total Liability to Expire:</span>
+                <span class="font-mono font-black text-sm" :class="expiryPreviewData?.due_count > 0 ? 'text-rose-400' : 'text-slate-400'">
+                  LKR <span x-text="Number(expiryPreviewData?.due_amount || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Warning Notice -->
+            <div x-show="expiryPreviewData?.due_count > 0" class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
+              <div class="font-bold flex items-center gap-1.5">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                <span>Are you sure you want to expire these commissions?</span>
+              </div>
+              <p class="text-[11px] text-amber-200/80 leading-relaxed">
+                Expiring these commissions will immediately deduct the unclaimed balances from the affiliates' available withdrawal limit. This action is permanent and logged in the audit trail.
+              </p>
+            </div>
+
+            <div x-show="!expiryPreviewData || expiryPreviewData?.due_count === 0" class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
+              <span>All active commissions are within their validity window. No balances will be expired!</span>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button type="button" @click="showExpiryConfirmModal = false" :disabled="isRunningExpiryJob" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                Cancel
+              </button>
+              <button type="button" @click="confirmExecuteExpiryJob()" :disabled="isRunningExpiryJob || !expiryPreviewData || expiryPreviewData?.due_count === 0"
+                      class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-rose-600/30 transition">
+                <i data-lucide="flame" class="w-3.5 h-3.5" :class="{'animate-spin': isRunningExpiryJob}"></i>
+                <span x-text="isRunningExpiryJob ? 'Executing Sweep...' : (expiryPreviewData?.due_count > 0 ? 'Yes, Expire ' + expiryPreviewData.due_count + ' Commissions' : 'Nothing to Expire')"></span>
               </button>
             </div>
           </div>
@@ -3105,6 +3170,9 @@
         selectedPayoutRequest: null,
         payoutRefInput: '',
         payoutNotesInput: '',
+        showExpiryConfirmModal: false,
+        expiryPreviewData: null,
+        isLoadingExpiryPreview: false,
         affiliateForm: {
           enabled: true,
           commission_rate: 20.0,
@@ -3237,7 +3305,28 @@
           }
         },
 
-        async runAdminExpiryJob() {
+        async openExpiryConfirmModal() {
+          this.isLoadingExpiryPreview = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/affiliate/expiry-preview', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.expiryPreviewData = await res.json();
+              this.showExpiryConfirmModal = true;
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            } else {
+              alert('Could not fetch expiry preview from server.');
+            }
+          } catch(e) {
+            alert('Error checking expiry: ' + e.message);
+          } finally {
+            this.isLoadingExpiryPreview = false;
+          }
+        },
+
+        async confirmExecuteExpiryJob() {
           this.isRunningExpiryJob = true;
           const token = localStorage.getItem('saas_token');
           try {
@@ -3248,6 +3337,7 @@
             const data = await res.json();
             if (res.ok) {
               alert(`Expiry sweep complete! Expired ${data.expired_commissions_count} commissions.`);
+              this.showExpiryConfirmModal = false;
               await this.loadAdminAffiliate();
             } else {
               alert('Expiry sweep failed: ' + (data.detail || 'Unknown error'));
@@ -3257,6 +3347,10 @@
           } finally {
             this.isRunningExpiryJob = false;
           }
+        },
+
+        async runAdminExpiryJob() {
+          await this.openExpiryConfirmModal();
         },
 
         formatDate(iso) {
