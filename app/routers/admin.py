@@ -219,6 +219,34 @@ async def admin_override_user_plan(
     }
 
 
+@router.delete("/api/admin/users/{user_id}")
+async def admin_delete_user(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Permanently delete a spam, bot, or malicious user account."""
+    if current_user.id == user_id:
+        raise HTTPException(status_code=400, detail="Administrators cannot delete their own account.")
+
+    stmt = select(User).where(User.id == user_id)
+    user = db.scalars(stmt).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Target user not found.")
+
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="Cannot delete an administrator account.")
+
+    target_email = user.email
+    db.delete(user)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"User #{user_id} ({target_email}) has been permanently deleted."
+    }
+
+
 @router.get("/api/admin/bank-slips")
 async def admin_get_bank_slips(
     status: Optional[str] = Query(None),

@@ -1,8 +1,9 @@
 import os
 import uuid
+import re
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SocialLink(BaseModel):
@@ -47,6 +48,15 @@ class PersonalInfo(BaseModel):
         default_factory=list,
         description="Dynamic list of social media and custom links",
     )
+
+    @field_validator("full_name")
+    @classmethod
+    def sanitize_resume_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            return "Candidate"
+        v = re.sub(r"<[^>]*>", "", v).strip()
+        v = re.sub(r"[<>\"'`{};]", "", v)
+        return re.sub(r"\s+", " ", v)
 
 
 class SkillCategory(BaseModel):
@@ -483,27 +493,78 @@ class CheckoutRequest(BaseModel):
 class UserRegisterRequest(BaseModel):
     email: str = Field(..., description="Valid email address")
     password: str = Field(
-        ..., min_length=6, description="Password (at least 6 characters)"
+        ..., min_length=6, max_length=128, description="Password (at least 6 characters)"
     )
-    full_name: str = Field(default="Candidate", description="User's full name")
+    full_name: str = Field(default="Candidate", max_length=70, description="User's full name")
     referral_code: Optional[str] = Field(
-        default=None, description="Optional referral code of inviter"
+        default=None, max_length=50, description="Optional referral code of inviter"
     )
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_full_name(cls, v: str) -> str:
+        if not v or not v.strip():
+            return "Candidate"
+        v = v.strip()
+        # Security: Block HTML tags, XSS payloads, scripts, and suspicious injection tokens
+        if re.search(r"<[^>]*>", v) or any(c in v for c in ["<", ">", '"', "'", "`", ";", "{", "}"]):
+            raise ValueError("Full name cannot contain HTML tags, scripts, or special symbols. Please enter your real name.")
+        if re.search(r"https?://|javascript:|data:", v, re.IGNORECASE):
+            raise ValueError("Full name cannot contain web links or URLs.")
+        if len(v) < 2 or len(v) > 70:
+            raise ValueError("Full name must be between 2 and 70 characters.")
+        # Normalize whitespace
+        return re.sub(r"\s+", " ", v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Email address is required.")
+        v = v.strip().lower()
+        if len(v) > 254:
+            raise ValueError("Email address cannot exceed 254 characters.")
+        if any(c in v for c in ["<", ">", '"', "'", "`", ";", " ", "\t", "\r", "\n"]):
+            raise ValueError("Email address contains invalid characters or HTML.")
+        email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        if not re.match(email_regex, v):
+            raise ValueError("Please provide a valid email address (e.g. name@domain.com).")
+        return v
+
+    @field_validator("referral_code")
+    @classmethod
+    def validate_referral_code(cls, v: Optional[str]) -> Optional[str]:
+        if not v or not v.strip():
+            return None
+        v = v.strip()
+        if not re.match(r"^[a-zA-Z0-9_-]{3,50}$", v):
+            raise ValueError("Invalid referral code format.")
+        return v
 
 
 class UserLoginRequest(BaseModel):
     email: str = Field(..., description="Registered email address")
     password: str = Field(..., description="User password")
 
+    @field_validator("email")
+    @classmethod
+    def validate_login_email(cls, v: str) -> str:
+        return v.strip().lower() if v else ""
+
 
 class ForgotPasswordRequest(BaseModel):
     email: str = Field(..., description="User registered email address")
+
+    @field_validator("email")
+    @classmethod
+    def validate_forgot_email(cls, v: str) -> str:
+        return v.strip().lower() if v else ""
 
 
 class ResetPasswordRequest(BaseModel):
     token: str = Field(..., description="Cryptographic reset token")
     new_password: str = Field(
-        ..., min_length=6, description="New password (at least 6 characters)"
+        ..., min_length=6, max_length=128, description="New password (at least 6 characters)"
     )
 
 

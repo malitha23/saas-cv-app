@@ -62,8 +62,10 @@ async def auth_with_google(
     )
 
     google_sub = str(google_info["sub"]).strip()
-    google_email = str(google_info["email"]).strip().lower()
-    google_name = str(google_info.get("name") or "Candidate").strip()
+    raw_google_name = str(google_info.get("name") or "Candidate").strip()
+    clean_google_name = re.sub(r"<[^>]*>", "", raw_google_name).strip()
+    clean_google_name = re.sub(r"[<>\"'`{};]", "", clean_google_name)
+    google_name = re.sub(r"\s+", " ", clean_google_name)[:70] or "Candidate"
     google_picture = google_info.get("picture")
 
     # 1. Lookup by google_id OR by email (case-insensitive & trimmed for safe account linking)
@@ -229,10 +231,14 @@ async def register_user(
 
     my_referral_code = generate_unique_referral_code(db)
 
+    clean_full_name = re.sub(r"<[^>]*>", "", req.full_name or "").strip()
+    clean_full_name = re.sub(r"[<>\"'`{};]", "", clean_full_name)
+    clean_full_name = re.sub(r"\s+", " ", clean_full_name)[:70] or "Candidate"
+
     user = User(
         email=email_clean,
         hashed_password=hash_password(req.password),
-        full_name=req.full_name.strip() or "Candidate",
+        full_name=clean_full_name,
         plan_tier="free",  # Default Free Starter Tier
         subscription_status="active",
         referral_code=my_referral_code
