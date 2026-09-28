@@ -267,8 +267,13 @@ async def serve_payment_status(
     if order_id:
         order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
 
-    # If order is still pending/initiated, verify directly with PayHere Retrieval API
-    if order and order.status in ["initiated", "pending"]:
+    # If order is canceled from query and still initiated, mark it canceled immediately
+    if order and order.status in ["initiated", "pending"] and (status or "").lower() == "canceled":
+        order.status = "canceled"
+        order.status_message = "Canceled by candidate during checkout."
+        db.commit()
+        db.refresh(order)
+    elif order and order.status in ["initiated", "pending"]:
         sync_order_status_from_payhere(order, db, background_tasks)
         db.refresh(order)
 

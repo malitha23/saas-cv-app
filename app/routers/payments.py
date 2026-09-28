@@ -1029,6 +1029,44 @@ async def payhere_cancel_redirect(
     return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status=canceled", status_code=303)
 
 
+@router.post("/api/payments/orders/{order_id}/cancel")
+async def cancel_pending_order(
+    order_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Candidate cancels their own in-flight initiated or pending payment order.
+    Purges pending lock, dismisses the header banner, and updates order status to 'canceled'.
+    """
+    stmt = select(OnlinePaymentOrder).where(
+        OnlinePaymentOrder.order_id == order_id,
+        OnlinePaymentOrder.user_id == current_user.id
+    )
+    order = db.scalars(stmt).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+
+    if order.status in ["initiated", "pending"]:
+        order.status = "canceled"
+        order.status_message = "Candidate canceled pending checkout from banner."
+        order.updated_at = datetime.utcnow()
+        db.commit()
+        return {
+            "success": True,
+            "message": f"Order #{order_id} has been canceled.",
+            "order_id": order_id,
+            "status": "canceled"
+        }
+
+    return {
+        "success": False,
+        "message": f"Order #{order_id} is already in '{order.status}' state.",
+        "order_id": order_id,
+        "status": order.status
+    }
+
+
 @router.get("/api/payments/orders/{order_id}/status")
 async def get_payment_order_status(
     order_id: str,

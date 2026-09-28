@@ -164,6 +164,11 @@
               class="px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-amber-300/80 hover:text-amber-200 border border-amber-500/30 rounded-xl transition font-medium text-[11px]">
               Start Fresh
             </button>
+            <button @click="cancelPendingOrder(currentUser.pending_order.order_id)"
+              class="px-3 py-2 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-500/40 rounded-xl transition font-bold text-[11px] flex items-center gap-1">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              <span>Cancel Order</span>
+            </button>
           </div>
         </div>
       </template>

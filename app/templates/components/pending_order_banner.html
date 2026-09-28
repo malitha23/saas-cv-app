@@ -59,6 +59,12 @@
             class="px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400/80 hover:text-amber-300 border border-amber-500/30 rounded-lg transition text-[11px]">
             Start Fresh
           </button>
+          <button @click="cancelPendingOrder(currentUser.pending_order.order_id)"
+            title="Cancel and dismiss this pending payment"
+            class="px-2.5 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-500/40 rounded-lg transition text-[11px] font-bold flex items-center gap-1">
+            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            <span>Cancel</span>
+          </button>
         </div>
       </template>
 

@@ -2846,6 +2846,35 @@ function resumeApp() {
       return await this.initiatePayHereCheckout(targetPlan);
     },
 
+    async cancelPendingOrder(orderId) {
+      if (!orderId) return;
+      if (!confirm('Are you sure you want to cancel and dismiss this pending payment?')) return;
+      const token = localStorage.getItem('saas_token');
+      if (!token) return;
+      try {
+        const res = await fetch(`/api/payments/orders/${encodeURIComponent(orderId)}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (this.currentUser) {
+            this.currentUser.has_pending_order = false;
+            this.currentUser.pending_order = null;
+          }
+          await this.refreshCurrentUser();
+        } else {
+          alert(data.message || data.detail || 'Could not cancel pending order.');
+        }
+      } catch (err) {
+        console.error('Cancel order error:', err);
+        alert('Network error while canceling order.');
+      }
+    },
+
     // ─────────────────────────────────────────────────────────────────────────
     // PROMO CODES & FREE PASS CAMPAIGN METHODS
     // ─────────────────────────────────────────────────────────────────────────
