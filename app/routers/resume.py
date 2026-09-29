@@ -121,7 +121,7 @@ async def tailor_resume(
     if not payload.job_description.strip():
         raise HTTPException(status_code=400, detail="Job description cannot be empty.")
 
-    if payload.job_title and payload.job_title.strip():
+    if payload.job_title and payload.job_title.strip() and not payload.allow_mismatch:
         is_match, err_msg = validate_title_resume_match(payload.resume_text, payload.job_title)
         if not is_match:
             raise HTTPException(status_code=400, detail=err_msg)

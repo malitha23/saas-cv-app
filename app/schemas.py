@@ -491,6 +491,9 @@ class TailorRequest(BaseModel):
     api_key: Optional[str] = Field(
         None, description="User-provided Gemini API key (optional)"
     )
+    allow_mismatch: Optional[bool] = Field(
+        False, description="Whether to bypass career title mismatch validation"
+    )
 
 
 class ParseResponse(BaseModel):

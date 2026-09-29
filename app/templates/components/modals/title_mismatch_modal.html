@@ -1,0 +1,106 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- TARGET TITLE MISMATCH WARNING & RESOLUTION MODAL                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showTitleMismatchModal" x-cloak
+  class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md transition-opacity"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  @keydown.escape.window="showTitleMismatchModal = false">
+
+  <div class="bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl max-w-lg w-full p-6 text-slate-200 relative overflow-hidden"
+    @click.outside="showTitleMismatchModal = false"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="scale-95 opacity-0"
+    x-transition:enter-end="scale-100 opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="scale-100 opacity-100"
+    x-transition:leave-end="scale-95 opacity-0">
+
+    <!-- Ambient Glow FX -->
+    <div class="absolute -top-24 -right-24 w-52 h-52 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-52 h-52 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Close Button -->
+    <button @click="showTitleMismatchModal = false"
+      class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+      <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+
+    <!-- Header Icon & Title -->
+    <div class="flex flex-col items-center text-center mb-5">
+      <div class="w-14 h-14 p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 shadow-lg shadow-rose-500/10 mb-3 flex items-center justify-center">
+        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+      </div>
+      <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-semibold mb-2">
+        <span>Career Field Mismatch</span>
+      </div>
+      <h3 class="text-lg sm:text-xl font-black text-white tracking-tight">Target Title Does Not Match Resume</h3>
+      <p class="text-xs text-slate-300 mt-1.5 leading-relaxed max-w-sm">
+        The target job title you entered belongs to a completely different profession than your uploaded CV background.
+      </p>
+    </div>
+
+    <!-- Side-by-Side Comparison Box -->
+    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 mb-4 space-y-3">
+      <div class="flex items-center justify-between text-xs pb-2.5 border-b border-slate-800/80">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <span class="text-slate-400 font-medium">Uploaded CV Background:</span>
+        </div>
+        <span class="font-bold text-emerald-400 text-right truncate max-w-[200px]"
+          x-text="titleMismatchData.resumeDomain || 'Software & IT'"></span>
+      </div>
+
+      <div class="flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-rose-400"></div>
+          <span class="text-slate-400 font-medium">Entered Target Title:</span>
+        </div>
+        <div class="text-right">
+          <span class="font-bold text-rose-400" x-text="titleMismatchData.targetTitle || 'Target Title'"></span>
+          <template x-if="titleMismatchData.targetDomain">
+            <span class="text-[10px] text-slate-400 block" x-text="'(' + titleMismatchData.targetDomain + ')'"></span>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Educational Context / Tip -->
+    <div class="bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-3 mb-5 text-[11px] text-indigo-200/90 leading-relaxed flex items-start gap-2.5">
+      <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+      <span>
+        <b>Why this matters:</b> ATS scoring engines match your genuine career history against the target role. Tailoring a CV for an incompatible field severely reduces recruitment success.
+      </span>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="space-y-2">
+      <!-- 1. Fix: Auto-detect from CV -->
+      <button @click="fixTitleAndAutoDetect()"
+        class="w-full py-2.5 px-4 rounded-xl font-bold bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-600/25 transition text-xs sm:text-sm flex items-center justify-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <span>Clear Title & Auto-Detect (Recommended)</span>
+      </button>
+
+      <!-- 2. Edit / Change Title -->
+      <button @click="focusTargetTitleInput()"
+        class="w-full py-2.5 px-4 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700/80 text-slate-200 border border-slate-700 transition text-xs flex items-center justify-center gap-2">
+        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Change Target Job Title</span>
+      </button>
+
+      <!-- 3. Optional Bypass -->
+      <div class="pt-2 text-center">
+        <button @click="proceedWithMismatchedTitle()"
+          class="text-[11px] text-slate-400 hover:text-slate-300 underline transition">
+          I understand the mismatch, proceed anyway
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

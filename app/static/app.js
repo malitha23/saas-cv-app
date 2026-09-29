@@ -31,6 +31,13 @@ function resumeApp() {
     extractedCandidateName: '',
     targetTitleMismatch: false,
     titleMismatchMessage: '',
+    showTitleMismatchModal: false,
+    titleMismatchData: {
+      targetTitle: '',
+      targetDomain: '',
+      resumeDomain: '',
+      message: ''
+    },
     uploadedFileBlob: null,
     uploadedFileBlobUrl: null,
     isUploadedFilePdf: false,
@@ -885,6 +892,12 @@ function resumeApp() {
       if (bestScore >= 2 && scores[targetDomainKey] === 0) {
         this.targetTitleMismatch = true;
         this.titleMismatchMessage = `Target title "${this.targetJobTitle}" (${targetDomainName}) does not match your uploaded CV background (${bestDomainName}).`;
+        this.titleMismatchData = {
+          targetTitle: this.targetJobTitle,
+          targetDomain: targetDomainName,
+          resumeDomain: bestDomainName,
+          message: this.titleMismatchMessage
+        };
         return false;
       }
 
@@ -893,7 +906,44 @@ function resumeApp() {
       return true;
     },
 
-    async tailorResume() {
+    openTitleMismatchModal(targetTitle, targetDomain, resumeDomain, message) {
+      this.titleMismatchData = {
+        targetTitle: targetTitle || this.targetJobTitle || 'Target Title',
+        targetDomain: targetDomain || this.titleMismatchData?.targetDomain || '',
+        resumeDomain: resumeDomain || this.titleMismatchData?.resumeDomain || 'Uploaded CV Background',
+        message: message || this.titleMismatchMessage || 'The entered title does not match your uploaded CV background.'
+      };
+      this.showTitleMismatchModal = true;
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    fixTitleAndAutoDetect() {
+      this.targetJobTitle = '';
+      this.targetTitleMismatch = false;
+      this.titleMismatchMessage = '';
+      this.showTitleMismatchModal = false;
+      this.$nextTick(() => {
+        this.tailorResume(true);
+      });
+    },
+
+    focusTargetTitleInput() {
+      this.showTitleMismatchModal = false;
+      this.$nextTick(() => {
+        const input = document.querySelector('input[x-model="targetJobTitle"]');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    },
+
+    proceedWithMismatchedTitle() {
+      this.showTitleMismatchModal = false;
+      this.tailorResume(true);
+    },
+
+    async tailorResume(allowMismatch = false) {
       // 1. Gated check: Login or register required to generate
       if (!this.currentUser) {
         this.pendingAction = 'tailor';
@@ -906,13 +956,14 @@ function resumeApp() {
         return;
       }
 
-      // 2. Validate target job title match against uploaded resume
-      if (this.targetJobTitle && !this.checkTitleMatch()) {
-        alert(`❌ Target Title Mismatch Error:\n\n${this.titleMismatchMessage}\n\nPlease enter a job title relevant to your career background, or clear the title field to let AI auto-detect.`);
-        this.$nextTick(() => {
-          const input = document.querySelector('input[x-model="targetJobTitle"]');
-          if (input) input.focus();
-        });
+      // 2. Validate target job title match against uploaded resume with beautiful modal
+      if (!allowMismatch && this.targetJobTitle && !this.checkTitleMatch()) {
+        this.openTitleMismatchModal(
+          this.targetJobTitle,
+          this.titleMismatchData.targetDomain,
+          this.titleMismatchData.resumeDomain,
+          this.titleMismatchMessage
+        );
         return;
       }
 
@@ -956,6 +1007,7 @@ function resumeApp() {
           template_style: this.currentTemplate,
           cover_letter_tone: this.coverLetterTone,
           api_key: this.userApiKey || null,
+          allow_mismatch: allowMismatch,
         };
 
         const token = localStorage.getItem('saas_token');
@@ -974,6 +1026,15 @@ function resumeApp() {
             this.showPricingModal = true;
             const quotaMsg = typeof errData.detail === 'object' ? errData.detail.message : errData.detail;
             throw new Error(quotaMsg || 'Daily free AI quota reached (2/2 runs). Upgrade to Pro ($9/mo) or Elite ($19/mo) for unlimited AI tailoring!');
+          }
+          if (res.status === 400 && typeof errData.detail === 'string' && errData.detail.includes('does not match the background in your uploaded CV')) {
+            this.openTitleMismatchModal(
+              this.targetJobTitle,
+              '',
+              '',
+              errData.detail
+            );
+            return;
           }
           throw new Error(typeof errData.detail === 'object' ? JSON.stringify(errData.detail) : (errData.detail || 'Failed to tailor resume'));
         }
