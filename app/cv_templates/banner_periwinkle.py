@@ -21,11 +21,12 @@ from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
-    _sync_resume_social_links
+    _sync_resume_social_links, _sanitize_pdf_data
 )
 
 def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     """Format 2: Soft Periwinkle top banner with circular photo on right and 2-column layout."""
+    _sanitize_pdf_data(resume)
     PAGE_W, PAGE_H = letter
     BANNER_H = 92
     banner_color = colors.HexColor("#9FB5D6")

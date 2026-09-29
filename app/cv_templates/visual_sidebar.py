@@ -22,7 +22,7 @@ from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
-    _sync_resume_social_links
+    _sync_resume_social_links, _sanitize_pdf_data
 )
 
 def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
@@ -32,6 +32,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     - Right Column starts directly with Professional Summary.
     - Deep Slate (#0F172A) + Royal Blue (#2563EB) accents.
     """
+    _sanitize_pdf_data(resume)
     PAGE_W, PAGE_H = letter
     SIDE_W = 185
     SIDE_X = 14

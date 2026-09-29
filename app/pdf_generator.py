@@ -34,6 +34,8 @@ from app.cv_templates.common import (
     _draw_sidebar_para,
     _draw_skill_progress_bar,
     _sync_resume_social_links,
+    _clean_pdf_text,
+    _sanitize_pdf_data,
 )
 
 __all__ = [
@@ -54,4 +56,6 @@ __all__ = [
     "_draw_sidebar_para",
     "_draw_skill_progress_bar",
     "_sync_resume_social_links",
+    "_clean_pdf_text",
+    "_sanitize_pdf_data",
 ]

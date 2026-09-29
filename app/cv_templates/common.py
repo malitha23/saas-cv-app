@@ -10,6 +10,7 @@ import ssl
 import base64
 import socket
 import ipaddress
+import unicodedata
 import urllib.request
 import urllib.parse
 from typing import Optional, List
@@ -24,6 +25,118 @@ from reportlab.platypus import (
 )
 
 from app.schemas import TailoredResume
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNICODE / ENCODING SANITIZATION HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Explicit fallback map for Unicode characters that don't decompose cleanly into ASCII/Latin-1
+_CHAR_FALLBACK_MAP = {
+    '\u0142': 'l', '\u0141': 'L',   # ł, Ł
+    '\u0111': 'd', '\u0110': 'D',   # đ, Đ
+    '\u0127': 'h', '\u0126': 'H',   # ħ, Ħ
+    '\u0131': 'i', '\u0130': 'I',   # Turkish dotless i, dotted I
+    '\u0153': 'oe', '\u0152': 'OE', # œ, Œ
+    '\u00e6': 'ae', '\u00c6': 'AE', # æ, Æ
+    '\u015f': 's', '\u015e': 'S',   # ş, Ş
+    '\u0219': 's', '\u0218': 'S',   # ș, Ș
+    '\u021b': 't', '\u021a': 'T',   # ț, Ț
+    '\u011f': 'g', '\u011e': 'G',   # ğ, Ğ
+    '\u200b': '',                   # zero-width space
+    '\u200e': '',                   # LTR mark
+    '\u200f': '',                   # RTL mark
+    '\ufeff': '',                   # BOM
+    '\u2028': '\n',                 # line separator
+    '\u2029': '\n',                 # paragraph separator
+    '–': '–',                       # en-dash (0x96 in cp1252)
+    '—': '—',                       # em-dash (0x97 in cp1252)
+    '‘': "'", '’': "'",             # curly single quotes
+    '“': '"', '”': '"',             # curly double quotes
+    '•': '•',                       # bullet (0x95 in cp1252)
+}
+
+
+def _clean_pdf_text(text: Optional[str]) -> str:
+    """
+    Sanitize text for ReportLab standard PostScript fonts (WinAnsi / cp1252).
+    Converts unsupported Unicode characters (like Welsh 'ŵ', Slavic 'č', etc.)
+    into their ASCII/Latin-1 compatible equivalents using NFKD decomposition
+    and a fallback character map. Prevents missing-glyph black boxes (■ / tofu).
+    """
+    if not text:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+
+    out = []
+    for ch in text:
+        # 1. Quick check: is character natively valid in cp1252 (WinAnsi)?
+        try:
+            ch.encode("cp1252")
+            out.append(ch)
+            continue
+        except UnicodeEncodeError:
+            pass
+
+        # 2. Check explicit fallback map
+        if ch in _CHAR_FALLBACK_MAP:
+            out.append(_CHAR_FALLBACK_MAP[ch])
+            continue
+
+        # 3. Unicode NFKD decomposition (e.g. 'ŵ' -> 'w' + combining circumflex)
+        decomposed = unicodedata.normalize("NFKD", ch)
+        stripped = "".join(c for c in decomposed if not unicodedata.combining(c))
+
+        # 4. Check if stripped version is cp1252 safe
+        cleaned = ""
+        for sc in stripped:
+            try:
+                sc.encode("cp1252")
+                cleaned += sc
+            except UnicodeEncodeError:
+                pass
+
+        if cleaned:
+            out.append(cleaned)
+        else:
+            # Safe ascii fallback
+            ascii_repr = ch.encode("ascii", "replace").decode("ascii")
+            if ascii_repr != "?":
+                out.append(ascii_repr)
+            else:
+                out.append(" ")
+
+    return "".join(out)
+
+
+def _sanitize_pdf_data(obj):
+    """
+    Recursively cleans all strings in a data object (Pydantic model, dict, list, or primitive)
+    to ensure all text renders cleanly in ReportLab without missing-glyph black boxes (■).
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, str):
+        return _clean_pdf_text(obj)
+    elif isinstance(obj, list):
+        for i in range(len(obj)):
+            obj[i] = _sanitize_pdf_data(obj[i])
+        return obj
+    elif isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            obj[k] = _sanitize_pdf_data(v)
+        return obj
+    elif hasattr(obj, "__dict__"):
+        for k, v in list(obj.__dict__.items()):
+            if not k.startswith("_"):
+                try:
+                    setattr(obj, k, _sanitize_pdf_data(v))
+                except Exception:
+                    pass
+        return obj
+    return obj
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -205,9 +318,10 @@ def _draw_diagonal_watermark(canvas, page_w: float, page_h: float, brand_title: 
 
 def _draw_sidebar_para(canvas, text: str, style: ParagraphStyle, x: float, y_top: float, max_w: float) -> float:
     """Wrap text inside max_w and draw on canvas. Returns total height consumed."""
-    if not text or not text.strip():
+    if not text or not str(text).strip():
         return 0.0
-    p = Paragraph(text, style)
+    cleaned_text = _clean_pdf_text(text)
+    p = Paragraph(cleaned_text, style)
     w, h = p.wrap(max_w, 400)
     p.drawOn(canvas, x, y_top - h)
     return h
@@ -243,7 +357,8 @@ def _draw_skill_progress_bar(
     text_y = y_top - 7.5
     canvas.setFont(fn_bold, 7.5)
     canvas.setFillColor(text_color)
-    canvas.drawString(x, text_y, skill_name[:24])
+    safe_name = _clean_pdf_text(skill_name)[:24]
+    canvas.drawString(x, text_y, safe_name)
 
     canvas.setFont(fn_reg, 7.0)
     canvas.setFillColor(pct_color)

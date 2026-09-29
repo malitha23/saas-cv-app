@@ -21,10 +21,11 @@ from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
-    _sync_resume_social_links
+    _sync_resume_social_links, _sanitize_pdf_data
 )
 
 def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
+    _sanitize_pdf_data(resume)
     buf = io.BytesIO()
     f_reg, f_bold, f_italic = _get_font_names(getattr(resume, "font_family", "Helvetica"))
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"

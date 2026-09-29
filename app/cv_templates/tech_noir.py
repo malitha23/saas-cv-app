@@ -21,7 +21,7 @@ from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
-    _sync_resume_social_links
+    _sync_resume_social_links, _sanitize_pdf_data
 )
 
 def _tech_noir_pdf(resume: TailoredResume) -> bytes:
@@ -31,6 +31,7 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
     - Code syntax section headers: '// 01. PROFESSIONAL_SUMMARY', '// 02. WORK_EXPERIENCE'.
     - Terminal command prompt styling and Cyan Blue (#06B6D4) tech accents.
     """
+    _sanitize_pdf_data(resume)
     PAGE_W, PAGE_H = letter
     CONSOLE_H = 82
 

@@ -12,7 +12,7 @@ Provides individual modules for each template format:
 """
 
 from app.schemas import TailoredResume
-from app.cv_templates.common import _sync_resume_social_links
+from app.cv_templates.common import _sync_resume_social_links, _sanitize_pdf_data
 from app.cv_templates.ats_templates import _ats_pdf
 from app.cv_templates.visual_sidebar import _visual_sidebar_pdf
 from app.cv_templates.banner_periwinkle import _banner_periwinkle_pdf
@@ -25,6 +25,7 @@ from app.cv_templates.cover_letter import generate_cover_letter_pdf
 def generate_resume_pdf(resume: TailoredResume) -> bytes:
     """Public entry point: dispatches resume to the selected template style."""
     _sync_resume_social_links(resume)
+    _sanitize_pdf_data(resume)
     style = resume.template_style or "classic"
     if style == "visual_sidebar":
         return _visual_sidebar_pdf(resume)
