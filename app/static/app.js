@@ -802,8 +802,8 @@ function resumeApp() {
         education: {
           name: 'Teaching & Education',
           keywords: [
-            'teacher', 'teaching', 'lecturer', 'professor', 'tutor', 'instructor', 'pedagogy', 'classroom',
-            'school', 'kindergarten', 'preschool', 'student', 'curriculum', 'education', 'academic',
+            'teacher', 'teaching', 'lecturer', 'professor', 'tutor', 'instructor', 'pedagogy', 'pedagogical',
+            'classroom', 'school teacher', 'kindergarten', 'preschool', 'curriculum design', 'lesson plan',
             'esl', 'tefl', 'english teacher', 'science teacher', 'math teacher', 'educator', 'headmaster', 'principal'
           ]
         },
@@ -1519,10 +1519,6 @@ function resumeApp() {
 
     async performAutoSave() {
       if (!this.currentUser || !this.tailoredData) return;
-      if (!this.currentUser.plan_tier || this.currentUser.plan_tier === 'free') {
-        this.autoSaveStatus = 'free_disabled';
-        return;
-      }
       this.autoSaveStatus = 'saving';
 
       const token = localStorage.getItem('saas_token');
@@ -3082,13 +3078,6 @@ function resumeApp() {
     },
 
     async loadSavedResume(id) {
-      const isFree = !this.currentUser?.plan_tier || this.currentUser?.plan_tier === 'free';
-      if (isFree) {
-        const found = this.userSavedResumes.find(r => r.id === id);
-        this.openProRestoreModal(found || { title: 'Saved Resume' });
-        return;
-      }
-
       const token = localStorage.getItem('saas_token');
       try {
         const res = await fetch(`/api/user/resumes/${id}`, {

@@ -163,8 +163,8 @@ CAREER_VALIDATION_DOMAINS = {
     "education": (
         "Teaching & Education",
         [
-            "teacher", "teaching", "lecturer", "professor", "tutor", "instructor", "pedagogy", "classroom",
-            "school", "kindergarten", "preschool", "student", "curriculum", "education", "academic",
+            "teacher", "teaching", "lecturer", "professor", "tutor", "instructor", "pedagogy", "pedagogical",
+            "classroom", "school teacher", "kindergarten", "preschool", "curriculum design", "lesson plan",
             "esl", "tefl", "english teacher", "science teacher", "math teacher", "educator", "headmaster", "principal",
         ],
     ),
