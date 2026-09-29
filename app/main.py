@@ -222,7 +222,7 @@ async def email_queue_worker_loop():
 
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     """Ensure database tables are created in MySQL on startup and start queue worker."""
     try:
         active_engine = get_engine()

@@ -37,10 +37,10 @@ class Base(DeclarativeBase):
     pass
 
 engine = None
-SessionLocal = None
+_session_factory = None
 
 def init_engine():
-    global engine, SessionLocal
+    global engine, _session_factory
     # If no MySQL URL is set, jump straight to SQLite fast fallback without network delay
     if not MYSQL_URL:
         logger.info("ℹ️ No MySQL credentials specified. Initializing SQLite local database.")
@@ -51,13 +51,7 @@ def init_engine():
         )
     else:
         connected = False
-        # Dual attempt: try configured host, and fallback between 127.0.0.1 and localhost (cPanel unix socket vs TCP)
         urls_to_try = [MYSQL_URL]
-        if "127.0.0.1" in MYSQL_URL:
-            urls_to_try.append(MYSQL_URL.replace("127.0.0.1", "localhost"))
-        elif "localhost" in MYSQL_URL:
-            urls_to_try.append(MYSQL_URL.replace("localhost", "127.0.0.1"))
-
         last_err = None
         for try_url in urls_to_try:
             try:
@@ -67,7 +61,7 @@ def init_engine():
                     max_overflow=20,
                     pool_recycle=3600,
                     pool_pre_ping=True,
-                    connect_args={"connect_timeout": 3} if "mysql" in try_url else {},
+                    connect_args={"connect_timeout": 2, "read_timeout": 2, "write_timeout": 2} if "mysql" in try_url else {},
                     echo=False
                 )
                 with candidate_engine.connect() as test_conn:
@@ -129,8 +123,14 @@ def init_engine():
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)
 
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    _session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return engine
+
+def SessionLocal():
+    global _session_factory
+    if _session_factory is None:
+        init_engine()
+    return _session_factory()
 
 def get_engine():
     global engine
@@ -140,9 +140,6 @@ def get_engine():
 
 def get_db():
     """FastAPI Dependency for request-scoped database sessions."""
-    global SessionLocal
-    if SessionLocal is None:
-        init_engine()
     db = SessionLocal()
     try:
         yield db
