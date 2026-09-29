@@ -1,0 +1,121 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- UNIFIED MODERN APP DIALOG MODAL (CONFIRM & ALERT)                   -->
+<!-- Beautiful glassmorphic modal replacing native JavaScript dialogs   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showAppDialog" x-cloak
+  @keydown.escape.window="if (showAppDialog) handleDialogCancel()"
+  class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md transition-all duration-200">
+  
+  <!-- Backdrop Click Area -->
+  <div class="fixed inset-0" @click="handleDialogCancel()"></div>
+
+  <!-- Modal Container -->
+  <div class="relative bg-slate-900/95 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 overflow-hidden animate-in fade-in zoom-in-95 backdrop-blur-xl z-10"
+    @click.stop>
+    
+    <!-- Dynamic Ambient Background Glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-300"
+      :class="{
+        'bg-red-500/15': appDialog.type === 'error' || appDialog.isDanger,
+        'bg-amber-500/15': appDialog.type === 'warning' && !appDialog.isDanger,
+        'bg-emerald-500/15': appDialog.type === 'success',
+        'bg-indigo-500/15': appDialog.type === 'confirm' && !appDialog.isDanger,
+        'bg-cyan-500/15': appDialog.type === 'info'
+      }">
+    </div>
+
+    <!-- Header Section with Dynamic Icon & Close Button -->
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex items-start gap-3.5">
+        <!-- Icon Badge -->
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-lg transition-colors duration-200"
+          :class="{
+            'bg-gradient-to-tr from-red-500/20 to-rose-500/20 border-red-500/30 text-red-400 shadow-red-500/10': appDialog.type === 'error' || appDialog.isDanger,
+            'bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400 shadow-amber-500/10': appDialog.type === 'warning' && !appDialog.isDanger,
+            'bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400 shadow-emerald-500/10': appDialog.type === 'success',
+            'bg-gradient-to-tr from-indigo-500/20 to-cyan-500/20 border-indigo-500/30 text-indigo-400 shadow-indigo-500/10': appDialog.type === 'confirm' && !appDialog.isDanger,
+            'bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border-cyan-500/30 text-cyan-400 shadow-cyan-500/10': appDialog.type === 'info'
+          }">
+          
+          <!-- Conditional Lucide Icons based on type -->
+          <template x-if="appDialog.type === 'error' || appDialog.isDanger">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+          </template>
+          <template x-if="appDialog.type === 'warning' && !appDialog.isDanger">
+            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+          </template>
+          <template x-if="appDialog.type === 'success'">
+            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+          </template>
+          <template x-if="appDialog.type === 'confirm' && !appDialog.isDanger">
+            <i data-lucide="help-circle" class="w-6 h-6"></i>
+          </template>
+          <template x-if="appDialog.type === 'info'">
+            <i data-lucide="info" class="w-6 h-6"></i>
+          </template>
+        </div>
+
+        <div class="space-y-1">
+          <h3 class="font-extrabold text-slate-100 text-lg leading-tight" x-text="appDialog.title"></h3>
+          <p class="text-xs text-slate-400 font-medium">DreemFolio Notification</p>
+        </div>
+      </div>
+
+      <!-- Close 'X' Button -->
+      <button @click="handleDialogCancel()" type="button"
+        class="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Message Body Container -->
+    <div class="p-4 bg-slate-950/70 border border-slate-800/80 rounded-2xl max-h-60 overflow-y-auto custom-scrollbar">
+      <p class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line break-words font-normal"
+        x-text="appDialog.message"></p>
+    </div>
+
+    <!-- Modal Actions / Buttons -->
+    <div class="pt-1">
+      <!-- Two buttons for CONFIRM dialogs -->
+      <template x-if="appDialog.type === 'confirm'">
+        <div class="grid grid-cols-2 gap-2.5">
+          <button @click="handleDialogCancel()" type="button"
+            class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700/80 active:scale-95 text-slate-300 hover:text-white font-semibold text-xs rounded-xl border border-slate-700 transition duration-150 text-center">
+            <span x-text="appDialog.cancelText || 'Cancel'"></span>
+          </button>
+
+          <!-- Danger Confirm Button -->
+          <template x-if="appDialog.isDanger">
+            <button @click="handleDialogConfirm()" type="button"
+              class="w-full py-2.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-red-600/20 border border-red-500/30 transition duration-150 text-center flex items-center justify-center gap-1.5">
+              <span x-text="appDialog.confirmText || 'Confirm'"></span>
+            </button>
+          </template>
+
+          <!-- Standard Confirm Button -->
+          <template x-if="!appDialog.isDanger">
+            <button @click="handleDialogConfirm()" type="button"
+              class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/20 border border-indigo-500/30 transition duration-150 text-center flex items-center justify-center gap-1.5">
+              <span x-text="appDialog.confirmText || 'Confirm'"></span>
+            </button>
+          </template>
+        </div>
+      </template>
+
+      <!-- Single button for ALERT / INFO / SUCCESS / WARNING / ERROR dialogs -->
+      <template x-if="appDialog.type !== 'confirm'">
+        <button @click="handleDialogConfirm()" type="button"
+          :class="{
+            'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-red-600/20 border-red-500/30 text-white': appDialog.type === 'error',
+            'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/20 border-amber-500/30 text-white': appDialog.type === 'warning',
+            'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/20 border-emerald-500/30 text-white': appDialog.type === 'success',
+            'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 shadow-indigo-600/20 border-indigo-500/30 text-white': appDialog.type === 'confirm' || appDialog.type === 'info'
+          }"
+          class="w-full py-2.5 px-4 font-bold text-xs rounded-xl shadow-lg border transition duration-150 active:scale-95 text-center flex items-center justify-center gap-1.5">
+          <span x-text="appDialog.confirmText || 'Understood'"></span>
+        </button>
+      </template>
+    </div>
+
+  </div>
+</div>

@@ -1235,6 +1235,7 @@
 
   <!-- Logout Confirmation Modal (Matching Dashboard) -->
   {% include 'components/modals/logout_modal.html' %}
+  {% include 'components/modals/app_dialog_modal.html' %}
 
   <!-- Toast Notification -->
   <div x-show="toastMessage" x-cloak
@@ -1286,6 +1287,18 @@
         // Logout Modal State
         showLogoutModal: false,
 
+        // Unified App Dialog Modal State
+        showAppDialog: false,
+        appDialog: {
+          type: 'info',
+          title: 'Notice',
+          message: '',
+          confirmText: 'OK',
+          cancelText: 'Cancel',
+          isDanger: false,
+          resolve: null,
+        },
+
         // Refund Request Modal State
         showRefundModal: false,
         selectedRefundOrder: null,
@@ -1294,6 +1307,11 @@
         toastMessage: '',
 
         async init() {
+          // Override native alert with modern modal
+          window.alert = (msg) => {
+            this.alertModal(msg);
+          };
+
           // Restore theme preference
           const savedTheme = localStorage.getItem('dreemfolio_theme');
           if (savedTheme === 'light') {
@@ -1609,6 +1627,102 @@
           } catch (e) {
             prompt('Copy your referral link:', url);
           }
+        },
+
+        openAppDialog({ type = 'info', title = '', message = '', confirmText = 'OK', cancelText = 'Cancel', isDanger = false }) {
+          return new Promise((resolve) => {
+            this.appDialog = {
+              type,
+              title: title || (type === 'confirm' ? 'Please Confirm' : type === 'error' ? 'Notice' : 'Alert'),
+              message: message || '',
+              confirmText: confirmText,
+              cancelText: cancelText,
+              isDanger: isDanger,
+              resolve,
+            };
+            this.showAppDialog = true;
+            this.$nextTick(() => {
+              if (window.lucide) window.lucide.createIcons();
+            });
+          });
+        },
+
+        handleDialogConfirm() {
+          const resolve = this.appDialog?.resolve;
+          this.showAppDialog = false;
+          if (resolve) resolve(true);
+        },
+
+        handleDialogCancel() {
+          const resolve = this.appDialog?.resolve;
+          this.showAppDialog = false;
+          if (resolve) resolve(false);
+        },
+
+        confirmModal(optionsOrMessage, title = 'Please Confirm', isDanger = false) {
+          if (typeof optionsOrMessage === 'string') {
+            return this.openAppDialog({
+              type: 'confirm',
+              title: title,
+              message: optionsOrMessage,
+              confirmText: 'Confirm',
+              cancelText: 'Cancel',
+              isDanger: isDanger
+            });
+          }
+          return this.openAppDialog({
+            type: 'confirm',
+            title: optionsOrMessage.title || 'Please Confirm',
+            message: optionsOrMessage.message || '',
+            confirmText: optionsOrMessage.confirmText || 'Confirm',
+            cancelText: optionsOrMessage.cancelText || 'Cancel',
+            isDanger: optionsOrMessage.isDanger || false
+          });
+        },
+
+        alertModal(optionsOrMessage, title = '', type = '') {
+          let message = '';
+          let finalTitle = title;
+          let finalType = type;
+          let confirmText = 'Understood';
+
+          if (typeof optionsOrMessage === 'string') {
+            message = optionsOrMessage;
+          } else if (optionsOrMessage && typeof optionsOrMessage === 'object') {
+            message = optionsOrMessage.message || '';
+            finalTitle = optionsOrMessage.title || finalTitle;
+            finalType = optionsOrMessage.type || finalType;
+            confirmText = optionsOrMessage.confirmText || confirmText;
+          }
+
+          const trimmed = (message || '').trim();
+          if (!finalType) {
+            if (trimmed.startsWith('✅') || trimmed.startsWith('🎉') || /success/i.test(finalTitle)) {
+              finalType = 'success';
+            } else if (trimmed.startsWith('❌') || /error|failed/i.test(trimmed) || /error/i.test(finalTitle)) {
+              finalType = 'error';
+            } else if (trimmed.startsWith('⚠️') || /warning/i.test(trimmed) || /warning/i.test(finalTitle)) {
+              finalType = 'warning';
+            } else {
+              finalType = 'info';
+            }
+          }
+
+          if (!finalTitle) {
+            if (finalType === 'success') finalTitle = 'Success';
+            else if (finalType === 'error') finalTitle = 'Action Failed';
+            else if (finalType === 'warning') finalTitle = 'Attention Required';
+            else finalTitle = 'Notice';
+          }
+
+          return this.openAppDialog({
+            type: finalType,
+            title: finalTitle,
+            message: message,
+            confirmText: confirmText,
+            cancelText: '',
+            isDanger: false
+          });
         }
       };
     }

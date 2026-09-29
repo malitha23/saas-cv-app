@@ -252,6 +252,18 @@ function resumeApp() {
     // Interactive Quota Dropdown Popover in Header
     showQuotaDropdown: false,
 
+    // Unified In-App Dialog Modal State (Replacing browser alert and confirm)
+    showAppDialog: false,
+    appDialog: {
+      type: 'info', // 'confirm', 'alert', 'error', 'success', 'warning', 'info'
+      title: 'Notice',
+      message: '',
+      confirmText: 'OK',
+      cancelText: 'Cancel',
+      isDanger: false,
+      resolve: null,
+    },
+
     // ═══════════════════════════════════════════════════════════════════════════
     // PAYHERE LITE MODE FEATURE SWITCH (See PAYHERE_LITE_MODE_GUIDE.md in root)
     // ═══════════════════════════════════════════════════════════════════════════
@@ -420,6 +432,14 @@ function resumeApp() {
     },
 
     async init() {
+      // 0. Register global app instance and modernize native alert/confirm dialogs
+      window.__resumeApp = this;
+      window.alert = (msg) => {
+        this.alertModal(msg);
+      };
+      window.confirmModal = (opts) => this.confirmModal(opts);
+      window.alertModal = (opts) => this.alertModal(opts);
+
       // 1. Restore theme preference immediately (Zero-latency before any async network operations)
       const savedTheme = localStorage.getItem('dreemfolio_theme');
       if (savedTheme === 'light') {
@@ -690,8 +710,15 @@ function resumeApp() {
       }
     },
 
-    resetAndReupload() {
-      if (confirm('Start fresh and upload a new CV? All current tailored content and inputs will be reset.')) {
+    async resetAndReupload() {
+      const confirmed = await this.confirmModal({
+        title: 'Start Fresh & Upload New CV?',
+        message: 'Start fresh and upload a new CV? All current tailored content and inputs will be reset.',
+        confirmText: 'Yes, Reset & Upload',
+        cancelText: 'Cancel',
+        isDanger: true
+      });
+      if (confirmed) {
         this.clearFile();
         this.activeTab = 'resume';
         this.editorTab = 'resume';
@@ -1282,9 +1309,16 @@ function resumeApp() {
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
 
-    removePortfolioProject(idx) {
+    async removePortfolioProject(idx) {
       if (!this.tailoredData || !this.tailoredData.projects) return;
-      if (confirm('Are you sure you want to remove this project?')) {
+      const confirmed = await this.confirmModal({
+        title: 'Remove Project?',
+        message: 'Are you sure you want to remove this project from your CV and portfolio?',
+        confirmText: 'Remove Project',
+        cancelText: 'Keep',
+        isDanger: true
+      });
+      if (confirmed) {
         this.tailoredData.projects.splice(idx, 1);
         this.refreshAllPreviews();
       }
@@ -1346,9 +1380,16 @@ function resumeApp() {
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
 
-    removePortfolioExperience(idx) {
+    async removePortfolioExperience(idx) {
       if (!this.tailoredData || !this.tailoredData.work_experience) return;
-      if (confirm('Are you sure you want to remove this career milestone?')) {
+      const confirmed = await this.confirmModal({
+        title: 'Remove Career Milestone?',
+        message: 'Are you sure you want to remove this career milestone from your CV?',
+        confirmText: 'Remove Milestone',
+        cancelText: 'Keep',
+        isDanger: true
+      });
+      if (confirmed) {
         this.tailoredData.work_experience.splice(idx, 1);
         this.refreshAllPreviews();
       }
@@ -2833,11 +2874,13 @@ function resumeApp() {
       } else {
         this.isSubmittingGoogleAuth = false;
         // Fallback for development/setup when Client ID has not been pasted in /paneladmin yet
-        const promptSimulate = confirm(
-          "⚙️ Google Sign-In Notice\n\n" +
-          "Connecting to Google Identity Services.\n\n" +
-          "Would you like to sign in using a verified Google candidate profile right now?"
-        );
+        const promptSimulate = await this.confirmModal({
+          title: 'Google Sign-In Simulation',
+          message: 'Connecting to Google Identity Services.\n\nWould you like to sign in using a verified Google candidate profile right now?',
+          confirmText: 'Sign In with Google',
+          cancelText: 'Cancel',
+          isDanger: false
+        });
         if (promptSimulate) {
           const mockId = 'google_' + Math.floor(100000 + Math.random() * 900000);
           const mockEmail = `candidate_${Math.floor(1000 + Math.random() * 9000)}@gmail.com`;
@@ -2931,6 +2974,132 @@ function resumeApp() {
       this.currentUser = null;
       this.isAuthChecking = false;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MODERN APP DIALOG SYSTEM (CONFIRM & ALERT)
+    // ═══════════════════════════════════════════════════════════════════════════
+    openAppDialog({ type = 'info', title = '', message = '', confirmText = 'OK', cancelText = 'Cancel', isDanger = false }) {
+      return new Promise((resolve) => {
+        this.appDialog = {
+          type,
+          title: title || (type === 'confirm' ? 'Please Confirm' : type === 'error' ? 'Notice' : 'Alert'),
+          message: message || '',
+          confirmText: confirmText,
+          cancelText: cancelText,
+          isDanger: isDanger,
+          resolve,
+        };
+        this.showAppDialog = true;
+        this.$nextTick(() => {
+          if (window.lucide) window.lucide.createIcons();
+        });
+      });
+    },
+
+    handleDialogConfirm() {
+      const resolve = this.appDialog?.resolve;
+      this.showAppDialog = false;
+      if (resolve) resolve(true);
+    },
+
+    handleDialogCancel() {
+      const resolve = this.appDialog?.resolve;
+      this.showAppDialog = false;
+      if (resolve) resolve(false);
+    },
+
+    confirmModal(optionsOrMessage, title = 'Please Confirm', isDanger = false) {
+      if (typeof optionsOrMessage === 'string') {
+        return this.openAppDialog({
+          type: 'confirm',
+          title: title,
+          message: optionsOrMessage,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+          isDanger: isDanger
+        });
+      }
+      return this.openAppDialog({
+        type: 'confirm',
+        title: optionsOrMessage.title || 'Please Confirm',
+        message: optionsOrMessage.message || '',
+        confirmText: optionsOrMessage.confirmText || 'Confirm',
+        cancelText: optionsOrMessage.cancelText || 'Cancel',
+        isDanger: optionsOrMessage.isDanger || false
+      });
+    },
+
+    alertModal(optionsOrMessage, title = '', type = '') {
+      let message = '';
+      let finalTitle = title;
+      let finalType = type;
+      let confirmText = 'Understood';
+
+      if (typeof optionsOrMessage === 'string') {
+        message = optionsOrMessage;
+      } else if (optionsOrMessage && typeof optionsOrMessage === 'object') {
+        message = optionsOrMessage.message || '';
+        finalTitle = optionsOrMessage.title || finalTitle;
+        finalType = optionsOrMessage.type || finalType;
+        confirmText = optionsOrMessage.confirmText || confirmText;
+      }
+
+      const trimmed = (message || '').trim();
+      if (!finalType) {
+        if (trimmed.startsWith('✅') || trimmed.startsWith('🎉') || /success/i.test(finalTitle)) {
+          finalType = 'success';
+        } else if (trimmed.startsWith('❌') || /error|failed/i.test(trimmed) || /error/i.test(finalTitle)) {
+          finalType = 'error';
+        } else if (trimmed.startsWith('⚠️') || /warning/i.test(trimmed) || /warning/i.test(finalTitle)) {
+          finalType = 'warning';
+        } else {
+          finalType = 'info';
+        }
+      }
+
+      if (!finalTitle) {
+        if (finalType === 'success') finalTitle = 'Success';
+        else if (finalType === 'error') finalTitle = 'Action Failed';
+        else if (finalType === 'warning') finalTitle = 'Attention Required';
+        else finalTitle = 'Notice';
+      }
+
+      return this.openAppDialog({
+        type: finalType,
+        title: finalTitle,
+        message: message,
+        confirmText: confirmText,
+        cancelText: '',
+        isDanger: false
+      });
+    },
+
+    async confirmDiscardAndCheckout(plan) {
+      const confirmed = await this.confirmModal({
+        title: 'Discard Pending Checkout?',
+        message: 'Are you sure you want to discard your previous pending checkout and start a new order?',
+        confirmText: 'Discard & Proceed',
+        cancelText: 'Keep Previous',
+        isDanger: true
+      });
+      if (confirmed) {
+        this.initiatePayHereCheckout(plan, true);
+      }
+    },
+
+    async handleVoiceInterviewExit() {
+      if (this.interviewStep === 'interviewing') {
+        const confirmed = await this.confirmModal({
+          title: 'Exit Active Interview?',
+          message: 'Are you sure you want to exit your active mock interview session? Your progress in this round will be lost.',
+          confirmText: 'Yes, Exit Session',
+          cancelText: 'Continue Interview',
+          isDanger: true
+        });
+        if (!confirmed) return;
+      }
+      this.closeVoiceInterviewModal();
     },
 
     async loadDynamicPlans(countryCode = null) {
@@ -3221,7 +3390,14 @@ function resumeApp() {
     },
 
     async deleteSavedResume(id) {
-      if (!confirm('Are you sure you want to delete this resume from your cloud account?')) return;
+      const confirmed = await this.confirmModal({
+        title: 'Delete Cloud Resume?',
+        message: 'Are you sure you want to delete this resume from your cloud account? This action cannot be undone.',
+        confirmText: 'Delete Resume',
+        cancelText: 'Keep Resume',
+        isDanger: true
+      });
+      if (!confirmed) return;
       const token = localStorage.getItem('saas_token');
       try {
         const res = await fetch(`/api/user/resumes/${id}`, {
@@ -3233,7 +3409,7 @@ function resumeApp() {
         this.userSavedResumes = this.userSavedResumes.filter(r => r.id !== id);
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       } catch (err) {
-        alert('Delete Error: ' + err.message);
+        this.alertModal('Delete Error: ' + err.message, 'Delete Error', 'error');
       }
     },
 
@@ -3268,7 +3444,13 @@ function resumeApp() {
           const detail = conflictData.detail || {};
           const msg = typeof detail === 'string' ? detail : (detail.message || 'You already have a payment in progress for this order.');
           
-          const viewStatus = confirm(`⏳ Active Payment in Progress!\n\n${msg}\n\nClick 'OK' to check your live payment status, or 'Cancel' to close.`);
+          const viewStatus = await this.confirmModal({
+            title: 'Active Payment in Progress',
+            message: `${msg}\n\nWould you like to check your live payment status?`,
+            confirmText: 'Check Payment Status',
+            cancelText: 'Close',
+            isDanger: false
+          });
           if (viewStatus) {
             const statusUrl = detail.status_url || (`/payment/status?order_id=${detail.order_id || ''}`);
             window.location.href = statusUrl;
@@ -3306,7 +3488,7 @@ function resumeApp() {
         document.body.appendChild(form);
         form.submit();
       } catch (err) {
-        alert('Payment Gateway: ' + err.message);
+        this.alertModal('Payment Gateway: ' + err.message, 'Payment Error', 'error');
       } finally {
         this.isSubmittingUpgrade = false;
       }
@@ -3318,7 +3500,14 @@ function resumeApp() {
 
     async cancelPendingOrder(orderId) {
       if (!orderId) return;
-      if (!confirm('Are you sure you want to cancel and dismiss this pending payment?')) return;
+      const confirmed = await this.confirmModal({
+        title: 'Cancel Pending Order?',
+        message: 'Are you sure you want to cancel and dismiss this pending payment?',
+        confirmText: 'Yes, Cancel Payment',
+        cancelText: 'Keep Payment',
+        isDanger: true
+      });
+      if (!confirmed) return;
       const token = localStorage.getItem('saas_token');
       if (!token) return;
       try {
@@ -3337,11 +3526,11 @@ function resumeApp() {
           }
           await this.refreshCurrentUser();
         } else {
-          alert(data.message || data.detail || 'Could not cancel pending order.');
+          this.alertModal(data.message || data.detail || 'Could not cancel pending order.', 'Notice', 'warning');
         }
       } catch (err) {
         console.error('Cancel order error:', err);
-        alert('Network error while canceling order.');
+        this.alertModal('Network error while canceling order.', 'Error', 'error');
       }
     },
 
@@ -3980,7 +4169,14 @@ function resumeApp() {
     },
 
     async deleteTrackedJob(jobId) {
-      if (!confirm('Are you sure you want to remove this job from your tracker?')) return;
+      const confirmed = await this.confirmModal({
+        title: 'Remove Tracked Job?',
+        message: 'Are you sure you want to remove this job from your application tracker?',
+        confirmText: 'Remove Job',
+        cancelText: 'Keep Job',
+        isDanger: true
+      });
+      if (!confirmed) return;
       const token = localStorage.getItem('saas_token');
       if (!token) return;
       try {
@@ -3992,7 +4188,7 @@ function resumeApp() {
           await this.loadUserTrackedJobs();
         }
       } catch (err) {
-        alert('Failed to delete job: ' + err.message);
+        this.alertModal('Failed to delete job: ' + err.message, 'Tracker Error', 'error');
       }
     },
 

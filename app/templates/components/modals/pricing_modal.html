@@ -160,7 +160,7 @@
               class="flex-1 sm:flex-initial px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition text-center shadow">
               Check Status
             </a>
-            <button @click="if (confirm('Are you sure you want to discard this pending checkout and start fresh?')) { initiatePayHereCheckout(currentUser.pending_order.target_plan, true); }"
+            <button @click="confirmDiscardAndCheckout(currentUser.pending_order.target_plan)"
               class="px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-amber-300/80 hover:text-amber-200 border border-amber-500/30 rounded-xl transition font-medium text-[11px]">
               Start Fresh
             </button>

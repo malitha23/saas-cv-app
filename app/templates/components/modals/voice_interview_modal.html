@@ -11,7 +11,7 @@
      x-transition:leave-end="opacity-0 scale-95"
      x-cloak
      class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6"
-     @keydown.escape.window="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()">
+     @keydown.escape.window="handleVoiceInterviewExit()">
 
   <!-- Main Container -->
   <div class="relative w-full max-w-4xl bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl shadow-violet-950/80 overflow-hidden flex flex-col max-h-[92vh]">
@@ -37,7 +37,7 @@
       </div>
 
       <!-- Close Button -->
-      <button @click="if(interviewStep !== 'interviewing' || confirm('Exit active interview session?')) closeVoiceInterviewModal()"
+      <button @click="handleVoiceInterviewExit()"
               class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>

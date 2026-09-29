@@ -55,7 +55,7 @@
             class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           </button>
-          <button @click="if (confirm('Do you want to discard this pending payment and start a new checkout?')) { initiatePayHereCheckout(currentUser.pending_order.target_plan, true); }"
+          <button @click="confirmDiscardAndCheckout(currentUser.pending_order.target_plan)"
             class="px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-amber-400/80 hover:text-amber-300 border border-amber-500/30 rounded-lg transition text-[11px]">
             Start Fresh
           </button>
