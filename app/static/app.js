@@ -29,6 +29,10 @@ function resumeApp() {
     portfolioFont: 'Inter',
     fileName: '',
     extractedCandidateName: '',
+    uploadedFileBlob: null,
+    uploadedFileBlobUrl: null,
+    isUploadedFilePdf: false,
+    copiedUploaded: false,
     dragOver: false,
     isUploading: false,
     isTailoring: false,
@@ -658,6 +662,39 @@ function resumeApp() {
       this.fileName = '';
       this.resumeText = '';
       this.extractedCandidateName = '';
+      if (this.uploadedFileBlobUrl) {
+        URL.revokeObjectURL(this.uploadedFileBlobUrl);
+        this.uploadedFileBlobUrl = null;
+      }
+      this.uploadedFileBlob = null;
+      this.isUploadedFilePdf = false;
+      if (this.activeTab === 'original_cv') {
+        this.activeTab = 'resume';
+      }
+    },
+
+    resetAndReupload() {
+      if (confirm('Start fresh and upload a new CV? All current tailored content and inputs will be reset.')) {
+        this.tailoredData = null;
+        this.clearFile();
+        this.jobDescription = '';
+        this.targetJobTitle = '';
+        this.activeTab = 'resume';
+        this.editorTab = 'resume';
+        this.mobileWorkspaceTab = 'editor';
+        if (this.autoSaveTimer) {
+          clearTimeout(this.autoSaveTimer);
+        }
+        this.autoSaveStatus = 'saved';
+        
+        this.$nextTick(() => {
+          if (window.lucide) window.lucide.createIcons();
+          const uploadInput = document.querySelector('input[type="file"][accept*=".pdf"]');
+          if (uploadInput) {
+            uploadInput.click();
+          }
+        });
+      }
     },
 
     async handleFileUpload(event) {
@@ -665,6 +702,7 @@ function resumeApp() {
       if (file) {
         await this.uploadFile(file);
       }
+      event.target.value = '';
     },
 
     async handleFileDrop(event) {
@@ -678,6 +716,18 @@ function resumeApp() {
     async uploadFile(file) {
       this.isUploading = true;
       this.fileName = file.name;
+
+      // Track uploaded file blob & URL for original CV preview
+      this.uploadedFileBlob = file;
+      this.isUploadedFilePdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (this.uploadedFileBlobUrl) {
+        URL.revokeObjectURL(this.uploadedFileBlobUrl);
+      }
+      this.uploadedFileBlobUrl = URL.createObjectURL(file);
+
+      // When a new file is uploaded, reset any prior tailoredData so inputs start fresh
+      this.tailoredData = null;
+      this.activeTab = 'resume';
 
       const formData = new FormData();
       formData.append('file', file);
@@ -699,7 +749,7 @@ function resumeApp() {
         this.showRawText = true;
       } catch (err) {
         alert('Upload Error: ' + err.message);
-        this.fileName = '';
+        this.clearFile();
       } finally {
         this.isUploading = false;
         this.$nextTick(() => {
