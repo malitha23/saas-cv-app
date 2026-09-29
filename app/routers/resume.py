@@ -11,7 +11,7 @@ from app.database import get_db
 from app.models import User, UserResume
 from app.sample_data import SAMPLE_RESUMES
 from app.parser import parse_resume_file, extract_candidate_name
-from app.ai_engine import generate_with_gemini
+from app.ai_engine import generate_with_gemini, validate_title_resume_match
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
 from app.schemas import ParseResponse, TailorRequest, TailoredResume, SaveResumeRequest, SavedResumeListItem
 from app.auth import (
@@ -120,6 +120,11 @@ async def tailor_resume(
         raise HTTPException(status_code=400, detail="Resume text cannot be empty.")
     if not payload.job_description.strip():
         raise HTTPException(status_code=400, detail="Job description cannot be empty.")
+
+    if payload.job_title and payload.job_title.strip():
+        is_match, err_msg = validate_title_resume_match(payload.resume_text, payload.job_title)
+        if not is_match:
+            raise HTTPException(status_code=400, detail=err_msg)
         
     try:
         result = await asyncio.to_thread(

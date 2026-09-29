@@ -1552,9 +1552,20 @@
         <!-- Overrides & Tone Selector -->
         <div class="grid grid-cols-2 gap-2 pt-1">
           <div>
-            <label class="text-[10px] text-slate-400 uppercase font-semibold">Target Title</label>
-            <input type="text" x-model="targetJobTitle" placeholder="e.g. Software Engineer"
-              class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] text-slate-400 uppercase font-semibold">Target Title</label>
+              <span x-show="targetTitleMismatch" class="text-[9.5px] text-rose-400 font-semibold flex items-center gap-1">
+                <i data-lucide="alert-triangle" class="w-3 h-3"></i> Mismatch
+              </span>
+            </div>
+            <input type="text" x-model="targetJobTitle" @input="checkTitleMatch()" placeholder="e.g. Software Engineer"
+              :class="targetTitleMismatch ? 'border-rose-500/80 focus:border-rose-400 bg-rose-950/20' : 'border-slate-800 focus:border-indigo-500 bg-slate-950'"
+              class="w-full mt-1 border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none transition">
+            <template x-if="targetTitleMismatch">
+              <p class="text-[10px] text-rose-400 mt-1 leading-tight flex items-start gap-1">
+                <span x-text="titleMismatchMessage"></span>
+              </p>
+            </template>
           </div>
           <div>
             <label class="text-[10px] text-slate-400 uppercase font-semibold">Cover Letter Tone</label>

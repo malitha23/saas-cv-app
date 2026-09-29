@@ -148,6 +148,126 @@ def detect_role_archetype(
     return "general_professional"
 
 
+CAREER_VALIDATION_DOMAINS = {
+    "tech": (
+        "Software & Information Technology",
+        [
+            "software", "developer", "engineer", "frontend", "backend", "fullstack", "web developer",
+            "mobile developer", "qa", "quality assurance", "test engineer", "tester", "devops", "cloud",
+            "python", "java", "javascript", "typescript", "react", "angular", "vue", "node", "c#", ".net",
+            "sql", "database", "agile", "scrum", "git", "programming", "programmer", "it specialist",
+            "computer science", "system administrator", "network engineer", "cybersecurity", "data engineer",
+            "data analyst", "data scientist", "machine learning", "ai engineer", "tech lead", "solution architect",
+        ],
+    ),
+    "education": (
+        "Teaching & Education",
+        [
+            "teacher", "teaching", "lecturer", "professor", "tutor", "instructor", "pedagogy", "classroom",
+            "school", "kindergarten", "preschool", "student", "curriculum", "education", "academic",
+            "esl", "tefl", "english teacher", "science teacher", "math teacher", "educator", "headmaster", "principal",
+        ],
+    ),
+    "medical": (
+        "Healthcare & Clinical",
+        [
+            "doctor", "nurse", "nursing", "physician", "surgeon", "medical", "clinic", "hospital",
+            "patient care", "clinical", "healthcare", "pharma", "pharmacist", "pharmacy", "dentist",
+            "dental", "paramedic", "radiology", "radiologist", "therapy", "therapist", "physiotherapist",
+        ],
+    ),
+    "finance": (
+        "Finance & Accounting",
+        [
+            "accountant", "accounting", "auditor", "audit", "bookkeeping", "bookkeeper", "finance",
+            "financial", "banking", "banker", "taxation", "tax", "cpa", "acca", "chartered accountant",
+            "wealth manager", "investment analyst", "actuary",
+        ],
+    ),
+    "trades": (
+        "Trades, Technical & Automotive",
+        [
+            "mechanic", "automotive", "electrician", "plumber", "carpenter", "welder", "welding",
+            "construction", "mason", "hvac", "painter", "machinist", "technician", "nvq", "fitter",
+            "vehicle technician", "motor mechanic",
+        ],
+    ),
+    "hospitality": (
+        "Hospitality & Culinary",
+        [
+            "chef", "cook", "culinary", "pastry", "baker", "barista", "waiter", "waitress", "bartender",
+            "hotel management", "hospitality", "restaurant manager", "housekeeping", "food and beverage",
+        ],
+    ),
+    "legal": (
+        "Legal & Law",
+        [
+            "lawyer", "attorney", "legal", "paralegal", "counsel", "solicitor", "barrister", "litigation",
+            "advocate", "judge", "legal advisor",
+        ],
+    ),
+    "aviation": (
+        "Aviation & Maritime",
+        [
+            "pilot", "flight attendant", "cabin crew", "air hostess", "aviation", "aircraft",
+            "captain", "seaman", "sailor", "maritime", "deck officer",
+        ],
+    ),
+}
+
+
+def validate_title_resume_match(resume_text: str, target_title: str) -> tuple[bool, str]:
+    """
+    Validate if target_title is compatible with candidate's uploaded resume background.
+    Returns (True, '') if compatible or generic, or (False, error_message) if mismatched.
+    """
+    t_clean = (target_title or "").strip().lower()
+    if not t_clean or len(t_clean) < 3:
+        return True, ""
+    r_clean = (resume_text or "").lower()
+
+    # Allow direct word matches if key non-generic words in target title appear in resume
+    generic_stop = {
+        "senior", "junior", "lead", "associate", "head", "chief", "specialist", "officer",
+        "expert", "assistant", "manager", "director", "intern", "consultant", "coordinator",
+        "executive", "analyst", "trainee", "entry", "level",
+    }
+    t_words = [w for w in re.split(r"[\s/\-,]+", t_clean) if len(w) > 2 and w not in generic_stop]
+    if any(w in r_clean for w in t_words):
+        return True, ""
+
+    # Check which domain the target title belongs to
+    target_domain_key = None
+    target_domain_name = None
+    for k, (name, kws) in CAREER_VALIDATION_DOMAINS.items():
+        if any(kw in t_clean for kw in kws):
+            target_domain_key = k
+            target_domain_name = name
+            break
+
+    # If title is cross-functional / generic (e.g. 'Project Manager', 'Operations'), allow it
+    if not target_domain_key:
+        return True, ""
+
+    # Calculate domain scores in resume
+    scores = {}
+    for k, (name, kws) in CAREER_VALIDATION_DOMAINS.items():
+        scores[k] = sum(1 for kw in kws if kw in r_clean)
+
+    best_key = max(scores, key=scores.get)
+    best_score = scores[best_key]
+    best_name = CAREER_VALIDATION_DOMAINS[best_key][0]
+
+    # If candidate has strong background in one domain (score >= 2) and ZERO overlap with target domain
+    if best_score >= 2 and scores[target_domain_key] == 0:
+        return (
+            False,
+            f"Target title '{target_title}' ({target_domain_name}) does not match the background in your uploaded CV ({best_name}). Please enter a relevant target title or leave it blank to auto-detect.",
+        )
+
+    return True, ""
+
+
 def generate_with_gemini(
     resume_text: str,
     job_description: str,

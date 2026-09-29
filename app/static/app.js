@@ -29,6 +29,8 @@ function resumeApp() {
     portfolioFont: 'Inter',
     fileName: '',
     extractedCandidateName: '',
+    targetTitleMismatch: false,
+    titleMismatchMessage: '',
     uploadedFileBlob: null,
     uploadedFileBlobUrl: null,
     isUploadedFilePdf: false,
@@ -668,6 +670,8 @@ function resumeApp() {
       }
       this.uploadedFileBlob = null;
       this.isUploadedFilePdf = false;
+      this.targetTitleMismatch = false;
+      this.titleMismatchMessage = '';
       if (this.activeTab === 'original_cv') {
         this.activeTab = 'resume';
       }
@@ -747,6 +751,7 @@ function resumeApp() {
         this.resumeText = data.text;
         this.extractedCandidateName = data.extracted_name || '';
         this.showRawText = true;
+        this.checkTitleMatch();
       } catch (err) {
         alert('Upload Error: ' + err.message);
         this.clearFile();
@@ -756,6 +761,136 @@ function resumeApp() {
           if (window.lucide) window.lucide.createIcons();
         });
       }
+    },
+
+    checkTitleMatch() {
+      const title = (this.targetJobTitle || '').trim().toLowerCase();
+      const resume = (this.resumeText || '').toLowerCase();
+
+      if (!title || title.length < 3 || !resume) {
+        this.targetTitleMismatch = false;
+        this.titleMismatchMessage = '';
+        return true;
+      }
+
+      // 1. Direct word overlap check: if important words from title appear in resume, it is a valid match
+      const genericStop = new Set([
+        'senior', 'junior', 'lead', 'associate', 'head', 'chief', 'specialist', 'officer',
+        'expert', 'assistant', 'manager', 'director', 'intern', 'consultant', 'coordinator',
+        'executive', 'analyst', 'trainee', 'entry', 'level'
+      ]);
+      const titleWords = title.split(/[\s/\-,]+/).filter(w => w.length > 2 && !genericStop.has(w));
+      if (titleWords.some(w => resume.includes(w))) {
+        this.targetTitleMismatch = false;
+        this.titleMismatchMessage = '';
+        return true;
+      }
+
+      // 2. Comprehensive career domain classification check
+      const careerDomains = {
+        tech: {
+          name: 'Software & Information Technology',
+          keywords: [
+            'software', 'developer', 'engineer', 'frontend', 'backend', 'fullstack', 'web developer',
+            'mobile developer', 'qa', 'quality assurance', 'test engineer', 'tester', 'devops', 'cloud',
+            'python', 'java', 'javascript', 'typescript', 'react', 'angular', 'vue', 'node', 'c#', '.net',
+            'sql', 'database', 'agile', 'scrum', 'git', 'programming', 'programmer', 'it specialist',
+            'computer science', 'system administrator', 'network engineer', 'cybersecurity', 'data engineer',
+            'data analyst', 'data scientist', 'machine learning', 'ai engineer', 'tech lead', 'solution architect'
+          ]
+        },
+        education: {
+          name: 'Teaching & Education',
+          keywords: [
+            'teacher', 'teaching', 'lecturer', 'professor', 'tutor', 'instructor', 'pedagogy', 'classroom',
+            'school', 'kindergarten', 'preschool', 'student', 'curriculum', 'education', 'academic',
+            'esl', 'tefl', 'english teacher', 'science teacher', 'math teacher', 'educator', 'headmaster', 'principal'
+          ]
+        },
+        medical: {
+          name: 'Healthcare & Clinical',
+          keywords: [
+            'doctor', 'nurse', 'nursing', 'physician', 'surgeon', 'medical', 'clinic', 'hospital',
+            'patient care', 'clinical', 'healthcare', 'pharma', 'pharmacist', 'pharmacy', 'dentist',
+            'dental', 'paramedic', 'radiology', 'radiologist', 'therapy', 'therapist', 'physiotherapist'
+          ]
+        },
+        finance: {
+          name: 'Finance & Accounting',
+          keywords: [
+            'accountant', 'accounting', 'auditor', 'audit', 'bookkeeping', 'bookkeeper', 'finance',
+            'financial', 'banking', 'banker', 'taxation', 'tax', 'cpa', 'acca', 'chartered accountant',
+            'wealth manager', 'investment analyst', 'actuary'
+          ]
+        },
+        trades: {
+          name: 'Trades, Technical & Automotive',
+          keywords: [
+            'mechanic', 'automotive', 'electrician', 'plumber', 'carpenter', 'welder', 'welding',
+            'construction', 'mason', 'hvac', 'painter', 'machinist', 'technician', 'nvq', 'fitter',
+            'vehicle technician', 'motor mechanic'
+          ]
+        },
+        hospitality: {
+          name: 'Hospitality & Culinary',
+          keywords: [
+            'chef', 'cook', 'culinary', 'pastry', 'baker', 'barista', 'waiter', 'waitress', 'bartender',
+            'hotel management', 'hospitality', 'restaurant manager', 'housekeeping', 'food and beverage'
+          ]
+        },
+        legal: {
+          name: 'Legal & Law',
+          keywords: [
+            'lawyer', 'attorney', 'legal', 'paralegal', 'counsel', 'solicitor', 'barrister', 'litigation',
+            'advocate', 'judge', 'legal advisor'
+          ]
+        },
+        aviation: {
+          name: 'Aviation & Maritime',
+          keywords: [
+            'pilot', 'flight attendant', 'cabin crew', 'air hostess', 'aviation', 'aircraft',
+            'captain', 'seaman', 'sailor', 'maritime', 'deck officer'
+          ]
+        }
+      };
+
+      // Find if target title belongs to a specific domain
+      let targetDomainKey = null;
+      let targetDomainName = null;
+      for (const [key, d] of Object.entries(careerDomains)) {
+        if (d.keywords.some(kw => title.includes(kw))) {
+          targetDomainKey = key;
+          targetDomainName = d.name;
+          break;
+        }
+      }
+
+      // If title is cross-functional / generic (e.g. 'Project Manager', 'Operations Manager'), allow it
+      if (!targetDomainKey) {
+        this.targetTitleMismatch = false;
+        this.titleMismatchMessage = '';
+        return true;
+      }
+
+      // Calculate domain presence in uploaded resume
+      const scores = {};
+      for (const [key, d] of Object.entries(careerDomains)) {
+        scores[key] = d.keywords.filter(kw => resume.includes(kw)).length;
+      }
+
+      const bestKey = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+      const bestScore = scores[bestKey];
+      const bestDomainName = careerDomains[bestKey].name;
+
+      if (bestScore >= 2 && scores[targetDomainKey] === 0) {
+        this.targetTitleMismatch = true;
+        this.titleMismatchMessage = `Target title "${this.targetJobTitle}" (${targetDomainName}) does not match your uploaded CV background (${bestDomainName}).`;
+        return false;
+      }
+
+      this.targetTitleMismatch = false;
+      this.titleMismatchMessage = '';
+      return true;
     },
 
     async tailorResume() {
@@ -768,6 +903,16 @@ function resumeApp() {
 
       if (!this.resumeText || !this.jobDescription) {
         alert('Please provide both your existing resume text and the target job description.');
+        return;
+      }
+
+      // 2. Validate target job title match against uploaded resume
+      if (this.targetJobTitle && !this.checkTitleMatch()) {
+        alert(`❌ Target Title Mismatch Error:\n\n${this.titleMismatchMessage}\n\nPlease enter a job title relevant to your career background, or clear the title field to let AI auto-detect.`);
+        this.$nextTick(() => {
+          const input = document.querySelector('input[x-model="targetJobTitle"]');
+          if (input) input.focus();
+        });
         return;
       }
 
