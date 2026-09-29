@@ -679,6 +679,12 @@ function resumeApp() {
       this.isUploadedFilePdf = false;
       this.targetTitleMismatch = false;
       this.titleMismatchMessage = '';
+      this.showTitleMismatchModal = false;
+      this.targetJobTitle = '';
+      this.targetCompany = '';
+      this.jobDescription = '';
+      this.tailoredData = null;
+      this.currentResumeId = null;
       if (this.activeTab === 'original_cv') {
         this.activeTab = 'resume';
       }
@@ -686,10 +692,7 @@ function resumeApp() {
 
     resetAndReupload() {
       if (confirm('Start fresh and upload a new CV? All current tailored content and inputs will be reset.')) {
-        this.tailoredData = null;
         this.clearFile();
-        this.jobDescription = '';
-        this.targetJobTitle = '';
         this.activeTab = 'resume';
         this.editorTab = 'resume';
         this.mobileWorkspaceTab = 'editor';
@@ -736,9 +739,27 @@ function resumeApp() {
       }
       this.uploadedFileBlobUrl = URL.createObjectURL(file);
 
-      // When a new file is uploaded, reset any prior tailoredData so inputs start fresh
+      // When a new file is uploaded, reset all previous inputs and tailored data to start clean
       this.tailoredData = null;
+      this.currentResumeId = null;
+      this.targetJobTitle = '';
+      this.targetCompany = '';
+      this.jobDescription = '';
+      this.roleArchetype = 'auto';
+      this.coverLetterTone = 'professional';
+      this.targetTitleMismatch = false;
+      this.titleMismatchMessage = '';
+      this.showTitleMismatchModal = false;
       this.activeTab = 'resume';
+      this.editorTab = 'resume';
+      this.mobileWorkspaceTab = 'editor';
+      this.coverLetterText = '';
+      this.portfolioPreviewHtml = '';
+      this.jobSearchResults = [];
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+      }
+      this.autoSaveStatus = 'saved';
 
       const formData = new FormData();
       formData.append('file', file);
