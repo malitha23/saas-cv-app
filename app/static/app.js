@@ -398,10 +398,10 @@ function resumeApp() {
       "6m": { "discount_percent": 25, "badge": "Save 25%" },
       "12m": { "discount_percent": 40, "badge": "Save 40% • Best Value" },
       "lifetime": {
-        "pro_price_lkr": 14900,
-        "elite_price_lkr": 24900,
-        "pro_price_usd": 149,
-        "elite_price_usd": 249,
+        "pro_price_lkr": 7900,
+        "elite_price_lkr": 14900,
+        "pro_price_usd": 99,
+        "elite_price_usd": 199,
         "badge": "Forever Access • 0 Renewals"
       }
     },
@@ -3216,9 +3216,9 @@ function resumeApp() {
         const lifetimeCfg = discounts['lifetime'] || {};
         let total = 0;
         if (currency === 'USD') {
-          total = lifetimeCfg[`${planKey}_price_usd`] ?? (planKey === 'elite' ? 249 : 149);
+          total = lifetimeCfg[`${planKey}_price_usd`] ?? (planKey === 'elite' ? 199 : 99);
         } else {
-          total = lifetimeCfg[`${planKey}_price_lkr`] ?? (planKey === 'elite' ? 24900 : 14900);
+          total = lifetimeCfg[`${planKey}_price_lkr`] ?? (planKey === 'elite' ? 14900 : 7900);
         }
         calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,

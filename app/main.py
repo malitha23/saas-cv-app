@@ -231,6 +231,90 @@ def on_startup():
     except Exception as e:
         print("[DB] Warning during database table initialization:", str(e))
 
+    # Auto-seed default promo code and pricing configuration
+    try:
+        from app.database import SessionLocal
+        from app.models import PromoCode, SaasSetting
+        from sqlalchemy import select
+        import json
+        from app.pricing import DEFAULT_COUNTRY_PRICING_DATA
+
+        with SessionLocal() as db:
+            # 1. Seed or ensure LAUNCH20 promo code exists
+            promo = db.scalars(select(PromoCode).where(PromoCode.code == "LAUNCH20")).first()
+            if not promo:
+                db.add(PromoCode(
+                    code="LAUNCH20",
+                    code_type="discount_percent",
+                    discount_percent=20.0,
+                    free_days=0,
+                    target_plan="any",
+                    max_uses=0,
+                    times_used=0,
+                    is_active=True,
+                    created_by_admin="System Launch Seed"
+                ))
+                db.commit()
+
+            # 2. Seed or sync billing discounts
+            disc_setting = db.scalars(select(SaasSetting).where(SaasSetting.key == "billing_discounts_json")).first()
+            new_discounts = {
+                "3m": {"discount_percent": 15, "badge": "Save 15%"},
+                "6m": {"discount_percent": 25, "badge": "Save 25%"},
+                "12m": {"discount_percent": 40, "badge": "Save 40% • Best Value"},
+                "lifetime": {
+                    "pro_price_lkr": 7900.0,
+                    "elite_price_lkr": 14900.0,
+                    "pro_price_usd": 99.0,
+                    "elite_price_usd": 199.0,
+                    "badge": "Forever Access • 0 Renewals"
+                }
+            }
+            if not disc_setting:
+                db.add(SaasSetting(
+                    key="billing_discounts_json",
+                    value=json.dumps(new_discounts, ensure_ascii=False),
+                    description="Configurable multi-duration subscription discounts"
+                ))
+                db.commit()
+            else:
+                try:
+                    existing = json.loads(disc_setting.value)
+                    if isinstance(existing, dict):
+                        if existing.get("lifetime", {}).get("pro_price_lkr") in (14900.0, 14900):
+                            existing["lifetime"]["pro_price_lkr"] = 7900.0
+                            existing["lifetime"]["elite_price_lkr"] = 14900.0
+                            existing["lifetime"]["pro_price_usd"] = 99.0
+                            existing["lifetime"]["elite_price_usd"] = 199.0
+                            disc_setting.value = json.dumps(existing, ensure_ascii=False)
+                            db.commit()
+                except Exception:
+                    pass
+
+            # 3. Update saas_country_pricing_json for LK if stored
+            country_setting = db.scalars(select(SaasSetting).where(SaasSetting.key == "saas_country_pricing_json")).first()
+            if country_setting and country_setting.value:
+                try:
+                    c_data = json.loads(country_setting.value)
+                    if isinstance(c_data, dict) and "LK" in c_data:
+                        lk_plans = c_data["LK"].get("plans", [])
+                        c_data["LK"]["sprint_price"] = "Rs. 290"
+                        for p in lk_plans:
+                            if p.get("plan_key") == "pro":
+                                p["price_display"] = "Rs. 690"
+                                p["sub_billing_text"] = "or Rs. 1,750 for 3-Month Job Hunt Pass"
+                                p["button_text"] = "Upgrade to Pro (Rs. 690/mo)"
+                            elif p.get("plan_key") == "elite":
+                                p["price_display"] = "Rs. 1,950"
+                                p["sub_billing_text"] = "or Rs. 4,950 for 3-Month Elite Pass"
+                                p["button_text"] = "Upgrade to Elite (Rs. 1,950/mo)"
+                        country_setting.value = json.dumps(c_data, ensure_ascii=False)
+                        db.commit()
+                except Exception:
+                    pass
+    except Exception as seed_err:
+        print("[DB] Note on pricing seed:", seed_err)
+
     # Launch background worker
     try:
         asyncio.create_task(email_queue_worker_loop())

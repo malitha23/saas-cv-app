@@ -166,7 +166,7 @@ class PayHereGateway:
             if curr == "USD":
                 pricing = {"sprint": 4.99, "pro": 9.00, "elite": 19.00}
             else:
-                pricing = {"sprint": 490.00, "pro": 990.00, "elite": 2490.00}
+                pricing = {"sprint": 290.00, "pro": 690.00, "elite": 1950.00}
 
         return pricing
 
@@ -180,10 +180,10 @@ class PayHereGateway:
             "6m": {"discount_percent": 25, "badge": "Save 25%"},
             "12m": {"discount_percent": 40, "badge": "Save 40% • Best Value"},
             "lifetime": {
-                "pro_price_lkr": 14900.0,
-                "elite_price_lkr": 24900.0,
-                "pro_price_usd": 149.0,
-                "elite_price_usd": 249.0,
+                "pro_price_lkr": 7900.0,
+                "elite_price_lkr": 14900.0,
+                "pro_price_usd": 99.0,
+                "elite_price_usd": 199.0,
                 "badge": "Forever Access • 0 Renewals"
             }
         }

@@ -87,7 +87,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
         "country_name": "Sri Lanka (LKR)",
         "currency_code": "LKR",
         "currency_symbol": "Rs.",
-        "sprint_price": "Rs. 490",
+        "sprint_price": "Rs. 290",
         "plans": [
             {
                 "plan_key": "free",
@@ -118,9 +118,9 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                 "plan_key": "pro",
                 "title": "Pro Career",
                 "badge": "🔥 Best Seller",
-                "price_display": "Rs. 990",
+                "price_display": "Rs. 690",
                 "period_display": "/ month",
-                "sub_billing_text": "or Rs. 2,490 for 3-Month Job Hunt Pass",
+                "sub_billing_text": "or Rs. 1,750 for 3-Month Job Hunt Pass",
                 "description": "Everything needed to land senior interviews with unbranded formats & live cloud sync.",
                 "features": [
                     "Unlimited AI Tailoring runs",
@@ -136,15 +136,15 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "💬 Unlimited 24/7 AI Career Copilot Chatbot"
                 ],
                 "is_popular": True,
-                "button_text": "Upgrade to Pro (Rs. 990/mo)"
+                "button_text": "Upgrade to Pro (Rs. 690/mo)"
             },
             {
                 "plan_key": "elite",
                 "title": "Executive Elite",
                 "badge": "Personal Brand",
-                "price_display": "Rs. 2,490",
+                "price_display": "Rs. 1,950",
                 "period_display": "/ month",
-                "sub_billing_text": "or Rs. 5,900 for 3-Month Elite Pass",
+                "sub_billing_text": "or Rs. 4,950 for 3-Month Elite Pass",
                 "description": "For Tech Leads, Architects & Executives building an elite digital brand.",
                 "features": [
                     "Everything in Pro Career",
@@ -156,7 +156,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Standalone Website HTML Export"
                 ],
                 "is_popular": False,
-                "button_text": "Upgrade to Elite (Rs. 2,490/mo)"
+                "button_text": "Upgrade to Elite (Rs. 1,950/mo)"
             }
         ]
     }
