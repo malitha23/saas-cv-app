@@ -23,13 +23,105 @@ from reportlab.lib.utils import ImageReader
 from reportlab.platypus import (
     Paragraph, Spacer, HRFlowable, Table, TableStyle, SimpleDocTemplate, KeepTogether, Image as RLImage
 )
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from app.schemas import TailoredResume
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# UNICODE / ENCODING SANITIZATION HELPERS
+# UNICODE / TRUE-TYPE FONT INITIALIZATION & ENCODING HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
+
+_FONTS_INITIALIZED = False
+_VALID_UNICODE_GLYPHS = set()
+
+
+def _init_pdf_fonts():
+    """
+    Register Unicode-capable TrueType fonts (Roboto) so special Latin and international
+    characters (such as Welsh 'ŵ', Slavic 'č', Turkish 'ş', smart punctuation, etc.)
+    render natively and crisply in PDFs without missing-glyph black boxes (■) or loss of accents.
+    """
+    global _FONTS_INITIALIZED, _VALID_UNICODE_GLYPHS
+    if _FONTS_INITIALIZED:
+        return
+    _FONTS_INITIALIZED = True
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    fonts_dir = os.path.join(base_dir, "fonts")
+
+    reg_roboto = os.path.join(fonts_dir, "Roboto-Regular.ttf")
+    bold_roboto = os.path.join(fonts_dir, "Roboto-Bold.ttf")
+    ital_roboto = os.path.join(fonts_dir, "Roboto-Italic.ttf")
+
+    # 1. Register Roboto for Helvetica / default sans-serif font family
+    if os.path.exists(reg_roboto):
+        try:
+            r_font = TTFont("Helvetica", reg_roboto)
+            pdfmetrics.registerFont(r_font)
+            _VALID_UNICODE_GLYPHS.update(r_font.face.charToGlyph.keys())
+
+            if os.path.exists(bold_roboto):
+                b_font = TTFont("Helvetica-Bold", bold_roboto)
+                pdfmetrics.registerFont(b_font)
+                _VALID_UNICODE_GLYPHS.update(b_font.face.charToGlyph.keys())
+            if os.path.exists(ital_roboto):
+                i_font = TTFont("Helvetica-Oblique", ital_roboto)
+                pdfmetrics.registerFont(i_font)
+                _VALID_UNICODE_GLYPHS.update(i_font.face.charToGlyph.keys())
+
+            pdfmetrics.registerFontFamily(
+                "Helvetica",
+                normal="Helvetica",
+                bold="Helvetica-Bold" if os.path.exists(bold_roboto) else "Helvetica",
+                italic="Helvetica-Oblique" if os.path.exists(ital_roboto) else "Helvetica",
+            )
+        except Exception as e:
+            print(f"[pdf_generator] Roboto font registration warning: {e}")
+
+    # 2. Register Windows Times-Roman & Courier if available
+    win_fonts = os.path.join(os.environ.get("WINDIR", "C:\\Windows"), "Fonts")
+    if os.path.isdir(win_fonts):
+        t_reg = os.path.join(win_fonts, "times.ttf")
+        t_bd = os.path.join(win_fonts, "timesbd.ttf")
+        t_it = os.path.join(win_fonts, "timesi.ttf")
+        if os.path.exists(t_reg):
+            try:
+                t_font = TTFont("Times-Roman", t_reg)
+                pdfmetrics.registerFont(t_font)
+                _VALID_UNICODE_GLYPHS.update(t_font.face.charToGlyph.keys())
+                if os.path.exists(t_bd):
+                    pdfmetrics.registerFont(TTFont("Times-Bold", t_bd))
+                if os.path.exists(t_it):
+                    pdfmetrics.registerFont(TTFont("Times-Italic", t_it))
+                pdfmetrics.registerFontFamily("Times-Roman", normal="Times-Roman", bold="Times-Bold", italic="Times-Italic")
+            except Exception:
+                pass
+
+        c_reg = os.path.join(win_fonts, "cour.ttf")
+        c_bd = os.path.join(win_fonts, "courbd.ttf")
+        c_it = os.path.join(win_fonts, "couri.ttf")
+        if os.path.exists(c_reg):
+            try:
+                c_font = TTFont("Courier", c_reg)
+                pdfmetrics.registerFont(c_font)
+                _VALID_UNICODE_GLYPHS.update(c_font.face.charToGlyph.keys())
+                if os.path.exists(c_bd):
+                    pdfmetrics.registerFont(TTFont("Courier-Bold", c_bd))
+                if os.path.exists(c_it):
+                    pdfmetrics.registerFont(TTFont("Courier-Oblique", c_it))
+                pdfmetrics.registerFontFamily("Courier", normal="Courier", bold="Courier-Bold", italic="Courier-Oblique")
+            except Exception:
+                pass
+
+
+# Initialize font metrics on module load
+try:
+    _init_pdf_fonts()
+except Exception:
+    pass
+
 
 # Explicit fallback map for Unicode characters that don't decompose cleanly into ASCII/Latin-1
 _CHAR_FALLBACK_MAP = {
@@ -59,19 +151,33 @@ _CHAR_FALLBACK_MAP = {
 
 def _clean_pdf_text(text: Optional[str]) -> str:
     """
-    Sanitize text for ReportLab standard PostScript fonts (WinAnsi / cp1252).
-    Converts unsupported Unicode characters (like Welsh 'ŵ', Slavic 'č', etc.)
-    into their ASCII/Latin-1 compatible equivalents using NFKD decomposition
-    and a fallback character map. Prevents missing-glyph black boxes (■ / tofu).
+    Sanitize text for ReportLab PDF rendering.
+    Preserves all valid Unicode characters supported by registered TrueType fonts
+    (e.g., Welsh 'ŵ', Slavic 'č', Turkish 'ş', smart punctuation, etc.).
+    Only strips truly unsupported characters or control marks to guarantee zero '■' boxes.
     """
     if not text:
         return ""
     if not isinstance(text, str):
         text = str(text)
 
+    _init_pdf_fonts()
+
     out = []
     for ch in text:
-        # 1. Quick check: is character natively valid in cp1252 (WinAnsi)?
+        code = ord(ch)
+
+        # 1. If character is natively supported in the registered Unicode font, PRESERVE IT!
+        if _VALID_UNICODE_GLYPHS and code in _VALID_UNICODE_GLYPHS:
+            out.append(ch)
+            continue
+
+        # 2. Check explicit fallback map
+        if ch in _CHAR_FALLBACK_MAP:
+            out.append(_CHAR_FALLBACK_MAP[ch])
+            continue
+
+        # 3. Quick check: is character natively valid in cp1252?
         try:
             ch.encode("cp1252")
             out.append(ch)
@@ -79,28 +185,16 @@ def _clean_pdf_text(text: Optional[str]) -> str:
         except UnicodeEncodeError:
             pass
 
-        # 2. Check explicit fallback map
-        if ch in _CHAR_FALLBACK_MAP:
-            out.append(_CHAR_FALLBACK_MAP[ch])
-            continue
-
-        # 3. Unicode NFKD decomposition (e.g. 'ŵ' -> 'w' + combining circumflex)
+        # 4. Unicode NFKD decomposition for characters not in font glyph set
         decomposed = unicodedata.normalize("NFKD", ch)
-        stripped = "".join(c for c in decomposed if not unicodedata.combining(c))
+        stripped = "".join(
+            c for c in decomposed
+            if not unicodedata.combining(c) and (not _VALID_UNICODE_GLYPHS or ord(c) in _VALID_UNICODE_GLYPHS)
+        )
 
-        # 4. Check if stripped version is cp1252 safe
-        cleaned = ""
-        for sc in stripped:
-            try:
-                sc.encode("cp1252")
-                cleaned += sc
-            except UnicodeEncodeError:
-                pass
-
-        if cleaned:
-            out.append(cleaned)
+        if stripped:
+            out.append(stripped)
         else:
-            # Safe ascii fallback
             ascii_repr = ch.encode("ascii", "replace").decode("ascii")
             if ascii_repr != "?":
                 out.append(ascii_repr)
