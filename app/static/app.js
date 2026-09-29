@@ -1531,7 +1531,7 @@ function resumeApp() {
     getMobileDownloadLabel() {
       if (this.activeTab === 'cover_letter') return 'Download Cover Letter (PDF)';
       if (this.activeTab === 'portfolio') return 'Publish Live Portfolio';
-      if (['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(this.currentTemplate)) {
+      if (['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive'].includes(this.currentTemplate)) {
         return 'Download Visual PDF';
       }
       return 'Download ATS PDF';
@@ -2178,7 +2178,7 @@ function resumeApp() {
       if (!this.tailoredData) return;
 
       // Lifetime Quota checks for Free Tier
-      const isVisual = ['visual_sidebar', 'creative_gradient', 'tech_noir', 'indigo_banner', 'emerald_prestige'].includes(this.currentTemplate);
+      const isVisual = ['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'tech_noir', 'indigo_banner', 'emerald_prestige', 'navy_executive'].includes(this.currentTemplate);
       const isFree = !this.currentUser.plan_tier || this.currentUser.plan_tier === 'free';
 
       if (isFree) {

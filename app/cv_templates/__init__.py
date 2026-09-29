@@ -7,6 +7,7 @@ Provides individual modules for each template format:
 - creative_gradient.py   -> Indigo Banner / Creative Gradient
 - emerald_prestige.py    -> Emerald Prestige Executive
 - tech_noir.py           -> Tech Noir Modern Tech
+- navy_executive.py      -> Navy Executive (Lorna Alvarado style)
 - cover_letter.py        -> Professional Cover Letter
 - common.py              -> Shared styling helpers, colors, fonts, watermark
 """
@@ -19,6 +20,7 @@ from app.cv_templates.banner_periwinkle import _banner_periwinkle_pdf
 from app.cv_templates.creative_gradient import _creative_gradient_pdf
 from app.cv_templates.emerald_prestige import _emerald_prestige_pdf
 from app.cv_templates.tech_noir import _tech_noir_pdf
+from app.cv_templates.navy_executive import _navy_executive_pdf
 from app.cv_templates.cover_letter import generate_cover_letter_pdf
 
 
@@ -37,6 +39,8 @@ def generate_resume_pdf(resume: TailoredResume) -> bytes:
         return _emerald_prestige_pdf(resume)
     elif style == "tech_noir":
         return _tech_noir_pdf(resume)
+    elif style == "navy_executive":
+        return _navy_executive_pdf(resume)
     return _ats_pdf(resume, style)
 
 
@@ -49,4 +53,5 @@ __all__ = [
     "_creative_gradient_pdf",
     "_emerald_prestige_pdf",
     "_tech_noir_pdf",
+    "_navy_executive_pdf",
 ]

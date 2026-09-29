@@ -155,7 +155,10 @@ async def create_resume_pdf(
     Free users can preview all visual formats on screen and download Classic ATS format within daily limits.
     Downloading Visual Photo CV formats requires Pro (or enabled in Admin panel).
     """
-    is_visual = (resume.template_style or 'classic') in ['visual_sidebar', 'creative_gradient', 'tech_noir', 'indigo_banner', 'emerald_prestige']
+    is_visual = (resume.template_style or 'classic') in [
+        'visual_sidebar', 'banner_periwinkle', 'creative_gradient',
+        'tech_noir', 'indigo_banner', 'emerald_prestige', 'navy_executive'
+    ]
     tier = (current_user.plan_tier if current_user else "free").lower()
 
     if download:

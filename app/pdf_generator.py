@@ -22,6 +22,7 @@ from app.cv_templates import (
     _creative_gradient_pdf,
     _emerald_prestige_pdf,
     _tech_noir_pdf,
+    _navy_executive_pdf,
 )
 
 from app.cv_templates.common import (
@@ -47,6 +48,7 @@ __all__ = [
     "_creative_gradient_pdf",
     "_emerald_prestige_pdf",
     "_tech_noir_pdf",
+    "_navy_executive_pdf",
     "_add",
     "_hex_to_rgb",
     "_is_safe_remote_url",
