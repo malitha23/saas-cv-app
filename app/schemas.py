@@ -75,7 +75,7 @@ class SkillCategory(BaseModel):
 class WorkExperienceItem(BaseModel):
     job_title: str = Field(..., description="Official job title")
     company: str = Field(..., description="Company or organization name")
-    location: Optional[str] = Field(None, description="City, State or 'Remote'")
+    location: Optional[str] = Field(default="", description="City, State, 'Remote' or empty string")
     start_date: str = Field(..., description="Start date (e.g. 'Nov 2024')")
     end_date: str = Field(..., description="End date (e.g. 'Present' or 'May 2024')")
     bullet_points: List[str] = Field(

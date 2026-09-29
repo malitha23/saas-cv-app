@@ -1110,7 +1110,7 @@ function resumeApp() {
       this.tailoredData.work_experience.unshift({
         job_title: 'Senior Software Engineer',
         company: 'Innovate Tech Labs',
-        location: 'Remote',
+        location: '',
         start_date: '2024',
         end_date: 'Present',
         bullet_points: ['Spearheaded enterprise architecture development delivering reliable cloud solutions.']
@@ -1567,7 +1567,7 @@ function resumeApp() {
       this.tailoredData.work_experience.unshift({
         job_title: 'Senior Software Engineer',
         company: 'Company Name',
-        location: 'Remote',
+        location: '',
         start_date: '2023',
         end_date: 'Present',
         bullet_points: [

@@ -732,7 +732,7 @@ Return ONLY valid JSON matching this schema:
     {{
       "job_title": "Real Job Title",
       "company": "Real Company / Organization Name",
-      "location": "Location or Remote",
+      "location": "Real City/Country only if explicitly stated in CV, otherwise empty string ''",
       "start_date": "Start Date",
       "end_date": "End Date",
       "bullet_points": ["Impact-driven bullet point 1", "Impact-driven bullet point 2"]
