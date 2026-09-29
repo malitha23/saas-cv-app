@@ -1277,6 +1277,23 @@ function resumeApp() {
       this.triggerAutoSave();
     },
 
+    openExternalLink(url) {
+      if (!url || typeof url !== 'string' || !url.trim()) return;
+      let target = url.trim();
+      if (target.startsWith('mailto:') || target.startsWith('tel:')) {
+        window.location.href = target;
+        return;
+      }
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) {
+        window.location.href = 'mailto:' + target;
+        return;
+      }
+      if (!target.match(/^[a-zA-Z]+:\/\//)) {
+        target = 'https://' + target;
+      }
+      window.open(target, '_blank', 'noopener,noreferrer');
+    },
+
     refreshAllPreviews() {
       this.syncSocialLinksToDirectFields();
 
