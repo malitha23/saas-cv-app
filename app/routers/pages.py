@@ -151,6 +151,7 @@ async def serve_robots_txt():
     """Serve dynamic, crawler-friendly robots.txt for Google, Bing, and major search engines."""
     content = """User-agent: *
 Allow: /
+Allow: /ai-resume-builder
 Allow: /app
 Allow: /guide
 Allow: /contact
@@ -182,6 +183,12 @@ async def serve_sitemap_xml():
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/ai-resume-builder</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
     <loc>https://www.dreemfolio.com/app</loc>
@@ -364,6 +371,24 @@ async def serve_landing(request: Request):
         return RedirectResponse(url=f"/payment/status?order_id={order_id}&status={payment_param}", status_code=303)
 
     response = templates.TemplateResponse(request=request, name="landing.html")
+    ref_param = request.query_params.get("ref")
+    if ref_param and ref_param.strip():
+        response.set_cookie(
+            key="dreemfolio_ref",
+            value=ref_param.strip(),
+            max_age=30 * 24 * 3600,  # 30-day affiliate attribution window
+            httponly=False,
+            samesite="lax",
+            path="/"
+        )
+    return response
+
+
+@router.get("/ai-resume-builder", response_class=HTMLResponse)
+@router.get("/ai-resume-builder/", response_class=HTMLResponse)
+async def serve_ai_resume_builder(request: Request):
+    """Serve the high-converting, authoritative AI Resume Builder SEO Money Page."""
+    response = templates.TemplateResponse(request=request, name="ai_resume_builder.html")
     ref_param = request.query_params.get("ref")
     if ref_param and ref_param.strip():
         response.set_cookie(
