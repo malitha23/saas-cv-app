@@ -1,5 +1,5 @@
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- SAAS AUTHENTICATION MODAL (REGISTER & LOGIN) -->
+  <!-- SAAS AUTHENTICATION MODAL (REGISTER, OTP & LOGIN) -->
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <div x-show="showAuthModal" x-cloak
     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
@@ -11,14 +11,17 @@
       <!-- Modal Header -->
       <div class="text-center space-y-1">
         <div class="w-10 h-10 mx-auto rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white mb-2">
-          <i data-lucide="lock" class="w-5 h-5"></i>
+          <i data-lucide="lock" class="w-5 h-5" x-show="authMode !== 'otp'"></i>
+          <i data-lucide="mail-check" class="w-5 h-5 text-emerald-400" x-show="authMode === 'otp'"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-100" x-text="authMode === 'login' ? 'Welcome Back to DreemFolio' : (authMode === 'forgot' ? 'Reset Your Password' : 'Create Your SaaS Account')"></h3>
-        <p class="text-xs text-slate-400" x-text="authMode === 'login' ? 'Sign in to access all templates, downloads & saved cloud resumes' : (authMode === 'forgot' ? 'Enter your email to receive a secure password reset link' : 'Register in seconds to unlock unlimited tailoring & cloud persistence')"></p>
+        <h3 class="text-lg font-bold text-slate-100"
+          x-text="authMode === 'login' ? 'Welcome Back to DreemFolio' : (authMode === 'forgot' ? 'Reset Your Password' : (authMode === 'otp' ? 'Verify Your Email Address' : 'Create Your SaaS Account'))"></h3>
+        <p class="text-xs text-slate-400"
+          x-text="authMode === 'login' ? 'Sign in to access all templates, downloads & saved cloud resumes' : (authMode === 'forgot' ? 'Enter your email to receive a secure password reset link' : (authMode === 'otp' ? 'Enter the 6-digit code sent to your email to activate your account' : 'Register in seconds to unlock unlimited tailoring & cloud persistence'))"></p>
       </div>
 
-      <!-- Mode Switcher Tabs (Hidden in forgot mode) -->
-      <div x-show="authMode !== 'forgot'" class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+      <!-- Mode Switcher Tabs (Hidden in forgot and otp modes) -->
+      <div x-show="authMode !== 'forgot' && authMode !== 'otp'" class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
         <button @click="authMode = 'login'; authError = ''; renderGoogleButton()"
           :class="{'bg-indigo-600 text-white font-bold shadow': authMode === 'login', 'text-slate-400 hover:text-slate-200': authMode !== 'login'}"
           class="py-1.5 rounded-lg transition text-center">
@@ -41,7 +44,7 @@
       </div>
 
       <!-- Prompt Alert when triggered by action -->
-      <template x-if="authPromptMessage && authMode !== 'forgot'">
+      <template x-if="authPromptMessage && authMode !== 'forgot' && authMode !== 'otp'">
         <div class="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs flex items-center gap-2">
           <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 shrink-0"></i>
           <span x-text="authPromptMessage"></span>
@@ -56,17 +59,23 @@
         </div>
       </template>
 
-      <!-- Success Alert for Forgot Password -->
-      <template x-if="forgotSuccess">
+      <!-- Success Alert for OTP / Forgot Password -->
+      <template x-if="otpSentSuccess && authMode === 'otp'">
+        <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+          <span x-text="otpSentSuccess"></span>
+        </div>
+      </template>
+
+      <template x-if="forgotSuccess && authMode === 'forgot'">
         <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2">
           <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
           <span x-text="forgotSuccess"></span>
         </div>
       </template>
 
-      <!-- Google Sign-In / Registration Action with Native Popup (Hidden in forgot mode) -->
-      <div class="pt-1" x-show="authMode !== 'forgot'">
-        <!-- 1-Click Direct Google Popup Trigger Button -->
+      <!-- Google Sign-In / Registration Action with Native Popup (Hidden in forgot and otp modes) -->
+      <div class="pt-1" x-show="authMode !== 'forgot' && authMode !== 'otp'">
         <button type="button" @click="triggerGoogleSignIn()" :disabled="isSubmittingGoogleAuth"
           class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800/80 text-slate-200 border border-slate-700/80 hover:border-indigo-500/50 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.99] disabled:opacity-50">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -87,15 +96,15 @@
         </button>
       </div>
 
-      <!-- Divider: OR (Hidden in forgot mode) -->
-      <div class="relative flex items-center py-1" x-show="authMode !== 'forgot'">
+      <!-- Divider: OR (Hidden in forgot and otp modes) -->
+      <div class="relative flex items-center py-1" x-show="authMode !== 'forgot' && authMode !== 'otp'">
         <div class="flex-grow border-t border-slate-800"></div>
         <span class="flex-shrink mx-3 text-[10px] uppercase font-extrabold tracking-widest text-slate-500">or with email</span>
         <div class="flex-grow border-t border-slate-800"></div>
       </div>
 
-      <!-- Auth Form (Login / Register) -->
-      <form x-show="authMode !== 'forgot'" @submit.prevent="submitAuth()" class="space-y-3 pt-1 text-xs">
+      <!-- Auth Form (Login / Register Initial Screen) -->
+      <form x-show="authMode === 'login' || authMode === 'register'" @submit.prevent="submitAuth()" class="space-y-3 pt-1 text-xs">
         <div x-show="authMode === 'register'">
           <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1">Full Name</label>
           <input type="text" x-model="authForm.full_name" placeholder="Malitha Sayuranga"
@@ -118,21 +127,68 @@
           </div>
           <input type="password" required minlength="6" x-model="authForm.password" placeholder="••••••••"
             class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:border-indigo-500 focus:outline-none">
-          <span x-show="authMode === 'register'" class="text-[9px] text-slate-500 mt-0.5 block">Minimum 6 characters. Encrypted with bcrypt.</span>
+          <span x-show="authMode === 'register'" class="text-[9px] text-slate-500 mt-0.5 block">Minimum 6 characters. We will send a 6-digit verification code to confirm this email.</span>
         </div>
 
         <button type="submit" :disabled="isSubmittingAuth"
           class="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition">
           <template x-if="!isSubmittingAuth">
-            <span x-text="authMode === 'login' ? 'Sign In' : 'Create Free Account'"></span>
+            <span x-text="authMode === 'login' ? 'Sign In' : 'Continue & Verify Email →'"></span>
           </template>
           <template x-if="isSubmittingAuth">
             <div class="flex items-center gap-2">
               <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Processing...</span>
+              <span x-text="authMode === 'login' ? 'Signing In...' : 'Sending Verification Code...'"></span>
             </div>
           </template>
         </button>
+      </form>
+
+      <!-- OTP Verification Form (Step 2 of Register) -->
+      <form x-show="authMode === 'otp'" @submit.prevent="submitVerifyOtp()" class="space-y-4 pt-1 text-xs">
+        <div class="text-center p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-slate-300">
+          <p class="text-xs">We sent a 6-digit verification code to:</p>
+          <p class="text-sm font-bold text-indigo-300 font-mono mt-0.5" x-text="authForm.email"></p>
+        </div>
+
+        <div>
+          <label class="block text-[10px] text-slate-400 uppercase font-semibold mb-1 text-center">Enter 6-Digit Code</label>
+          <input type="text" required maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+            x-model="otpCode" placeholder="123456"
+            autocomplete="one-time-code"
+            class="w-full text-center text-2xl font-mono tracking-[10px] bg-slate-950 border border-indigo-500/60 rounded-xl px-3 py-2.5 text-white focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+          <span class="text-[10px] text-slate-500 text-center block mt-1">Code is valid for 10 minutes. Check your Spam folder if not received.</span>
+        </div>
+
+        <button type="submit" :disabled="isSubmittingOtp || otpCode.length !== 6"
+          class="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition">
+          <template x-if="!isSubmittingOtp">
+            <span>Verify & Create Account</span>
+          </template>
+          <template x-if="isSubmittingOtp">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Verifying Code...</span>
+            </div>
+          </template>
+        </button>
+
+        <div class="flex items-center justify-between text-[11px] pt-1 text-slate-400">
+          <button type="button" @click="authMode = 'register'; authError = '';" class="text-slate-400 hover:text-white flex items-center gap-1">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Edit Details</span>
+          </button>
+          <div>
+            <template x-if="otpResendCountdown > 0">
+              <span class="text-slate-500">Resend in <strong class="text-indigo-400 font-mono" x-text="otpResendCountdown + 's'"></strong></span>
+            </template>
+            <template x-if="otpResendCountdown <= 0">
+              <button type="button" @click="resendRegistrationOtp()" :disabled="isSubmittingAuth" class="text-indigo-400 hover:text-indigo-300 font-semibold underline">
+                Resend Code
+              </button>
+            </template>
+          </div>
+        </div>
       </form>
 
       <!-- Forgot Password Form -->
@@ -165,6 +221,9 @@
         </template>
         <template x-if="authMode === 'register'">
           <span>Already have an account? <button @click="authMode = 'login'; authError = ''; forgotSuccess = ''" class="text-indigo-400 hover:underline font-semibold">Sign In</button></span>
+        </template>
+        <template x-if="authMode === 'otp'">
+          <span>Already verified? <button @click="authMode = 'login'; authError = '';" class="text-indigo-400 hover:underline font-semibold">Sign In</button></span>
         </template>
         <template x-if="authMode === 'forgot'">
           <span>Remember your password? <button @click="authMode = 'login'; authError = ''; forgotSuccess = ''" class="text-indigo-400 hover:underline font-semibold">Back to Sign In</button></span>

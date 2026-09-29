@@ -92,6 +92,11 @@ function resumeApp() {
     authForm: { email: '', password: '', full_name: '' },
     authError: '',
     isSubmittingAuth: false,
+    otpCode: '',
+    isSubmittingOtp: false,
+    otpSentSuccess: '',
+    otpResendCountdown: 0,
+    otpResendInterval: null,
     forgotEmail: '',
     isSubmittingForgot: false,
     forgotSuccess: '',
@@ -2173,21 +2178,51 @@ function resumeApp() {
       this.authError = '';
       this.isSubmittingAuth = true;
 
-      const endpoint = this.authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
-      const payload = {
-        email: this.authForm.email,
-        password: this.authForm.password,
-      };
+      // Registration Flow: Dispatch 6-digit OTP verification email first
       if (this.authMode === 'register') {
-        payload.full_name = this.authForm.full_name || 'Candidate';
+        const payload = {
+          email: this.authForm.email ? this.authForm.email.trim() : '',
+          password: this.authForm.password,
+          full_name: this.authForm.full_name ? this.authForm.full_name.trim() : 'Candidate',
+        };
         const refStored = this.getActiveReferralCode();
         if (refStored) {
           payload.referral_code = refStored;
         }
+
+        try {
+          const res = await fetch('/api/auth/send-registration-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.detail || 'Failed to send verification code.');
+          }
+
+          this.otpSentSuccess = data.message || `A verification code was dispatched to ${payload.email}`;
+          this.authMode = 'otp';
+          this.otpCode = '';
+          this.startOtpCountdown(60);
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        } catch (err) {
+          this.authError = err.message;
+        } finally {
+          this.isSubmittingAuth = false;
+        }
+        return;
       }
 
+      // Login Flow
+      const payload = {
+        email: this.authForm.email,
+        password: this.authForm.password,
+      };
+
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -2212,16 +2247,13 @@ function resumeApp() {
         this.authPromptMessage = '';
 
         if (wasPendingTailor) {
-          // Immediately start tailoring the resume seamlessly!
           this.$nextTick(() => {
             this.tailorResume();
           });
         } else {
           this.welcomeModalData = {
-            title: this.authMode === 'register' ? '🎉 Welcome to DreemFolio AI!' : '👋 Welcome Back!',
-            message: this.authMode === 'register'
-              ? `Your SaaS account for ${data.user.email} is ready. Start optimizing your resume with AI right away!`
-              : `Great to see you again, ${data.user.full_name}! All your documents and daily quotas are synced.`
+            title: '👋 Welcome Back!',
+            message: `Great to see you again, ${data.user.full_name}! All your documents and daily quotas are synced.`
           };
           this.showWelcomeModal = true;
         }
@@ -2231,6 +2263,112 @@ function resumeApp() {
       } finally {
         this.isSubmittingAuth = false;
       }
+    },
+
+    async submitVerifyOtp() {
+      this.authError = '';
+      const cleanCode = (this.otpCode || '').trim();
+      if (!cleanCode || cleanCode.length !== 6) {
+        this.authError = 'Please enter the 6-digit verification code sent to your email.';
+        return;
+      }
+
+      this.isSubmittingOtp = true;
+      try {
+        const res = await fetch('/api/auth/verify-registration-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: this.authForm.email ? this.authForm.email.trim() : '',
+            otp_code: cleanCode
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Verification failed. Please check the code.');
+        }
+
+        // Save JWT access token & user profile
+        localStorage.setItem('saas_token', data.access_token);
+        if (data.user) {
+          localStorage.setItem('saas_user', JSON.stringify(data.user));
+        }
+        this.avatarImgFailed = false;
+        this.currentUser = data.user;
+        this.showAuthModal = false;
+        this.authMode = 'login';
+        this.otpCode = '';
+        if (this.otpResendInterval) clearInterval(this.otpResendInterval);
+
+        const wasPendingTailor = (this.pendingAction === 'tailor');
+        this.pendingAction = null;
+        this.authPromptMessage = '';
+
+        if (wasPendingTailor) {
+          this.$nextTick(() => {
+            this.tailorResume();
+          });
+        } else {
+          this.welcomeModalData = {
+            title: '🎉 Email Verified & Account Created!',
+            message: `Welcome to DreemFolio AI, ${data.user.full_name}! Your verified account is ready. Start building your ATS resume today.`
+          };
+          this.showWelcomeModal = true;
+        }
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      } catch (err) {
+        this.authError = err.message;
+      } finally {
+        this.isSubmittingOtp = false;
+      }
+    },
+
+    async resendRegistrationOtp() {
+      if (this.otpResendCountdown > 0) return;
+      this.authError = '';
+      this.otpSentSuccess = '';
+      this.isSubmittingAuth = true;
+
+      try {
+        const payload = {
+          email: this.authForm.email ? this.authForm.email.trim() : '',
+          password: this.authForm.password,
+          full_name: this.authForm.full_name ? this.authForm.full_name.trim() : 'Candidate',
+        };
+        const refStored = this.getActiveReferralCode();
+        if (refStored) payload.referral_code = refStored;
+
+        const res = await fetch('/api/auth/send-registration-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to resend verification code.');
+        }
+
+        this.otpSentSuccess = 'A fresh 6-digit verification code has been dispatched to your email.';
+        this.startOtpCountdown(60);
+      } catch (err) {
+        this.authError = err.message;
+      } finally {
+        this.isSubmittingAuth = false;
+      }
+    },
+
+    startOtpCountdown(seconds = 60) {
+      if (this.otpResendInterval) clearInterval(this.otpResendInterval);
+      this.otpResendCountdown = seconds;
+      this.otpResendInterval = setInterval(() => {
+        if (this.otpResendCountdown > 0) {
+          this.otpResendCountdown--;
+        } else {
+          clearInterval(this.otpResendInterval);
+        }
+      }, 1000);
     },
 
     async submitForgotPassword() {

@@ -351,4 +351,26 @@ class AffiliateWithdrawal(Base):
         return f"<AffiliateWithdrawal(id={self.id}, user_id={self.user_id}, amount={self.amount}, status='{self.status}')>"
 
 
+class EmailVerificationOtp(Base):
+    """
+    Stores 6-digit OTP verification codes for new email registrations.
+    Guarantees anti-fraud protection against disposable and fake email spam.
+    """
+    __tablename__ = "email_verification_otps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    otp_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Candidate")
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    referral_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<EmailVerificationOtp(email='{self.email}', otp='{self.otp_code}', is_used={self.is_used})>"
+
+
 

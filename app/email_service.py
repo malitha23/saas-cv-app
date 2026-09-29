@@ -356,6 +356,30 @@ def dispatch_email_in_background(to_email: str, subject: str, html_body: str, ba
 # HIGH-LEVEL TRANSACTIONAL EMAIL DISPATCHERS
 # ─────────────────────────────────────────────────────────────────────────────
 
+def send_user_registration_otp(
+    to_email: str,
+    full_name: str,
+    otp_code: str,
+    base_url: str = "http://localhost:8000",
+    background_tasks=None
+):
+    """Sends 6-digit OTP verification code to prospective SaaS registrant."""
+    template = jinja_env.get_template("emails/user_registration_otp.html")
+    html = template.render(
+        subject=f"🔐 {otp_code} is your DreemFolio verification code",
+        full_name=full_name or "Candidate",
+        otp_code=otp_code,
+        base_url=base_url.rstrip("/"),
+        current_year=datetime.utcnow().year
+    )
+    dispatch_email_in_background(
+        to_email,
+        f"🔐 {otp_code} is your DreemFolio verification code",
+        html,
+        background_tasks
+    )
+
+
 def send_user_welcome_email(to_email: str, full_name: str, base_url: str = "http://localhost:8000", background_tasks=None):
     """Sends warm welcome email to new SaaS registrant."""
     template = jinja_env.get_template("emails/user_welcome.html")

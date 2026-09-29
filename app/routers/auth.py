@@ -10,11 +10,12 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
-from app.models import User
+from app.models import User, EmailVerificationOtp
 from app.schemas import (
     GoogleConfigResponse, GoogleAuthRequest, TokenResponse,
     UserRegisterRequest, UserLoginRequest, ForgotPasswordRequest,
-    ResetPasswordRequest, UserResponse
+    ResetPasswordRequest, UserResponse,
+    SendRegistrationOtpRequest, VerifyRegistrationOtpRequest
 )
 from app.auth import (
     hash_password, verify_password, create_access_token,
@@ -24,7 +25,8 @@ from app.auth import (
 from app.state import build_user_response
 from app.email_service import (
     send_user_welcome_email, send_admin_new_user_alert,
-    send_user_forgot_password, send_user_password_reset_success
+    send_user_forgot_password, send_user_password_reset_success,
+    send_user_registration_otp
 )
 
 logger = logging.getLogger("dreemfolio.auth")
@@ -215,39 +217,178 @@ def process_referral_signup(new_user: User, raw_ref_code: Optional[str], db: Ses
         return False
     except Exception as e:
         logger.warning("Error processing referral signup: %s", e)
-        return False
+DISPOSABLE_EMAIL_DOMAINS = {
+    "mailinator.com", "tempmail.com", "10minutemail.com", "guerrillamail.com",
+    "trashmail.com", "yopmail.com", "dispostable.com", "getairmail.com",
+    "fakeinbox.com", "sharklasers.com", "guerrillamailblock.com", "grr.la",
+    "temp-mail.org", "throwawaymail.com", "nada.ltd", "mohmal.com", "inboxkitten.com",
+    "burnermail.io", "maildrop.cc", "crazymailing.com", "mytemp.email", "disposablemail.com"
+}
 
 
-@router.post("/api/auth/register", response_model=TokenResponse)
-async def register_user(
-    req: UserRegisterRequest,
+@router.post("/api/auth/send-registration-otp")
+async def send_registration_otp(
+    req: SendRegistrationOtpRequest,
     request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    """Register a new SaaS user with secure bcrypt hashing (Defaults to Free Starter Tier)."""
+    """
+    Validates email format, screens for disposable/fake domains, generates a secure 6-digit OTP,
+    and dispatches verification code via email. Blocks fake and unverified account generation.
+    """
     email_clean = req.email.strip().lower()
-    stmt = select(User).where(User.email == email_clean)
-    existing = db.scalars(stmt).first()
+    domain = email_clean.split("@")[-1] if "@" in email_clean else ""
+    if domain in DISPOSABLE_EMAIL_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail="Temporary or disposable email domains are not permitted. Please use a legitimate personal or work email address."
+        )
+
+    # Check if already registered
+    existing_user = db.scalars(select(User).where(User.email == email_clean)).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="An account with this email address already exists. Please log in."
+        )
+
+    # Rate limiting: max 1 OTP request every 45 seconds per email
+    now = datetime.datetime.utcnow()
+    recent_otp = db.scalars(
+        select(EmailVerificationOtp)
+        .where(
+            EmailVerificationOtp.email == email_clean,
+            EmailVerificationOtp.is_used == False,
+            EmailVerificationOtp.created_at >= now - datetime.timedelta(seconds=45)
+        )
+    ).first()
+    if recent_otp:
+        raise HTTPException(
+            status_code=429,
+            detail="A verification code was recently sent. Please wait 45 seconds before requesting another code."
+        )
+
+    # Generate 6-digit cryptographic OTP
+    otp_code = f"{secrets.randbelow(900000) + 100000}"
+    expires_at = now + datetime.timedelta(minutes=10)
+    pw_hash = hash_password(req.password)
+    clean_name = re.sub(r"<[^>]*>", "", req.full_name or "").strip()
+    clean_name = re.sub(r"[<>\"'`{};]", "", clean_name)
+    clean_name = re.sub(r"\s+", " ", clean_name)[:70] or "Candidate"
+
+    incoming_ref = (req.referral_code or request.cookies.get("dreemfolio_ref") or "").strip() or None
+
+    # Invalidate previous unused OTPs for this email
+    prev_otps = db.scalars(
+        select(EmailVerificationOtp).where(
+            EmailVerificationOtp.email == email_clean,
+            EmailVerificationOtp.is_used == False
+        )
+    ).all()
+    for p in prev_otps:
+        p.is_used = True
+
+    # Record new OTP
+    otp_record = EmailVerificationOtp(
+        email=email_clean,
+        otp_code=otp_code,
+        full_name=clean_name,
+        password_hash=pw_hash,
+        referral_code=incoming_ref,
+        expires_at=expires_at,
+        is_used=False
+    )
+    db.add(otp_record)
+    db.commit()
+
+    # Dispatch email in background
+    base_url = str(request.base_url).rstrip("/")
+    send_user_registration_otp(
+        to_email=email_clean,
+        full_name=clean_name,
+        otp_code=otp_code,
+        base_url=base_url,
+        background_tasks=background_tasks
+    )
+
+    return {
+        "success": True,
+        "message": f"A 6-digit verification code has been sent to {email_clean}. Please check your inbox.",
+        "email": email_clean
+    }
+
+
+@router.post("/api/auth/verify-registration-otp", response_model=TokenResponse)
+async def verify_registration_otp(
+    req: VerifyRegistrationOtpRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Verifies 6-digit OTP code. Upon successful verification, securely creates user account,
+    applies referral rewards, and issues cryptographic JWT token.
+    """
+    email_clean = req.email.strip().lower()
+    otp_clean = req.otp_code.strip()
+    now = datetime.datetime.utcnow()
+
+    # Query active, unexpired OTP for this email
+    otp_record = db.scalars(
+        select(EmailVerificationOtp)
+        .where(
+            EmailVerificationOtp.email == email_clean,
+            EmailVerificationOtp.is_used == False,
+            EmailVerificationOtp.expires_at >= now
+        )
+        .order_by(EmailVerificationOtp.id.desc())
+    ).first()
+
+    if not otp_record:
+        raise HTTPException(
+            status_code=400,
+            detail="Verification code is invalid or has expired. Please request a new code."
+        )
+
+    # Brute-force check: max 5 failed attempts per OTP record
+    if otp_record.attempts >= 5:
+        otp_record.is_used = True
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="Too many incorrect attempts. This verification code has been revoked. Please request a new one."
+        )
+
+    if otp_record.otp_code != otp_clean:
+        otp_record.attempts += 1
+        db.commit()
+        remaining = 5 - otp_record.attempts
+        raise HTTPException(
+            status_code=400,
+            detail=f"Incorrect verification code. Please check your email and try again ({remaining} attempts remaining)."
+        )
+
+    # Mark OTP as successfully used
+    otp_record.is_used = True
+    db.commit()
+
+    # Re-check user existence in case of race condition
+    existing = db.scalars(select(User).where(User.email == email_clean)).first()
     if existing:
         raise HTTPException(
             status_code=400,
             detail="An account with this email address already exists. Please log in."
         )
 
-    my_referral_code = generate_unique_referral_code(db)
-
-    clean_full_name = re.sub(r"<[^>]*>", "", req.full_name or "").strip()
-    clean_full_name = re.sub(r"[<>\"'`{};]", "", clean_full_name)
-    clean_full_name = re.sub(r"\s+", " ", clean_full_name)[:70] or "Candidate"
-
+    my_ref_code = generate_unique_referral_code(db)
     user = User(
         email=email_clean,
-        hashed_password=hash_password(req.password),
-        full_name=clean_full_name,
-        plan_tier="free",  # Default Free Starter Tier
+        hashed_password=otp_record.password_hash,
+        full_name=otp_record.full_name,
+        plan_tier="free",
         subscription_status="active",
-        referral_code=my_referral_code
+        referral_code=my_ref_code
     )
     try:
         db.add(user)
@@ -260,14 +401,14 @@ async def register_user(
             detail="An account with this email address already exists. Please log in."
         )
 
-    # Process Referral attribution if provided (or via 30-day cookie)
-    incoming_ref = (req.referral_code or request.cookies.get("dreemfolio_ref") or "").strip()
+    # Process referral attribution if code stored
+    incoming_ref = (otp_record.referral_code or request.cookies.get("dreemfolio_ref") or "").strip()
     if incoming_ref:
         process_referral_signup(user, incoming_ref, db)
 
     base_url = str(request.base_url).rstrip("/")
     send_user_welcome_email(user.email, user.full_name, base_url, background_tasks)
-    send_admin_new_user_alert(user.email, user.full_name, "Email", base_url, db, background_tasks)
+    send_admin_new_user_alert(user.email, user.full_name, "Email (Verified OTP)", base_url, db, background_tasks)
 
     token = create_access_token(user)
     return TokenResponse(
@@ -275,6 +416,26 @@ async def register_user(
         token_type="bearer",
         user=build_user_response(user, db)
     )
+
+
+@router.post("/api/auth/register")
+async def register_user_redirect_to_otp(
+    req: UserRegisterRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Mandatory email verification gateway: intercepts direct registration calls
+    and routes through 6-digit OTP verification to prevent fake email creation.
+    """
+    otp_req = SendRegistrationOtpRequest(
+        email=req.email,
+        password=req.password,
+        full_name=req.full_name,
+        referral_code=req.referral_code
+    )
+    return await send_registration_otp(otp_req, request, background_tasks, db)
 
 
 @router.post("/api/auth/login", response_model=TokenResponse)
