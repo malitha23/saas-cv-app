@@ -62,6 +62,12 @@ async def auth_with_google(
     )
 
     google_sub = str(google_info["sub"]).strip()
+    google_email = str(google_info.get("email") or "").strip().lower()
+    if not google_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Google authentication failed: Email address was not provided by Google."
+        )
     raw_google_name = str(google_info.get("name") or "Candidate").strip()
     clean_google_name = re.sub(r"<[^>]*>", "", raw_google_name).strip()
     clean_google_name = re.sub(r"[<>\"'`{};]", "", clean_google_name)
