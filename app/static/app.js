@@ -3078,6 +3078,13 @@ function resumeApp() {
     },
 
     async loadSavedResume(id) {
+      const isFree = !this.currentUser?.plan_tier || this.currentUser?.plan_tier === 'free';
+      if (isFree && !this.adminSettingsState?.free_allow_cloud_restore) {
+        const found = this.userSavedResumes.find(r => r.id === id);
+        this.openProRestoreModal(found || { title: 'Saved Resume' });
+        return;
+      }
+
       const token = localStorage.getItem('saas_token');
       try {
         const res = await fetch(`/api/user/resumes/${id}`, {
