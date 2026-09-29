@@ -851,6 +851,8 @@ function resumeApp() {
         }
         if (!this.tailoredData.education) {
           this.tailoredData.education = [];
+        } else {
+          this.tailoredData.education.forEach(edu => this.syncEduDates(edu));
         }
         if (!this.tailoredData.skill_categories) {
           this.tailoredData.skill_categories = [];
@@ -1635,6 +1637,41 @@ function resumeApp() {
       this.refreshAllPreviews();
     },
 
+    syncEduDates(edu) {
+      if (!edu) return;
+      if (!edu.start_date && !edu.end_date && edu.graduation_year) {
+        const gy = String(edu.graduation_year).trim();
+        let splitDone = false;
+        for (const sep of [' - ', ' – ', ' — ', '-']) {
+          if (gy.includes(sep)) {
+            const parts = gy.split(sep);
+            edu.start_date = (parts[0] || '').trim();
+            edu.end_date = (parts[1] || '').trim();
+            splitDone = true;
+            break;
+          }
+        }
+        if (!splitDone) {
+          edu.end_date = gy;
+          edu.start_date = '';
+        }
+      }
+      this.updateEduGradYear(edu);
+    },
+
+    updateEduGradYear(edu) {
+      if (!edu) return;
+      const start = (edu.start_date || '').trim();
+      const end = (edu.end_date || '').trim();
+      if (start && end) {
+        edu.graduation_year = `${start} - ${end}`;
+      } else if (end) {
+        edu.graduation_year = end;
+      } else if (start) {
+        edu.graduation_year = start;
+      }
+    },
+
     // Education Customizer
     addEducation() {
       if (!this.tailoredData) return;
@@ -1643,6 +1680,8 @@ function resumeApp() {
         degree: 'BSc in Software Engineering',
         institution: 'University / Institute Name',
         location: 'Remote',
+        start_date: '2021',
+        end_date: '2025',
         graduation_year: '2021 - 2025',
         details: 'First Class Honours'
       });
@@ -2924,6 +2963,9 @@ function resumeApp() {
         this.lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         this.tailoredData = loadedResume;
+        if (this.tailoredData && this.tailoredData.education && Array.isArray(this.tailoredData.education)) {
+          this.tailoredData.education.forEach(edu => this.syncEduDates(edu));
+        }
         this.targetJobTitle = loadedResume.target_job_title || '';
         this.targetCompany = loadedResume.target_company || '';
         this.currentTemplate = loadedResume.template_style || 'visual_sidebar';

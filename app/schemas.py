@@ -3,7 +3,7 @@ import uuid
 import re
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SocialLink(BaseModel):
@@ -90,12 +90,44 @@ class EducationItem(BaseModel):
     )
     institution: str = Field(..., description="University / College name")
     location: Optional[str] = Field(None, description="City, State or Country")
+    start_date: Optional[str] = Field(
+        None, description="Start date/year (e.g. '2021' or 'Nov 2021')"
+    )
+    end_date: Optional[str] = Field(
+        None, description="End date/year or graduation year (e.g. '2025' or 'Present')"
+    )
     graduation_year: str = Field(
-        ..., description="Graduation year (e.g. '2023 - 2025')"
+        default="", description="Graduation year or date range (e.g. '2023 - 2025')"
     )
     details: Optional[str] = Field(
         None, description="GPA, Honors, or notable coursework"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_education_dates(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            start = data.get("start_date")
+            end = data.get("end_date")
+            grad = data.get("graduation_year")
+            if (not grad or not str(grad).strip()) and (start or end):
+                if start and end:
+                    data["graduation_year"] = f"{start} - {end}"
+                elif end:
+                    data["graduation_year"] = str(end)
+                elif start:
+                    data["graduation_year"] = str(start)
+            elif grad and (not start and not end):
+                grad_str = str(grad).strip()
+                for sep in [" - ", " – ", " — ", "-"]:
+                    if sep in grad_str:
+                        parts = grad_str.split(sep, 1)
+                        data["start_date"] = parts[0].strip()
+                        data["end_date"] = parts[1].strip()
+                        break
+                else:
+                    data["end_date"] = grad_str
+        return data
 
 
 class ProjectItem(BaseModel):

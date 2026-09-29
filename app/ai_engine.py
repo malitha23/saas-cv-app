@@ -743,7 +743,9 @@ Return ONLY valid JSON matching this schema:
       "degree": "Real Degree / Qualification / NVQ",
       "institution": "Real Institution / Authority / School",
       "location": "Location",
-      "graduation_year": "Graduation Year / Status",
+      "start_date": "Start Year (e.g. 2020)",
+      "end_date": "End Year or Graduation Year (e.g. 2024)",
+      "graduation_year": "Start - End or Graduation Year (e.g. 2020 - 2024)",
       "details": "Certificate No, Honors, or notable specialization"
     }}
   ],
