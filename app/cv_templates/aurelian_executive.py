@@ -75,12 +75,12 @@ def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color
     canvas.drawString(x, y_top - 9.0, num_str)
     num_w = canvas.stringWidth(num_str, f_bold, 8.5)
 
-    # Title in serif / dark ink
-    canvas.setFont("Times-Bold", 12.0)
+    # Title in bold / dark ink
+    canvas.setFont(f_bold, 11.5)
     canvas.setFillColor(colors.HexColor("#0F0F0F"))
     title_x = x + num_w + 6.0
     canvas.drawString(title_x, y_top - 9.0, title)
-    title_w = canvas.stringWidth(title, "Times-Bold", 12.0)
+    title_w = canvas.stringWidth(title, f_bold, 11.5)
 
     # Hairline rule extending to the right edge
     rule_start_x = title_x + title_w + 6.0
@@ -94,13 +94,17 @@ def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color
     return 20.0
 
 
-def _draw_aurelian_skill_dots(canvas, name: str, level_pct: int, bronze_color, hairline_color, x: float, y: float, max_w: float, font_name: str, font_size: float = 7.8) -> float:
+def _draw_aurelian_skill_dots(canvas, name: str, level_pct: int, bronze_color, hairline_color, x: float, y_top: float, max_w: float, font_name: str, font_size: float = 7.8) -> float:
     """
     Draws a skill entry with 5 refined dot ratings on the right.
+    Consumes a well-defined vertical row height with zero text collision.
     """
     canvas.saveState()
     canvas.setFont(font_name, font_size)
     canvas.setFillColor(colors.HexColor("#2A2A2A"))
+
+    row_h = font_size + 6.0
+    baseline_y = y_top - font_size - 1.0
 
     dots_total_w = 5 * 7.0
     text_max_w = max_w - dots_total_w - 6.0
@@ -110,11 +114,11 @@ def _draw_aurelian_skill_dots(canvas, name: str, level_pct: int, bronze_color, h
     if display_name != name:
         display_name = display_name[:-2] + ".."
 
-    canvas.drawString(x, y, display_name)
+    canvas.drawString(x, baseline_y, display_name)
 
     filled_count = max(1, min(5, round((level_pct / 100.0) * 5)))
     dots_start_x = x + max_w - dots_total_w
-    dot_y = y + 2.5
+    dot_y = baseline_y + (font_size * 0.35)
     for i in range(5):
         dx = dots_start_x + (i * 7.0)
         if i < filled_count:
@@ -127,10 +131,10 @@ def _draw_aurelian_skill_dots(canvas, name: str, level_pct: int, bronze_color, h
     # Soft hairline divider below
     canvas.setStrokeColor(colors.HexColor("#F0ECE5"))
     canvas.setLineWidth(0.5)
-    canvas.line(x, y - 3.0, x + max_w, y - 3.0)
+    canvas.line(x, y_top - row_h + 1.0, x + max_w, y_top - row_h + 1.0)
 
     canvas.restoreState()
-    return 11.0
+    return row_h
 
 
 def _extract_monogram(full_name: str) -> str:
@@ -178,41 +182,45 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     ink_muted = colors.HexColor("#6B6B6B")
     ink_light = colors.HexColor("#9A9A9A")
 
-    f_reg, f_bold, f_italic = _get_font_names(getattr(resume, "font_family", "Helvetica"))
+    f_reg, f_bold, f_italic = _get_font_names(getattr(resume, "font_family", "Times-Roman"))
 
-    # Font size scaling
+    # Dynamic Proportional Font Scaling
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
     if font_scale == "compact":
-        body_size, body_leading, name_size = 8.0, 11.2, 19.0
-        spacer_h = 3.5
+        body_size, body_leading, name_size = 7.8, 10.8, 19.0
+        side_size, side_leading = 6.8, 9.4
+        spacer_h = 3.2
     elif font_scale == "large":
-        body_size, body_leading, name_size = 9.6, 13.5, 24.0
-        spacer_h = 6.0
+        body_size, body_leading, name_size = 10.0, 14.0, 24.0
+        side_size, side_leading = 8.5, 12.0
+        spacer_h = 5.8
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 10.2, 14.5, 26.0
+        body_size, body_leading, name_size = 11.0, 15.5, 26.0
+        side_size, side_leading = 9.2, 13.0
         spacer_h = 7.0
-    else:
+    else:  # standard
         body_size, body_leading, name_size = 8.8, 12.4, 21.5
+        side_size, side_leading = 7.8, 11.0
         spacer_h = 4.8
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
 
-    _add(S, ParagraphStyle("AuJobTitle", fontName="Times-Bold", fontSize=body_size + 1.8, leading=body_leading + 2.0, textColor=ink_primary, spaceAfter=1))
-    _add(S, ParagraphStyle("AuCompany", fontName="Times-Italic", fontSize=body_size + 0.4, leading=body_leading + 0.6, textColor=ink_muted, spaceAfter=3))
+    _add(S, ParagraphStyle("AuJobTitle", fontName=f_bold, fontSize=body_size + 1.5, leading=body_leading + 1.8, textColor=ink_primary, spaceAfter=1))
+    _add(S, ParagraphStyle("AuCompany", fontName=f_italic, fontSize=body_size + 0.2, leading=body_leading + 0.4, textColor=ink_muted, spaceAfter=2))
     _add(S, ParagraphStyle("AuDate", fontName=f_bold, fontSize=body_size - 1.0, leading=body_leading, textColor=bronze_color, alignment=TA_RIGHT))
-    _add(S, ParagraphStyle("AuBody", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.5, textColor=ink_soft, spaceAfter=3))
-    _add(S, ParagraphStyle("AuBullet", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.2, textColor=ink_soft, leftIndent=9, firstLineIndent=-7, spaceAfter=2.5))
-    _add(S, ParagraphStyle("AuProjTitle", fontName="Times-Bold", fontSize=body_size + 1.5, leading=body_leading + 1.8, textColor=ink_primary, spaceAfter=1))
-    _add(S, ParagraphStyle("AuProjSub", fontName="Times-Italic", fontSize=body_size - 0.2, leading=body_leading, textColor=bronze_color, spaceAfter=2))
+    _add(S, ParagraphStyle("AuBody", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.2, textColor=ink_soft, spaceAfter=3))
+    _add(S, ParagraphStyle("AuBullet", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.0, textColor=ink_soft, leftIndent=9, firstLineIndent=-7, spaceAfter=2))
+    _add(S, ParagraphStyle("AuProjTitle", fontName=f_bold, fontSize=body_size + 1.2, leading=body_leading + 1.5, textColor=ink_primary, spaceAfter=1))
+    _add(S, ParagraphStyle("AuProjSub", fontName=f_italic, fontSize=body_size - 0.2, leading=body_leading, textColor=bronze_color, spaceAfter=2))
 
     # Styles for Left Sidebar
-    _add(S, ParagraphStyle("AuEyebrow", fontName=f_bold, fontSize=7.2, leading=9.0, textColor=bronze_color, alignment=TA_CENTER, spaceAfter=4))
-    _add(S, ParagraphStyle("AuSideName", fontName="Times-Bold", fontSize=name_size, leading=name_size + 2.5, textColor=ink_primary, alignment=TA_CENTER, spaceAfter=3))
-    _add(S, ParagraphStyle("AuSideRole", fontName=f_bold, fontSize=8.5, leading=11.5, textColor=ink_muted, alignment=TA_CENTER, spaceAfter=6))
-    _add(S, ParagraphStyle("AuSideContact", fontName=f_reg, fontSize=7.6, leading=10.8, textColor=ink_soft))
-    _add(S, ParagraphStyle("AuSideAbout", fontName=f_reg, fontSize=7.6, leading=11.6, textColor=ink_soft, spaceAfter=4))
-    _add(S, ParagraphStyle("AuSideCat", fontName=f_bold, fontSize=6.8, leading=9.0, textColor=bronze_color, spaceAfter=2))
+    _add(S, ParagraphStyle("AuEyebrow", fontName=f_bold, fontSize=side_size - 0.6, leading=side_leading, textColor=bronze_color, alignment=TA_CENTER, spaceAfter=3))
+    _add(S, ParagraphStyle("AuSideName", fontName=f_bold, fontSize=name_size, leading=name_size + 2.5, textColor=ink_primary, alignment=TA_CENTER, spaceAfter=3))
+    _add(S, ParagraphStyle("AuSideRole", fontName=f_bold, fontSize=side_size + 0.8, leading=side_leading + 1.5, textColor=ink_muted, alignment=TA_CENTER, spaceAfter=6))
+    _add(S, ParagraphStyle("AuSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=ink_soft))
+    _add(S, ParagraphStyle("AuSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=ink_soft, spaceAfter=4))
+    _add(S, ParagraphStyle("AuSideCat", fontName=f_bold, fontSize=side_size - 0.8, leading=side_leading, textColor=bronze_color, spaceAfter=2))
 
     MAIN_LEFT = SIDE_W + 22.0
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - 22.0
@@ -344,6 +352,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         # 9. SECTION 03: EXPERTISE (Skills with Dot Ratings)
         if resume.show_skills and resume.skill_categories and y > 60:
             y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+            y -= 4.0
 
             completed_all = True
             for cat_idx in range(len(resume.skill_categories)):
@@ -355,8 +364,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                     break
 
                 if cat.category_name and len(resume.skill_categories) > 1:
+                    y -= 5.0
                     y -= _draw_sidebar_para(canvas, cat.category_name.upper(), S["AuSideCat"], SIDE_PAD, y, SIDE_MAX_W)
-                    y -= 2.0
+                    y -= 4.0
 
                 for s_idx in range(len(cat.skills)):
                     skill_name = cat.skills[s_idx]
@@ -367,15 +377,10 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                         break
 
                     level = cat.skill_levels.get(skill_name, 80) if cat.skill_levels else 80
-                    y -= _draw_aurelian_skill_dots(canvas, skill_name, level, bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_reg, 7.8)
+                    y -= _draw_aurelian_skill_dots(canvas, skill_name, level, bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_reg, side_size)
 
             if completed_all:
                 rendered_skills_state["cat_idx"] = 9999
-
-        # Continuous vertical timeline line in right main column
-        canvas.setStrokeColor(hairline_color)
-        canvas.setLineWidth(1.0)
-        canvas.line(MAIN_LEFT + 9.0, 50.0, MAIN_LEFT + 9.0, PAGE_H - 45.0)
 
         # Watermark
         if getattr(resume, "watermark", False):
@@ -399,45 +404,45 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.setLineWidth(1.0)
         canvas.line(SIDE_W, 0, SIDE_W, PAGE_H)
 
-        # 4. Continuation Monogram & Header
+        # 4. Subtle Top Accent Bar in Sidebar
         canvas.setFillColor(bronze_color)
-        canvas.setFont("Times-Italic", 13.0)
-        canvas.drawRightString(SIDE_W - 20.0, PAGE_H - 34.0, monogram)
+        canvas.rect(0, PAGE_H - 4.0, SIDE_W, 4.0, fill=1, stroke=0)
 
-        full_name = info.full_name or "Candidate Name"
-        canvas.setFont("Times-Bold", 10.5)
-        canvas.setFillColor(ink_primary)
-        canvas.drawCentredString(SIDE_W / 2.0, PAGE_H - 42.0, full_name)
-
-        canvas.setFont(f_bold, 7.0)
+        # 5. Monogram Watermark in Top-Right
         canvas.setFillColor(bronze_color)
-        canvas.drawCentredString(SIDE_W / 2.0, PAGE_H - 53.0, f"CURRICULUM VITAE · PAGE {doc.page}")
+        canvas.setFont(f_italic, 12.0)
+        canvas.drawRightString(SIDE_W - 20.0, PAGE_H - 24.0, monogram)
 
-        canvas.setStrokeColor(hairline_color)
-        canvas.setLineWidth(0.8)
-        canvas.line(SIDE_PAD, PAGE_H - 62.0, SIDE_W - SIDE_PAD, PAGE_H - 62.0)
+        # 6. Sidebar Page Number at Bottom (NO duplicated candidate name or role!)
+        canvas.setFont(f_bold, 7.5)
+        canvas.setFillColor(bronze_color)
+        canvas.drawCentredString(SIDE_W / 2.0, 16.0, f"CURRICULUM VITAE · PAGE {doc.page}")
 
-        y = PAGE_H - 78.0
+        y = PAGE_H - 36.0
 
         # Remaining Skills Continuation
         cat_start = rendered_skills_state["cat_idx"]
         if cat_start < len(resume.skill_categories):
             y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise (Cont.)", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+            y -= 4.0
             for c_idx in range(cat_start, len(resume.skill_categories)):
                 cat = resume.skill_categories[c_idx]
                 if y < 45: break
 
                 s_start = rendered_skills_state["skill_idx"] if c_idx == cat_start else 0
+                if cat.category_name and (len(resume.skill_categories) > 1 or s_start > 0):
+                    c_title = cat.category_name.upper()
+                    if s_start > 0:
+                        c_title += " (CONT.)"
+                    y -= 5.0
+                    y -= _draw_sidebar_para(canvas, c_title, S["AuSideCat"], SIDE_PAD, y, SIDE_MAX_W)
+                    y -= 4.0
+
                 for s_idx in range(s_start, len(cat.skills)):
                     if y < 35: break
                     skill_name = cat.skills[s_idx]
                     level = cat.skill_levels.get(skill_name, 80) if cat.skill_levels else 80
-                    y -= _draw_aurelian_skill_dots(canvas, skill_name, level, bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_reg, 7.8)
-
-        # Continuous vertical timeline line in right main column
-        canvas.setStrokeColor(hairline_color)
-        canvas.setLineWidth(1.0)
-        canvas.line(MAIN_LEFT + 9.0, 50.0, MAIN_LEFT + 9.0, PAGE_H - 45.0)
+                    y -= _draw_aurelian_skill_dots(canvas, skill_name, level, bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_reg, side_size)
 
         # Watermark
         if getattr(resume, "watermark", False):
@@ -481,63 +486,46 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             section_counter += 1
             body.extend(make_main_header(r_num, "Education"))
 
+            edu_rows = []
             for edu in resume.education:
-                e_flow = []
                 date_str = edu.graduation_year or ""
                 if not date_str and (edu.start_date or edu.end_date):
                     date_str = f"{edu.start_date or ''} — {edu.end_date or ''}".strip(" —")
 
-                header_tbl = Table(
-                    [[
-                        AurelianTimelineDot(dot_color=bronze_color),
-                        Paragraph(f"<b>{edu.degree}</b>", S["AuJobTitle"]),
-                        Paragraph(date_str, S["AuDate"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 108, 90]
-                )
-                header_tbl.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ]))
-                e_flow.append(header_tbl)
-
-                sub_tbl = Table(
-                    [[
-                        Spacer(1, 1),
-                        Paragraph(f"<i>{edu.institution}</i>", S["AuCompany"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 18]
-                )
-                sub_tbl.setStyle(TableStyle([
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-                ]))
-                e_flow.append(sub_tbl)
-
-                if edu.details:
-                    desc_tbl = Table(
+                item_flowables = [
+                    Table(
                         [[
-                            Spacer(1, 1),
-                            Paragraph(edu.details, S["AuBody"]),
+                            Paragraph(f"<b>{edu.degree}</b>", S["AuJobTitle"]),
+                            Paragraph(date_str, S["AuDate"]),
                         ]],
-                        colWidths=[18, MAIN_MAX_W - 18]
-                    )
-                    desc_tbl.setStyle(TableStyle([
-                        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                        ('TOPPADDING', (0, 0), (-1, -1), 0),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                    ]))
-                    e_flow.append(desc_tbl)
+                        colWidths=[MAIN_MAX_W - 20 - 90, 90],
+                        style=[
+                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                            ('TOPPADDING', (0, 0), (-1, -1), 0),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                        ]
+                    ),
+                    Paragraph(f"<i>{edu.institution}</i>", S["AuCompany"]),
+                ]
+                if edu.details:
+                    item_flowables.append(Paragraph(edu.details, S["AuBody"]))
 
-                e_flow.append(Spacer(1, 5))
-                body.append(KeepTogether(e_flow))
+                dot = AurelianTimelineDot(dot_color=bronze_color)
+                edu_rows.append([dot, item_flowables])
 
+            edu_table = Table(edu_rows, colWidths=[16, MAIN_MAX_W - 16])
+            edu_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (1, 0), (1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]))
+            body.append(edu_table)
             body.append(Spacer(1, spacer_h * 0.5))
 
     # SECTION II: WORK EXPERIENCE
@@ -548,66 +536,49 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             section_counter += 1
             body.extend(make_main_header(r_num, "Experience"))
 
+            exp_rows = []
             for job in resume.work_experience:
-                j_flow = []
                 date_str = f"{job.start_date} — {job.end_date}" if job.start_date and job.end_date else (job.start_date or job.end_date or "")
-
-                header_tbl = Table(
-                    [[
-                        AurelianTimelineDot(dot_color=bronze_color),
-                        Paragraph(f"<b>{job.job_title}</b>", S["AuJobTitle"]),
-                        Paragraph(date_str, S["AuDate"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 108, 90]
-                )
-                header_tbl.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ]))
-                j_flow.append(header_tbl)
 
                 comp_loc = job.company
                 if job.location:
                     comp_loc += f" &middot; {job.location}"
 
-                sub_tbl = Table(
-                    [[
-                        Spacer(1, 1),
-                        Paragraph(f"<i>{comp_loc}</i>", S["AuCompany"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 18]
-                )
-                sub_tbl.setStyle(TableStyle([
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-                ]))
-                j_flow.append(sub_tbl)
-
-                if job.bullet_points:
-                    for b in job.bullet_points:
-                        b_tbl = Table(
-                            [[
-                                Spacer(1, 1),
-                                Paragraph(f"• {b.lstrip('•- ')}", S["AuBullet"]),
-                            ]],
-                            colWidths=[18, MAIN_MAX_W - 18]
-                        )
-                        b_tbl.setStyle(TableStyle([
+                item_flowables = [
+                    Table(
+                        [[
+                            Paragraph(f"<b>{job.job_title}</b>", S["AuJobTitle"]),
+                            Paragraph(date_str, S["AuDate"]),
+                        ]],
+                        colWidths=[MAIN_MAX_W - 20 - 90, 90],
+                        style=[
+                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                             ('TOPPADDING', (0, 0), (-1, -1), 0),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                        ]))
-                        j_flow.append(b_tbl)
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                        ]
+                    ),
+                    Paragraph(f"<i>{comp_loc}</i>", S["AuCompany"]),
+                ]
+                if job.bullet_points:
+                    for b in job.bullet_points:
+                        item_flowables.append(Paragraph(f"• {b.lstrip('•- ')}", S["AuBullet"]))
 
-                j_flow.append(Spacer(1, 6))
-                body.append(KeepTogether(j_flow))
+                dot = AurelianTimelineDot(dot_color=bronze_color)
+                exp_rows.append([dot, item_flowables])
 
+            exp_table = Table(exp_rows, colWidths=[16, MAIN_MAX_W - 16])
+            exp_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (1, 0), (1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]))
+            body.append(exp_table)
             body.append(Spacer(1, spacer_h * 0.5))
 
     # SECTION III: KEY PROJECTS
@@ -618,61 +589,33 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             section_counter += 1
             body.extend(make_main_header(r_num, "Key Projects"))
 
+            proj_rows = []
             for proj in resume.projects:
-                p_flow = []
-                p_head_tbl = Table(
-                    [[
-                        AurelianTimelineDot(dot_color=bronze_color),
-                        Paragraph(f"<b>{proj.name}</b>", S["AuProjTitle"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 18]
-                )
-                p_head_tbl.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ]))
-                p_flow.append(p_head_tbl)
-
+                item_flowables = [
+                    Paragraph(f"<b>{proj.name}</b>", S["AuProjTitle"]),
+                ]
                 if proj.technologies:
                     tech_str = " &middot; ".join(proj.technologies)
-                    t_tbl = Table(
-                        [[
-                            Spacer(1, 1),
-                            Paragraph(f"<i>Technologies: {tech_str}</i>", S["AuProjSub"]),
-                        ]],
-                        colWidths=[18, MAIN_MAX_W - 18]
-                    )
-                    t_tbl.setStyle(TableStyle([
-                        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                        ('TOPPADDING', (0, 0), (-1, -1), 0),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-                    ]))
-                    p_flow.append(t_tbl)
+                    item_flowables.append(Paragraph(f"<i>Technologies: {tech_str}</i>", S["AuProjSub"]))
 
                 if hasattr(proj, "description_bullets") and proj.description_bullets:
                     for b in proj.description_bullets:
-                        b_tbl = Table(
-                            [[
-                                Spacer(1, 1),
-                                Paragraph(f"• {b.lstrip('•- ')}", S["AuBullet"]),
-                            ]],
-                            colWidths=[18, MAIN_MAX_W - 18]
-                        )
-                        b_tbl.setStyle(TableStyle([
-                            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                            ('TOPPADDING', (0, 0), (-1, -1), 0),
-                            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                        ]))
-                        p_flow.append(b_tbl)
+                        item_flowables.append(Paragraph(f"• {b.lstrip('•- ')}", S["AuBullet"]))
 
-                p_flow.append(Spacer(1, 5))
-                body.append(KeepTogether(p_flow))
+                dot = AurelianTimelineDot(dot_color=bronze_color)
+                proj_rows.append([dot, item_flowables])
 
+            proj_table = Table(proj_rows, colWidths=[16, MAIN_MAX_W - 16])
+            proj_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (1, 0), (1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]))
+            body.append(proj_table)
             body.append(Spacer(1, spacer_h * 0.5))
 
     # SECTION IV: CERTIFICATIONS & LICENSES
@@ -683,27 +626,26 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             section_counter += 1
             body.extend(make_main_header(r_num, "Certifications & Credentials"))
 
-            cert_flow = []
+            cert_rows = []
             for cert in resume.certifications:
-                year_str = f" <font color='{bronze_hex}' size='7.5'>({cert.year})</font>" if cert.year else ""
-                c_tbl = Table(
-                    [[
-                        AurelianTimelineDot(dot_color=bronze_color),
-                        Paragraph(f"<b>{cert.name}</b> — <i>{cert.issuer}</i>{year_str}", S["AuJobTitle"]),
-                    ]],
-                    colWidths=[18, MAIN_MAX_W - 18]
-                )
-                c_tbl.setStyle(TableStyle([
-                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ]))
-                cert_flow.append(c_tbl)
-                cert_flow.append(Spacer(1, 2))
+                year_str = f" <font color='{bronze_hex}' size='{body_size - 1.2}'>({cert.year})</font>" if cert.year else ""
+                item_flowables = [
+                    Paragraph(f"<b>{cert.name}</b> — <i>{cert.issuer}</i>{year_str}", S["AuJobTitle"]),
+                ]
+                dot = AurelianTimelineDot(dot_color=bronze_color)
+                cert_rows.append([dot, item_flowables])
 
-            body.append(KeepTogether(cert_flow))
+            cert_table = Table(cert_rows, colWidths=[16, MAIN_MAX_W - 16])
+            cert_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (1, 0), (1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]))
+            body.append(cert_table)
             body.append(Spacer(1, spacer_h * 0.5))
 
     # Build sequence
@@ -719,8 +661,8 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     sig_flow.append(Spacer(1, spacer_h * 1.5))
     sig_table = Table(
         [[
-            Paragraph(f"<i>{full_name}</i>", ParagraphStyle("AuSigName", fontName="Times-Italic", fontSize=15.0, leading=18.0, textColor=ink_primary)),
-            Paragraph(f"CURRICULUM VITAE &middot; {cur_year}", ParagraphStyle("AuSigTag", fontName=f_bold, fontSize=7.5, leading=10.0, textColor=bronze_color, alignment=TA_RIGHT)),
+            Paragraph(f"<i>{full_name}</i>", ParagraphStyle("AuSigName", fontName=f_italic, fontSize=body_size + 6.0, leading=body_size + 8.0, textColor=ink_primary)),
+            Paragraph(f"CURRICULUM VITAE &middot; {cur_year}", ParagraphStyle("AuSigTag", fontName=f_bold, fontSize=body_size - 1.2, leading=body_leading, textColor=bronze_color, alignment=TA_RIGHT)),
         ]],
         colWidths=[MAIN_MAX_W * 0.6, MAIN_MAX_W * 0.4]
     )

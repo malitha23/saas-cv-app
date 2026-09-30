@@ -169,6 +169,16 @@
                 class="px-2 py-0.5 rounded-full bg-rose-500 text-[10px] font-black text-white animate-pulse"
                 x-text="affiliateData?.pending_withdrawals ? affiliateData.pending_withdrawals.length : 0"></span>
         </button>
+
+        <button @click="activeTab = 'reviews'; loadAdminReviews()"
+          :class="activeTab === 'reviews' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
+          <span>Reviews & Trust (පාරිභෝගික අදහස්)</span>
+          <span x-show="pendingReviewsCount > 0"
+                class="px-2 py-0.5 rounded-full bg-amber-500 text-[10px] font-black text-slate-950 animate-pulse"
+                x-text="pendingReviewsCount"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -2256,7 +2266,304 @@
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 10: USER REVIEWS & SOCIAL PROOF (SEO & TRUST)                    -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'reviews'" class="space-y-6">
+        <!-- Header Banner -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-amber-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-xs font-semibold">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+              <span>Candidate Trust & SEO Engine</span>
+            </div>
+            <h2 class="text-xl font-black text-white tracking-tight">Social Proof & Verified Reviews</h2>
+            <p class="text-xs text-slate-400">Moderate customer ratings, feature high-impact testimonials on the landing page, and power Google SEO rich snippet star ratings.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button @click="loadAdminReviews()" :disabled="isLoadingReviews"
+                    class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-2 border border-slate-700 transition">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5" :class="{'animate-spin': isLoadingReviews}"></i>
+              <span>Refresh</span>
+            </button>
+            <button @click="openCreateReviewModal()"
+                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Add Showcase Review</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-1">
+            <span class="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Total Reviews</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-white" x-text="adminReviewsList.length"></span>
+              <span class="text-xs text-slate-500">All sources</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-4 shadow-lg space-y-1">
+            <span class="text-[11px] font-semibold text-amber-300 block uppercase tracking-wider">Average Rating</span>
+            <div class="flex items-baseline justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="text-2xl font-black text-amber-400" x-text="averageReviewRating"></span>
+                <span class="text-amber-400 text-sm">★</span>
+              </div>
+              <span class="text-[11px] text-amber-300/70">Google SERP Schema</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-4 shadow-lg space-y-1">
+            <span class="text-[11px] font-semibold text-emerald-300 block uppercase tracking-wider">Landing Featured</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black text-emerald-400" x-text="adminReviewsList.filter(r => r.is_featured).length"></span>
+              <span class="text-xs text-emerald-400/70">Visible to Visitors</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-1">
+            <span class="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Pending Moderation</span>
+            <div class="flex items-baseline justify-between">
+              <span class="text-2xl font-black" :class="pendingReviewsCount > 0 ? 'text-amber-400' : 'text-slate-400'" x-text="pendingReviewsCount"></span>
+              <span class="text-xs text-slate-500" x-text="pendingReviewsCount > 0 ? 'Action Needed' : 'All Clear'"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 border border-slate-800 p-3 rounded-2xl">
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <button @click="adminReviewsFilter = 'all'"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                    :class="adminReviewsFilter === 'all' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'">
+              All (<span x-text="adminReviewsList.length"></span>)
+            </button>
+            <button @click="adminReviewsFilter = 'featured'"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                    :class="adminReviewsFilter === 'featured' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'">
+              Featured Landing (<span x-text="adminReviewsList.filter(r => r.is_featured).length"></span>)
+            </button>
+            <button @click="adminReviewsFilter = 'approved'"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                    :class="adminReviewsFilter === 'approved' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'">
+              Approved (<span x-text="adminReviewsList.filter(r => r.is_approved).length"></span>)
+            </button>
+            <button @click="adminReviewsFilter = 'pending'"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                    :class="adminReviewsFilter === 'pending' ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400 hover:text-white'">
+              Pending (<span x-text="pendingReviewsCount"></span>)
+            </button>
+          </div>
+
+          <div class="relative w-full sm:w-64">
+            <input type="text" x-model="adminReviewsSearch" placeholder="Search candidate, role..."
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-amber-500 outline-none">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
+          </div>
+        </div>
+
+        <!-- Reviews Table / Cards -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Reviewer</th>
+                  <th class="py-3 px-4">Rating</th>
+                  <th class="py-3 px-4 min-w-[280px]">Review Content</th>
+                  <th class="py-3 px-4">Source</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                  <th class="py-3 px-4 text-center">Landing Page</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <template x-for="review in filteredAdminReviews" :key="review.id">
+                  <tr class="hover:bg-slate-800/30 transition">
+                    <!-- Reviewer Info -->
+                    <td class="py-3.5 px-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center font-bold text-xs text-amber-400 shrink-0">
+                          <template x-if="review.avatar_url">
+                            <img :src="review.avatar_url" class="w-full h-full object-cover" :alt="review.reviewer_name" />
+                          </template>
+                          <template x-if="!review.avatar_url">
+                            <span x-text="review.reviewer_name ? review.reviewer_name.charAt(0).toUpperCase() : 'U'"></span>
+                          </template>
+                        </div>
+                        <div>
+                          <div class="font-bold text-white text-xs" x-text="review.reviewer_name"></div>
+                          <div class="text-[11px] text-slate-400" x-text="review.reviewer_role || 'Candidate'"></div>
+                          <div class="text-[10px] text-slate-500" x-text="review.reviewer_company || ''"></div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Rating Stars -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <div class="flex items-center gap-1 text-amber-400">
+                        <template x-for="star in 5" :key="star">
+                          <span :class="star <= review.rating ? 'text-amber-400' : 'text-slate-700'" class="text-sm font-black">★</span>
+                        </template>
+                        <span class="text-[11px] font-bold text-slate-400 ml-1" x-text="review.rating + '/5'"></span>
+                      </div>
+                      <div class="text-[10px] text-slate-500 mt-0.5" x-text="formatDate(review.created_at)"></div>
+                    </td>
+
+                    <!-- Review Text -->
+                    <td class="py-3.5 px-4 text-slate-300 leading-relaxed max-w-sm">
+                      <p class="line-clamp-3 text-xs" :title="review.review_text" x-text="review.review_text"></p>
+                    </td>
+
+                    <!-- Source -->
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                            :class="{
+                              'bg-purple-500/10 text-purple-400 border border-purple-500/30': review.source === 'admin_showcase',
+                              'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30': review.source === 'download_prompt',
+                              'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30': review.source === 'workspace_header',
+                              'bg-slate-800 text-slate-400': !review.source
+                            }"
+                            x-text="review.source || 'workspace'"></span>
+                    </td>
+
+                    <!-- Approval Status -->
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                      <button @click="toggleApproveReview(review.id)"
+                              class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1 transition"
+                              :class="review.is_approved ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'">
+                        <span class="w-1.5 h-1.5 rounded-full" :class="review.is_approved ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+                        <span x-text="review.is_approved ? 'Approved' : 'Pending'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Featured on Landing -->
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                      <button @click="toggleFeatureReview(review.id)"
+                              class="px-2.5 py-1 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5 transition"
+                              :class="review.is_featured ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40' : 'bg-slate-800 text-slate-500 hover:text-slate-300 border border-slate-700'">
+                        <i data-lucide="star" class="w-3 h-3" :class="review.is_featured ? 'fill-amber-400 text-amber-400' : 'text-slate-500'"></i>
+                        <span x-text="review.is_featured ? 'Featured' : 'Hidden'"></span>
+                      </button>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button @click="deleteReview(review.id)"
+                                class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                                title="Delete Review">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+
+                <tr x-show="filteredAdminReviews.length === 0">
+                  <td colspan="7" class="py-12 text-center text-slate-500 text-xs">
+                    <i data-lucide="message-square" class="w-8 h-8 mx-auto text-slate-600 mb-2"></i>
+                    <p class="font-bold text-slate-400">No reviews found</p>
+                    <p class="text-[11px] text-slate-600 mt-0.5">Reviews submitted by candidates or created manually will appear here.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Showcase Review Modal -->
+        <div x-show="showCreateReviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4" @click.outside="showCreateReviewModal = false">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                  <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-sm">Add Showcase Testimonial</h3>
+                  <p class="text-[11px] text-slate-400">Create a verified review for social proof and landing page display</p>
+                </div>
+              </div>
+              <button @click="showCreateReviewModal = false" class="text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 text-[11px] font-bold mb-1">Candidate Name *</label>
+                  <input type="text" x-model="newReviewForm.reviewer_name" placeholder="e.g. Malitha Sayuranga"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 text-[11px] font-bold mb-1">Job Role / Title *</label>
+                  <input type="text" x-model="newReviewForm.reviewer_role" placeholder="e.g. Software Engineer"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 text-[11px] font-bold mb-1">Company / Location</label>
+                  <input type="text" x-model="newReviewForm.reviewer_company" placeholder="e.g. TechCorp / Colombo"
+                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
+                </div>
+                <div>
+                  <label class="block text-slate-400 text-[11px] font-bold mb-1">Star Rating (1 - 5)</label>
+                  <select x-model.number="newReviewForm.rating"
+                          class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-amber-400 font-bold focus:border-amber-500 outline-none">
+                    <option :value="5">★★★★★ (5 Stars - Outstanding)</option>
+                    <option :value="4">★★★★☆ (4 Stars - Very Good)</option>
+                    <option :value="3">★★★☆☆ (3 Stars - Average)</option>
+                    <option :value="2">★★☆☆☆ (2 Stars - Below Average)</option>
+                    <option :value="1">★☆☆☆☆ (1 Star - Poor)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 text-[11px] font-bold mb-1">Avatar Image URL (Optional)</label>
+                <input type="text" x-model="newReviewForm.avatar_url" placeholder="https://images.unsplash.com/... or blank"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 outline-none">
+              </div>
+
+              <div>
+                <label class="block text-slate-400 text-[11px] font-bold mb-1">Review Testimonial Text *</label>
+                <textarea x-model="newReviewForm.review_text" rows="3" placeholder="Describe the candidate's experience, ATS success, or interview invitation..."
+                          class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:border-amber-500 outline-none resize-none"></textarea>
+              </div>
+
+              <div class="flex items-center gap-6 pt-1">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" x-model="newReviewForm.is_featured" class="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0">
+                  <span class="text-xs text-slate-300 font-semibold">Feature on Landing Page</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" x-model="newReviewForm.is_approved" class="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-0">
+                  <span class="text-xs text-slate-300 font-semibold">Auto-Approve</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+              <button type="button" @click="showCreateReviewModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                Cancel
+              </button>
+              <button type="button" @click="createAdminReview()" :disabled="isSubmittingReview || !newReviewForm.reviewer_name || !newReviewForm.review_text"
+                      class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition">
+                <i data-lucide="check" class="w-3.5 h-3.5" :class="{'animate-spin': isSubmittingReview}"></i>
+                <span x-text="isSubmittingReview ? 'Saving...' : 'Publish Testimonial'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     <!-- Admin Footer -->
     <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600 mt-auto">
@@ -2341,9 +2648,57 @@
         isRetryingQueue: false,
         retryingEmailId: null,
         selectedPreviewEmail: null,
+        adminReviewsList: [],
+        isLoadingReviews: false,
+        adminReviewsFilter: 'all',
+        adminReviewsSearch: '',
+        showCreateReviewModal: false,
+        isSubmittingReview: false,
+        newReviewForm: {
+          reviewer_name: '',
+          reviewer_role: '',
+          reviewer_company: '',
+          rating: 5,
+          review_text: '',
+          avatar_url: '',
+          is_featured: true,
+          is_approved: true
+        },
 
         get pendingSlipsCount() {
           return this.bankSlipsList.filter(s => s.status === 'pending').length;
+        },
+
+        get pendingReviewsCount() {
+          return (this.adminReviewsList || []).filter(r => !r.is_approved).length;
+        },
+
+        get averageReviewRating() {
+          const list = (this.adminReviewsList || []).filter(r => r.is_approved);
+          if (!list.length) return '5.0';
+          const sum = list.reduce((acc, r) => acc + (r.rating || 5), 0);
+          return (sum / list.length).toFixed(1);
+        },
+
+        get filteredAdminReviews() {
+          let list = this.adminReviewsList || [];
+          if (this.adminReviewsFilter === 'featured') {
+            list = list.filter(r => r.is_featured);
+          } else if (this.adminReviewsFilter === 'approved') {
+            list = list.filter(r => r.is_approved);
+          } else if (this.adminReviewsFilter === 'pending') {
+            list = list.filter(r => !r.is_approved);
+          }
+          if (this.adminReviewsSearch && this.adminReviewsSearch.trim()) {
+            const q = this.adminReviewsSearch.trim().toLowerCase();
+            list = list.filter(r =>
+              (r.reviewer_name && r.reviewer_name.toLowerCase().includes(q)) ||
+              (r.reviewer_role && r.reviewer_role.toLowerCase().includes(q)) ||
+              (r.reviewer_company && r.reviewer_company.toLowerCase().includes(q)) ||
+              (r.review_text && r.review_text.toLowerCase().includes(q))
+            );
+          }
+          return list;
         },
 
         get filteredBankSlips() {
@@ -2420,7 +2775,8 @@
               this.loadPayHereSubscriptions(),
               this.loadAdminPromos(),
               this.loadEmailQueue(),
-              this.loadAdminAffiliate()
+              this.loadAdminAffiliate(),
+              this.loadAdminReviews()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -3396,6 +3752,126 @@
 
         async runAdminExpiryJob() {
           await this.openExpiryConfirmModal();
+        },
+
+        async loadAdminReviews() {
+          this.isLoadingReviews = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/reviews', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.adminReviewsList = await res.json();
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            console.error('Failed to load reviews:', err);
+          } finally {
+            this.isLoadingReviews = false;
+          }
+        },
+
+        openCreateReviewModal() {
+          this.newReviewForm = {
+            reviewer_name: '',
+            reviewer_role: '',
+            reviewer_company: '',
+            rating: 5,
+            review_text: '',
+            avatar_url: '',
+            is_featured: true,
+            is_approved: true
+          };
+          this.showCreateReviewModal = true;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        async createAdminReview() {
+          if (!this.newReviewForm.reviewer_name || !this.newReviewForm.review_text) return;
+          this.isSubmittingReview = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/reviews/create', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(this.newReviewForm)
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert('Showcase review published successfully!');
+              this.showCreateReviewModal = false;
+              await this.loadAdminReviews();
+            } else {
+              alert('Error creating review: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (err) {
+            alert('Server error: ' + err.message);
+          } finally {
+            this.isSubmittingReview = false;
+          }
+        },
+
+        async toggleApproveReview(reviewId) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/reviews/${reviewId}/toggle-approve`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const r = this.adminReviewsList.find(x => x.id === reviewId);
+              if (r) r.is_approved = data.is_approved;
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            alert('Failed to toggle approval: ' + err.message);
+          }
+        },
+
+        async toggleFeatureReview(reviewId) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/reviews/${reviewId}/toggle-feature`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const r = this.adminReviewsList.find(x => x.id === reviewId);
+              if (r) {
+                r.is_featured = data.is_featured;
+                if (data.is_approved) r.is_approved = true;
+              }
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            }
+          } catch (err) {
+            alert('Failed to toggle feature: ' + err.message);
+          }
+        },
+
+        async deleteReview(reviewId) {
+          if (!confirm('Are you sure you want to permanently delete this candidate review?')) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/reviews/${reviewId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.adminReviewsList = this.adminReviewsList.filter(x => x.id !== reviewId);
+              this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+            } else {
+              const data = await res.json();
+              alert('Failed to delete review: ' + (data.detail || 'Error'));
+            }
+          } catch (err) {
+            alert('Server error: ' + err.message);
+          }
         },
 
         formatDate(iso) {

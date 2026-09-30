@@ -433,33 +433,32 @@ def _draw_skill_progress_bar(
     bg_color: colors.Color = colors.HexColor("#E2E8F0"),
     text_color: colors.Color = colors.HexColor("#0F172A"),
     pct_color: colors.Color = colors.HexColor("#64748B"),
-    font_name: str = "Helvetica"
+    font_name: str = "Helvetica",
+    font_size: float = 7.5
 ) -> float:
     """
-    Draws a skill progress bar cleanly bounded within [y_top - 16.0, y_top].
-    - Text baseline: y_top - 7.5 (safely below y_top)
-    - Progress bar: y_top - 10.5 down to y_top - 14.0 (3.5pt bar height)
-    - Returns exact height consumed: 16.0pt
+    Draws a skill progress bar cleanly bounded within [y_top - slot_h, y_top].
+    Scales dynamically with user-selected font size.
     """
     pct = max(10, min(100, int(level)))
-    slot_h = 16.0
+    slot_h = max(15.0, font_size + 8.5)
 
     fn_bold = f"{font_name}-Bold" if "Bold" not in font_name and font_name != "Times-Roman" else ("Times-Bold" if font_name == "Times-Roman" else font_name)
     fn_reg = font_name.replace("-Bold", "")
 
     # 1. Text sits safely below y_top
-    text_y = y_top - 7.5
-    canvas.setFont(fn_bold, 7.5)
+    text_y = y_top - font_size
+    canvas.setFont(fn_bold, font_size)
     canvas.setFillColor(text_color)
     safe_name = _clean_pdf_text(skill_name)[:24]
     canvas.drawString(x, text_y, safe_name)
 
-    canvas.setFont(fn_reg, 7.0)
+    canvas.setFont(fn_reg, max(6.0, font_size - 0.5))
     canvas.setFillColor(pct_color)
     canvas.drawRightString(x + w, text_y, f"{pct}%")
 
     # 2. Bar sits safely below text
-    bar_top = y_top - 10.5
+    bar_top = text_y - 3.0
     bar_h = 3.5
 
     if style == "segmented":

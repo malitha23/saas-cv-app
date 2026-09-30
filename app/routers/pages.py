@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import OnlinePaymentOrder
+from app.models import OnlinePaymentOrder, UserReview, User
+from app.schemas import CreateUserReviewRequest
+from app.auth import get_optional_user
+from app.reviews_service import get_public_reviews_data, sanitize_review_text
 from app.state import templates
 from app.routers.payments import sync_order_status_from_payhere
 from app.guide_service import get_dynamic_guide_catalog
@@ -401,15 +404,83 @@ async def serve_payment_status(
     )
 
 
+@router.get("/api/reviews/public")
+async def get_public_reviews(db: Session = Depends(get_db)):
+    """Public reviews API returning verified candidate ratings and reviews for client-side rendering."""
+    return get_public_reviews_data(db)
+
+
+@router.post("/api/reviews")
+async def submit_user_review(
+    req: CreateUserReviewRequest,
+    current_user: Optional[User] = Depends(get_optional_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Allow candidates to submit feedback & star ratings at the end of CV tailoring or download.
+    Includes XSS sanitization, length bounds, and automated approval for 4-5 star ratings.
+    """
+    clean_name = sanitize_review_text(req.reviewer_name, 100) or "Candidate"
+    clean_role = sanitize_review_text(req.reviewer_role, 100) or "Software Engineer"
+    clean_company = sanitize_review_text(req.reviewer_company or "", 100)
+    clean_text = sanitize_review_text(req.review_text, 1500)
+    rating = max(1, min(5, req.rating))
+
+    if len(clean_text) < 5:
+        raise HTTPException(status_code=400, detail="Review feedback must be at least 5 characters.")
+
+    # High satisfaction reviews (4-5 stars) auto-approved for landing page showcase
+    is_approved = rating >= 4
+
+    user_id = current_user.id if current_user else None
+    avatar = current_user.avatar_url if (current_user and current_user.avatar_url) else req.avatar_url
+
+    review = UserReview(
+        user_id=user_id,
+        reviewer_name=clean_name,
+        reviewer_role=clean_role,
+        reviewer_company=clean_company or None,
+        rating=rating,
+        review_text=clean_text,
+        avatar_url=avatar,
+        is_approved=is_approved,
+        is_featured=is_approved,
+        source="candidate_feedback",
+        created_at=datetime.datetime.utcnow(),
+        updated_at=datetime.datetime.utcnow()
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    return {
+        "success": True,
+        "id": review.id,
+        "is_approved": is_approved,
+        "message": "Thank you for your valuable feedback! Your review helps inspire and guide other candidates."
+    }
+
+
 @router.get("/", response_class=HTMLResponse)
-async def serve_landing(request: Request):
-    """Serve the modern, high-converting Landing Page with OWASP security headers."""
+async def serve_landing(request: Request, db: Session = Depends(get_db)):
+    """Serve the modern, high-converting Landing Page with OWASP security headers and verified social reviews."""
     payment_param = request.query_params.get("payment")
     if payment_param:
         order_id = request.query_params.get("order_id", "")
         return RedirectResponse(url=f"/payment/status?order_id={order_id}&status={payment_param}", status_code=303)
 
-    response = templates.TemplateResponse(request=request, name="landing.html")
+    reviews_data = get_public_reviews_data(db)
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={
+            "reviews": reviews_data["reviews"],
+            "average_rating": reviews_data["average_rating"],
+            "total_reviews": reviews_data["total_reviews"],
+            "active_page": "home"
+        }
+    )
     ref_param = request.query_params.get("ref")
     if ref_param and ref_param.strip():
         response.set_cookie(

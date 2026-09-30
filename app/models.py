@@ -373,4 +373,32 @@ class EmailVerificationOtp(Base):
         return f"<EmailVerificationOtp(email='{self.email}', otp='{self.otp_code}', is_used={self.is_used})>"
 
 
+class UserReview(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Candidate Feedback, Star Ratings & Public Testimonials.
+    Used for SEO Structured Data (AggregateRating / Review Schema) and Landing Page Social Proof.
+    """
+    __tablename__ = "user_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    reviewer_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    reviewer_role: Mapped[str] = mapped_column(String(150), nullable=False, default="Software Engineer")
+    reviewer_company: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    rating: Mapped[int] = mapped_column(Integer, default=5, nullable=False)  # 1 to 5 stars
+    review_text: Mapped[str] = mapped_column(Text, nullable=False)
+    avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    is_approved: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=True, index=True, nullable=False)
+    source: Mapped[str] = mapped_column(String(50), default="service_feedback", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user: Mapped[Optional["User"]] = relationship("User")
+
+    def __repr__(self) -> str:
+        return f"<UserReview(id={self.id}, name='{self.reviewer_name}', rating={self.rating}, approved={self.is_approved})>"
+
+
+
 

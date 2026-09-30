@@ -7,14 +7,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage, QueuedEmail
+from app.models import User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage, QueuedEmail, UserReview
 from app.schemas import (
     AdminOverviewResponse, AdminSettingItem, AdminUpdateSettingsRequest,
     AdminUserListItem, AdminUpdateUserPlanRequest,
     AdminRefundRequest, AdminRefundResponse,
     AdminUpdateCountryPricingRequest, UpdatePlansConfigRequest,
     AdminCreatePromoCodeRequest, AdminPromoCodeItem,
-    QueuedEmailItem, EmailQueueListResponse, EmailQueueStatsResponse
+    QueuedEmailItem, EmailQueueListResponse, EmailQueueStatsResponse,
+    AdminCreateReviewRequest
 )
 from app.auth import require_admin, get_saas_setting
 from app.state import build_user_response
@@ -1025,5 +1026,110 @@ async def admin_delete_queued_email(
     db.delete(item)
     db.commit()
     return {"success": True, "message": f"Queued email #{email_id} removed."}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADMIN USER REVIEWS & TESTIMONIALS CONTROL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.get("/api/admin/reviews")
+async def get_admin_reviews(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Retrieve all candidate feedback, star ratings, and showcase testimonials for moderation."""
+    reviews = db.scalars(select(UserReview).order_by(UserReview.created_at.desc())).all()
+    return [
+        {
+            "id": r.id,
+            "user_id": r.user_id,
+            "reviewer_name": r.reviewer_name,
+            "reviewer_role": r.reviewer_role,
+            "reviewer_company": r.reviewer_company or "",
+            "rating": r.rating,
+            "review_text": r.review_text,
+            "avatar_url": r.avatar_url or "",
+            "is_approved": r.is_approved,
+            "is_featured": r.is_featured,
+            "source": r.source,
+            "created_at": r.created_at.strftime("%b %d, %Y - %I:%M %p")
+        }
+        for r in reviews
+    ]
+
+
+@router.post("/api/admin/reviews/create")
+async def admin_create_review(
+    req: AdminCreateReviewRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Add a verified showcase review / testimonial directly from the Admin Panel."""
+    review = UserReview(
+        reviewer_name=req.reviewer_name.strip(),
+        reviewer_role=req.reviewer_role.strip(),
+        reviewer_company=req.reviewer_company.strip() if req.reviewer_company else None,
+        rating=max(1, min(5, req.rating)),
+        review_text=req.review_text.strip(),
+        avatar_url=req.avatar_url.strip() if req.avatar_url else None,
+        is_approved=req.is_approved,
+        is_featured=req.is_featured,
+        source="admin_showcase",
+        created_at=datetime.datetime.utcnow(),
+        updated_at=datetime.datetime.utcnow()
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return {"success": True, "id": review.id, "message": "Showcase testimonial added successfully."}
+
+
+@router.post("/api/admin/reviews/{review_id}/toggle-approve")
+async def admin_toggle_approve_review(
+    review_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Toggle publication approval status for a candidate review."""
+    review = db.scalar(select(UserReview).where(UserReview.id == review_id))
+    if not review:
+        raise HTTPException(status_code=404, detail="Review record not found.")
+    review.is_approved = not review.is_approved
+    review.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    return {"success": True, "is_approved": review.is_approved}
+
+
+@router.post("/api/admin/reviews/{review_id}/toggle-feature")
+async def admin_toggle_feature_review(
+    review_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Toggle whether a review appears prominently in the Landing Page showcase."""
+    review = db.scalar(select(UserReview).where(UserReview.id == review_id))
+    if not review:
+        raise HTTPException(status_code=404, detail="Review record not found.")
+    review.is_featured = not review.is_featured
+    review.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    return {"success": True, "is_featured": review.is_featured}
+
+
+@router.delete("/api/admin/reviews/{review_id}")
+async def admin_delete_review(
+    review_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Permanently delete a spam or inappropriate review."""
+    review = db.scalar(select(UserReview).where(UserReview.id == review_id))
+    if not review:
+        raise HTTPException(status_code=404, detail="Review record not found.")
+    db.delete(review)
+    db.commit()
+    return {"success": True, "message": f"Review #{review_id} has been permanently deleted."}
+
 
 

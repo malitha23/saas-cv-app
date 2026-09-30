@@ -1,9 +1,12 @@
 import re
+import io
 import json
+import base64
+import logging
 import datetime
 import asyncio
 from typing import Optional, List
-from fastapi import APIRouter, File, UploadFile, HTTPException, Response, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Response, Depends, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -261,6 +264,63 @@ async def list_user_resumes(
     ]
 
 
+logger = logging.getLogger("dreemfolio.resume")
+
+
+def _optimize_avatar_data_url(avatar_url: Optional[str]) -> Optional[str]:
+    """
+    Safely validate and compress Base64 avatar data URLs to max 400x400 JPEG (~25KB)
+    to prevent MySQL max_allowed_packet drops, reduce database bloat, and protect VPS storage.
+    """
+    if not avatar_url or not isinstance(avatar_url, str):
+        return None
+    url = avatar_url.strip()
+    if not url.startswith("data:image/"):
+        return url  # Public HTTP/HTTPS URLs remain intact
+
+    try:
+        parts = url.split(",", 1)
+        if len(parts) != 2:
+            return url
+        raw_bytes = base64.b64decode(parts[1])
+        # If already compact (< 60KB), return as is without re-encoding
+        if len(raw_bytes) <= 60 * 1024:
+            return url
+
+        from PIL import Image, ImageOps
+        with Image.open(io.BytesIO(raw_bytes)) as img:
+            # Handle mobile orientation (EXIF transpose)
+            img = ImageOps.exif_transpose(img)
+            # Convert RGBA/Palette/Grayscale to RGB with clean white background
+            if img.mode in ("RGBA", "LA", "P"):
+                rgb_img = Image.new("RGB", img.size, (255, 255, 255))
+                if img.mode == "P":
+                    img = img.convert("RGBA")
+                rgb_img.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
+                img = rgb_img
+            elif img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Square crop center
+            w, h = img.size
+            min_side = min(w, h)
+            left = (w - min_side) // 2
+            top = (h - min_side) // 2
+            img = img.crop((left, top, left + min_side, top + min_side))
+
+            # Resize to max 400x400
+            if min_side > 400:
+                img = img.resize((400, 400), Image.Resampling.LANCZOS)
+
+            out_buf = io.BytesIO()
+            img.save(out_buf, format="JPEG", quality=85, optimize=True)
+            compressed_b64 = base64.b64encode(out_buf.getvalue()).decode("ascii")
+            return f"data:image/jpeg;base64,{compressed_b64}"
+    except Exception as e:
+        logger.warning("Avatar image server optimization warning: %s", e)
+        return url
+
+
 @router.post("/api/user/resumes")
 async def save_user_resume(
     req: SaveResumeRequest,
@@ -268,48 +328,60 @@ async def save_user_resume(
     db: Session = Depends(get_db)
 ):
     """Save or update tailored resume data into MySQL for the logged-in user."""
+    # Ensure avatar data is safely compressed to protect MySQL packet limit and VPS disk
+    if req.resume_data and req.resume_data.personal_info and req.resume_data.personal_info.avatar_url:
+        req.resume_data.personal_info.avatar_url = _optimize_avatar_data_url(req.resume_data.personal_info.avatar_url)
+
     json_data = req.resume_data.model_dump_json()
     new_title = req.title.strip() or f"{req.resume_data.target_job_title} - {req.resume_data.target_company or 'Resume'}"
 
-    target_resume = None
-    if req.resume_id:
-        stmt = select(UserResume).where(
-            UserResume.id == req.resume_id,
-            UserResume.user_id == current_user.id
-        )
-        target_resume = db.scalars(stmt).first()
+    try:
+        target_resume = None
+        if req.resume_id:
+            stmt = select(UserResume).where(
+                UserResume.id == req.resume_id,
+                UserResume.user_id == current_user.id
+            )
+            target_resume = db.scalars(stmt).first()
 
-    if target_resume:
-        target_resume.title = new_title
-        target_resume.target_role = req.resume_data.target_job_title
-        target_resume.template_style = req.resume_data.template_style or "visual_sidebar"
-        target_resume.resume_data_json = json_data
-        target_resume.updated_at = datetime.datetime.utcnow()
-        db.commit()
-        db.refresh(target_resume)
-        return {
-            "success": True,
-            "resume_id": target_resume.id,
-            "title": target_resume.title,
-            "message": "Resume updated in Cloud!"
-        }
-    else:
-        new_resume = UserResume(
-            user_id=current_user.id,
-            title=new_title,
-            target_role=req.resume_data.target_job_title,
-            template_style=req.resume_data.template_style or "visual_sidebar",
-            resume_data_json=json_data
+        if target_resume:
+            target_resume.title = new_title
+            target_resume.target_role = req.resume_data.target_job_title
+            target_resume.template_style = req.resume_data.template_style or "visual_sidebar"
+            target_resume.resume_data_json = json_data
+            target_resume.updated_at = datetime.datetime.utcnow()
+            db.commit()
+            db.refresh(target_resume)
+            return {
+                "success": True,
+                "resume_id": target_resume.id,
+                "title": target_resume.title,
+                "message": "Resume updated in Cloud!"
+            }
+        else:
+            new_resume = UserResume(
+                user_id=current_user.id,
+                title=new_title,
+                target_role=req.resume_data.target_job_title,
+                template_style=req.resume_data.template_style or "visual_sidebar",
+                resume_data_json=json_data
+            )
+            db.add(new_resume)
+            db.commit()
+            db.refresh(new_resume)
+            return {
+                "success": True,
+                "resume_id": new_resume.id,
+                "title": new_resume.title,
+                "message": "Resume successfully saved in Cloud!"
+            }
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to save resume for user %s: %s", current_user.id, e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unable to save resume to cloud: {str(e)}"
         )
-        db.add(new_resume)
-        db.commit()
-        db.refresh(new_resume)
-        return {
-            "success": True,
-            "resume_id": new_resume.id,
-            "title": new_resume.title,
-            "message": "Resume successfully saved in Cloud!"
-        }
 
 
 @router.get("/api/user/resumes/{resume_id}")

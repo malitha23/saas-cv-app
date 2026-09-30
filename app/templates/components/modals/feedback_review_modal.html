@@ -1,0 +1,128 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- CANDIDATE FEEDBACK, STAR RATING & TESTIMONIAL MODAL -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showFeedbackModal" x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md transition-opacity">
+  <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative overflow-hidden"
+       @click.outside="if (!feedbackForm.isSubmitting) showFeedbackModal = false">
+
+    <!-- Ambient Glow -->
+    <div class="absolute -top-16 -right-16 w-36 h-36 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3.5">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-md">
+          <i data-lucide="star" class="w-5 h-5 fill-amber-400 text-amber-400"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-white text-base">Rate Your Experience</h3>
+          <p class="text-xs text-slate-400">Help inspire fellow candidates & improve DreemFolio</p>
+        </div>
+      </div>
+      <button @click="showFeedbackModal = false" :disabled="feedbackForm.isSubmitting"
+              class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Success Confirmation State -->
+    <template x-if="feedbackForm.submittedSuccess">
+      <div class="py-8 text-center space-y-3">
+        <div class="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shadow-lg">
+          <i data-lucide="check" class="w-8 h-8"></i>
+        </div>
+        <h4 class="text-lg font-black text-white">Thank You for Your Feedback!</h4>
+        <p class="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
+          Your review has been successfully recorded. We wish you the very best in your interviews and career journey!
+        </p>
+      </div>
+    </template>
+
+    <!-- Review Form State -->
+    <template x-if="!feedbackForm.submittedSuccess">
+      <form @submit.prevent="submitFeedbackReview()" class="space-y-4 text-xs">
+
+        <!-- Star Rating Selector -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-center space-y-2">
+          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Overall Satisfaction</label>
+          <div class="flex items-center justify-center gap-2 py-1">
+            <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
+              <button type="button" @click="feedbackForm.rating = star"
+                      class="transition-transform hover:scale-125 focus:outline-none p-1">
+                <i data-lucide="star"
+                   class="w-7 h-7 transition-colors"
+                   :class="star <= feedbackForm.rating ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'text-slate-700 hover:text-amber-300'"></i>
+              </button>
+            </template>
+          </div>
+          <span class="text-xs font-bold"
+                :class="feedbackForm.rating >= 4 ? 'text-amber-400' : (feedbackForm.rating === 3 ? 'text-indigo-300' : 'text-slate-400')"
+                x-text="feedbackForm.rating === 5 ? '⭐⭐⭐⭐⭐ Outstanding! (5/5)' : (feedbackForm.rating === 4 ? '⭐⭐⭐⭐ Very Good! (4/5)' : (feedbackForm.rating === 3 ? '⭐⭐⭐ Good / Average (3/5)' : 'Needs Improvement'))">
+          </span>
+        </div>
+
+        <!-- Candidate Name & Target Role -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1 text-[11px]">Your Name</label>
+            <input type="text" x-model="feedbackForm.reviewer_name" required placeholder="e.g. Malitha Sayuranga"
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 transition">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1 text-[11px]">Your Role / Title</label>
+            <input type="text" x-model="feedbackForm.reviewer_role" required placeholder="e.g. Software Engineer"
+                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1 text-[11px]">Company / Subtitle (Optional)</label>
+          <input type="text" x-model="feedbackForm.reviewer_company" placeholder="e.g. Tech Corp, Remote Applicant, or Hired Candidate"
+                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 transition">
+        </div>
+
+        <!-- Review Comment / Feedback -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1 text-[11px]">Your Review / Feedback</label>
+          <textarea x-model="feedbackForm.review_text" required rows="3"
+                    placeholder="Share what worked well for you (e.g., ATS scoring, instant PDF tailoring, interview callbacks)..."
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+        </div>
+
+        <!-- Error Alert -->
+        <template x-if="feedbackForm.error">
+          <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <span x-text="feedbackForm.error"></span>
+          </div>
+        </template>
+
+        <!-- Action CTAs -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" @click="showFeedbackModal = false" :disabled="feedbackForm.isSubmitting"
+                  class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+            Maybe Later
+          </button>
+          <button type="submit" :disabled="feedbackForm.isSubmitting"
+                  class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 hover:brightness-110 text-white font-bold shadow-lg shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-50">
+            <template x-if="!feedbackForm.isSubmitting">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                <span>Submit Review</span>
+              </span>
+            </template>
+            <template x-if="feedbackForm.isSubmitting">
+              <span class="flex items-center gap-1.5">
+                <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Submitting...</span>
+              </span>
+            </template>
+          </button>
+        </div>
+
+      </form>
+    </template>
+
+  </div>
+</div>

@@ -148,6 +148,16 @@
                 </button>
               </template>
 
+              <!-- Rate / Feedback Button -->
+              <template x-if="tailoredData">
+                <button @click="openFeedbackModal()"
+                  class="px-2.5 xl:px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 rounded-lg border border-slate-700 flex items-center gap-1.5 transition shrink-0"
+                  title="Share your review & rating">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                  <span class="hidden xl:inline">Review</span>
+                </button>
+              </template>
+
               <template x-if="activeTab === 'resume'">
                 <button id="downloadResumeButton" @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
                   class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition shrink-0"

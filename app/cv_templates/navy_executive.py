@@ -215,7 +215,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
     # Color Palette
     navy_hex = "#1B3A5C"
-    if resume.custom_accent_color:
+    if resume.custom_accent_color and resume.custom_accent_color.lower() not in ("#000000", "#ffffff"):
         navy_hex = resume.custom_accent_color
     navy_color = colors.HexColor(navy_hex)
 
@@ -228,23 +228,27 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
 
     if font_scale == "compact":
-        body_size, body_leading, name_size = 8.2, 11.5, 23.0
-        spacer_h = 3.5
+        body_size, body_leading, name_size = 7.8, 10.8, 21.0
+        side_size, side_leading = 6.8, 9.4
+        spacer_h = 3.2
     elif font_scale == "large":
-        body_size, body_leading, name_size = 9.8, 13.8, 27.0
-        spacer_h = 6.0
+        body_size, body_leading, name_size = 10.0, 14.0, 28.0
+        side_size, side_leading = 8.5, 12.0
+        spacer_h = 5.8
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 10.5, 14.8, 29.0
+        body_size, body_leading, name_size = 11.0, 15.5, 30.0
+        side_size, side_leading = 9.2, 13.0
         spacer_h = 7.0
-    else:
-        body_size, body_leading, name_size = 9.0, 12.8, 25.0
+    else:  # standard
+        body_size, body_leading, name_size = 8.8, 12.4, 25.0
+        side_size, side_leading = 7.8, 11.0
         spacer_h = 4.8
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
     _add(S, ParagraphStyle("NeName", fontName=f_bold, fontSize=name_size, leading=name_size + 3.0, textColor=text_primary, spaceAfter=2))
-    _add(S, ParagraphStyle("NeRole", fontName=f_reg, fontSize=11.5, leading=14.5, textColor=text_secondary, spaceAfter=10))
-    _add(S, ParagraphStyle("NeSecTitle", fontName=f_bold, fontSize=10.5, leading=13.5, textColor=text_primary))
+    _add(S, ParagraphStyle("NeRole", fontName=f_reg, fontSize=body_size + 2.5, leading=body_leading + 2.0, textColor=text_secondary, spaceAfter=10))
+    _add(S, ParagraphStyle("NeSecTitle", fontName=f_bold, fontSize=body_size + 1.5, leading=body_leading + 1.2, textColor=text_primary))
     _add(S, ParagraphStyle("NeBody", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.0, textColor=text_secondary, spaceAfter=4))
     _add(S, ParagraphStyle("NeJobTitle", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1.2, textColor=text_primary))
     _add(S, ParagraphStyle("NeJobCompany", fontName=f_italic, fontSize=body_size - 0.2, leading=body_leading, textColor=text_secondary, spaceAfter=2))
@@ -253,12 +257,12 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("NeProjSub", fontName=f_reg, fontSize=body_size - 0.4, leading=body_leading, textColor=text_muted, spaceAfter=2))
 
     # Styles for Left Sidebar Text
-    _add(S, ParagraphStyle("NeSideContact", fontName=f_reg, fontSize=7.6, leading=10.5, textColor=colors.white))
-    _add(S, ParagraphStyle("NeSideEduInst", fontName=f_bold, fontSize=8.0, leading=10.5, textColor=colors.white))
-    _add(S, ParagraphStyle("NeSideEduDeg", fontName=f_reg, fontSize=7.4, leading=9.8, textColor=colors.HexColor("#C5D3E0")))
-    _add(S, ParagraphStyle("NeSideEduYear", fontName=f_reg, fontSize=7.0, leading=9.0, textColor=colors.HexColor("#9FB7CE"), spaceAfter=5))
-    _add(S, ParagraphStyle("NeSideSkill", fontName=f_reg, fontSize=7.5, leading=10.2, textColor=colors.white, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
-    _add(S, ParagraphStyle("NeSideCat", fontName=f_bold, fontSize=7.4, leading=9.5, textColor=colors.HexColor("#C5D3E0"), spaceAfter=2))
+    _add(S, ParagraphStyle("NeSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.white))
+    _add(S, ParagraphStyle("NeSideEduInst", fontName=f_bold, fontSize=side_size + 0.4, leading=side_leading, textColor=colors.white))
+    _add(S, ParagraphStyle("NeSideEduDeg", fontName=f_reg, fontSize=side_size - 0.4, leading=side_leading - 0.5, textColor=colors.HexColor("#C5D3E0")))
+    _add(S, ParagraphStyle("NeSideEduYear", fontName=f_reg, fontSize=side_size - 0.8, leading=side_leading - 1.0, textColor=colors.HexColor("#9FB7CE"), spaceAfter=5))
+    _add(S, ParagraphStyle("NeSideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.white, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
+    _add(S, ParagraphStyle("NeSideCat", fontName=f_bold, fontSize=side_size - 0.4, leading=side_leading - 0.5, textColor=colors.HexColor("#C5D3E0"), spaceAfter=2))
 
     # Track rendered items to handle clean multi-page continuation
     rendered_edu_count = [0]
@@ -395,7 +399,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                         consumed = _draw_skill_progress_bar(
                             canvas, s, s_level, SIDE_PAD + 2, y, SIDE_MAX_W - 4,
                             style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
-                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg
+                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg, font_size=side_size
                         )
                         y -= (consumed + 3.0)
                     else:
@@ -483,7 +487,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                         consumed = _draw_skill_progress_bar(
                             canvas, s, s_level, SIDE_PAD + 2, y, SIDE_MAX_W - 4,
                             style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
-                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg
+                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg, font_size=side_size
                         )
                         y -= (consumed + 3.0)
                     else:

@@ -98,6 +98,19 @@ function resumeApp() {
     showAtsScoreCardModal: false,
     copiedAtsCard: false,
     showUserProfileDropdown: false,
+
+    // Candidate Feedback, Review & Rating Modal State
+    showFeedbackModal: false,
+    feedbackForm: {
+      rating: 5,
+      reviewer_name: '',
+      reviewer_role: '',
+      reviewer_company: '',
+      review_text: '',
+      isSubmitting: false,
+      submittedSuccess: false,
+      error: ''
+    },
     showAuthModal: false,
     authMode: 'login', // 'login' or 'register'
     authPromptMessage: '',
@@ -606,6 +619,34 @@ function resumeApp() {
         }
       }
 
+      // Automatically watch form inputs to persist across page reloads
+      this.$watch('editorTab', (val) => {
+        if (val) {
+          try { localStorage.setItem('dreemfolio_active_editor_tab', val); } catch (e) {}
+        }
+      });
+      this.$watch('jobDescription', (val) => {
+        try {
+          if (val) localStorage.setItem('dreemfolio_active_job_description', val);
+          else localStorage.removeItem('dreemfolio_active_job_description');
+        } catch(e) {}
+      });
+      this.$watch('targetJobTitle', (val) => {
+        try {
+          if (val) localStorage.setItem('dreemfolio_active_job_title', val);
+          else localStorage.removeItem('dreemfolio_active_job_title');
+        } catch(e) {}
+      });
+      this.$watch('targetCompany', (val) => {
+        try {
+          if (val) localStorage.setItem('dreemfolio_active_company', val);
+          else localStorage.removeItem('dreemfolio_active_company');
+        } catch(e) {}
+      });
+
+      // Automatically restore active resume draft if user was editing and refreshed the page
+      await this.restoreActiveResumeSnapshot();
+
       // Check first-time visitor tour
       const tourSeen = localStorage.getItem('df_tour_seen');
       if (!tourSeen) {
@@ -688,6 +729,7 @@ function resumeApp() {
     },
 
     clearFile() {
+      this.clearActiveResumeLocalSnapshot();
       this.fileName = '';
       this.resumeText = '';
       this.extractedCandidateName = '';
@@ -719,6 +761,7 @@ function resumeApp() {
         isDanger: true
       });
       if (confirmed) {
+        this.clearActiveResumeLocalSnapshot();
         this.clearFile();
         this.activeTab = 'resume';
         this.editorTab = 'resume';
@@ -767,6 +810,7 @@ function resumeApp() {
       this.uploadedFileBlobUrl = URL.createObjectURL(file);
 
       // When a new file is uploaded, reset all previous inputs and tailored data to start clean
+      this.clearActiveResumeLocalSnapshot();
       this.tailoredData = null;
       this.currentResumeId = null;
       this.targetJobTitle = '';
@@ -1311,6 +1355,7 @@ function resumeApp() {
         // Null out first so Alpine re-mounts the iframe cleanly
         this.pdfBlobUrl = null;
         await this.renderPdfPreview();
+        this.triggerAutoSave();
       }
     },
 
@@ -1698,8 +1743,135 @@ function resumeApp() {
       this.triggerAutoSave();
     },
 
+    saveActiveResumeLocalSnapshot() {
+      if (!this.tailoredData) return;
+      try {
+        localStorage.setItem('dreemfolio_active_resume', JSON.stringify(this.tailoredData));
+        if (this.currentResumeId) {
+          localStorage.setItem('dreemfolio_active_resume_id', String(this.currentResumeId));
+        } else {
+          localStorage.removeItem('dreemfolio_active_resume_id');
+        }
+        if (this.currentTemplate) {
+          localStorage.setItem('dreemfolio_active_template', this.currentTemplate);
+        }
+        if (this.targetJobTitle) {
+          localStorage.setItem('dreemfolio_active_job_title', this.targetJobTitle);
+        }
+        if (this.targetCompany) {
+          localStorage.setItem('dreemfolio_active_company', this.targetCompany);
+        }
+        if (this.fileName) {
+          localStorage.setItem('dreemfolio_active_file_name', this.fileName);
+        }
+        if (this.resumeText) {
+          localStorage.setItem('dreemfolio_active_resume_text', this.resumeText);
+        }
+        if (this.jobDescription) {
+          localStorage.setItem('dreemfolio_active_job_description', this.jobDescription);
+        }
+        if (this.roleArchetype) {
+          localStorage.setItem('dreemfolio_active_role_archetype', this.roleArchetype);
+        }
+        if (this.editorTab) {
+          localStorage.setItem('dreemfolio_active_editor_tab', this.editorTab);
+        }
+      } catch (e) {
+        console.warn('Could not save local resume snapshot:', e);
+      }
+    },
+
+    clearActiveResumeLocalSnapshot() {
+      try {
+        localStorage.removeItem('dreemfolio_active_resume');
+        localStorage.removeItem('dreemfolio_active_resume_id');
+        localStorage.removeItem('dreemfolio_active_template');
+        localStorage.removeItem('dreemfolio_active_job_title');
+        localStorage.removeItem('dreemfolio_active_company');
+        localStorage.removeItem('dreemfolio_active_file_name');
+        localStorage.removeItem('dreemfolio_active_resume_text');
+        localStorage.removeItem('dreemfolio_active_job_description');
+        localStorage.removeItem('dreemfolio_active_role_archetype');
+        localStorage.removeItem('dreemfolio_active_editor_tab');
+      } catch (e) {
+        console.warn('Could not clear local resume snapshot:', e);
+      }
+    },
+
+    async restoreActiveResumeSnapshot() {
+      try {
+        const raw = localStorage.getItem('dreemfolio_active_resume');
+        if (!raw) {
+          // If no active tailored resume, still restore unsubmitted job form if present
+          const savedJobTitle = localStorage.getItem('dreemfolio_active_job_title');
+          if (savedJobTitle && !this.targetJobTitle) this.targetJobTitle = savedJobTitle;
+          const savedCompany = localStorage.getItem('dreemfolio_active_company');
+          if (savedCompany && !this.targetCompany) this.targetCompany = savedCompany;
+          const savedJd = localStorage.getItem('dreemfolio_active_job_description');
+          if (savedJd && !this.jobDescription) this.jobDescription = savedJd;
+          const savedResumeText = localStorage.getItem('dreemfolio_active_resume_text');
+          if (savedResumeText && !this.resumeText) this.resumeText = savedResumeText;
+          const savedFileName = localStorage.getItem('dreemfolio_active_file_name');
+          if (savedFileName && !this.fileName) this.fileName = savedFileName;
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+
+        this.tailoredData = parsed;
+        const savedResumeId = localStorage.getItem('dreemfolio_active_resume_id');
+        this.currentResumeId = savedResumeId ? (parseInt(savedResumeId, 10) || savedResumeId) : (parsed.id || null);
+        this.currentTemplate = localStorage.getItem('dreemfolio_active_template') || parsed.template_style || 'classic';
+        this.roleArchetype = localStorage.getItem('dreemfolio_active_role_archetype') || parsed.role_archetype || 'auto';
+        this.targetJobTitle = localStorage.getItem('dreemfolio_active_job_title') || parsed.target_job_title || '';
+        this.targetCompany = localStorage.getItem('dreemfolio_active_company') || parsed.target_company || '';
+        this.fileName = localStorage.getItem('dreemfolio_active_file_name') || parsed.file_name || (parsed.personal_info?.full_name ? `${parsed.personal_info.full_name}_CV.pdf` : 'Resume.pdf');
+        this.editorTab = localStorage.getItem('dreemfolio_active_editor_tab') || 'resume';
+        this.activeTab = 'resume';
+
+        const savedJd = localStorage.getItem('dreemfolio_active_job_description');
+        if (savedJd) this.jobDescription = savedJd;
+        const savedResumeText = localStorage.getItem('dreemfolio_active_resume_text');
+        if (savedResumeText) this.resumeText = savedResumeText;
+
+        this.portfolioTheme = parsed.portfolio_theme || 'bento_grid';
+        this.portfolioAccent = parsed.portfolio_accent_color || '#6366f1';
+        this.portfolioFont = parsed.portfolio_font || 'Inter';
+
+        if (this.tailoredData.education && Array.isArray(this.tailoredData.education)) {
+          this.tailoredData.education.forEach(edu => this.syncEduDates(edu));
+        }
+
+        if (this.tailoredData.personal_info?.custom_domain) {
+          this.customDomainInput = this.tailoredData.personal_info.custom_domain;
+        }
+
+        this.autoSaveStatus = 'saved';
+        this.lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Wait for Alpine to process DOM reactivity so canvas wrapper is present
+        await new Promise(r => this.$nextTick(r));
+        await this.renderPdfPreview();
+        await this.renderPortfolioPreview();
+
+        this.$nextTick(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+      } catch (err) {
+        console.warn('Error restoring active resume snapshot:', err);
+      }
+    },
+
     triggerAutoSave() {
-      if (!this.currentUser || !this.tailoredData) return;
+      if (!this.tailoredData) return;
+      // 1. Immediately persist full snapshot to local storage (0ms latency, survives page refresh)
+      this.saveActiveResumeLocalSnapshot();
+
+      // 2. If logged in, debounce cloud sync to MySQL
+      if (!this.currentUser) return;
       this.autoSaveStatus = 'unsaved';
 
       if (this.autoSaveTimer) {
@@ -1712,7 +1884,13 @@ function resumeApp() {
     },
 
     async performAutoSave() {
-      if (!this.currentUser || !this.tailoredData) return;
+      if (!this.tailoredData) return;
+      this.saveActiveResumeLocalSnapshot();
+
+      if (!this.currentUser) {
+        this.autoSaveStatus = 'saved';
+        return;
+      }
       this.autoSaveStatus = 'saving';
 
       const token = localStorage.getItem('saas_token');
@@ -1739,6 +1917,7 @@ function resumeApp() {
         if (res.ok) {
           const data = await res.json();
           this.currentResumeId = data.resume_id;
+          this.saveActiveResumeLocalSnapshot();
           this.autoSaveStatus = 'saved';
           this.lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         } else {
@@ -1759,13 +1938,56 @@ function resumeApp() {
         alert('Please select a valid image file (PNG, JPG, JPEG, WEBP).');
         return;
       }
+      if (file.size > 20 * 1024 * 1024) {
+        alert('File size exceeds 20MB. Please choose a smaller image.');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
-        if (this.tailoredData) {
-          this.tailoredData.personal_info.avatar_url = e.target.result;
-          this.tailoredData.show_photo = true;
-          this.refreshAllPreviews();
-        }
+        const img = new Image();
+        img.onload = () => {
+          try {
+            // Downscale & center-crop to crisp 300-DPI square avatar (max 400x400)
+            const canvas = document.createElement('canvas');
+            const maxDim = 400;
+            let width = img.width;
+            let height = img.height;
+
+            const minSide = Math.min(width, height);
+            const sx = (width - minSide) / 2;
+            const sy = (height - minSide) / 2;
+
+            canvas.width = Math.min(minSide, maxDim);
+            canvas.height = Math.min(minSide, maxDim);
+
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, canvas.width, canvas.height);
+
+            // Compress to lightweight high-quality JPEG (~20KB - 40KB)
+            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            if (this.tailoredData && this.tailoredData.personal_info) {
+              this.tailoredData.personal_info.avatar_url = optimizedDataUrl;
+              this.tailoredData.show_photo = true;
+              this.refreshAllPreviews();
+              this.scheduleAutoSave();
+            }
+          } catch (err) {
+            console.error('Photo optimization error:', err);
+            if (this.tailoredData && this.tailoredData.personal_info) {
+              this.tailoredData.personal_info.avatar_url = e.target.result;
+              this.tailoredData.show_photo = true;
+              this.refreshAllPreviews();
+              this.scheduleAutoSave();
+            }
+          }
+        };
+        img.onerror = () => {
+          alert('Could not decode image. Please try a different image format.');
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     },
@@ -2319,6 +2541,14 @@ function resumeApp() {
 
         // Refresh user quotas to instantly reflect (e.g. PDFs: 0 left)
         await this.refreshCurrentUser();
+
+        // Prompt for review & rating after successful resume download
+        const hasFeedback = localStorage.getItem('dreemfolio_feedback_given');
+        if (!hasFeedback) {
+          setTimeout(() => {
+            this.openFeedbackModal();
+          }, 1400);
+        }
       } catch (err) {
         alert('Download Error: ' + err.message);
       } finally {
@@ -2384,10 +2614,80 @@ function resumeApp() {
 
         // Refresh user quotas to instantly reflect (e.g. CL: 2 left)
         await this.refreshCurrentUser();
+
+        // Prompt for review & rating after successful cover letter download
+        const hasFeedback = localStorage.getItem('dreemfolio_feedback_given');
+        if (!hasFeedback) {
+          setTimeout(() => {
+            this.openFeedbackModal();
+          }, 1400);
+        }
       } catch (err) {
         alert('Download Error: ' + err.message);
       } finally {
         this.isDownloading = false;
+      }
+    },
+
+    openFeedbackModal() {
+      const candidateName = this.currentUser?.full_name || this.tailoredData?.personal_info?.full_name || '';
+      const candidateRole = this.tailoredData?.target_job_title || 'Software Engineer';
+      const candidateCompany = this.tailoredData?.target_company || '';
+
+      this.feedbackForm = {
+        rating: 5,
+        reviewer_name: candidateName,
+        reviewer_role: candidateRole,
+        reviewer_company: candidateCompany,
+        review_text: '',
+        isSubmitting: false,
+        submittedSuccess: false,
+        error: ''
+      };
+      this.showFeedbackModal = true;
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    async submitFeedbackReview() {
+      if (!this.feedbackForm.review_text.trim()) {
+        this.feedbackForm.error = 'Please share a quick sentence or two about your experience.';
+        return;
+      }
+      this.feedbackForm.isSubmitting = true;
+      this.feedbackForm.error = '';
+
+      try {
+        const token = localStorage.getItem('saas_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            rating: this.feedbackForm.rating,
+            reviewer_name: this.feedbackForm.reviewer_name.trim() || 'Candidate',
+            reviewer_role: this.feedbackForm.reviewer_role.trim() || 'Software Engineer',
+            reviewer_company: this.feedbackForm.reviewer_company.trim() || null,
+            review_text: this.feedbackForm.review_text.trim(),
+            avatar_url: this.currentUser?.avatar_url || this.tailoredData?.personal_info?.avatar_url || null
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || 'Could not submit review');
+        }
+
+        this.feedbackForm.submittedSuccess = true;
+        localStorage.setItem('dreemfolio_feedback_given', 'true');
+        setTimeout(() => {
+          this.showFeedbackModal = false;
+        }, 2200);
+      } catch (err) {
+        this.feedbackForm.error = err.message;
+      } finally {
+        this.feedbackForm.isSubmitting = false;
       }
     },
 
@@ -3042,6 +3342,9 @@ function resumeApp() {
       this.showQuotaDropdown = false;
       localStorage.removeItem('saas_token');
       localStorage.removeItem('saas_user');
+      this.clearActiveResumeLocalSnapshot();
+      this.tailoredData = null;
+      this.currentResumeId = null;
       this.currentUser = null;
       this.isAuthChecking = false;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
@@ -3454,6 +3757,7 @@ function resumeApp() {
         }
 
         this.showSavedResumesModal = false;
+        this.saveActiveResumeLocalSnapshot();
         await this.refreshAllPreviews();
       } catch (err) {
         alert('Load Error: ' + err.message);

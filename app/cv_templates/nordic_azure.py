@@ -212,21 +212,25 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
 
     if font_scale == "compact":
-        body_size, body_leading, name_size = 8.2, 11.5, 17.0
-        spacer_h = 3.5
+        body_size, body_leading, name_size = 7.8, 10.8, 16.0
+        side_size, side_leading = 6.8, 9.4
+        spacer_h = 3.2
     elif font_scale == "large":
-        body_size, body_leading, name_size = 9.8, 13.8, 20.0
-        spacer_h = 6.0
+        body_size, body_leading, name_size = 10.0, 14.0, 21.0
+        side_size, side_leading = 8.5, 12.0
+        spacer_h = 5.8
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 10.5, 14.8, 22.0
+        body_size, body_leading, name_size = 11.0, 15.5, 23.0
+        side_size, side_leading = 9.2, 13.0
         spacer_h = 7.0
-    else:
-        body_size, body_leading, name_size = 9.0, 12.8, 18.5
+    else:  # standard
+        body_size, body_leading, name_size = 8.8, 12.4, 18.5
+        side_size, side_leading = 7.8, 11.0
         spacer_h = 4.8
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
-    _add(S, ParagraphStyle("NaSecTitle", fontName=f_bold, fontSize=11.5, leading=14.5, textColor=colors.HexColor("#3A3A3A")))
+    _add(S, ParagraphStyle("NaSecTitle", fontName=f_bold, fontSize=body_size + 2.5, leading=body_leading + 2.0, textColor=colors.HexColor("#3A3A3A")))
     _add(S, ParagraphStyle("NaJobTitle", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1.2, textColor=text_dark))
     _add(S, ParagraphStyle("NaJobCompany", fontName=f_italic, fontSize=body_size - 0.2, leading=body_leading, textColor=text_gray, spaceAfter=2))
     _add(S, ParagraphStyle("NaBullet", fontName=f_reg, fontSize=body_size - 0.2, leading=body_leading, textColor=body_text_color, leftIndent=8, firstLineIndent=-6, spaceAfter=2))
@@ -235,11 +239,11 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
     # Styles for Left Sidebar Text
     _add(S, ParagraphStyle("NaSideName", fontName=f_reg, fontSize=name_size, leading=name_size + 3.0, textColor=blue_color, spaceAfter=2))
-    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=10.0, leading=13.0, textColor=colors.HexColor("#5A5A5A"), spaceAfter=12))
-    _add(S, ParagraphStyle("NaSideContact", fontName=f_reg, fontSize=7.6, leading=10.8, textColor=body_text_color))
-    _add(S, ParagraphStyle("NaSideAbout", fontName=f_reg, fontSize=7.8, leading=11.5, textColor=colors.HexColor("#555555"), spaceAfter=6))
-    _add(S, ParagraphStyle("NaSideSkill", fontName=f_reg, fontSize=7.5, leading=10.2, textColor=body_text_color, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
-    _add(S, ParagraphStyle("NaSideCat", fontName=f_bold, fontSize=7.4, leading=9.5, textColor=colors.HexColor("#5A5A5A"), spaceAfter=2))
+    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=side_size + 1.8, leading=side_leading + 2.0, textColor=colors.HexColor("#5A5A5A"), spaceAfter=12))
+    _add(S, ParagraphStyle("NaSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=body_text_color))
+    _add(S, ParagraphStyle("NaSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=colors.HexColor("#555555"), spaceAfter=6))
+    _add(S, ParagraphStyle("NaSideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=body_text_color, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
+    _add(S, ParagraphStyle("NaSideCat", fontName=f_bold, fontSize=side_size - 0.4, leading=side_leading, textColor=colors.HexColor("#5A5A5A"), spaceAfter=2))
 
     # State tracking for multi-page skills continuation
     rendered_skills_state = {"cat_idx": 0, "skill_idx": 0}
@@ -377,7 +381,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                         consumed = _draw_skill_progress_bar(
                             canvas, s, s_level, SIDE_PAD, y, SIDE_MAX_W,
                             style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
-                            text_color=text_dark, pct_color=text_gray, font_name=f_reg
+                            text_color=text_dark, pct_color=text_gray, font_name=f_reg, font_size=side_size
                         )
                         y -= (consumed + 3.0)
                     else:
@@ -452,7 +456,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                         consumed = _draw_skill_progress_bar(
                             canvas, s, s_level, SIDE_PAD, y, SIDE_MAX_W,
                             style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
-                            text_color=text_dark, pct_color=text_gray, font_name=f_reg
+                            text_color=text_dark, pct_color=text_gray, font_name=f_reg, font_size=side_size
                         )
                         y -= (consumed + 3.0)
                     else:
