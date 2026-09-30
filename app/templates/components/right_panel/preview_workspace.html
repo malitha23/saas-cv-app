@@ -153,8 +153,8 @@
                   class="px-2.5 xl:px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition shrink-0"
                   title="Download Resume in PDF Format">
                   <i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i>
-                  <span class="hidden 2xl:inline" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
-                  <span class="2xl:hidden" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive'].includes(currentTemplate) ? 'Visual PDF' : 'ATS PDF'"></span>
+                  <span class="hidden 2xl:inline" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive', 'nordic_azure'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+                  <span class="2xl:hidden" x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive', 'nordic_azure'].includes(currentTemplate) ? 'Visual PDF' : 'ATS PDF'"></span>
                 </button>
               </template>
 
@@ -255,6 +255,11 @@
                   class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
                   <span>Navy Executive</span>
                 </button>
+                <button @click="setTemplate('nordic_azure')"
+                  :class="currentTemplate === 'nordic_azure' ? 'bg-pink-600 text-white font-bold shadow-sm' : 'text-pink-300 hover:text-white hover:bg-pink-950/50'"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition flex items-center gap-1">
+                  <span>Nordic Azure</span>
+                </button>
               </div>
             </div>
           </template>
@@ -307,7 +312,7 @@
               <button @click="downloadResumePdf()" :disabled="!tailoredData || isDownloading"
                 class="w-full py-2.5 px-3 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl shadow-md flex items-center justify-center gap-1.5 transition">
                 <i data-lucide="download" class="w-4 h-4"></i>
-                <span x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
+                <span x-text="['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive', 'nordic_azure'].includes(currentTemplate) ? 'Download Visual PDF' : 'Download ATS PDF'"></span>
               </button>
             </template>
 

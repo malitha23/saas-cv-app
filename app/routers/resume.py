@@ -157,7 +157,8 @@ async def create_resume_pdf(
     """
     is_visual = (resume.template_style or 'classic') in [
         'visual_sidebar', 'banner_periwinkle', 'creative_gradient',
-        'tech_noir', 'indigo_banner', 'emerald_prestige', 'navy_executive'
+        'tech_noir', 'indigo_banner', 'emerald_prestige', 'navy_executive',
+        'nordic_azure'
     ]
     tier = (current_user.plan_tier if current_user else "free").lower()
 
