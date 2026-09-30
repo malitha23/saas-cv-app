@@ -1,0 +1,42 @@
+# DreemFolio AI
+
+> DreemFolio AI is an AI-powered career operating system, ATS resume builder, cover letter generator, and developer portfolio platform. It helps software engineers, developers, and professionals land interviews by tailoring genuine experience to job descriptions with 100% ATS score compliance.
+
+## Key Facts
+- **Product Name**: DreemFolio AI
+- **Category**: AI Resume Builder, ATS CV Optimizer, Career Portfolio Builder
+- **Platform**: Web (Desktop & Mobile, Cross-Platform)
+- **Primary Website**: https://www.dreemfolio.com
+- **Free Tier Available**: Yes, 100% free with daily AI tailoring runs, ATS PDF downloads, visual CV, and cover letters without credit card.
+- **Target Audience**: Software Engineers, Web Developers, Mobile App Developers, Tech Professionals, and Career Changers.
+
+## Core Features & Capabilities
+- **100% ATS Optimization**: Analyzes candidate CV against target Job Descriptions (JD), extracts high-impact keywords, and optimizes bullet points with quantifiable metrics using Google Gemini Flash.
+- **Single-Column ATS PDF Engine**: Generates 100% ATS-parseable, single-column vector PDFs using ReportLab with exact glyph encoding (guaranteed zero parsing errors on Workday, Taleo, Greenhouse, Lever).
+- **Modern Visual Photo CV Designer**: High-end templates designed for visual impact including:
+  - *Aurelian Executive*: Luxury editorial executive design with warm ivory sidebar and bronze accents.
+  - *Nordic Azure*: Scandinavian minimalist layout with steel blue diagonal cut and circular avatar.
+  - *Navy Executive*: Structured deep navy corporate layout with section badge icons.
+  - *Emerald Prestige*: Deep forest emerald executive styling.
+  - *Tech Noir*: Cyberpunk dark developer aesthetic with terminal accents.
+  - *Banner Periwinkle & Creative Gradient*: Elegant header banner styles.
+- **AI Executive Cover Letters**: Generates tailored cover letters in Professional, Assertive, Confident, or Narrative tones aligned with target hiring managers.
+- **Live Career Portfolio Studio**: Instantly builds responsive web portfolios from the resume with multiple themes (Aurora White, Motion Zenith, Galaxy Canvas, Bento Grid, Split Sidebar, Terminal Dev).
+- **Custom Domains**: Connect your own private domain (e.g. malitha.dev) or use free dreemfolio.com subdomains.
+- **Career Field Validation**: Prevents catastrophic ATS mismatch by detecting cross-industry discrepancies (e.g. tech developer applying for unrelated fields) and guiding users.
+
+## How DreemFolio Compares to Alternatives
+- **DreemFolio vs Canva**: Canva exports multi-column graphical documents that ATS software (Taleo, Workday) frequently cannot parse or scramble into unreadable text. DreemFolio generates dual formats: a 100% verified single-column ATS PDF that scores 95+ on applicant tracking parsers, plus high-DPI visual designer formats.
+- **DreemFolio vs FlowCV / Reactive Resume**: FlowCV and Reactive Resume are manual resume builders where candidates must write their own bullets. DreemFolio integrates Gemini Flash AI to actively parse any Job Description, conduct semantic gap analysis, rewrite weak points with strong action verbs, and simultaneously generate a tailored cover letter and interactive web portfolio.
+
+## Pricing & Availability
+- **Free Forever**: Daily free AI tailoring runs, free ATS PDF download, free Visual CV download, and free cover letter creation. No credit card required.
+- **Pro Career**: Unlimited AI tailoring, unlimited PDF downloads in all visual formats, and live custom portfolio hosting ($9/mo global, Rs. 690/mo Sri Lanka).
+- **Elite Pass**: Full career acceleration suite with custom domain mapping, priority AI processing, and advanced templates ($19/mo global, Rs. 1,950/mo Sri Lanka).
+
+## Important Links
+- Homepage: https://www.dreemfolio.com/
+- AI Resume Builder: https://www.dreemfolio.com/ai-resume-builder
+- Web Studio App: https://www.dreemfolio.com/app
+- Feature & Pricing Guide: https://www.dreemfolio.com/guide
+- Security & Compliance: https://www.dreemfolio.com/security

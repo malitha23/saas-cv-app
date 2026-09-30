@@ -148,7 +148,7 @@ async def serve_features_page():
 
 @router.get("/robots.txt", response_class=Response)
 async def serve_robots_txt():
-    """Serve dynamic, crawler-friendly robots.txt for Google, Bing, and major search engines."""
+    """Serve dynamic, crawler-friendly robots.txt for Google, Bing, and major AI search engines."""
     content = """User-agent: *
 Allow: /
 Allow: /ai-resume-builder
@@ -159,17 +159,56 @@ Allow: /privacy
 Allow: /terms
 Allow: /refund
 Allow: /security
+Allow: /llms.txt
 Allow: /static/
 Disallow: /api/
 Disallow: /admin
 Disallow: /paneladmin
 Disallow: /portfolio/preview/
 
-# Search Engine Sitemaps
+# AI Search & Training Crawlers (Welcome ChatGPT, Perplexity, Claude & Gemini)
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+
+# Search Engine Sitemaps & LLM Context
 Sitemap: https://www.dreemfolio.com/sitemap.xml
 Host: www.dreemfolio.com
 """
     return Response(content=content, media_type="text/plain")
+
+
+@router.get("/llms.txt", response_class=Response)
+async def serve_llms_txt():
+    """Serve LLM discovery standard specification for AI search engines."""
+    llms_path = os.path.join(static_dir, "llms.txt")
+    if os.path.exists(llms_path):
+        with open(llms_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    else:
+        content = "# DreemFolio AI\n\n> Free AI Resume Builder, ATS Optimizer & Career Portfolio Studio.\n"
+    return Response(content=content, media_type="text/plain; charset=utf-8")
+
 
 
 @router.get("/sitemap.xml", response_class=Response)

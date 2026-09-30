@@ -2,23 +2,44 @@ User-agent: *
 Allow: /
 Allow: /ai-resume-builder
 Allow: /app
-Allow: /pricing
-Allow: /features
 Allow: /guide
-Allow: /support/guide
 Allow: /contact
-Allow: /support
 Allow: /privacy
 Allow: /terms
 Allow: /refund
-Allow: /refund-policy
 Allow: /security
+Allow: /llms.txt
 Allow: /static/
 Disallow: /api/
 Disallow: /admin
 Disallow: /paneladmin
 Disallow: /portfolio/preview/
 
-# Search Engine Sitemaps
+# AI Search & Training Crawlers (Welcome ChatGPT, Perplexity, Claude & Gemini)
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+
+# Search Engine Sitemaps & LLM Context
 Sitemap: https://www.dreemfolio.com/sitemap.xml
 Host: https://www.dreemfolio.com
