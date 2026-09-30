@@ -160,6 +160,14 @@ CAREER_VALIDATION_DOMAINS = {
             "data analyst", "data scientist", "machine learning", "ai engineer", "tech lead", "solution architect",
         ],
     ),
+    "agriculture": (
+        "Agriculture & Farming",
+        [
+            "farmer", "farming", "agriculture", "agricultural", "agronomist", "agronomy", "crop",
+            "livestock", "dairy farmer", "cultivator", "harvester", "horticulture", "horticulturalist",
+            "rancher", "farm manager", "soil scientist", "aquaculture", "poultry", "plantation", "fishery",
+        ],
+    ),
     "education": (
         "Teaching & Education",
         [
@@ -171,9 +179,9 @@ CAREER_VALIDATION_DOMAINS = {
     "medical": (
         "Healthcare & Clinical",
         [
-            "doctor", "nurse", "nursing", "physician", "surgeon", "medical", "clinic", "hospital",
-            "patient care", "clinical", "healthcare", "pharma", "pharmacist", "pharmacy", "dentist",
-            "dental", "paramedic", "radiology", "radiologist", "therapy", "therapist", "physiotherapist",
+            "doctor", "physician", "surgeon", "medical doctor", "nurse", "nursing", "dentist", "dental",
+            "pharmacist", "paramedic", "radiologist", "radiology", "physiotherapist", "pathologist",
+            "pediatrician", "psychiatrist", "anesthesiologist", "cardiologist", "dermatologist", "oncologist", "clinical",
         ],
     ),
     "finance": (
@@ -185,7 +193,7 @@ CAREER_VALIDATION_DOMAINS = {
         ],
     ),
     "trades": (
-        "Trades, Technical & Automotive",
+        "Trades, Construction & Automotive",
         [
             "mechanic", "automotive", "electrician", "plumber", "carpenter", "welder", "welding",
             "construction", "mason", "hvac", "painter", "machinist", "technician", "nvq", "fitter",
@@ -213,6 +221,42 @@ CAREER_VALIDATION_DOMAINS = {
             "captain", "seaman", "sailor", "maritime", "deck officer",
         ],
     ),
+    "sales_marketing": (
+        "Sales & Marketing",
+        [
+            "sales executive", "sales representative", "sales manager", "marketing manager", "digital marketer",
+            "seo specialist", "account executive", "brand manager", "media buyer", "public relations", "pr specialist",
+            "real estate agent", "realtor",
+        ],
+    ),
+    "security_defense": (
+        "Security, Law Enforcement & Defense",
+        [
+            "police", "police officer", "security guard", "security officer", "detective", "soldier",
+            "military", "firefighter", "prison officer", "customs officer", "border patrol",
+        ],
+    ),
+    "beauty_wellness": (
+        "Beauty, Fitness & Personal Care",
+        [
+            "beautician", "hairdresser", "barber", "esthetician", "cosmetologist", "makeup artist",
+            "spa therapist", "fitness trainer", "gym instructor", "personal trainer",
+        ],
+    ),
+    "logistics_transport": (
+        "Logistics & Transportation",
+        [
+            "truck driver", "delivery driver", "chauffeur", "forklift operator", "warehouse associate",
+            "logistics coordinator", "supply chain", "courier", "bus driver", "dispatcher",
+        ],
+    ),
+}
+
+UNIVERSAL_CROSS_FUNCTIONAL_TITLES = {
+    "project manager", "program manager", "product manager", "product owner",
+    "scrum master", "operations manager", "operations", "business analyst",
+    "general manager", "consultant", "coordinator", "team lead", "executive",
+    "management trainee", "strategy analyst",
 }
 
 
@@ -226,6 +270,10 @@ def validate_title_resume_match(resume_text: str, target_title: str) -> tuple[bo
         return True, ""
     r_clean = (resume_text or "").lower()
 
+    # Allow universal cross-functional / management roles
+    if any(uc in t_clean for uc in UNIVERSAL_CROSS_FUNCTIONAL_TITLES):
+        return True, ""
+
     # Allow direct word matches if key non-generic words in target title appear in resume
     generic_stop = {
         "senior", "junior", "lead", "associate", "head", "chief", "specialist", "officer",
@@ -233,7 +281,7 @@ def validate_title_resume_match(resume_text: str, target_title: str) -> tuple[bo
         "executive", "analyst", "trainee", "entry", "level",
     }
     t_words = [w for w in re.split(r"[\s/\-,]+", t_clean) if len(w) > 2 and w not in generic_stop]
-    if any(w in r_clean for w in t_words):
+    if any(re.search(r"\b" + re.escape(w) + r"\b", r_clean) for w in t_words):
         return True, ""
 
     # Check which domain the target title belongs to
@@ -245,25 +293,32 @@ def validate_title_resume_match(resume_text: str, target_title: str) -> tuple[bo
             target_domain_name = name
             break
 
-    # If title is cross-functional / generic (e.g. 'Project Manager', 'Operations'), allow it
-    if not target_domain_key:
-        return True, ""
-
     # Calculate domain scores in resume
     scores = {}
     for k, (name, kws) in CAREER_VALIDATION_DOMAINS.items():
-        scores[k] = sum(1 for kw in kws if kw in r_clean)
+        scores[k] = sum(1 for kw in kws if re.search(r"\b" + re.escape(kw) + r"\b", r_clean))
 
     best_key = max(scores, key=scores.get)
     best_score = scores[best_key]
     best_name = CAREER_VALIDATION_DOMAINS[best_key][0]
 
-    # If candidate has strong background in one domain (score >= 2) and ZERO overlap with target domain
-    if best_score >= 2 and scores[target_domain_key] == 0:
-        return (
-            False,
-            f"Target title '{target_title}' ({target_domain_name}) does not match the background in your uploaded CV ({best_name}). Please enter a relevant target title or leave it blank to auto-detect.",
-        )
+    # If title belongs to an unknown domain and candidate has a strong primary background
+    if not target_domain_key:
+        if best_score >= 3:
+            return (
+                False,
+                f"Target title '{target_title}' does not match the background in your uploaded CV ({best_name}). Please enter a relevant target title or leave it blank to auto-detect.",
+            )
+        return True, ""
+
+    # If candidate has strong background in one domain (score >= 3) and target domain is mismatched
+    if best_key != target_domain_key and best_score >= 3:
+        target_score = scores[target_domain_key]
+        if target_score == 0 or (best_score >= 3 * target_score and target_score <= 1):
+            return (
+                False,
+                f"Target title '{target_title}' ({target_domain_name}) does not match the background in your uploaded CV ({best_name}). Please enter a relevant target title or leave it blank to auto-detect.",
+            )
 
     return True, ""
 

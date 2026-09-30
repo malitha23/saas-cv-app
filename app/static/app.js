@@ -828,20 +828,36 @@ function resumeApp() {
         return true;
       }
 
-      // 1. Direct word overlap check: if important words from title appear in resume, it is a valid match
+      // 1. Universal cross-functional / management roles check
+      const universalRoles = [
+        'project manager', 'program manager', 'product manager', 'product owner',
+        'scrum master', 'operations manager', 'operations', 'business analyst',
+        'general manager', 'consultant', 'coordinator', 'team lead', 'executive',
+        'management trainee', 'strategy analyst'
+      ];
+      if (universalRoles.some(ur => title.includes(ur))) {
+        this.targetTitleMismatch = false;
+        this.titleMismatchMessage = '';
+        return true;
+      }
+
+      // 2. Direct word overlap check: if non-generic word from title appears as a whole word in resume
       const genericStop = new Set([
         'senior', 'junior', 'lead', 'associate', 'head', 'chief', 'specialist', 'officer',
         'expert', 'assistant', 'manager', 'director', 'intern', 'consultant', 'coordinator',
         'executive', 'analyst', 'trainee', 'entry', 'level'
       ]);
       const titleWords = title.split(/[\s/\-,]+/).filter(w => w.length > 2 && !genericStop.has(w));
-      if (titleWords.some(w => resume.includes(w))) {
+      if (titleWords.some(w => {
+        const re = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+        return re.test(resume);
+      })) {
         this.targetTitleMismatch = false;
         this.titleMismatchMessage = '';
         return true;
       }
 
-      // 2. Comprehensive career domain classification check
+      // 3. Comprehensive career domain classification check
       const careerDomains = {
         tech: {
           name: 'Software & Information Technology',
@@ -852,6 +868,14 @@ function resumeApp() {
             'sql', 'database', 'agile', 'scrum', 'git', 'programming', 'programmer', 'it specialist',
             'computer science', 'system administrator', 'network engineer', 'cybersecurity', 'data engineer',
             'data analyst', 'data scientist', 'machine learning', 'ai engineer', 'tech lead', 'solution architect'
+          ]
+        },
+        agriculture: {
+          name: 'Agriculture & Farming',
+          keywords: [
+            'farmer', 'farming', 'agriculture', 'agricultural', 'agronomist', 'agronomy', 'crop',
+            'livestock', 'dairy farmer', 'cultivator', 'harvester', 'horticulture', 'horticulturalist',
+            'rancher', 'farm manager', 'soil scientist', 'aquaculture', 'poultry', 'plantation', 'fishery'
           ]
         },
         education: {
@@ -865,9 +889,9 @@ function resumeApp() {
         medical: {
           name: 'Healthcare & Clinical',
           keywords: [
-            'doctor', 'nurse', 'nursing', 'physician', 'surgeon', 'medical', 'clinic', 'hospital',
-            'patient care', 'clinical', 'healthcare', 'pharma', 'pharmacist', 'pharmacy', 'dentist',
-            'dental', 'paramedic', 'radiology', 'radiologist', 'therapy', 'therapist', 'physiotherapist'
+            'doctor', 'physician', 'surgeon', 'medical doctor', 'nurse', 'nursing', 'dentist', 'dental',
+            'pharmacist', 'paramedic', 'radiologist', 'radiology', 'physiotherapist', 'pathologist',
+            'pediatrician', 'psychiatrist', 'anesthesiologist', 'cardiologist', 'dermatologist', 'oncologist', 'clinical'
           ]
         },
         finance: {
@@ -879,7 +903,7 @@ function resumeApp() {
           ]
         },
         trades: {
-          name: 'Trades, Technical & Automotive',
+          name: 'Trades, Construction & Automotive',
           keywords: [
             'mechanic', 'automotive', 'electrician', 'plumber', 'carpenter', 'welder', 'welding',
             'construction', 'mason', 'hvac', 'painter', 'machinist', 'technician', 'nvq', 'fitter',
@@ -906,6 +930,35 @@ function resumeApp() {
             'pilot', 'flight attendant', 'cabin crew', 'air hostess', 'aviation', 'aircraft',
             'captain', 'seaman', 'sailor', 'maritime', 'deck officer'
           ]
+        },
+        sales_marketing: {
+          name: 'Sales & Marketing',
+          keywords: [
+            'sales executive', 'sales representative', 'sales manager', 'marketing manager', 'digital marketer',
+            'seo specialist', 'account executive', 'brand manager', 'media buyer', 'public relations', 'pr specialist',
+            'real estate agent', 'realtor'
+          ]
+        },
+        security_defense: {
+          name: 'Security, Law Enforcement & Defense',
+          keywords: [
+            'police', 'police officer', 'security guard', 'security officer', 'detective', 'soldier',
+            'military', 'firefighter', 'prison officer', 'customs officer', 'border patrol'
+          ]
+        },
+        beauty_wellness: {
+          name: 'Beauty, Fitness & Personal Care',
+          keywords: [
+            'beautician', 'hairdresser', 'barber', 'esthetician', 'cosmetologist', 'makeup artist',
+            'spa therapist', 'fitness trainer', 'gym instructor', 'personal trainer'
+          ]
+        },
+        logistics_transport: {
+          name: 'Logistics & Transportation',
+          keywords: [
+            'truck driver', 'delivery driver', 'chauffeur', 'forklift operator', 'warehouse associate',
+            'logistics coordinator', 'supply chain', 'courier', 'bus driver', 'dispatcher'
+          ]
         }
       };
 
@@ -920,33 +973,51 @@ function resumeApp() {
         }
       }
 
-      // If title is cross-functional / generic (e.g. 'Project Manager', 'Operations Manager'), allow it
-      if (!targetDomainKey) {
-        this.targetTitleMismatch = false;
-        this.titleMismatchMessage = '';
-        return true;
-      }
-
-      // Calculate domain presence in uploaded resume
+      // Calculate domain presence in uploaded resume using whole word match
       const scores = {};
       for (const [key, d] of Object.entries(careerDomains)) {
-        scores[key] = d.keywords.filter(kw => resume.includes(kw)).length;
+        scores[key] = d.keywords.filter(kw => {
+          const re = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+          return re.test(resume);
+        }).length;
       }
 
       const bestKey = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
       const bestScore = scores[bestKey];
       const bestDomainName = careerDomains[bestKey].name;
 
-      if (bestScore >= 2 && scores[targetDomainKey] === 0) {
-        this.targetTitleMismatch = true;
-        this.titleMismatchMessage = `Target title "${this.targetJobTitle}" (${targetDomainName}) does not match your uploaded CV background (${bestDomainName}).`;
-        this.titleMismatchData = {
-          targetTitle: this.targetJobTitle,
-          targetDomain: targetDomainName,
-          resumeDomain: bestDomainName,
-          message: this.titleMismatchMessage
-        };
-        return false;
+      // If title is in an unknown domain and candidate has a strong primary background
+      if (!targetDomainKey) {
+        if (bestScore >= 3) {
+          this.targetTitleMismatch = true;
+          this.titleMismatchMessage = `Target title "${this.targetJobTitle}" does not match your uploaded CV background (${bestDomainName}).`;
+          this.titleMismatchData = {
+            targetTitle: this.targetJobTitle,
+            targetDomain: 'Other Industry',
+            resumeDomain: bestDomainName,
+            message: this.titleMismatchMessage
+          };
+          return false;
+        }
+        this.targetTitleMismatch = false;
+        this.titleMismatchMessage = '';
+        return true;
+      }
+
+      // If candidate has strong background in one domain (score >= 3) and target domain is mismatched
+      if (bestKey !== targetDomainKey && bestScore >= 3) {
+        const targetScore = scores[targetDomainKey] || 0;
+        if (targetScore === 0 || (bestScore >= 3 * targetScore && targetScore <= 1)) {
+          this.targetTitleMismatch = true;
+          this.titleMismatchMessage = `Target title "${this.targetJobTitle}" (${targetDomainName}) does not match your uploaded CV background (${bestDomainName}).`;
+          this.titleMismatchData = {
+            targetTitle: this.targetJobTitle,
+            targetDomain: targetDomainName,
+            resumeDomain: bestDomainName,
+            message: this.titleMismatchMessage
+          };
+          return false;
+        }
       }
 
       this.targetTitleMismatch = false;
