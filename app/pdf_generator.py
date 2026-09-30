@@ -24,6 +24,7 @@ from app.cv_templates import (
     _tech_noir_pdf,
     _navy_executive_pdf,
     _nordic_azure_pdf,
+    _aurelian_executive_pdf,
 )
 
 from app.cv_templates.common import (
@@ -51,6 +52,7 @@ __all__ = [
     "_tech_noir_pdf",
     "_navy_executive_pdf",
     "_nordic_azure_pdf",
+    "_aurelian_executive_pdf",
     "_add",
     "_hex_to_rgb",
     "_is_safe_remote_url",

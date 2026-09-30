@@ -23,6 +23,7 @@ from app.cv_templates.emerald_prestige import _emerald_prestige_pdf
 from app.cv_templates.tech_noir import _tech_noir_pdf
 from app.cv_templates.navy_executive import _navy_executive_pdf
 from app.cv_templates.nordic_azure import _nordic_azure_pdf
+from app.cv_templates.aurelian_executive import _aurelian_executive_pdf
 from app.cv_templates.cover_letter import generate_cover_letter_pdf
 
 
@@ -45,6 +46,8 @@ def generate_resume_pdf(resume: TailoredResume) -> bytes:
         return _navy_executive_pdf(resume)
     elif style == "nordic_azure":
         return _nordic_azure_pdf(resume)
+    elif style == "aurelian_executive":
+        return _aurelian_executive_pdf(resume)
     return _ats_pdf(resume, style)
 
 
@@ -59,4 +62,5 @@ __all__ = [
     "_tech_noir_pdf",
     "_navy_executive_pdf",
     "_nordic_azure_pdf",
+    "_aurelian_executive_pdf",
 ]
