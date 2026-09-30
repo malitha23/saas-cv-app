@@ -24,7 +24,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
-    _draw_diagonal_watermark, _draw_sidebar_para, _clean_pdf_text,
+    _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar, _clean_pdf_text,
     _sync_resume_social_links, _sanitize_pdf_data
 )
 
@@ -262,7 +262,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
     # Track rendered items to handle clean multi-page continuation
     rendered_edu_count = [0]
-    rendered_skills_count = [0]
+    rendered_skills_state = {"cat_idx": 0, "skill_idx": 0}
 
     def on_first_page(canvas, doc):
         canvas.saveState()
@@ -353,20 +353,63 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
             y -= 8.0
 
-        # 5. SKILLS SECTION (Left Sidebar)
+        # 5. SKILLS SECTION (Left Sidebar with Progress Bars)
         if resume.show_skills and resume.skill_categories:
             y -= _draw_sidebar_badge_header(canvas, "Skills", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
-            for cat_idx, cat in enumerate(resume.skill_categories):
-                if y < 45: break
+            show_bars = getattr(resume, "show_skill_bars", True)
+            bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
+
+            bar_fill_color = colors.HexColor("#38BDF8")
+            if resume.custom_accent_color and resume.custom_accent_color.lower() not in ("#1b3a5c", "#000000"):
+                bar_fill_color = colors.HexColor(resume.custom_accent_color)
+            bar_track_color = colors.HexColor("#244A72")
+
+            completed_all = True
+            for cat_idx in range(len(resume.skill_categories)):
+                cat = resume.skill_categories[cat_idx]
+                if y < 45:
+                    completed_all = False
+                    rendered_skills_state["cat_idx"] = cat_idx
+                    rendered_skills_state["skill_idx"] = 0
+                    break
+
                 if cat.category_name and len(resume.skill_categories) > 1:
                     y -= _draw_sidebar_para(canvas, cat.category_name.upper(), S["NeSideCat"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
                     y -= 2.0
-                for s in cat.skills:
-                    if y < 35: break
-                    y -= _draw_sidebar_para(canvas, f"• {s}", S["NeSideSkill"], SIDE_PAD + 4, y, SIDE_MAX_W - 6)
-                    y -= 2.0
-                rendered_skills_count[0] = cat_idx + 1
+
+                levels = getattr(cat, "skill_levels", {}) or {}
+                skills_list = cat.skills or []
+                cat_finished = True
+                for s_idx in range(len(skills_list)):
+                    s = skills_list[s_idx]
+                    req_h = 19.0 if show_bars else 13.0
+                    if y < 35 + req_h:
+                        completed_all = False
+                        cat_finished = False
+                        rendered_skills_state["cat_idx"] = cat_idx
+                        rendered_skills_state["skill_idx"] = s_idx
+                        break
+
+                    if show_bars:
+                        s_level = levels.get(s, 85)
+                        consumed = _draw_skill_progress_bar(
+                            canvas, s, s_level, SIDE_PAD + 2, y, SIDE_MAX_W - 4,
+                            style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
+                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg
+                        )
+                        y -= (consumed + 3.0)
+                    else:
+                        y -= _draw_sidebar_para(canvas, f"• {s}", S["NeSideSkill"], SIDE_PAD + 4, y, SIDE_MAX_W - 6)
+                        y -= 2.0
+
+                if not cat_finished:
+                    break
+
                 y -= 4.0
+
+            if completed_all:
+                rendered_skills_state["cat_idx"] = len(resume.skill_categories)
+                rendered_skills_state["skill_idx"] = 0
 
         # Page 1 Footer inside sidebar
         canvas.setFillColor(colors.HexColor("#7A9EBF"))
@@ -404,17 +447,49 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 y -= 4.0
 
         # Overflow Skills if any
-        if resume.show_skills and resume.skill_categories and rendered_skills_count[0] < len(resume.skill_categories):
+        if resume.show_skills and resume.skill_categories and rendered_skills_state["cat_idx"] < len(resume.skill_categories):
             y -= _draw_sidebar_badge_header(canvas, "Skills (Cont.)", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
-            for cat in resume.skill_categories[rendered_skills_count[0]:]:
+            show_bars = getattr(resume, "show_skill_bars", True)
+            bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
+
+            bar_fill_color = colors.HexColor("#38BDF8")
+            if resume.custom_accent_color and resume.custom_accent_color.lower() not in ("#1b3a5c", "#000000"):
+                bar_fill_color = colors.HexColor(resume.custom_accent_color)
+            bar_track_color = colors.HexColor("#244A72")
+
+            start_cat_idx = rendered_skills_state["cat_idx"]
+            start_s_idx = rendered_skills_state["skill_idx"]
+
+            for cat_idx in range(start_cat_idx, len(resume.skill_categories)):
                 if y < 45: break
-                if cat.category_name:
-                    y -= _draw_sidebar_para(canvas, cat.category_name.upper(), S["NeSideCat"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
+                cat = resume.skill_categories[cat_idx]
+                s_from = start_s_idx if cat_idx == start_cat_idx else 0
+
+                if cat.category_name and (len(resume.skill_categories) > 1 or s_from > 0):
+                    cat_title = cat.category_name.upper()
+                    if s_from > 0:
+                        cat_title += " (CONT.)"
+                    y -= _draw_sidebar_para(canvas, cat_title, S["NeSideCat"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
                     y -= 2.0
-                for s in cat.skills:
-                    if y < 35: break
-                    y -= _draw_sidebar_para(canvas, f"• {s}", S["NeSideSkill"], SIDE_PAD + 4, y, SIDE_MAX_W - 6)
-                    y -= 2.0
+
+                levels = getattr(cat, "skill_levels", {}) or {}
+                skills_list = cat.skills or []
+                for s in skills_list[s_from:]:
+                    req_h = 19.0 if show_bars else 13.0
+                    if y < 35 + req_h: break
+
+                    if show_bars:
+                        s_level = levels.get(s, 85)
+                        consumed = _draw_skill_progress_bar(
+                            canvas, s, s_level, SIDE_PAD + 2, y, SIDE_MAX_W - 4,
+                            style=bar_style, bar_color=bar_fill_color, bg_color=bar_track_color,
+                            text_color=colors.white, pct_color=colors.HexColor("#C5D3E0"), font_name=f_reg
+                        )
+                        y -= (consumed + 3.0)
+                    else:
+                        y -= _draw_sidebar_para(canvas, f"• {s}", S["NeSideSkill"], SIDE_PAD + 4, y, SIDE_MAX_W - 6)
+                        y -= 2.0
+
                 y -= 4.0
 
         # Page N Footer inside sidebar
