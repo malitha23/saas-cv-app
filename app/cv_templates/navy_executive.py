@@ -381,30 +381,13 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
     def on_later_pages(canvas, doc):
         canvas.saveState()
-        info = resume.personal_info
 
-        # Left Navy Sidebar background continues
+        # Left Navy Sidebar background continues cleanly
+        # Absolutely NO duplicate avatar circle, NO duplicate candidate name, NO duplicate role title!
         canvas.setFillColor(navy_color)
         canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
 
-        y = PAGE_H - 36.0
-
-        # Sidebar Header on later pages: Mini monogram & candidate name
-        names = (info.full_name or "C").split()
-        initials = "".join([n[0] for n in names[:2]]).upper()
-        canvas.setFillColor(colors.HexColor("#244A72"))
-        canvas.circle(SIDE_W / 2.0, y - 12, 18, fill=1, stroke=0)
-        canvas.setStrokeColor(colors.white)
-        canvas.setLineWidth(2.0)
-        canvas.circle(SIDE_W / 2.0, y - 12, 18, stroke=1, fill=0)
-        canvas.setFillColor(colors.white)
-        canvas.setFont(f_bold, 12)
-        canvas.drawCentredString(SIDE_W / 2.0, y - 16, initials)
-
-        y -= 40.0
-        canvas.setFont(f_bold, 9.0)
-        canvas.drawCentredString(SIDE_W / 2.0, y, (info.full_name or "").upper())
-        y -= 16.0
+        y = PAGE_H - 32.0
 
         # Overflow Education if any
         if resume.show_education and resume.education and rendered_edu_count[0] < len(resume.education):
