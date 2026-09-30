@@ -194,7 +194,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     SIDE_W = 202.0       # 34% of page width
     SIDE_PAD = 18.0
     SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)  # 166 pt
-    TRIANGLE_H = 210.0
+    TRIANGLE_H = 114.0
 
     # Color Palette
     blue_hex = "#5B8FC7"
@@ -212,16 +212,16 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
 
     if font_scale == "compact":
-        body_size, body_leading, name_size = 8.2, 11.5, 22.0
+        body_size, body_leading, name_size = 8.2, 11.5, 17.0
         spacer_h = 3.5
     elif font_scale == "large":
-        body_size, body_leading, name_size = 9.8, 13.8, 26.0
+        body_size, body_leading, name_size = 9.8, 13.8, 20.0
         spacer_h = 6.0
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 10.5, 14.8, 28.0
+        body_size, body_leading, name_size = 10.5, 14.8, 22.0
         spacer_h = 7.0
     else:
-        body_size, body_leading, name_size = 9.0, 12.8, 24.0
+        body_size, body_leading, name_size = 9.0, 12.8, 18.5
         spacer_h = 4.8
 
     # Platypus Styles for Right Main Column
@@ -234,8 +234,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("NaProjSub", fontName=f_reg, fontSize=body_size - 0.4, leading=body_leading, textColor=text_muted, spaceAfter=2))
 
     # Styles for Left Sidebar Text
-    _add(S, ParagraphStyle("NaSideName", fontName=f_reg, fontSize=name_size, leading=name_size + 3.0, textColor=blue_color, spaceAfter=3))
-    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=11.0, leading=14.0, textColor=colors.HexColor("#5A5A5A"), spaceAfter=14))
+    _add(S, ParagraphStyle("NaSideName", fontName=f_reg, fontSize=name_size, leading=name_size + 3.0, textColor=blue_color, spaceAfter=2))
+    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=10.0, leading=13.0, textColor=colors.HexColor("#5A5A5A"), spaceAfter=12))
     _add(S, ParagraphStyle("NaSideContact", fontName=f_reg, fontSize=7.6, leading=10.8, textColor=body_text_color))
     _add(S, ParagraphStyle("NaSideAbout", fontName=f_reg, fontSize=7.8, leading=11.5, textColor=colors.HexColor("#555555"), spaceAfter=6))
     _add(S, ParagraphStyle("NaSideSkill", fontName=f_reg, fontSize=7.5, leading=10.2, textColor=body_text_color, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
@@ -252,7 +252,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         canvas.setFillColor(sidebar_bg)
         canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
 
-        # 2. Diagonal Steel Blue Triangle in Top-Left
+        # 2. Diagonal Steel Blue Triangle in Top-Left (Ends strictly above name)
         canvas.setFillColor(blue_color)
         p = canvas.beginPath()
         p.moveTo(0, PAGE_H)
@@ -262,9 +262,9 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         canvas.drawPath(p, fill=1, stroke=0)
 
         # 3. Avatar Overlapping the Diagonal Cut
-        photo_size = 88.0
+        photo_size = 82.0
         photo_x = (SIDE_W - photo_size) / 2.0
-        photo_y = PAGE_H - 125.0
+        photo_y = PAGE_H - 116.0
         radius = photo_size / 2.0
         cx = photo_x + radius
         cy = photo_y + radius
