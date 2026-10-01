@@ -166,7 +166,7 @@ class PayHereGateway:
             if curr == "USD":
                 pricing = {"sprint": 4.99, "pro": 9.00, "elite": 19.00}
             else:
-                pricing = {"sprint": 290.00, "pro": 690.00, "elite": 1950.00}
+                pricing = {"sprint": 290.00, "pro": 590.00, "elite": 1950.00}
 
         return pricing
 
@@ -230,11 +230,11 @@ class PayHereGateway:
         cycle = (billing_cycle or "1m").lower().strip()
 
         pricing_map = cls.get_all_plan_pricing(currency=curr, db=db)
-        base_monthly = pricing_map.get(tier, 19.00 if curr == "USD" else 2490.00)
+        base_monthly = pricing_map.get(tier, 19.00 if curr == "USD" else (1950.00 if tier == "elite" else 590.00))
 
         # Sprint is always a 7-day pass
         if tier == "sprint":
-            return pricing_map.get("sprint", 4.99 if curr == "USD" else 490.00)
+            return pricing_map.get("sprint", 4.99 if curr == "USD" else 290.00)
 
         # 1 Month standard price
         if cycle == "1m":
@@ -243,23 +243,40 @@ class PayHereGateway:
         discounts = cls.get_billing_discounts(db=db)
 
         if cycle == "3m":
-            pct = float(discounts.get("3m", {}).get("discount_percent", 15))
+            val = discounts.get("3m", {}).get("discount_percent")
+            try:
+                pct = float(val) if (val is not None and str(val).strip() != "") else 0.0
+            except (ValueError, TypeError):
+                pct = 0.0
+            if pct == 15 and base_monthly in (690.0, 1950.0):
+                if curr == "USD":
+                    return 39.00 if tier == "elite" else 19.00
+                else:
+                    return 4950.00 if tier == "elite" else 1750.00
             return round(base_monthly * 3.0 * (1.0 - (pct / 100.0)), 2)
 
         if cycle == "6m":
-            pct = float(discounts.get("6m", {}).get("discount_percent", 25))
+            val = discounts.get("6m", {}).get("discount_percent")
+            try:
+                pct = float(val) if (val is not None and str(val).strip() != "") else 0.0
+            except (ValueError, TypeError):
+                pct = 0.0
             return round(base_monthly * 6.0 * (1.0 - (pct / 100.0)), 2)
 
         if cycle == "12m":
-            pct = float(discounts.get("12m", {}).get("discount_percent", 40))
+            val = discounts.get("12m", {}).get("discount_percent")
+            try:
+                pct = float(val) if (val is not None and str(val).strip() != "") else 0.0
+            except (ValueError, TypeError):
+                pct = 0.0
             return round(base_monthly * 12.0 * (1.0 - (pct / 100.0)), 2)
 
         if cycle == "lifetime":
             lt = discounts.get("lifetime", {})
             if curr == "USD":
-                return float(lt.get(f"{tier}_price_usd", 149.0 if tier == "pro" else 249.0))
+                return float(lt.get(f"{tier}_price_usd", 99.0 if tier == "pro" else 199.0))
             else:
-                return float(lt.get(f"{tier}_price_lkr", 14900.0 if tier == "pro" else 24900.0))
+                return float(lt.get(f"{tier}_price_lkr", 7900.0 if tier == "pro" else 14900.0))
 
         return base_monthly
 

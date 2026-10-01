@@ -488,24 +488,24 @@
               </template>
 
               <template x-if="p.plan_key === 'pro'">
-                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('pro'); }"
+                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' && currentUser?.pending_order?.status === 'pending') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('pro'); }"
                   :disabled="currentUser?.plan_tier === 'pro'"
-                  :class="currentUser?.plan_tier === 'pro' ? 'bg-indigo-900/50 text-indigo-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50')"
+                  :class="currentUser?.plan_tier === 'pro' ? 'bg-indigo-900/50 text-indigo-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' && currentUser?.pending_order?.status === 'pending' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50')"
                   class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
-                  <i x-show="currentUser?.plan_tier !== 'pro' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'pro')" data-lucide="zap" class="w-4 h-4"></i>
-                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
-                  <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Pro (' + getCalculatedPrice('pro').price_display + ')'))"></span>
+                  <i x-show="currentUser?.plan_tier !== 'pro' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'pro' || currentUser?.pending_order?.status !== 'pending')" data-lucide="zap" class="w-4 h-4"></i>
+                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' && currentUser?.pending_order?.status === 'pending'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
+                  <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'pro' && currentUser?.pending_order?.status === 'pending' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Pro (' + getCalculatedPrice('pro').price_display + ')'))"></span>
                 </button>
               </template>
 
               <template x-if="p.plan_key === 'elite'">
-                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('elite'); }"
+                <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' && currentUser?.pending_order?.status === 'pending') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { initiatePayHereCheckout('elite'); }"
                   :disabled="currentUser?.plan_tier === 'elite'"
-                  :class="currentUser?.plan_tier === 'elite' ? 'bg-amber-900/40 text-amber-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20')"
+                  :class="currentUser?.plan_tier === 'elite' ? 'bg-amber-900/40 text-amber-300 cursor-default' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' && currentUser?.pending_order?.status === 'pending' ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20')"
                   class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
-                  <i x-show="currentUser?.plan_tier !== 'elite' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'elite')" data-lucide="crown" class="w-4 h-4"></i>
-                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
-                  <span x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Elite (' + getCalculatedPrice('elite').price_display + ')'))"></span>
+                  <i x-show="currentUser?.plan_tier !== 'elite' && (!currentUser?.has_pending_order || currentUser?.pending_order?.target_plan !== 'elite' || currentUser?.pending_order?.status !== 'pending')" data-lucide="crown" class="w-4 h-4"></i>
+                  <i x-show="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' && currentUser?.pending_order?.status === 'pending'" data-lucide="clock" class="w-4 h-4 animate-spin"></i>
+                  <span x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'elite' && currentUser?.pending_order?.status === 'pending' ? '⏳ Payment In Progress (View Status)' : ('Upgrade to Elite (' + getCalculatedPrice('elite').price_display + ')'))"></span>
                 </button>
               </template>
             </div>
@@ -514,22 +514,97 @@
         </template>
       </div>
 
-      <!-- Quick 7-Day Interview Sprint Pass Banner -->
-      <div class="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold">
-            <i data-lucide="clock" class="w-4 h-4"></i>
+      <!-- Quick 7-Day Interview Sprint Pass Banner & Expandable Features -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-2xl overflow-hidden text-xs transition">
+        <div class="p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold shrink-0 border border-violet-500/30">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="font-bold text-slate-100 text-sm">Only need it for this week's interviews?</p>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30">7-Day Sprint Pass</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+                <p class="text-[11px] text-slate-400">Get 7 full days of Pro Career features without a monthly subscription.</p>
+                <button type="button" @click="showSprintFeatures = !showSprintFeatures; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="text-[11px] font-bold text-violet-400 hover:text-violet-300 flex items-center gap-1 underline decoration-violet-500/40 hover:decoration-violet-400 transition cursor-pointer">
+                  <span x-text="showSprintFeatures ? 'Hide Features' : 'View Included Features & Limits'"></span>
+                  <i :data-lucide="showSprintFeatures ? 'chevron-up' : 'chevron-down'" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
           </div>
-          <div>
-            <p class="font-bold text-slate-200">Only need it for this week's interviews?</p>
-            <p class="text-[11px] text-slate-400">Get 7 full days of Pro Career access without a monthly subscription.</p>
+          <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' && currentUser?.pending_order?.status === 'pending') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { upgradeSubscription('sprint', 1); }"
+            :class="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' && currentUser?.pending_order?.status === 'pending' ? 'bg-amber-600 text-white border-amber-500' : 'bg-gradient-to-r from-violet-600 via-indigo-600 to-pink-600 hover:brightness-110 text-white border-violet-500/40 shadow-lg shadow-violet-600/25'"
+            class="px-4 py-2.5 border rounded-xl font-bold transition flex items-center gap-1.5 shrink-0">
+            <i data-lucide="bolt" class="w-3.5 h-3.5 text-amber-300"></i>
+            <span x-text="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' && currentUser?.pending_order?.status === 'pending' ? '⏳ Pass Payment In Progress' : ('7-Day Sprint Pass (' + (activeSprintPrice || 'Rs. 290') + ')')"></span>
+          </button>
+        </div>
+
+        <!-- Expandable Features & Limits Drawer -->
+        <div x-show="showSprintFeatures" x-cloak
+          class="border-t border-slate-800/80 bg-slate-900/60 p-4 pt-3.5 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-violet-300 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-400"></i>
+              What's Included in Your 7-Day Sprint Pass
+            </span>
+            <span class="text-[10px] text-slate-400 font-medium">Valid for 7 Days • Non-recurring Prepaid Pass</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>3 Classic ATS Downloads</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">100% clean, watermark-free vector ReportLab ATS format.</p>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>3 Visual Photo CV Downloads</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">High-resolution unbranded visual layouts with photo & signature.</p>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-violet-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>5 Mock Interviews & Conferences</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">5 AI Voice Mock Interviews & 5 Real-Time Video Conference sessions.</p>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>Unlimited Clean Cover Letters</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">100% watermark-free matching cover letters for all your roles.</p>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-indigo-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>5 Matched Jobs & 4 Hunter Vacancies</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Top 5 tailored roles + 2 Kits/day & 3 tracked pipeline jobs.</p>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1">
+              <div class="flex items-center gap-1.5 text-pink-400 font-bold text-[11px]">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 shrink-0"></i>
+                <span>Live Portfolio & AI Chatbot</span>
+              </div>
+              <p class="text-[10px] text-slate-400 leading-tight">Hosted web subdomain (.dreemfolio.com) + 24/7 AI Career Copilot.</p>
+            </div>
           </div>
         </div>
-        <button @click="if (currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint') { window.location.href = (currentUser.pending_order.status_url || ('/payment/status?order_id=' + currentUser.pending_order.order_id)); } else { upgradeSubscription('sprint', 1); }"
-          :class="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-800 hover:bg-slate-700 text-violet-300 border-violet-500/30'"
-          class="px-4 py-2 border rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm">
-          <span x-text="currentUser?.has_pending_order && currentUser?.pending_order?.target_plan === 'sprint' ? '⏳ Pass Payment In Progress' : ('7-Day Sprint Pass (' + (activeSprintPrice || '$4.99') + ')')"></span>
-        </button>
       </div>
 
       <!-- ═══════════════════════════════════════════════════════════════════ -->

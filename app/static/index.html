@@ -5212,9 +5212,9 @@
               <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Pro Career</span>
             </div>
             <div>
-              <span class="text-3xl font-black text-white">$9</span>
+              <span class="text-3xl font-black text-white" x-text="getCalculatedPrice('pro')?.price_display || 'Rs. 590'">Rs. 590</span>
               <span class="text-xs text-indigo-300"> / month</span>
-              <p class="text-[11px] text-slate-400">or $19 for 3-Month Job Hunt Pass</p>
+              <p class="text-[11px] text-slate-400" x-text="getCalculatedPrice('pro')?.sub_billing_text || 'or Rs. 1,590 for 3-Month Job Hunt Pass'"></p>
             </div>
             <p class="text-xs text-slate-300">Everything needed to land senior interviews with confidence.</p>
 
@@ -5225,15 +5225,15 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span><b>All 4 Visual CV Formats (High-Res Download)</b></span>
+                <span><b>10 ATS + 10 Visual Photo CV</b> Downloads / mo</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>Photo & Digital Signature Upload</span>
+                <span><b>12 Voice Mock Interviews & Video Conferences</b> / mo</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span><b>AI Cover Letter Builder</b></span>
+                <span>Top 12 AI Matched Roles & 8 Hunter Vacancies</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
@@ -5241,7 +5241,7 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>Hosted Portfolio Subdomain</span>
+                <span>Hosted Portfolio Subdomain (.dreemfolio.com)</span>
               </li>
             </ul>
           </div>
@@ -5250,7 +5250,7 @@
             :class="currentUser?.plan_tier === 'pro' ? 'bg-indigo-900/50 text-indigo-300 cursor-default' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50'"
             class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
             <i x-show="currentUser?.plan_tier !== 'pro'" data-lucide="zap" class="w-4 h-4"></i>
-            <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : 'Upgrade to Pro ($9/mo)'"></span>
+            <span x-text="currentUser?.plan_tier === 'pro' ? 'Active Pro Plan' : ('Upgrade to Pro (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)')"></span>
           </button>
         </div>
 
@@ -5265,7 +5265,7 @@
                 Brand</span>
             </div>
             <div>
-              <span class="text-3xl font-black text-white">$19</span>
+              <span class="text-3xl font-black text-white" x-text="getCalculatedPrice('elite')?.price_display || 'Rs. 1,950'">Rs. 1,950</span>
               <span class="text-xs text-slate-500"> / month</span>
             </div>
             <p class="text-xs text-slate-400">For Tech Leads, Architects & Executives building an elite digital brand.
@@ -5304,7 +5304,7 @@
             class="w-full py-2.5 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5">
             <i x-show="currentUser?.plan_tier !== 'elite'" data-lucide="crown" class="w-4 h-4"></i>
             <span
-              x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : 'Upgrade to Elite ($19/mo)'"></span>
+              x-text="currentUser?.plan_tier === 'elite' ? 'Active Elite Plan' : ('Upgrade to Elite (' + (getCalculatedPrice('elite')?.price_display || 'Rs. 1,950') + '/mo)')"></span>
           </button>
         </div>
 
@@ -5325,7 +5325,7 @@
         </div>
         <button @click="upgradeSubscription('sprint', 1)"
           class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-violet-300 border border-violet-500/30 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm">
-          <span>7-Day Sprint Pass ($4.99)</span>
+          <span x-text="'7-Day Sprint Pass (' + (activeSprintPrice || 'Rs. 290') + ')'">7-Day Sprint Pass (Rs. 290)</span>
         </button>
       </div>
 
@@ -5524,9 +5524,10 @@
       <template x-if="!currentUser || currentUser.plan_tier === 'free'">
         <div
           class="px-3 py-2 rounded-xl bg-indigo-950/40 border border-indigo-500/20 flex items-center justify-between text-xs text-indigo-300">
-          <span>Free tier: 1 tailored screening kit per day. Upgrade to Pro for unlimited application kits.</span>
+          <span>Free tier: 1 tailored screening kit per day. Upgrade for more application kits.</span>
           <button @click="showPricingModal = true"
-            class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2">Upgrade ($9/mo)</button>
+            class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2"
+            x-text="'Upgrade (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)'">Upgrade</button>
         </div>
       </template>
 
@@ -6150,7 +6151,7 @@
                 <button @click="showPricingModal = true"
                   class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-1.5">
                   <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-300"></i>
-                  <span>Upgrade to Pro ($9/mo)</span>
+                  <span x-text="'Upgrade to Pro (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)'">Upgrade to Pro</span>
                 </button>
               </div>
             </template>

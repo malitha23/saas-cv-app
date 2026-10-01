@@ -43,7 +43,8 @@
     <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-4 mb-5 text-xs text-left">
       <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-700/60">
         <span class="font-bold text-slate-200 flex items-center gap-1.5">
-          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Unlock with Pro Career ($9/mo)
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span x-text="'Unlock with Pro Career (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)'">Unlock with Pro Career</span>
         </span>
         <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
           🔥 Best Seller
@@ -56,11 +57,19 @@
         </li>
         <li class="flex items-center gap-2">
           <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
-          <span><b>Unlimited ATS & Visual Photo CV Downloads</b></span>
+          <span><b>10 Classic ATS & 10 Visual Photo CV Downloads</b> / month</span>
         </li>
         <li class="flex items-center gap-2">
           <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
           <span><b>100% Watermark-Free & Clean Cover Letters</b></span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+          <span><b>Top 12 AI Matched Roles</b> & 8 Hunter Vacancies</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+          <span><b>12 Voice Mock Interviews & Video Conferences</b> / month</span>
         </li>
         <li class="flex items-center gap-2">
           <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
@@ -78,7 +87,14 @@
       <button @click="showQuotaLimitModal = false; showPricingModal = true"
         class="w-full py-2.5 px-4 rounded-xl font-bold bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 shadow-lg shadow-amber-500/25 transition text-sm flex items-center justify-center gap-2">
         <i data-lucide="crown" class="w-4 h-4"></i>
-        <span>Upgrade to Pro ($9/mo)</span>
+        <span x-text="'Upgrade to Pro (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)'">Upgrade to Pro</span>
+      </button>
+
+      <!-- 7-Day Sprint Pass Option -->
+      <button @click="showQuotaLimitModal = false; showPricingModal = true"
+        class="w-full py-2 px-3 rounded-xl font-semibold bg-violet-950/60 border border-violet-500/30 hover:border-violet-500/60 text-violet-300 transition text-xs flex items-center justify-center gap-1.5">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-violet-400"></i>
+        <span x-text="'Or get 7-Day Sprint Pass (' + (activeSprintPrice || 'Rs. 290') + ')'">Or get 7-Day Sprint Pass</span>
       </button>
 
       <button @click="showQuotaLimitModal = false"

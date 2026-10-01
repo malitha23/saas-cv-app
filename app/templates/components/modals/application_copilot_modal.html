@@ -169,7 +169,7 @@
     <template x-if="!currentUser || currentUser.plan_tier === 'free'">
       <div class="px-3 py-2 rounded-xl bg-indigo-950/40 border border-indigo-500/20 flex items-center justify-between text-xs text-indigo-300">
         <span>Free tier: 1 tailored screening kit per day. Upgrade to Pro for unlimited application kits.</span>
-        <button @click="showPricingModal = true" class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2">Upgrade ($9/mo)</button>
+        <button @click="showPricingModal = true" class="font-bold text-white underline hover:text-indigo-200 shrink-0 ml-2" x-text="'Upgrade (' + (getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/mo)'">Upgrade</button>
       </div>
     </template>
 

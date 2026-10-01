@@ -721,14 +721,14 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
         {
             "feature": "Classic ATS PDF Downloads",
             "free": f"{free_lifetime_ats} Lifetime (+1 per referral)",
-            "pro": "Unlimited Downloads",
+            "pro": "10 Downloads / month",
             "elite": "Unlimited Downloads",
             "highlight": True
         },
         {
             "feature": "Visual Photo CV Downloads",
             "free": f"{free_lifetime_visual} Lifetime Download",
-            "pro": "Unlimited Downloads",
+            "pro": "10 Downloads / month",
             "elite": "Unlimited Downloads",
             "highlight": False
         },
@@ -742,28 +742,28 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
         {
             "feature": "1-Click Application Copilot Screening Kits",
             "free": f"{free_daily_copilot_kits} Kit / day",
-            "pro": "Unlimited Kits",
+            "pro": "4 Kits / day",
             "elite": "Unlimited Kits",
             "highlight": False
         },
         {
             "feature": "AI Job Recommendations & Re-Tailoring",
             "free": "Top 3 Roles Preview",
-            "pro": "Unlimited Roles & Re-Tailor",
+            "pro": "Top 12 Tailored Roles",
             "elite": "Unlimited Roles & Re-Tailor",
             "highlight": False
         },
         {
             "feature": "AI Job Hunter Vacancy Search",
-            "free": "Up to 4 Vacancies",
-            "pro": "Unlimited Search & Filtering",
+            "free": "2 Vacancies",
+            "pro": "8 Vacancies (LinkedIn Easy Apply)",
             "elite": "Unlimited + VIP Sourcing",
             "highlight": False
         },
         {
             "feature": "Kanban Job Application Tracker",
             "free": f"Up to {free_max_tracked_jobs} Jobs Tracked",
-            "pro": "Unlimited Jobs + Cloud History",
+            "pro": "Up to 5 Jobs Tracked",
             "elite": "Unlimited Jobs + Cloud History",
             "highlight": True
         },
@@ -776,16 +776,16 @@ def get_dynamic_guide_catalog(db: Session, country_code: str = "LK") -> Dict[str
         },
         {
             "feature": "Real-Time AI Video Conference Mistake Coaching",
-            "free": f"{free_daily_interview} Session / day",
-            "pro": "Unlimited Live Video Practice",
-            "elite": "Unlimited + Boardroom Scenarios",
+            "free": "3 Sessions Lifetime Trial",
+            "pro": "12 Sessions / month",
+            "elite": "Unlimited + High-Priority Queue",
             "highlight": True
         },
         {
             "feature": "AI Voice Mock Interview Simulator",
-            "free": f"{free_daily_interview} Session / day",
-            "pro": "Unlimited Voice Interviews",
-            "elite": "Unlimited Voice Interviews",
+            "free": "3 Sessions Lifetime Trial",
+            "pro": "12 Sessions / month",
+            "elite": "Unlimited C-Level Simulations",
             "highlight": False
         },
         {

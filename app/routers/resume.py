@@ -166,21 +166,19 @@ async def create_resume_pdf(
     tier = (current_user.plan_tier if current_user else "free").lower()
 
     if download:
-        if is_visual and tier == "free":
+        if is_visual and tier in ["free", "sprint"]:
             if not current_user:
                 raise HTTPException(
                     status_code=401,
-                    detail="Please sign in or create a free account to download your free Visual Photo CV."
+                    detail="Please sign in or create a free account to download your Visual Photo CV."
                 )
-            # Free users get 1 Lifetime Visual CV download
             check_visual_pdf_quota(current_user, db)
-        elif (not is_visual) and tier == "free":
+        elif (not is_visual) and tier in ["free", "sprint"]:
             if not current_user:
                 raise HTTPException(
                     status_code=401,
                     detail="Please sign in or create a free account to download your ATS resume PDF."
                 )
-            # Free users get 2 Lifetime ATS PDF downloads
             check_ats_pdf_quota(current_user, db)
 
     try:
@@ -390,21 +388,28 @@ async def load_user_resume(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Load a specific saved resume from MySQL into the editor. Restoring is gated to Pro unless enabled by Admin."""
+    """Load a specific saved resume from MySQL into the editor. Free users can load their latest resume; older past revisions require Pro."""
     check_and_update_subscription(current_user, db)
     tier = (current_user.plan_tier or "free").lower()
     if tier == "free":
         allow_restore = get_saas_setting(db, "free_allow_cloud_restore", "false").lower() == "true"
         if not allow_restore:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "pro_required",
-                    "feature": "cloud_restore",
-                    "message": "Restoring saved resumes into the editor requires the Pro Career plan ($9/mo). Free users can view resume history, or upgrade to Pro to instantly edit any past version!",
-                    "upgrade_url": "/api/subscription/upgrade"
-                }
-            )
+            # Query user's latest saved resume
+            latest_resume = db.scalars(
+                select(UserResume)
+                .where(UserResume.user_id == current_user.id)
+                .order_by(UserResume.updated_at.desc())
+            ).first()
+            if not latest_resume or latest_resume.id != resume_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error": "pro_required",
+                        "feature": "cloud_restore",
+                        "message": "Restoring older revisions into the editor requires the Pro Career plan ($9/mo). Free users can always load their latest resume, or upgrade to Pro to instantly restore any past version!",
+                        "upgrade_url": "/api/subscription/upgrade"
+                    }
+                )
 
     stmt = select(UserResume).where(
         UserResume.id == resume_id,

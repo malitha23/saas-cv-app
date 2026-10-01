@@ -157,9 +157,10 @@ DEFAULT_FREE_DAILY_AI_LIMIT = 2
 DEFAULT_FREE_DAILY_PDF_LIMIT = 1
 DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT = 3
 DEFAULT_FREE_DAILY_COPILOT_KITS_LIMIT = 1
-DEFAULT_FREE_MAX_TRACKED_JOBS = 3
+DEFAULT_FREE_MAX_TRACKED_JOBS = 2
 DEFAULT_FREE_DAILY_CHAT_LIMIT = 3
 DEFAULT_FREE_DAILY_INTERVIEW_LIMIT = 1
+DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT = 3
 
 
 def get_saas_setting(db: Session, key: str, default: str) -> str:
@@ -223,6 +224,28 @@ def check_daily_ai_quota(
     check_and_update_subscription(current_user, db)
     ensure_daily_counters_reset(current_user, db)
 
+    # Quota check for sprint tier (7 runs during 7-day pass)
+    if current_user.plan_tier == "sprint":
+        limit = 7
+        used = getattr(current_user, "sprint_ai_generations_count", 0) or 0
+        if used >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "quota_exceeded",
+                    "plan": "sprint",
+                    "sprint_limit": limit,
+                    "generations_used": used,
+                    "message": f"You have reached your 7-Day Sprint Pass limit of {limit} AI Resume Tailoring runs. Upgrade to Pro Career for unlimited AI tailoring!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.sprint_ai_generations_count = used + 1
+        current_user.daily_ai_generations_count += 1
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+
     # Quota check for free tier
     if current_user.plan_tier == "free":
         limit_str = get_saas_setting(db, "free_daily_ai_limit", str(DEFAULT_FREE_DAILY_AI_LIMIT))
@@ -238,7 +261,7 @@ def check_daily_ai_quota(
                     "error": "quota_exceeded",
                     "plan": "free",
                     "daily_limit": limit,
-                    "message": f"Daily free AI generation limit ({limit} runs) reached. Upgrade to Pro ($9/mo) or Elite ($19/mo) for unlimited AI tailoring!",
+                    "message": f"Daily free AI generation limit ({limit} runs) reached. Upgrade to Pro Career or Executive Elite for unlimited AI tailoring!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
@@ -260,11 +283,61 @@ def check_ats_pdf_quota(
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Enforces strategic Lifetime PDF download limit for Free users on Classic ATS format (Max: 2 lifetime downloads).
-    Pro/Elite get unlimited downloads.
+    Enforces PDF download limit for Classic ATS format:
+    - Free: 2 lifetime downloads (+ referral bonus).
+    - Sprint: 3 downloads.
+    - Pro: 10 downloads per month.
+    - Elite: Unlimited.
     """
     check_and_update_subscription(current_user, db)
     tier = (current_user.plan_tier or "free").lower()
+
+    if tier == "sprint":
+        limit = 3
+        used = getattr(current_user, "sprint_ats_downloads_count", 0) or 0
+        if used >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "ats_quota_exceeded",
+                    "error_code": "ats_quota_exceeded",
+                    "plan": "sprint",
+                    "sprint_limit": limit,
+                    "downloads_used": used,
+                    "message": f"You have reached your 7-Day Sprint Pass limit of {limit} Classic ATS PDF downloads. Upgrade to Pro Career for 10 downloads/month or Executive Elite for unlimited downloads!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.sprint_ats_downloads_count = used + 1
+        current_user.lifetime_ats_downloads_count = (getattr(current_user, "lifetime_ats_downloads_count", 0) or 0) + 1
+        current_user.daily_pdf_downloads_count = (current_user.daily_pdf_downloads_count or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+
+    if tier == "pro":
+        limit = 10
+        used = getattr(current_user, "pro_ats_downloads_count", 0) or 0
+        if used >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "ats_quota_exceeded",
+                    "error_code": "ats_quota_exceeded",
+                    "plan": "pro",
+                    "pro_limit": limit,
+                    "downloads_used": used,
+                    "message": f"You have reached your Pro Career monthly limit of {limit} Classic ATS PDF downloads. Upgrade to Executive Elite for unlimited downloads!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.pro_ats_downloads_count = used + 1
+        current_user.lifetime_ats_downloads_count = (getattr(current_user, "lifetime_ats_downloads_count", 0) or 0) + 1
+        current_user.daily_pdf_downloads_count = (current_user.daily_pdf_downloads_count or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+
     if tier == "free":
         limit_str = get_saas_setting(db, "free_lifetime_ats_limit", str(DEFAULT_FREE_LIFETIME_ATS_LIMIT))
         try:
@@ -285,7 +358,7 @@ def check_ats_pdf_quota(
                     "plan": "free",
                     "lifetime_limit": effective_limit,
                     "downloads_used": count,
-                    "message": f"You have reached your Free Starter limit of {effective_limit} Classic ATS PDF downloads. Invite friends with your referral link to earn +1 Free Clean Download or upgrade to Pro!",
+                    "message": f"You have reached your Free Starter limit of {effective_limit} Classic ATS PDF downloads. Invite friends with your referral link to earn +1 Free Clean Download or upgrade to Sprint / Pro!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
@@ -302,11 +375,59 @@ def check_visual_pdf_quota(
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Enforces strategic Lifetime Visual Photo CV download limit for Free users (Max: 1 lifetime download).
-    Pro/Elite get unlimited downloads.
+    Enforces Visual Photo CV download limit:
+    - Free: 1 lifetime download.
+    - Sprint: 3 downloads.
+    - Pro: 10 downloads per month.
+    - Elite: Unlimited downloads.
     """
     check_and_update_subscription(current_user, db)
     tier = (current_user.plan_tier or "free").lower()
+
+    if tier == "sprint":
+        limit = 3
+        used = getattr(current_user, "sprint_visual_downloads_count", 0) or 0
+        if used >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "visual_quota_exceeded",
+                    "error_code": "visual_quota_exceeded",
+                    "plan": "sprint",
+                    "sprint_limit": limit,
+                    "downloads_used": used,
+                    "message": f"You have reached your 7-Day Sprint Pass limit of {limit} Visual Photo CV downloads. Upgrade to Pro Career for 10 downloads/month or Executive Elite for unlimited downloads!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.sprint_visual_downloads_count = used + 1
+        current_user.lifetime_visual_downloads_count = (getattr(current_user, "lifetime_visual_downloads_count", 0) or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+
+    if tier == "pro":
+        limit = 10
+        used = getattr(current_user, "pro_visual_downloads_count", 0) or 0
+        if used >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "error": "visual_quota_exceeded",
+                    "error_code": "visual_quota_exceeded",
+                    "plan": "pro",
+                    "pro_limit": limit,
+                    "downloads_used": used,
+                    "message": f"You have reached your Pro Career monthly limit of {limit} Visual Photo CV downloads. Upgrade to Executive Elite for unlimited downloads!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.pro_visual_downloads_count = used + 1
+        current_user.lifetime_visual_downloads_count = (getattr(current_user, "lifetime_visual_downloads_count", 0) or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+        return current_user
+
     if tier == "free":
         limit_str = get_saas_setting(db, "free_lifetime_visual_limit", str(DEFAULT_FREE_LIFETIME_VISUAL_LIMIT))
         try:
@@ -324,7 +445,7 @@ def check_visual_pdf_quota(
                     "plan": "free",
                     "lifetime_limit": limit,
                     "downloads_used": count,
-                    "message": f"You have already downloaded your 1 free Visual Photo CV. Upgrade to Pro ($9/mo) for unlimited high-resolution Visual CV downloads!",
+                    "message": f"You have already downloaded your 1 free Visual Photo CV. Upgrade to Sprint or Pro for more high-resolution Visual CV downloads!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
@@ -373,7 +494,7 @@ def check_daily_cover_letter_quota(
                     "plan": "free",
                     "lifetime_limit": limit,
                     "downloads_used": count,
-                    "message": f"You have reached your Free Starter limit of {limit} Cover Letter downloads. Upgrade to Pro ($9/mo) for unlimited clean watermark-free downloads!",
+                    "message": f"You have reached your Free Starter limit of {limit} Cover Letter downloads. Upgrade to Pro Career for unlimited clean watermark-free downloads!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
@@ -390,9 +511,11 @@ def check_copilot_kit_quota(
     db: Session
 ) -> User:
     """
-    Quota guard for 1-Click Application Copilot screening kit generation.
+    Quota guard for 1-Click Application Copilot screening kit generation:
     - Free tier: 1 kit per day.
-    - Pro / Elite: Unlimited kits.
+    - Sprint Pass: 2 kits per day.
+    - Pro Career: 4 kits per day.
+    - Elite: Unlimited kits.
     - Requires authenticated user account.
     """
     if not current_user:
@@ -421,11 +544,49 @@ def check_copilot_kit_quota(
                     "plan": "free",
                     "daily_limit": limit,
                     "kits_used": current_user.daily_copilot_kits_count,
-                    "message": f"Daily free Application Kit limit ({limit} kit) reached. Upgrade to Pro ($9/mo) for unlimited 1-click tailored screening kits!",
+                    "message": f"Daily free Application Kit limit ({limit} kit) reached. Upgrade to Sprint (2/day), Pro (4/day), or Elite for unlimited kits!",
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
 
+        current_user.daily_copilot_kits_count = (current_user.daily_copilot_kits_count or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+
+    elif tier == "sprint":
+        limit = 2
+        if (current_user.daily_copilot_kits_count or 0) >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "copilot_kit_quota_exceeded",
+                    "error_code": "copilot_kit_quota_exceeded",
+                    "plan": "sprint",
+                    "daily_limit": limit,
+                    "kits_used": current_user.daily_copilot_kits_count,
+                    "message": f"Daily Sprint Pass limit of {limit} Application Kits reached. Upgrade to Pro Career (4/day) or Executive Elite for unlimited kits!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
+        current_user.daily_copilot_kits_count = (current_user.daily_copilot_kits_count or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+
+    elif tier == "pro":
+        limit = 4
+        if (current_user.daily_copilot_kits_count or 0) >= limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail={
+                    "error": "copilot_kit_quota_exceeded",
+                    "error_code": "copilot_kit_quota_exceeded",
+                    "plan": "pro",
+                    "daily_limit": limit,
+                    "kits_used": current_user.daily_copilot_kits_count,
+                    "message": f"Daily Pro Career limit of {limit} Application Kits reached. Upgrade to Executive Elite for unlimited kits!",
+                    "upgrade_url": "/api/subscription/upgrade"
+                }
+            )
         current_user.daily_copilot_kits_count = (current_user.daily_copilot_kits_count or 0) + 1
         db.commit()
         db.refresh(current_user)
@@ -438,20 +599,32 @@ def check_job_tracker_quota(
     db: Session
 ) -> User:
     """
-    Enforces maximum active tracked jobs limit for Free users (Max 3 tracked jobs).
-    Pro / Elite users have unlimited tracking with cloud sync.
+    Enforces maximum active tracked jobs limit:
+    - Free: 2 active jobs
+    - Sprint: 3 active jobs
+    - Pro: 5 active jobs
+    - Elite: Unlimited active pipeline jobs
     """
     check_and_update_subscription(current_user, db)
     tier = (current_user.plan_tier or "free").lower()
 
-    if tier == "free":
+    if tier in ["free", "sprint", "pro"]:
         stmt = select(func.count(UserJobApplication.id)).where(UserJobApplication.user_id == current_user.id)
         current_tracked = db.scalar(stmt) or 0
-        limit_str = get_saas_setting(db, "free_max_tracked_jobs", str(DEFAULT_FREE_MAX_TRACKED_JOBS))
-        try:
-            limit = int(limit_str)
-        except ValueError:
-            limit = DEFAULT_FREE_MAX_TRACKED_JOBS
+
+        if tier == "free":
+            limit_str = get_saas_setting(db, "free_max_tracked_jobs", str(DEFAULT_FREE_MAX_TRACKED_JOBS))
+            try:
+                limit = int(limit_str)
+            except ValueError:
+                limit = DEFAULT_FREE_MAX_TRACKED_JOBS
+            msg = f"Free Starter tier allows tracking up to {limit} jobs. Upgrade to Sprint (3 jobs), Pro (5 jobs), or Elite (unlimited)!"
+        elif tier == "sprint":
+            limit = 3
+            msg = f"7-Day Sprint Pass allows tracking up to {limit} active jobs. Upgrade to Pro (5 jobs) or Elite (unlimited)!"
+        else:  # pro
+            limit = 5
+            msg = f"Pro Career tier allows tracking up to {limit} active jobs. Upgrade to Executive Elite for unlimited Kanban pipeline tracking!"
 
         if current_tracked >= limit:
             raise HTTPException(
@@ -459,10 +632,10 @@ def check_job_tracker_quota(
                 detail={
                     "error": "tracker_quota_exceeded",
                     "error_code": "tracker_quota_exceeded",
-                    "plan": "free",
+                    "plan": tier,
                     "limit": limit,
                     "tracked_count": current_tracked,
-                    "message": f"Free Starter tier allows tracking up to {limit} jobs. Upgrade to Pro ($9/mo) for unlimited Kanban pipeline job tracking!",
+                    "message": msg,
                     "upgrade_url": "/api/subscription/upgrade"
                 }
             )
@@ -491,7 +664,7 @@ def check_chat_copilot_quota(
     ensure_daily_counters_reset(current_user, db)
 
     tier = (current_user.plan_tier or "free").lower()
-    if tier in ["pro", "elite"]:
+    if tier in ["pro", "elite", "sprint"]:
         return True, 9999, "Unlimited Pro Coach"
 
     limit_str = get_saas_setting(db, "free_daily_chat_limit", str(DEFAULT_FREE_DAILY_CHAT_LIMIT))
@@ -502,7 +675,13 @@ def check_chat_copilot_quota(
 
     used = current_user.daily_chat_count or 0
     if used >= limit:
-        return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached. Upgrade to Pro ($9/mo) for unlimited 24/7 coaching!"
+        return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached. Upgrade to Pro Career for unlimited 24/7 coaching!"
+
+    current_user.daily_chat_count = used + 1
+    db.commit()
+    db.refresh(current_user)
+    remaining = max(0, limit - (used + 1))
+    return True, remaining, f"{remaining} free messages remaining today"
 
     current_user.daily_chat_count = used + 1
     db.commit()
@@ -517,9 +696,10 @@ def check_voice_interview_quota(
 ) -> tuple[bool, int, str]:
     """
     Checks session allowance for the AI Voice Mock Interview Simulator.
-    - Pro / Elite: Unlimited full-length voice mock interviews.
-    - Free registered user: 1 interactive practice session per day (3 questions).
-    - Requires authenticated user account.
+    - Free registered user: 3 sessions lifetime trial.
+    - Sprint Pass: 5 sessions total.
+    - Pro Career: 12 sessions per month.
+    - Elite: Unlimited C-Level Simulations.
     Returns: (is_allowed, remaining_count, message)
     """
     if not current_user:
@@ -532,26 +712,49 @@ def check_voice_interview_quota(
     ensure_daily_counters_reset(current_user, db)
 
     tier = (current_user.plan_tier or "free").lower()
-    if tier in ["pro", "elite"]:
-        return True, 9999, "Unlimited Voice Interviews (Pro Access)"
+    if tier == "elite":
+        return True, 9999, "Unlimited Executive Voice Simulations"
 
-    limit_str = get_saas_setting(db, "free_daily_interview_limit", str(DEFAULT_FREE_DAILY_INTERVIEW_LIMIT))
+    if tier == "pro":
+        limit = 12
+        used = getattr(current_user, "pro_interview_count", 0) or 0
+        if used >= limit:
+            return False, 0, f"You have reached your Pro Career monthly limit of {limit} Voice Mock Interview sessions. Upgrade to Executive Elite for unlimited sessions!"
+        current_user.pro_interview_count = used + 1
+        db.commit()
+        db.refresh(current_user)
+        remaining = max(0, limit - (used + 1))
+        return True, remaining, f"{remaining} Voice Interview sessions remaining this month"
+
+    if tier == "sprint":
+        limit = 5
+        used = getattr(current_user, "sprint_interview_count", 0) or 0
+        if used >= limit:
+            return False, 0, f"You have reached your 7-Day Sprint Pass limit of {limit} Voice Mock Interview sessions. Upgrade to Pro Career or Elite for more practice!"
+        current_user.sprint_interview_count = used + 1
+        db.commit()
+        db.refresh(current_user)
+        remaining = max(0, limit - (used + 1))
+        return True, remaining, f"{remaining} Sprint Voice Interview sessions remaining"
+
+    # Free tier: 3 lifetime trial sessions
+    limit_str = get_saas_setting(db, "free_lifetime_interview_limit", str(DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT))
     try:
         limit = int(limit_str)
     except ValueError:
-        limit = DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
+        limit = DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT
 
-    used = getattr(current_user, "daily_interview_count", 0) or 0
+    used = getattr(current_user, "lifetime_interview_count", 0) or 0
     if used >= limit:
-        return False, 0, f"Daily free Voice Mock Interview limit ({limit} session) reached. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited practice!"
+        return False, 0, f"You have reached your Free Starter trial limit of {limit} Voice Mock Interview sessions. Get a 7-Day Sprint Pass (Rs. 290) or Pro Career for full access!"
 
-    if hasattr(current_user, "daily_interview_count"):
-        current_user.daily_interview_count = used + 1
-        db.commit()
-        db.refresh(current_user)
+    current_user.lifetime_interview_count = used + 1
+    current_user.daily_interview_count = (current_user.daily_interview_count or 0) + 1
+    db.commit()
+    db.refresh(current_user)
 
     remaining = max(0, limit - (used + 1))
-    return True, remaining, f"{remaining} free practice sessions remaining today"
+    return True, remaining, f"{remaining} free trial practice sessions remaining"
 
 
 def check_conference_quota(
@@ -559,10 +762,11 @@ def check_conference_quota(
     db: Session
 ) -> tuple[bool, int, str]:
     """
-    Checks session allowance for Real-Time AI Video Conference & Live Mistake Coaching (Real-Time Error Detection).
-    - Pro / Elite: Unlimited live video conference sessions with real-time HUD error coaching.
-    - Free registered user: 1 conference practice session per day.
-    - Requires authenticated user account.
+    Checks session allowance for Real-Time AI Video Conference & Live Coaching.
+    - Free tier: 3 sessions lifetime trial.
+    - Sprint Pass: 5 sessions.
+    - Pro Career: 12 sessions.
+    - Elite: Unlimited High-Priority sessions.
     Returns: (is_allowed, remaining_count, message)
     """
     if not current_user:
@@ -575,20 +779,34 @@ def check_conference_quota(
     ensure_daily_counters_reset(current_user, db)
 
     tier = (current_user.plan_tier or "free").lower()
-    if tier in ["pro", "elite"]:
-        return True, 9999, "Unlimited Video Conferences (Pro Access)"
+    if tier == "elite":
+        return True, 9999, "Unlimited Video Conferences (Elite Priority)"
 
-    limit_str = get_saas_setting(db, "free_daily_interview_limit", str(DEFAULT_FREE_DAILY_INTERVIEW_LIMIT))
+    if tier == "pro":
+        limit = 12
+        used = getattr(current_user, "pro_interview_count", 0) or 0
+        if used >= limit:
+            return False, 0, f"You have reached your Pro Career limit of {limit} Video Conference sessions. Upgrade to Executive Elite for unlimited sessions!"
+        return True, max(0, limit - used), f"{max(0, limit - used)} sessions remaining this month"
+
+    if tier == "sprint":
+        limit = 5
+        used = getattr(current_user, "sprint_interview_count", 0) or 0
+        if used >= limit:
+            return False, 0, f"You have reached your 7-Day Sprint limit of {limit} Video Conference sessions. Upgrade to Pro Career for 12 sessions or Elite for unlimited!"
+        return True, max(0, limit - used), f"{max(0, limit - used)} sessions remaining"
+
+    limit_str = get_saas_setting(db, "free_lifetime_interview_limit", str(DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT))
     try:
         limit = int(limit_str)
     except ValueError:
-        limit = DEFAULT_FREE_DAILY_INTERVIEW_LIMIT
+        limit = DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT
 
-    used = getattr(current_user, "daily_interview_count", 0) or 0
+    used = getattr(current_user, "lifetime_interview_count", 0) or 0
     if used >= limit:
-        return False, 0, f"Daily free Video Conference Coaching limit ({limit} session) reached. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited sessions!"
+        return False, 0, f"You have completed your {limit} free Video Conference trial sessions. Get a 7-Day Sprint Pass or Pro Career to continue!"
 
-    return True, max(0, limit - used), f"{max(0, limit - used)} free sessions remaining today"
+    return True, max(0, limit - used), f"{max(0, limit - used)} free trial sessions remaining"
 
 
 

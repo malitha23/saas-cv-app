@@ -198,6 +198,14 @@ async def admin_override_user_plan(
     if tier == "free":
         user.subscription_expires_at = None
         user.subscription_status = "active"
+    elif tier == "sprint":
+        user.sprint_ats_downloads_count = 0
+        user.sprint_visual_downloads_count = 0
+        user.sprint_ai_generations_count = 0
+        days = max(1, req.duration_days) if req.duration_days else 7
+        user.subscription_started_at = now
+        user.subscription_expires_at = now + datetime.timedelta(days=days)
+        user.subscription_status = "active"
     else:
         days = max(1, req.duration_days)
         if user.subscription_expires_at and user.subscription_expires_at > now:
@@ -307,7 +315,10 @@ async def admin_approve_bank_slip(
     now = datetime.datetime.utcnow()
     if tier == "sprint":
         days = 7
-        actual_tier = "pro"
+        actual_tier = "sprint"
+        candidate.sprint_ats_downloads_count = 0
+        candidate.sprint_visual_downloads_count = 0
+        candidate.sprint_ai_generations_count = 0
     else:
         actual_tier = tier
         if cycle == "3m":

@@ -373,12 +373,22 @@
 
                     <div class="grid grid-cols-2 gap-2">
                       <div>
-                        <label class="text-[10px] text-slate-400 font-semibold">Price Display</label>
+                        <div class="flex items-center justify-between mb-0.5">
+                          <label class="text-[10px] text-slate-400 font-semibold">Price Display</label>
+                          <button type="button" x-show="p.plan_key !== 'free'"
+                            @click="autoCalculateCountryPlan(cData, p)"
+                            class="text-[9.5px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 transition"
+                            title="Auto-calculate 3-Month Pass & Button CTA from this price">
+                            <span>⚡ Auto-Fill</span>
+                          </button>
+                        </div>
                         <input type="text" x-model="p.price_display"
-                          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-100 font-bold font-mono outline-none">
+                          @change="autoCalculateCountryPlan(cData, p)"
+                          placeholder="e.g. 750 or Rs. 750"
+                          class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-500 rounded-lg px-2 py-1 text-xs text-slate-100 font-bold font-mono outline-none">
                       </div>
                       <div>
-                        <label class="text-[10px] text-slate-400 font-semibold">Period</label>
+                        <label class="text-[10px] text-slate-400 font-semibold block mb-0.5">Period</label>
                         <input type="text" x-model="p.period_display"
                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-200 font-mono outline-none">
                       </div>
@@ -624,8 +634,9 @@
                     <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-extrabold uppercase"
                       :class="{
                         'bg-slate-800 text-slate-400 border border-slate-700': u.plan_tier === 'free',
+                        'bg-amber-500/20 text-amber-300 border border-amber-500/30': u.plan_tier === 'sprint',
                         'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': u.plan_tier === 'pro',
-                        'bg-amber-500/20 text-amber-300 border border-amber-500/30': u.plan_tier === 'elite'
+                        'bg-purple-500/20 text-purple-300 border border-purple-500/30': u.plan_tier === 'elite'
                       }"
                       x-text="u.plan_tier">
                     </span>
@@ -653,6 +664,7 @@
                       <select @change="changeUserPlan(u.id, $event.target.value)" :value="u.plan_tier"
                         class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 outline-none">
                         <option value="free">Free</option>
+                        <option value="sprint">Sprint (7-Day)</option>
                         <option value="pro">Pro</option>
                         <option value="elite">Elite</option>
                       </select>
@@ -1194,13 +1206,14 @@
                   <label class="font-semibold text-slate-400 block mb-1">Discount Percentage (%):</label>
                   <div class="flex items-center gap-2">
                     <input type="number" min="0" max="90" x-model.number="adminDiscounts['3m'].discount_percent"
+                           @input="if (adminDiscounts['3m']) adminDiscounts['3m'].badge = (adminDiscounts['3m'].discount_percent > 0) ? ('Save ' + adminDiscounts['3m'].discount_percent + '%') : 'Standard Rate'"
                            class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 font-mono font-bold outline-none">
                     <span class="text-slate-400 font-bold">%</span>
                   </div>
                 </div>
                 <div>
                   <label class="font-semibold text-slate-400 block mb-1">Badge / Display Label:</label>
-                  <input type="text" x-model="adminDiscounts['3m'].label"
+                  <input type="text" x-model="adminDiscounts['3m'].badge"
                          class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 outline-none">
                 </div>
               </div>
@@ -1217,13 +1230,14 @@
                   <label class="font-semibold text-slate-400 block mb-1">Discount Percentage (%):</label>
                   <div class="flex items-center gap-2">
                     <input type="number" min="0" max="90" x-model.number="adminDiscounts['6m'].discount_percent"
+                           @input="if (adminDiscounts['6m']) adminDiscounts['6m'].badge = (adminDiscounts['6m'].discount_percent > 0) ? ('Save ' + adminDiscounts['6m'].discount_percent + '%') : 'Standard Rate'"
                            class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 font-mono font-bold outline-none">
                     <span class="text-slate-400 font-bold">%</span>
                   </div>
                 </div>
                 <div>
                   <label class="font-semibold text-slate-400 block mb-1">Badge / Display Label:</label>
-                  <input type="text" x-model="adminDiscounts['6m'].label"
+                  <input type="text" x-model="adminDiscounts['6m'].badge"
                          class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 outline-none">
                 </div>
               </div>
@@ -1240,13 +1254,14 @@
                   <label class="font-semibold text-slate-400 block mb-1">Discount Percentage (%):</label>
                   <div class="flex items-center gap-2">
                     <input type="number" min="0" max="90" x-model.number="adminDiscounts['12m'].discount_percent"
+                           @input="if (adminDiscounts['12m']) adminDiscounts['12m'].badge = (adminDiscounts['12m'].discount_percent > 0) ? ('Save ' + adminDiscounts['12m'].discount_percent + '% • Best Value') : 'Standard Rate'"
                            class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 font-mono font-bold outline-none">
                     <span class="text-slate-400 font-bold">%</span>
                   </div>
                 </div>
                 <div>
                   <label class="font-semibold text-slate-400 block mb-1">Badge / Display Label:</label>
-                  <input type="text" x-model="adminDiscounts['12m'].label"
+                  <input type="text" x-model="adminDiscounts['12m'].badge"
                          class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 outline-none">
                 </div>
               </div>
@@ -2887,6 +2902,53 @@
           }
         },
 
+        autoCalculateCountryPlan(cData, plan) {
+          if (!plan || plan.plan_key === 'free') return;
+          const symbol = cData.currency_symbol || (cData.currency_code === 'LKR' ? 'Rs.' : '$');
+          const isLkr = (cData.currency_code || '').toUpperCase() === 'LKR';
+
+          // Extract numerical base price
+          const m = String(plan.price_display || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+          if (!m) return;
+          const baseMonthly = parseFloat(m[0]);
+          if (!baseMonthly || baseMonthly <= 0) return;
+
+          // Formatted base price
+          const formattedBase = isLkr ? baseMonthly.toLocaleString() : (baseMonthly % 1 === 0 ? baseMonthly.toFixed(0) : baseMonthly.toFixed(2));
+          plan.price_display = `${symbol} ${formattedBase}`;
+          plan.period_display = '/ month';
+
+          // Read dynamic 3-Month discount from adminDiscounts!
+          const rawDisc = this.adminDiscounts?.['3m']?.discount_percent;
+          let discPct = 0;
+          if (rawDisc !== null && rawDisc !== undefined && rawDisc !== '' && !isNaN(rawDisc)) {
+            discPct = Number(rawDisc);
+          }
+
+          // Calculate 3-Month Pass with active discount
+          let threeMonthTotal = 0;
+          if (discPct === 15 && (baseMonthly === 690 || baseMonthly === 1950)) {
+            threeMonthTotal = plan.plan_key === 'elite' ? (isLkr ? 4950 : 39) : (isLkr ? 1750 : 19);
+          } else if (discPct > 0) {
+            threeMonthTotal = Math.round(baseMonthly * 3 * (1 - discPct / 100));
+            if (isLkr && threeMonthTotal >= 100) {
+              threeMonthTotal = Math.round(threeMonthTotal / 10) * 10;
+            }
+          } else {
+            // 0% discount (or cleared field) -> Full 3 months price with 0 discount!
+            threeMonthTotal = baseMonthly * 3;
+          }
+          const formatted3M = isLkr ? threeMonthTotal.toLocaleString() : threeMonthTotal;
+
+          if (plan.plan_key === 'pro') {
+            plan.sub_billing_text = `or ${symbol} ${formatted3M} for 3-Month Job Hunt Pass`;
+            plan.button_text = `Upgrade to Pro (${symbol} ${formattedBase}/mo)`;
+          } else if (plan.plan_key === 'elite') {
+            plan.sub_billing_text = `or ${symbol} ${formatted3M} for 3-Month Elite Pass`;
+            plan.button_text = `Upgrade to Elite (${symbol} ${formattedBase}/mo)`;
+          }
+        },
+
         async deleteCountryPricing(countryCode) {
           if (!confirm(`Are you sure you want to remove the pricing rule for ${countryCode}?`)) return;
           const token = localStorage.getItem('saas_token');
@@ -3271,6 +3333,25 @@
           this.discountsSaveMsg = '';
           const token = localStorage.getItem('saas_token');
           try {
+            // Sanitize discount percentages: if empty/null/NaN, default to 0
+            ['3m', '6m', '12m'].forEach(k => {
+              if (this.adminDiscounts && this.adminDiscounts[k]) {
+                const val = this.adminDiscounts[k].discount_percent;
+                if (val === null || val === undefined || val === '' || isNaN(val)) {
+                  this.adminDiscounts[k].discount_percent = 0;
+                } else {
+                  this.adminDiscounts[k].discount_percent = Number(val);
+                }
+                const pct = this.adminDiscounts[k].discount_percent;
+                if (!this.adminDiscounts[k].badge && this.adminDiscounts[k].label) {
+                  this.adminDiscounts[k].badge = this.adminDiscounts[k].label;
+                }
+                if (!this.adminDiscounts[k].badge) {
+                  this.adminDiscounts[k].badge = pct > 0 ? `Save ${pct}%` : 'Standard Rate';
+                }
+              }
+            });
+
             const res = await fetch('/api/admin/billing/discounts', {
               method: 'POST',
               headers: {
@@ -3283,7 +3364,22 @@
               const err = await res.json();
               throw new Error(err.detail || 'Failed to update billing discounts');
             }
-            this.discountsSaveMsg = '✅ Discount rules updated successfully!';
+
+            // Sync with countryPricingMap plans so that Sub-Billing lines immediately re-calculate!
+            if (this.countryPricingMap) {
+              Object.keys(this.countryPricingMap).forEach(cCode => {
+                const cData = this.countryPricingMap[cCode];
+                if (cData && cData.plans) {
+                  cData.plans.forEach(plan => {
+                    if (plan.plan_key === 'pro' || plan.plan_key === 'elite') {
+                      this.autoCalculateCountryPlan(cData, plan);
+                    }
+                  });
+                }
+              });
+            }
+
+            this.discountsSaveMsg = '✅ Discount rules updated & plans re-calculated!';
             setTimeout(() => { this.discountsSaveMsg = ''; }, 4000);
           } catch (e) {
             alert('Discount Settings Error: ' + e.message);

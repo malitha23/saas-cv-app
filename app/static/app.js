@@ -288,7 +288,8 @@ function resumeApp() {
     activeCountryCode: 'LK',
     activeCurrency: 'LKR',
     activeCurrencySymbol: 'Rs.',
-    activeSprintPrice: 'Rs. 490',
+    activeSprintPrice: 'Rs. 290',
+    showSprintFeatures: false,
     availableCountries: [
       { code: 'LK', name: 'Sri Lanka', currency: 'LKR', symbol: 'Rs.' },
       { code: 'DEFAULT', name: 'Global', currency: 'USD', symbol: '$' }
@@ -318,31 +319,36 @@ function resumeApp() {
         plan_key: "pro",
         title: "Pro Career",
         badge: "🔥 Best Seller",
-        price_display: "$9",
+        price_display: "Rs. 590",
         period_display: "/ month",
-        sub_billing_text: "or $19 for 3-Month Job Hunt Pass",
+        sub_billing_text: "or Rs. 1,590 for 3-Month Job Hunt Pass",
         description: "Everything needed to land senior interviews with confidence.",
         features: [
           "Unlimited AI Tailoring runs",
-          "All 4 Visual CV Formats (High-Res Download)",
+          "10 Classic ATS PDF Downloads / month",
+          "10 Visual Photo CV Downloads / month",
           "Unlimited AI Cover Letters (100% Watermark-Free & Clean)",
           "Photo & Digital Signature Upload",
           "Hosted Live Portfolio Subdomain (.dreemfolio.com)",
-          "Cloud Auto-Save & Revision Archive"
+          "Cloud Auto-Save & Instant Version Restore",
+          "Top 12 AI Matched Roles & 8 Hunter Vacancies",
+          "12 AI Voice & Video Mock Interview Sessions / month"
         ],
         is_popular: true,
-        button_text: "Upgrade to Pro ($9/mo)"
+        button_text: "Upgrade to Pro (Rs. 590/mo)"
       },
       {
         plan_key: "elite",
         title: "Executive Elite",
         badge: "Personal Brand",
-        price_display: "$19",
+        price_display: "Rs. 1,950",
         period_display: "/ month",
-        sub_billing_text: "",
+        sub_billing_text: "or Rs. 4,950 for 3-Month Elite Pass",
         description: "For Tech Leads, Architects & Executives building an elite digital brand.",
         features: [
           "Everything in Pro Career",
+          "Unlimited Classic ATS & Visual Photo CV Downloads",
+          "Unlimited AI Matched Jobs & Hunter Searches",
           "All 8 Portfolio Web Architectures",
           "100% Full CRUD Portfolio Studio",
           "Connect Custom Private Domain & SSL",
@@ -350,7 +356,7 @@ function resumeApp() {
           "Priority AI Processing Queue"
         ],
         is_popular: false,
-        button_text: "Upgrade to Elite ($19/mo)"
+        button_text: "Upgrade to Elite (Rs. 1,950/mo)"
       }
     ],
 
@@ -479,6 +485,7 @@ function resumeApp() {
           if (authRes.ok) {
             this.currentUser = await authRes.json();
             localStorage.setItem('saas_user', JSON.stringify(this.currentUser));
+            await this.fetchUserSavedResumes();
           } else {
             localStorage.removeItem('saas_token');
             localStorage.removeItem('saas_user');
@@ -597,6 +604,13 @@ function resumeApp() {
         }
       });
 
+      // Synchronously flush active resume snapshot to localStorage before page unloads/refreshes
+      window.addEventListener('beforeunload', () => {
+        if (this.tailoredData) {
+          this.saveActiveResumeLocalSnapshot();
+        }
+      });
+
       // Fetch sample data
       try {
         const res = await fetch('/api/sample-data');
@@ -644,6 +658,11 @@ function resumeApp() {
         } catch(e) {}
       });
 
+      // Watch tailoredData to immediately persist edits locally
+      this.$watch('tailoredData', () => {
+        this.saveActiveResumeLocalSnapshot();
+      });
+
       // Automatically restore active resume draft if user was editing and refreshed the page
       await this.restoreActiveResumeSnapshot();
 
@@ -657,9 +676,20 @@ function resumeApp() {
     },
 
     openQuotaLimitModal(opts = {}) {
+      const proPrice = this.getCalculatedPrice('pro')?.price_display || (this.activeCurrency === 'USD' ? '$9' : 'Rs. 590');
+      const sprintPrice = this.activeSprintPrice || (this.activeCurrency === 'USD' ? '$4.99' : 'Rs. 290');
+      const elitePrice = this.getCalculatedPrice('elite')?.price_display || (this.activeCurrency === 'USD' ? '$19' : 'Rs. 1,950');
+
+      let rawMsg = opts.message || `You have reached your daily free quota. Upgrade to Pro Career (${proPrice}/mo) or get a 7-Day Sprint Pass (${sprintPrice}) for unlimited access!`;
+      // Cleanly replace any legacy dollar figures with active currency
+      let cleanMsg = String(rawMsg)
+        .replace(/\$9(\/mo)?/g, `${proPrice}/mo`)
+        .replace(/\$4\.99/g, sprintPrice)
+        .replace(/\$19(\/mo)?/g, `${elitePrice}/mo`);
+
       this.quotaLimitData = {
         title: opts.title || 'Daily Free Limit Reached',
-        message: opts.message || 'You have reached the daily free tier limit. Upgrade to Pro for unlimited access!',
+        message: cleanMsg,
         feature: opts.feature || '',
         requiredPlan: opts.requiredPlan || 'pro'
       };
@@ -1188,7 +1218,7 @@ function resumeApp() {
           if (res.status === 402) {
             this.showPricingModal = true;
             const quotaMsg = typeof errData.detail === 'object' ? errData.detail.message : errData.detail;
-            throw new Error(quotaMsg || 'Daily free AI quota reached (2/2 runs). Upgrade to Pro ($9/mo) or Elite ($19/mo) for unlimited AI tailoring!');
+            throw new Error(quotaMsg || 'Daily free AI quota reached (2/2 runs). Upgrade to Pro Career or Executive Elite for unlimited AI tailoring!');
           }
           if (res.status === 400 && typeof errData.detail === 'string' && errData.detail.includes('does not match the background in your uploaded CV')) {
             this.openTitleMismatchModal(
@@ -1327,9 +1357,10 @@ function resumeApp() {
         await this.refreshCurrentUser();
 
       } catch (err) {
-        if (err.message && (err.message.toLowerCase().includes('quota') || err.message.includes('Daily free AI generation limit'))) {
+        if (err.message && (err.message.toLowerCase().includes('quota') || err.message.includes('Daily free AI generation limit') || err.message.includes('Sprint Pass limit'))) {
+          const isSprint = this.currentUser?.plan_tier === 'sprint';
           this.openQuotaLimitModal({
-            title: 'Daily AI Generation Limit Reached',
+            title: isSprint ? 'Sprint Pass AI Generation Limit Reached' : 'Daily AI Generation Limit Reached',
             message: err.message,
             requiredPlan: 'pro'
           });
@@ -1635,6 +1666,15 @@ function resumeApp() {
     },
 
     downloadCurrentActiveDoc() {
+      if (this.activeTab === 'original_cv' && this.uploadedFileBlobUrl) {
+        const link = document.createElement('a');
+        link.href = this.uploadedFileBlobUrl;
+        link.download = this.fileName || 'original_resume.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
       if (this.activeTab === 'cover_letter') {
         this.downloadCoverLetterPdf();
       } else if (this.activeTab === 'portfolio') {
@@ -1645,6 +1685,7 @@ function resumeApp() {
     },
 
     getMobileDownloadLabel() {
+      if (this.activeTab === 'original_cv') return 'Download Original CV';
       if (this.activeTab === 'cover_letter') return 'Download Cover Letter (PDF)';
       if (this.activeTab === 'portfolio') return 'Publish Live Portfolio';
       if (['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir', 'navy_executive', 'nordic_azure', 'aurelian_executive'].includes(this.currentTemplate)) {
@@ -1802,6 +1843,15 @@ function resumeApp() {
       try {
         const raw = localStorage.getItem('dreemfolio_active_resume');
         if (!raw) {
+          // If no active tailored resume in local storage, but user is logged in, auto-restore their latest saved resume!
+          if (this.currentUser) {
+            await this.fetchUserSavedResumes();
+            if (this.userSavedResumes && this.userSavedResumes.length > 0) {
+              const latest = this.userSavedResumes[0];
+              await this.loadSavedResume(latest.id);
+              return;
+            }
+          }
           // If no active tailored resume, still restore unsubmitted job form if present
           const savedJobTitle = localStorage.getItem('dreemfolio_active_job_title');
           if (savedJobTitle && !this.targetJobTitle) this.targetJobTitle = savedJobTitle;
@@ -2382,7 +2432,7 @@ function resumeApp() {
       if (isFree) {
         this.openQuotaLimitModal({
           title: 'Live Web Portfolio Locked',
-          message: 'Publishing your portfolio live to a public web URL (.dreemfolio.com) requires the Pro Career plan ($9/mo). Free users can customize, preview, and test all 8 portfolio themes on-screen! Upgrade to Pro to publish your live website.',
+          message: 'Publishing your portfolio live to a public web URL (.dreemfolio.com) requires a 7-Day Sprint Pass or Pro Career plan. Free users can customize, preview, and test all 8 portfolio themes on-screen! Upgrade to publish your live website.',
           requiredPlan: 'pro'
         });
         return;
@@ -2470,23 +2520,35 @@ function resumeApp() {
       }
       if (!this.tailoredData) return;
 
-      // Lifetime Quota checks for Free Tier
+      // Quota checks for Free Tier & 7-Day Sprint Pass
       const isVisual = ['visual_sidebar', 'banner_periwinkle', 'creative_gradient', 'tech_noir', 'indigo_banner', 'emerald_prestige', 'navy_executive', 'nordic_azure', 'aurelian_executive'].includes(this.currentTemplate);
       const isFree = !this.currentUser.plan_tier || this.currentUser.plan_tier === 'free';
+      const isSprint = this.currentUser.plan_tier === 'sprint';
 
-      if (isFree) {
-        if (isVisual && this.currentUser.remaining_visual_downloads !== undefined && this.currentUser.remaining_visual_downloads <= 0) {
+      if (isFree || isSprint) {
+        const visualRemaining = this.currentUser.lifetime_visual_downloads_remaining !== undefined 
+          ? this.currentUser.lifetime_visual_downloads_remaining 
+          : this.currentUser.remaining_visual_downloads;
+        if (isVisual && visualRemaining !== undefined && visualRemaining <= 0) {
           this.openQuotaLimitModal({
-            title: 'Visual Photo CV Limit Reached',
-            message: 'Your 1 free lifetime Visual Photo CV download has been used.\n\nUpgrade to Pro Career for unlimited high-resolution Visual and ATS downloads!',
+            title: isSprint ? 'Sprint Pass Visual CV Limit Reached' : 'Visual Photo CV Limit Reached',
+            message: isSprint 
+              ? 'Your 7-Day Sprint Pass limit of 2 Visual Photo CV downloads has been reached.\n\nUpgrade to Pro Career for unlimited downloads in all formats!'
+              : 'Your 1 free lifetime Visual Photo CV download has been used.\n\nUpgrade to Pro Career for unlimited high-resolution Visual and ATS downloads!',
             requiredPlan: 'pro'
           });
           return;
         }
-        if (!isVisual && this.currentUser.remaining_ats_downloads !== undefined && this.currentUser.remaining_ats_downloads <= 0) {
+
+        const atsRemaining = this.currentUser.lifetime_ats_downloads_remaining !== undefined 
+          ? this.currentUser.lifetime_ats_downloads_remaining 
+          : this.currentUser.remaining_ats_downloads;
+        if (!isVisual && atsRemaining !== undefined && atsRemaining <= 0) {
           this.openQuotaLimitModal({
-            title: 'Classic ATS Resume Limit Reached',
-            message: 'Your 2 free lifetime Classic ATS downloads have been used.\n\nUpgrade to Pro Career for unlimited downloads in all formats!',
+            title: isSprint ? 'Sprint Pass Classic ATS Limit Reached' : 'Classic ATS Resume Limit Reached',
+            message: isSprint 
+              ? 'Your 7-Day Sprint Pass limit of 2 Classic ATS PDF downloads has been reached.\n\nUpgrade to Pro Career for unlimited downloads in all formats!'
+              : 'Your 2 free lifetime Classic ATS downloads have been used.\n\nUpgrade to Pro Career for unlimited downloads in all formats!',
             requiredPlan: 'pro'
           });
           return;
@@ -2782,7 +2844,12 @@ function resumeApp() {
       const dataUrl = canvas.toDataURL('image/png');
       this.tailoredData.cover_letter.signature_image_data = dataUrl;
       this.refreshAllPreviews();
-      alert('✅ Signature captured and applied to your cover letter!');
+      this.alertModal({
+        title: 'Signature Applied',
+        message: 'Your digital signature has been successfully captured and applied to your cover letter!',
+        type: 'success',
+        confirmText: 'Done'
+      });
     },
 
     handleSigFileUpload(event) {
@@ -2792,6 +2859,12 @@ function resumeApp() {
       reader.onload = (e) => {
         this.tailoredData.cover_letter.signature_image_data = e.target.result;
         this.refreshAllPreviews();
+        this.alertModal({
+          title: 'Signature Uploaded',
+          message: 'Your signature image has been successfully uploaded and attached to your cover letter!',
+          type: 'success',
+          confirmText: 'Done'
+        });
       };
       reader.readAsDataURL(file);
     },
@@ -3539,8 +3612,16 @@ function resumeApp() {
       const currency = (this.activeCurrency || 'LKR').toUpperCase();
       const symbol = this.activeCurrencySymbol || (currency === 'USD' ? '$' : 'Rs. ');
 
-      // Base monthly rates
-      let baseMonthly = (planKey === 'elite') ? (currency === 'USD' ? 19 : 2490) : (currency === 'USD' ? 9 : 990);
+      // Base monthly rates: dynamically extracted from currently configured plans
+      const plan = (this.dynamicPlans || []).find(p => p.plan_key === planKey);
+      let baseMonthly = 0;
+      if (plan && plan.price_display) {
+        const m = String(plan.price_display).replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+        baseMonthly = m ? parseFloat(m[0]) : 0;
+      }
+      if (!baseMonthly) {
+        baseMonthly = (planKey === 'elite') ? (currency === 'USD' ? 19 : 1950) : (currency === 'USD' ? 9 : 590);
+      }
 
       const discounts = this.billingDiscounts || {};
 
@@ -3551,40 +3632,60 @@ function resumeApp() {
           period_display: '/ month',
           sub_billing_text: 'Billed monthly • One-time prepaid checkout',
           raw_amount: baseMonthly,
-          badge: planKey === 'pro' ? '🔥 Best Seller' : 'Most Powerful'
+          badge: planKey === 'pro' ? '🔥 Best Seller' : 'Personal Brand'
         };
       } else if (cycle === '3m') {
-        const discPct = discounts['3m']?.discount_percent ?? 15;
-        const total = Math.round(baseMonthly * 3 * (1 - discPct / 100));
+        const rawDisc = discounts['3m']?.discount_percent;
+        const discPct = (rawDisc !== null && rawDisc !== undefined && rawDisc !== '' && !isNaN(rawDisc))
+          ? Number(rawDisc)
+          : 0;
+        let total = 0;
+        if (discPct === 15 && (baseMonthly === 690 || baseMonthly === 1950)) {
+          if (currency === 'USD') {
+            total = planKey === 'elite' ? 39 : 19;
+          } else {
+            total = planKey === 'elite' ? 4950 : 1750;
+          }
+        } else if (discPct > 0) {
+          total = Math.round(baseMonthly * 3 * (1 - discPct / 100));
+        } else {
+          total = baseMonthly * 3;
+        }
         const perMonth = Math.round(total / 3);
         calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ 3 months',
-          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          sub_billing_text: discPct > 0 ? `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo` : `Billed quarterly • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
           raw_amount: total,
-          badge: `Save ${discPct}%`
+          badge: discPct > 0 ? `Save ${discPct}%` : 'Standard'
         };
       } else if (cycle === '6m') {
-        const discPct = discounts['6m']?.discount_percent ?? 25;
-        const total = Math.round(baseMonthly * 6 * (1 - discPct / 100));
+        const rawDisc = discounts['6m']?.discount_percent;
+        const discPct = (rawDisc !== null && rawDisc !== undefined && rawDisc !== '' && !isNaN(rawDisc))
+          ? Number(rawDisc)
+          : 0;
+        const total = discPct > 0 ? Math.round(baseMonthly * 6 * (1 - discPct / 100)) : baseMonthly * 6;
         const perMonth = Math.round(total / 6);
         calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ 6 months',
-          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          sub_billing_text: discPct > 0 ? `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo` : `Billed semi-annually • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
           raw_amount: total,
-          badge: `Save ${discPct}%`
+          badge: discPct > 0 ? `Save ${discPct}%` : 'Standard'
         };
       } else if (cycle === '12m') {
-        const discPct = discounts['12m']?.discount_percent ?? 40;
-        const total = Math.round(baseMonthly * 12 * (1 - discPct / 100));
+        const rawDisc = discounts['12m']?.discount_percent;
+        const discPct = (rawDisc !== null && rawDisc !== undefined && rawDisc !== '' && !isNaN(rawDisc))
+          ? Number(rawDisc)
+          : 0;
+        const total = discPct > 0 ? Math.round(baseMonthly * 12 * (1 - discPct / 100)) : baseMonthly * 12;
         const perMonth = Math.round(total / 12);
         calcRes = {
           price_display: `${symbol}${currency === 'USD' ? total : total.toLocaleString()}`,
           period_display: '/ year',
-          sub_billing_text: `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
+          sub_billing_text: discPct > 0 ? `Save ${discPct}% • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo` : `Billed annually • Just ${symbol}${currency === 'USD' ? perMonth : perMonth.toLocaleString()}/mo`,
           raw_amount: total,
-          badge: `Super Saver ${discPct}% OFF`
+          badge: discPct > 0 ? `Super Saver ${discPct}% OFF` : 'Standard'
         };
       } else if (cycle === 'lifetime') {
         const lifetimeCfg = discounts['lifetime'] || {};
@@ -3599,11 +3700,11 @@ function resumeApp() {
           period_display: '/ lifetime pass',
           sub_billing_text: 'Pay once, enjoy forever • 100 Years Unlimited Access',
           raw_amount: total,
-          badge: lifetimeCfg.badge || '👑 Lifetime Pass'
+          badge: lifetimeCfg.badge || 'Forever Access • 0 Renewals'
         };
       } else {
         calcRes = {
-          price_display: `${symbol}${baseMonthly}`,
+          price_display: `${symbol}${currency === 'USD' ? baseMonthly : baseMonthly.toLocaleString()}`,
           period_display: '/ month',
           sub_billing_text: '',
           raw_amount: baseMonthly,
@@ -3674,6 +3775,24 @@ function resumeApp() {
       return this.upgradeSubscription(targetPlan, durationMonths);
     },
 
+    async fetchUserSavedResumes() {
+      const token = localStorage.getItem('saas_token');
+      if (!token) return [];
+      try {
+        const res = await fetch('/api/user/resumes', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          this.userSavedResumes = await res.json();
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          return this.userSavedResumes;
+        }
+      } catch (err) {
+        console.warn('Could not fetch saved resumes:', err);
+      }
+      return [];
+    },
+
     async openSavedResumesModal() {
       if (!this.currentUser) {
         this.openAuthModal('login');
@@ -3684,18 +3803,8 @@ function resumeApp() {
       this.isLoadingSavedResumes = true;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
 
-      const token = localStorage.getItem('saas_token');
       try {
-        const res = await fetch('/api/user/resumes', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          this.userSavedResumes = await res.json();
-        } else {
-          throw new Error('Failed to load resumes');
-        }
-      } catch (err) {
-        console.warn('Could not fetch saved resumes:', err);
+        await this.fetchUserSavedResumes();
       } finally {
         this.isLoadingSavedResumes = false;
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
@@ -3704,10 +3813,18 @@ function resumeApp() {
 
     async loadSavedResume(id) {
       const isFree = !this.currentUser?.plan_tier || this.currentUser?.plan_tier === 'free';
+      // In Free tier: the very latest (most recent) resume is free to load. Older past revisions require Pro.
       if (isFree && !this.adminSettingsState?.free_allow_cloud_restore) {
-        const found = this.userSavedResumes.find(r => r.id === id);
-        this.openProRestoreModal(found || { title: 'Saved Resume' });
-        return;
+        if (!this.userSavedResumes || this.userSavedResumes.length === 0) {
+          await this.fetchUserSavedResumes();
+        }
+        const list = this.userSavedResumes || [];
+        const isLatest = list.length > 0 && list[0].id === id;
+        if (!isLatest && list.length > 0) {
+          const found = list.find(r => r.id === id);
+          this.openProRestoreModal(found || { title: 'Previous Saved Resume' });
+          return;
+        }
       }
 
       const token = localStorage.getItem('saas_token');
@@ -4122,9 +4239,9 @@ function resumeApp() {
       this.bankSlipMessage = '';
       const token = localStorage.getItem('saas_token');
 
-      const calcPrice = this.getCalculatedPrice(this.selectedBankPlan);
-      let amount = calcPrice?.raw_amount || (this.selectedBankPlan === 'elite' ? 2490 : 990);
       const currency = (this.activeCurrency || 'LKR').toUpperCase();
+      const calcPrice = this.getCalculatedPrice(this.selectedBankPlan);
+      let amount = calcPrice?.raw_amount || (this.selectedBankPlan === 'elite' ? (currency === 'USD' ? 19 : 1950) : (currency === 'USD' ? 9 : 690));
 
       const formData = new FormData();
       formData.append('file', this.bankSlipFile);
@@ -4369,7 +4486,7 @@ function resumeApp() {
       if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_copilot_kits_remaining === 0) {
         this.openQuotaLimitModal({
           title: 'Application Copilot Limit Reached',
-          message: 'Free Starter tier includes 1 tailored Application Kit per day. Upgrade to Pro ($9/mo) for unlimited 1-click tailored screening answers & elevator pitches!',
+          message: 'Free Starter tier includes 1 tailored Application Kit per day. Upgrade to 7-Day Sprint (2 kits/day) or Pro Career (4 kits/day) for more screening kits!',
           feature: 'application_copilot',
           requiredPlan: 'pro'
         });
@@ -4401,10 +4518,11 @@ function resumeApp() {
           })
         });
         if (res.status === 402) {
+          const errData = await res.json().catch(() => ({}));
           this.showCopilotModal = false;
           this.openQuotaLimitModal({
-            title: 'Daily Application Kit Limit Reached',
-            message: 'You have used your free application kit for today. Upgrade to Pro ($9/mo) for unlimited 1-click screening kits!',
+            title: 'Application Kit Quota Reached',
+            message: errData.detail?.message || 'You have reached your daily Application Kit quota. Upgrade to 7-Day Sprint or Pro Career for more kits!',
             feature: 'application_copilot',
             requiredPlan: 'pro'
           });
@@ -4458,12 +4576,20 @@ function resumeApp() {
         return;
       }
 
-      if (this.currentUser && (this.currentUser.plan_tier === 'free' || !this.currentUser.plan_tier) && this.userTrackedJobs.length >= 3) {
+      const userTier = (this.currentUser?.plan_tier || 'free').toLowerCase();
+      let maxJobs = 2;
+      if (userTier === 'sprint') maxJobs = 3;
+      else if (userTier === 'pro') maxJobs = 5;
+      else if (userTier === 'elite') maxJobs = 9999;
+
+      if (userTier !== 'elite' && (this.userTrackedJobs || []).length >= maxJobs) {
         this.openQuotaLimitModal({
-          title: 'Job Tracker Quota Reached (3/3 Jobs)',
-          message: 'Free Starter tier allows tracking up to 3 job applications. Upgrade to Pro ($9/mo) for unlimited Kanban pipeline job tracking and cloud sync!',
+          title: `Job Tracker Quota Reached (${(this.userTrackedJobs || []).length}/${maxJobs} Jobs)`,
+          message: userTier === 'free'
+            ? 'Free Starter tier allows tracking up to 2 job applications. Upgrade to 7-Day Sprint (3 jobs) or Pro Career (5 jobs) for more tracking capacity!'
+            : `Your current plan allows tracking up to ${maxJobs} job applications. Upgrade your plan for increased Kanban pipeline capacity!`,
           feature: 'job_tracker',
-          requiredPlan: 'pro'
+          requiredPlan: userTier === 'free' ? 'sprint' : 'pro'
         });
         return;
       }
@@ -4488,11 +4614,12 @@ function resumeApp() {
           })
         });
         if (res.status === 402) {
+          const errData = await res.json().catch(() => ({}));
           this.openQuotaLimitModal({
-            title: 'Job Tracker Quota Reached (3/3 Jobs)',
-            message: 'Free Starter tier allows tracking up to 3 job applications. Upgrade to Pro ($9/mo) for unlimited Kanban pipeline job tracking!',
+            title: 'Job Tracker Quota Reached',
+            message: errData.detail?.message || 'You have reached your tracked jobs quota. Upgrade your plan for more tracking capacity!',
             feature: 'job_tracker',
-            requiredPlan: 'pro'
+            requiredPlan: userTier === 'free' ? 'sprint' : 'pro'
           });
           return;
         }
@@ -4745,10 +4872,10 @@ function resumeApp() {
 
       if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
         this.openQuotaLimitModal({
-          title: 'Daily Voice Interview Limit Reached',
-          message: 'Free Starter accounts include 1 interactive AI Voice Mock Interview session per day. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited practice sessions!',
+          title: 'Voice Interview Quota Reached',
+          message: 'Free Starter accounts include 3 lifetime trial AI Voice Mock Interview sessions. Get a 7-Day Sprint Pass or Pro Career for more practice sessions!',
           feature: 'voice_interview',
-          requiredPlan: 'pro'
+          requiredPlan: 'sprint'
         });
         return;
       }
@@ -4813,9 +4940,9 @@ function resumeApp() {
           this.closeVoiceInterviewModal();
           this.openQuotaLimitModal({
             title: 'Voice Interview Quota Reached',
-            message: errData.detail?.message || 'Free tier includes 1 AI Voice Mock Interview per day. Upgrade to Pro for unlimited full-length sessions!',
+            message: errData.detail?.message || errData.detail || 'Free Starter accounts include 3 lifetime trial AI Voice Mock Interview sessions. Get a 7-Day Sprint Pass or Pro Career for more practice sessions!',
             feature: 'voice_mock_interview',
-            requiredPlan: 'pro'
+            requiredPlan: 'sprint'
           });
           return;
         }
@@ -5166,10 +5293,10 @@ function resumeApp() {
 
       if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
         this.openQuotaLimitModal({
-          title: 'Daily Conference Coaching Limit Reached',
-          message: 'Free Starter accounts include 1 AI Video Conference & Live Coaching session per day. Upgrade to Pro ($9/mo) or get a 7-Day Sprint Pass for unlimited video coaching!',
+          title: 'Video Conference Quota Reached',
+          message: 'Free Starter accounts include 3 lifetime trial AI Video Conference & Live Coaching sessions. Get a 7-Day Sprint Pass or Pro Career for more coaching sessions!',
           feature: 'video_conference',
-          requiredPlan: 'pro'
+          requiredPlan: 'sprint'
         });
         return;
       }

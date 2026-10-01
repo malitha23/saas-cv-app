@@ -98,7 +98,15 @@ def init_engine():
                 ("reset_password_expires_at", "DATETIME NULL"),
                 ("referral_code", "VARCHAR(50) NULL"),
                 ("referred_by_id", "INT NULL"),
-                ("referral_bonus_downloads", "INT NOT NULL DEFAULT 0")
+                ("referral_bonus_downloads", "INT NOT NULL DEFAULT 0"),
+                ("sprint_ats_downloads_count", "INT NOT NULL DEFAULT 0"),
+                ("sprint_visual_downloads_count", "INT NOT NULL DEFAULT 0"),
+                ("sprint_ai_generations_count", "INT NOT NULL DEFAULT 0"),
+                ("sprint_interview_count", "INT NOT NULL DEFAULT 0"),
+                ("pro_interview_count", "INT NOT NULL DEFAULT 0"),
+                ("pro_ats_downloads_count", "INT NOT NULL DEFAULT 0"),
+                ("pro_visual_downloads_count", "INT NOT NULL DEFAULT 0"),
+                ("lifetime_interview_count", "INT NOT NULL DEFAULT 0")
             ]
             with engine.connect() as mig_conn:
                 for col_name, col_def in needed_cols:

@@ -49,6 +49,23 @@
           <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 animate-pulse"></i>
           <span>✨ Quick Tour</span>
         </button>
+
+        <!-- Matched Jobs Shortcut Button (Desktop) -->
+        <button @click="activeTab = 'jobs'; mobileWorkspaceTab = 'preview'; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+          :class="activeTab === 'jobs' ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30' : 'border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-white'"
+          class="px-2.5 py-1.5 rounded-lg border transition text-xs font-bold flex items-center gap-1.5 shadow-sm shrink-0"
+          title="AI Matched Jobs & Live Vacancy Hunter">
+          <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>🎯 Matched Jobs</span>
+        </button>
+
+        <!-- AI Voice Mock Interview Button (Desktop) -->
+        <button @click="openVoiceInterviewModal()"
+          class="px-2.5 py-1.5 rounded-lg border border-violet-500/40 bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 shadow-sm shrink-0"
+          title="AI Voice Mock Interview Studio">
+          <i data-lucide="mic" class="w-3.5 h-3.5 text-violet-400"></i>
+          <span>🎙️ Mock Interview</span>
+        </button>
       </div>
 
       <!-- Compact Explore / Nav Menu Dropdown (lg and xl screens) -->
@@ -67,10 +84,20 @@
           x-transition:leave="transition ease-in duration-100"
           x-transition:leave-start="opacity-100 translate-y-0 scale-100"
           x-transition:leave-end="opacity-0 translate-y-1 scale-95"
-          class="absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl p-2 z-50 text-xs">
+          class="absolute left-0 mt-2 w-60 bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl p-2 z-50 text-xs">
           <div class="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 mb-1">
             Quick Navigation
           </div>
+          <button @click="activeTab = 'jobs'; mobileWorkspaceTab = 'preview'; openNavMenu = false; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                  class="w-full px-2.5 py-2 rounded-xl text-left hover:bg-emerald-950/40 text-emerald-300 font-semibold transition flex items-center gap-2 group">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform"></i>
+            <span>🎯 Matched Jobs & Vacancies</span>
+          </button>
+          <button @click="openVoiceInterviewModal(); openNavMenu = false;"
+                  class="w-full px-2.5 py-2 rounded-xl text-left hover:bg-violet-950/40 text-violet-300 font-semibold transition flex items-center gap-2 group">
+            <i data-lucide="mic" class="w-3.5 h-3.5 text-violet-400 group-hover:scale-110 transition-transform"></i>
+            <span>🎙️ AI Mock Interview Studio</span>
+          </button>
           <a href="/" class="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 text-slate-200 transition flex items-center gap-2 group">
             <i data-lucide="home" class="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform"></i>
             <span>Home (Landing Page)</span>
@@ -228,40 +255,54 @@
               <button @click="showQuotaDropdown = !showQuotaDropdown; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
                 class="px-2 xl:px-2.5 py-1 text-xs rounded-lg border flex items-center gap-1.5 transition shadow-sm cursor-pointer shrink-0"
                 :class="{
-                  'bg-slate-800/90 text-slate-300 border-slate-700 hover:border-slate-600': !currentUser.plan_tier || currentUser.plan_tier === 'free',
-                  'bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25': currentUser.plan_tier === 'pro',
-                  'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25': currentUser.plan_tier === 'elite'
+                  'bg-slate-800/90 text-slate-300 border-slate-700 hover:border-slate-600': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                  'bg-white text-slate-700 border-slate-300 hover:border-slate-400 shadow-sm': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                  'bg-amber-500/15 text-amber-500 border-amber-500/30 hover:bg-amber-500/25': currentUser?.plan_tier === 'sprint',
+                  'bg-indigo-500/15 text-indigo-500 border-indigo-500/30 hover:bg-indigo-500/25': currentUser?.plan_tier === 'pro',
+                  'bg-purple-500/15 text-purple-500 border-purple-500/30 hover:bg-purple-500/25': currentUser?.plan_tier === 'elite'
                 }"
                 title="Click to view full lifetime quota & validity breakdown">
                 
                 <span class="font-extrabold uppercase text-[10px] tracking-wider"
-                  x-text="(currentUser.plan_tier || 'free').toUpperCase() + ' PLAN'"></span>
+                  x-text="(currentUser?.plan_tier === 'sprint' ? '7-Day Sprint' : (currentUser?.plan_tier || 'free')).toUpperCase() + ' PLAN'"></span>
                 
                 <!-- Quick Real-Time Quota Counter for Free Tier (Compact on 2xl) -->
-                <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                  <div class="hidden 2xl:flex items-center gap-1 text-[10px] font-mono ml-0.5 pl-1.5 border-l border-slate-700">
-                    <span title="AI Tailoring Runs Left Today" class="text-indigo-300 font-semibold">AI:<span x-text="currentUser.daily_generations_remaining !== null ? currentUser.daily_generations_remaining : 2"></span></span>
+                <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                  <div class="hidden 2xl:flex items-center gap-1 text-[10px] font-mono ml-0.5 pl-1.5 border-l"
+                    :class="darkMode ? 'border-slate-700' : 'border-slate-300'">
+                    <span title="AI Tailoring Runs Left Today" :class="darkMode ? 'text-indigo-300 font-semibold' : 'text-indigo-600 font-bold'">AI:<span x-text="currentUser?.daily_generations_remaining !== null && currentUser?.daily_generations_remaining !== undefined ? currentUser.daily_generations_remaining : 2"></span></span>
+                    <span :class="darkMode ? 'text-slate-500' : 'text-slate-400'">•</span>
+                    <span title="Lifetime Classic ATS PDF Downloads Remaining" :class="(currentUser?.lifetime_ats_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-bold' : 'text-red-600 font-black') : (darkMode ? 'text-emerald-300 font-semibold' : 'text-emerald-700 font-bold')">ATS:<span x-text="currentUser?.lifetime_ats_downloads_remaining !== null && currentUser?.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 2"></span></span>
+                    <span :class="darkMode ? 'text-slate-500' : 'text-slate-400'">•</span>
+                    <span title="Lifetime Visual Photo CV Downloads Remaining" :class="(currentUser?.lifetime_visual_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-bold' : 'text-red-600 font-black') : (darkMode ? 'text-pink-300 font-semibold' : 'text-pink-700 font-bold')">VCV:<span x-text="currentUser?.lifetime_visual_downloads_remaining !== null && currentUser?.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 1"></span></span>
+                    <span :class="darkMode ? 'text-slate-500' : 'text-slate-400'">•</span>
+                    <span title="Cover Letter Downloads Remaining" :class="darkMode ? 'text-violet-300 font-semibold' : 'text-violet-700 font-bold'">CL:<span x-text="currentUser?.lifetime_cover_letter_downloads_remaining !== null && currentUser?.lifetime_cover_letter_downloads_remaining !== undefined ? currentUser.lifetime_cover_letter_downloads_remaining : 3"></span></span>
+                  </div>
+                </template>
+
+                <!-- Quick Real-Time Quota Counter for Sprint Tier (Compact on 2xl) -->
+                <template x-if="currentUser?.plan_tier === 'sprint'">
+                  <div class="hidden 2xl:flex items-center gap-1 text-[10px] font-mono ml-0.5 pl-1.5 border-l border-amber-500/30">
+                    <span title="AI Tailoring Runs Left" class="text-indigo-300 font-semibold">AI:<span x-text="currentUser?.daily_generations_remaining !== null && currentUser?.daily_generations_remaining !== undefined ? currentUser.daily_generations_remaining : 7"></span></span>
                     <span class="text-slate-500">•</span>
-                    <span title="Lifetime Classic ATS PDF Downloads Remaining" :class="(currentUser.lifetime_ats_downloads_remaining === 0) ? 'text-red-400 font-bold' : 'text-emerald-300 font-semibold'">ATS:<span x-text="currentUser.lifetime_ats_downloads_remaining !== null && currentUser.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 2"></span></span>
+                    <span title="Classic ATS PDF Downloads Left" :class="(currentUser?.lifetime_ats_downloads_remaining === 0) ? 'text-red-400 font-bold' : 'text-emerald-300 font-semibold'">ATS:<span x-text="currentUser?.lifetime_ats_downloads_remaining !== null && currentUser?.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 3"></span></span>
                     <span class="text-slate-500">•</span>
-                    <span title="Lifetime Visual Photo CV Downloads Remaining" :class="(currentUser.lifetime_visual_downloads_remaining === 0) ? 'text-red-400 font-bold' : 'text-pink-300 font-semibold'">VCV:<span x-text="currentUser.lifetime_visual_downloads_remaining !== null && currentUser.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 1"></span></span>
-                    <span class="text-slate-500">•</span>
-                    <span title="Cover Letter Downloads Remaining" class="text-violet-300 font-semibold">CL:<span x-text="currentUser.lifetime_cover_letter_downloads_remaining !== null && currentUser.lifetime_cover_letter_downloads_remaining !== undefined ? currentUser.lifetime_cover_letter_downloads_remaining : 3"></span></span>
+                    <span title="Visual Photo CV Downloads Left" :class="(currentUser?.lifetime_visual_downloads_remaining === 0) ? 'text-red-400 font-bold' : 'text-pink-300 font-semibold'">VCV:<span x-text="currentUser?.lifetime_visual_downloads_remaining !== null && currentUser?.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 3"></span></span>
                   </div>
                 </template>
 
                 <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 transition-transform" :class="{'rotate-180': showQuotaDropdown}"></i>
               </button>
 
-              <!-- Quick Upgrade CTA Button (Free Tier Only) -->
-              <button x-show="!currentUser.plan_tier || currentUser.plan_tier === 'free'"
+              <!-- Quick Upgrade CTA Button (Free Tier & Sprint) -->
+              <button x-show="!currentUser?.plan_tier || currentUser?.plan_tier === 'free' || currentUser?.plan_tier === 'sprint'"
                 @click="showPricingModal = true"
                 class="px-2 py-1 text-[10.5px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg shadow flex items-center gap-1 transition shrink-0">
-                <i data-lucide="zap" class="w-3 h-3"></i> <span class="hidden sm:inline">Upgrade</span>
+                <i data-lucide="zap" class="w-3 h-3"></i> <span class="hidden sm:inline" x-text="currentUser?.plan_tier === 'sprint' ? 'Upgrade Pro' : 'Upgrade'">Upgrade</span>
               </button>
             </div>
 
-            <!-- Sleek Interactive Quota & Validity Popover -->
+            <!-- Sleek Interactive Quota & Validity Popover with Complete Feature Breakdown -->
             <div x-show="showQuotaDropdown"
               x-cloak
               x-transition:enter="transition ease-out duration-150"
@@ -270,129 +311,369 @@
               x-transition:leave="transition ease-in duration-100"
               x-transition:leave-start="opacity-100 translate-y-0 scale-100"
               x-transition:leave-end="opacity-0 translate-y-1 scale-95"
-              class="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700/90 rounded-2xl shadow-2xl p-4 text-xs z-50 overflow-hidden">
+              :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900 shadow-2xl'"
+              :style="darkMode ? 'background-color: #0f172a !important;' : 'background-color: #ffffff !important;'"
+              class="absolute right-0 mt-2 w-80 sm:w-96 border rounded-2xl shadow-2xl p-4 text-xs z-50 overflow-hidden">
               
               <!-- Popover Ambient Accent -->
               <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500"></div>
 
               <!-- Header: Plan & Validity -->
-              <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
+              <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b"
+                :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                 <div>
-                  <h4 class="font-extrabold text-slate-100 uppercase text-[11px] tracking-wider"
-                    x-text="(currentUser.plan_tier || 'free').toUpperCase() + ' PLAN'"></h4>
-                  <p class="text-[10px] text-slate-400 font-medium"
-                    x-text="currentUser.subscription_validity_label || (currentUser.plan_tier === 'free' ? 'Lifetime Free Access' : 'Active Subscription')"></p>
+                  <h4 class="font-extrabold uppercase text-[11.5px] tracking-wider"
+                    :class="darkMode ? 'text-slate-100' : 'text-slate-900'"
+                    x-text="(currentUser?.plan_tier === 'sprint' ? '7-Day Sprint Pass' : (currentUser?.plan_tier === 'pro' ? 'Pro Career Plan' : (currentUser?.plan_tier === 'elite' ? 'Executive Elite Plan' : 'Free Starter Plan')))"></h4>
+                  <p class="text-[10px] font-medium"
+                    :class="darkMode ? 'text-slate-400' : 'text-slate-500'"
+                    x-text="currentUser?.subscription_validity_label || (currentUser?.plan_tier === 'free' ? 'Lifetime Free Access' : 'Active Subscription')"></p>
                 </div>
                 <span class="px-2 py-0.5 text-[9.5px] font-bold rounded uppercase tracking-wider"
                   :class="{
-                    'bg-slate-800 text-slate-400 border border-slate-700': !currentUser.plan_tier || currentUser.plan_tier === 'free',
-                    'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40': currentUser.plan_tier === 'pro',
-                    'bg-amber-500/20 text-amber-300 border border-amber-500/40': currentUser.plan_tier === 'elite'
+                    'bg-slate-800 text-slate-400 border border-slate-700': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                    'bg-slate-100 text-slate-600 border border-slate-200': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                    'bg-amber-500/20 text-amber-500 border border-amber-500/40': currentUser?.plan_tier === 'sprint',
+                    'bg-indigo-500/20 text-indigo-500 border border-indigo-500/40': currentUser?.plan_tier === 'pro',
+                    'bg-purple-500/20 text-purple-500 border border-purple-500/40': currentUser?.plan_tier === 'elite'
                   }"
-                  x-text="currentUser.subscription_status || 'Active'"></span>
+                  x-text="currentUser?.subscription_status || 'Active'"></span>
               </div>
 
-              <!-- Quota Breakdown Items -->
-              <div class="space-y-2 mb-3">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Quota Breakdown</p>
-
-                <!-- AI Runs -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-400"></i>
-                    <span>AI Tailored Runs:</span>
-                  </div>
-                  <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                    <span class="font-mono font-bold text-slate-200"
-                      x-text="(currentUser.daily_generations_remaining !== null ? currentUser.daily_generations_remaining : 2) + ' left today'"></span>
-                  </template>
-                  <template x-if="currentUser.plan_tier && currentUser.plan_tier !== 'free'">
-                    <span class="font-bold text-emerald-400 text-[10px] uppercase">Unlimited</span>
-                  </template>
+              <!-- Scrollable Features & Quotas Breakdown -->
+              <div class="space-y-3 mb-3 max-h-[380px] overflow-y-auto pr-1">
+                <div class="flex items-center justify-between">
+                  <p class="text-[10px] font-bold uppercase tracking-wider"
+                    :class="darkMode ? 'text-slate-400' : 'text-slate-500'">Plan Features & Quotas</p>
+                  <span class="text-[9.5px] font-semibold uppercase"
+                    :class="darkMode ? 'text-indigo-400' : 'text-indigo-600'"
+                    x-text="(currentUser?.plan_tier || 'free') + ' tier'"></span>
                 </div>
 
-                <!-- Classic ATS PDF -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-400"></i>
-                    <span>Classic ATS PDF:</span>
+                <!-- Section 1: AI Resume & Job Discovery -->
+                <div class="space-y-1.5">
+                  <span class="text-[9px] font-bold uppercase tracking-wider pl-0.5"
+                    :class="darkMode ? 'text-indigo-400' : 'text-indigo-600'">🎯 AI Resume & Discovery</span>
+                  
+                  <!-- AI Runs -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-500"></i>
+                      <span>AI Tailored Runs:</span>
+                    </div>
+                    <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                      <span class="font-mono font-bold"
+                        :class="darkMode ? 'text-slate-200' : 'text-slate-900'"
+                        x-text="(currentUser?.daily_generations_remaining !== null && currentUser?.daily_generations_remaining !== undefined ? currentUser.daily_generations_remaining : 2) + ' left today (2/day)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'sprint'">
+                      <span class="font-mono font-bold"
+                        :class="darkMode ? 'text-amber-300' : 'text-amber-700'"
+                        x-text="(currentUser?.daily_generations_remaining !== null && currentUser?.daily_generations_remaining !== undefined ? currentUser.daily_generations_remaining : 7) + ' left (7 Runs)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier && currentUser?.plan_tier !== 'free' && currentUser?.plan_tier !== 'sprint'">
+                      <span class="font-bold text-[10px] uppercase"
+                        :class="darkMode ? 'text-emerald-400' : 'text-emerald-700'">Unlimited</span>
+                    </template>
                   </div>
-                  <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                    <span class="font-mono font-bold"
-                      :class="(currentUser.lifetime_ats_downloads_remaining === 0) ? 'text-red-400 font-black' : 'text-slate-200'"
-                      x-text="(currentUser.lifetime_ats_downloads_remaining !== null && currentUser.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 2) + ' left (Lifetime)'"></span>
-                  </template>
-                  <template x-if="currentUser.plan_tier && currentUser.plan_tier !== 'free'">
-                    <span class="font-bold text-emerald-400 text-[10px] uppercase">Unlimited</span>
-                  </template>
+
+                  <!-- Matched Jobs -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="crosshair" class="w-3.5 h-3.5 text-emerald-500"></i>
+                      <span>AI Matched Jobs:</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? 'Top 3 Preview' : (currentUser?.plan_tier === 'sprint' ? 'Top 5 Preview' : (currentUser?.plan_tier === 'pro' ? 'Top 12 Preview' : 'Unlimited'))">
+                    </span>
+                  </div>
+
+                  <!-- Live Job Hunter -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="search" class="w-3.5 h-3.5 text-sky-500"></i>
+                      <span>Live Job Hunter:</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? '2 Vacancies' : (currentUser?.plan_tier === 'sprint' ? '4 Vacancies' : (currentUser?.plan_tier === 'pro' ? '8 Vacancies' : 'Unlimited Searches'))">
+                    </span>
+                  </div>
                 </div>
 
-                <!-- Visual Photo CVs -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-[11px]">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-400"></i>
-                    <span>Visual Photo CV:</span>
+                <!-- Section 2: Applications & CV Downloads -->
+                <div class="space-y-1.5 pt-1 border-t"
+                  :class="darkMode ? 'border-slate-800/80' : 'border-slate-200/70'">
+                  <span class="text-[9px] font-bold uppercase tracking-wider pl-0.5"
+                    :class="darkMode ? 'text-emerald-400' : 'text-emerald-600'">📄 Applications & CVs</span>
+                  
+                  <!-- 1-Click Copilot Kits -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="zap" class="w-3.5 h-3.5 text-yellow-500"></i>
+                      <span>1-Click App Copilot:</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((currentUser?.daily_copilot_kits_remaining !== null && currentUser?.daily_copilot_kits_remaining !== undefined ? currentUser.daily_copilot_kits_remaining : 1) + ' left today (1/day)') : (currentUser?.plan_tier === 'sprint' ? ((currentUser?.daily_copilot_kits_remaining !== null && currentUser?.daily_copilot_kits_remaining !== undefined ? currentUser.daily_copilot_kits_remaining : 2) + ' left today (2/day)') : (currentUser?.plan_tier === 'pro' ? ((currentUser?.daily_copilot_kits_remaining !== null && currentUser?.daily_copilot_kits_remaining !== undefined ? currentUser.daily_copilot_kits_remaining : 4) + ' left today (4/day)') : 'Unlimited Kits'))">
+                    </span>
                   </div>
-                  <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                    <span class="font-mono font-bold"
-                      :class="(currentUser.lifetime_visual_downloads_remaining === 0) ? 'text-red-400 font-black' : 'text-slate-200'"
-                      x-text="(currentUser.lifetime_visual_downloads_remaining !== null && currentUser.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 1) + ' left (Lifetime)'"></span>
-                  </template>
-                  <template x-if="currentUser.plan_tier && currentUser.plan_tier !== 'free'">
-                    <span class="font-bold text-emerald-400 text-[10px] uppercase">Unlimited</span>
-                  </template>
+
+                  <!-- Job Application Tracker -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="kanban" class="w-3.5 h-3.5 text-teal-500"></i>
+                      <span>Job Tracker (Kanban):</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((userTrackedJobs?.length || 0) + ' / 2 Jobs') : (currentUser?.plan_tier === 'sprint' ? ((userTrackedJobs?.length || 0) + ' / 3 Jobs') : (currentUser?.plan_tier === 'pro' ? ((userTrackedJobs?.length || 0) + ' / 5 Jobs') : 'Unlimited Pipeline'))">
+                    </span>
+                  </div>
+
+                  <!-- Classic ATS PDF -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-500"></i>
+                      <span>Classic ATS PDF:</span>
+                    </div>
+                    <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                      <span class="font-mono font-bold"
+                        :class="(currentUser?.lifetime_ats_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-black' : 'text-red-600 font-black') : (darkMode ? 'text-slate-200' : 'text-slate-900')"
+                        x-text="(currentUser?.lifetime_ats_downloads_remaining !== null && currentUser?.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 2) + ' left (2 Lifetime)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'sprint'">
+                      <span class="font-mono font-bold"
+                        :class="(currentUser?.lifetime_ats_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-black' : 'text-red-600 font-black') : (darkMode ? 'text-amber-300' : 'text-amber-700')"
+                        x-text="(currentUser?.lifetime_ats_downloads_remaining !== null && currentUser?.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 3) + ' left (3 Max)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'pro'">
+                      <span class="font-mono font-bold"
+                        :class="darkMode ? 'text-indigo-300' : 'text-indigo-700'"
+                        x-text="(currentUser?.lifetime_ats_downloads_remaining !== null && currentUser?.lifetime_ats_downloads_remaining !== undefined ? currentUser.lifetime_ats_downloads_remaining : 10) + ' left (10/mo)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'elite'">
+                      <span class="font-bold text-[10px] uppercase"
+                        :class="darkMode ? 'text-emerald-400' : 'text-emerald-700'">Unlimited</span>
+                    </template>
+                  </div>
+
+                  <!-- Visual Photo CVs -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-500"></i>
+                      <span>Visual Photo CV:</span>
+                    </div>
+                    <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                      <span class="font-mono font-bold"
+                        :class="(currentUser?.lifetime_visual_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-black' : 'text-red-600 font-black') : (darkMode ? 'text-slate-200' : 'text-slate-900')"
+                        x-text="(currentUser?.lifetime_visual_downloads_remaining !== null && currentUser?.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 1) + ' left (1 Lifetime)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'sprint'">
+                      <span class="font-mono font-bold"
+                        :class="(currentUser?.lifetime_visual_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-black' : 'text-red-600 font-black') : (darkMode ? 'text-amber-300' : 'text-amber-700')"
+                        x-text="(currentUser?.lifetime_visual_downloads_remaining !== null && currentUser?.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 3) + ' left (3 Max)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'pro'">
+                      <span class="font-mono font-bold"
+                        :class="darkMode ? 'text-indigo-300' : 'text-indigo-700'"
+                        x-text="(currentUser?.lifetime_visual_downloads_remaining !== null && currentUser?.lifetime_visual_downloads_remaining !== undefined ? currentUser.lifetime_visual_downloads_remaining : 10) + ' left (10/mo)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier === 'elite'">
+                      <span class="font-bold text-[10px] uppercase"
+                        :class="darkMode ? 'text-emerald-400' : 'text-emerald-700'">Unlimited</span>
+                    </template>
+                  </div>
+
+                  <!-- Cover Letters -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="mail" class="w-3.5 h-3.5 text-violet-500"></i>
+                      <span>AI Cover Letters:</span>
+                    </div>
+                    <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                      <span class="font-mono font-bold"
+                        :class="(currentUser?.lifetime_cover_letter_downloads_remaining === 0) ? (darkMode ? 'text-red-400 font-black' : 'text-red-600 font-black') : (darkMode ? 'text-slate-200' : 'text-slate-900')"
+                        x-text="(currentUser?.lifetime_cover_letter_downloads_remaining !== null && currentUser?.lifetime_cover_letter_downloads_remaining !== undefined ? currentUser.lifetime_cover_letter_downloads_remaining : 3) + ' left (1st Clean)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier && currentUser?.plan_tier !== 'free'">
+                      <span class="font-bold text-[10px] uppercase"
+                        :class="darkMode ? 'text-emerald-400' : 'text-emerald-700'">Unlimited Clean</span>
+                    </template>
+                  </div>
                 </div>
 
-                <!-- Cover Letters -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="mail" class="w-3.5 h-3.5 text-violet-400"></i>
-                    <span>AI Cover Letters:</span>
+                <!-- Section 3: Interview Prep & Coaching -->
+                <div class="space-y-1.5 pt-1 border-t"
+                  :class="darkMode ? 'border-slate-800/80' : 'border-slate-200/70'">
+                  <span class="text-[9px] font-bold uppercase tracking-wider pl-0.5"
+                    :class="darkMode ? 'text-purple-400' : 'text-purple-600'">🎙️ Interview & Coaching</span>
+
+                  <!-- AI Voice Mock Interview -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="mic" class="w-3.5 h-3.5 text-purple-500"></i>
+                      <span>Voice Mock Interview:</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 3) + ' left (3 Trial)') : (currentUser?.plan_tier === 'sprint' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 5) + ' left (5 Pass)') : (currentUser?.plan_tier === 'pro' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 12) + ' left (12/mo)') : 'Unlimited C-Level'))">
+                    </span>
                   </div>
-                  <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
-                    <span class="font-mono font-bold"
-                      :class="(currentUser.lifetime_cover_letter_downloads_remaining === 0) ? 'text-red-400 font-black' : 'text-slate-200'"
-                      x-text="(currentUser.lifetime_cover_letter_downloads_remaining !== null && currentUser.lifetime_cover_letter_downloads_remaining !== undefined ? currentUser.lifetime_cover_letter_downloads_remaining : 3) + ' left (1st Clean)'"></span>
-                  </template>
-                  <template x-if="currentUser.plan_tier && currentUser.plan_tier !== 'free'">
-                    <span class="font-bold text-emerald-400 text-[10px] uppercase">Unlimited Clean</span>
-                  </template>
+
+                  <!-- AI Realtime Video Conference -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="video" class="w-3.5 h-3.5 text-rose-500"></i>
+                      <span>Video Conference:</span>
+                    </div>
+                    <span class="font-mono font-bold text-[10.5px]"
+                      :class="{
+                        'text-slate-200': darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-slate-800': !darkMode && (!currentUser?.plan_tier || currentUser?.plan_tier === 'free'),
+                        'text-amber-400': darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-amber-700': !darkMode && currentUser?.plan_tier === 'sprint',
+                        'text-indigo-300': darkMode && currentUser?.plan_tier === 'pro',
+                        'text-indigo-700': !darkMode && currentUser?.plan_tier === 'pro',
+                        'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
+                        'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
+                      }"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 3) + ' left (3 Trial)') : (currentUser?.plan_tier === 'sprint' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 5) + ' left (5 Pass)') : (currentUser?.plan_tier === 'pro' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 12) + ' left (12/mo)') : 'Unlimited Elite'))">
+                    </span>
+                  </div>
+
+                  <!-- 24/7 Career Copilot Chat -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-500"></i>
+                      <span>Career Copilot Chat:</span>
+                    </div>
+                    <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
+                      <span class="font-mono font-bold"
+                        :class="darkMode ? 'text-slate-200' : 'text-slate-900'"
+                        x-text="(currentUser?.daily_chat_remaining !== null && currentUser?.daily_chat_remaining !== undefined ? currentUser.daily_chat_remaining : 3) + ' left today (3/day)'"></span>
+                    </template>
+                    <template x-if="currentUser?.plan_tier && currentUser?.plan_tier !== 'free'">
+                      <span class="font-bold text-[10px] uppercase"
+                        :class="darkMode ? 'text-emerald-400' : 'text-emerald-700'">Unlimited 24/7</span>
+                    </template>
+                  </div>
                 </div>
 
-                <!-- Visual Photo CVs -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-[11px]">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="palette" class="w-3.5 h-3.5 text-pink-400"></i>
-                    <span>Visual Photo CVs:</span>
-                  </div>
-                  <span class="text-[10px] font-semibold"
-                    :class="(!currentUser.plan_tier || currentUser.plan_tier === 'free') ? 'text-amber-400' : 'text-emerald-400'"
-                    x-text="(!currentUser.plan_tier || currentUser.plan_tier === 'free') ? 'Preview Only' : 'Unlocked'"></span>
-                </div>
+                <!-- Section 4: Cloud & Portfolio -->
+                <div class="space-y-1.5 pt-1 border-t"
+                  :class="darkMode ? 'border-slate-800/80' : 'border-slate-200/70'">
+                  <span class="text-[9px] font-bold uppercase tracking-wider pl-0.5"
+                    :class="darkMode ? 'text-amber-400' : 'text-amber-600'">🌐 Cloud & Portfolio</span>
 
-                <!-- Live Portfolio -->
-                <div class="flex items-center justify-between p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-[11px]">
-                  <div class="flex items-center gap-1.5 text-slate-300">
-                    <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
-                    <span>Live Web Portfolio:</span>
+                  <!-- Live Portfolio -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-500"></i>
+                      <span>Web Portfolio:</span>
+                    </div>
+                    <span class="text-[10px] font-semibold"
+                      :class="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? (darkMode ? 'text-amber-400' : 'text-amber-700') : (darkMode ? 'text-emerald-400' : 'text-emerald-700')"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? 'Preview Only (8 Themes)' : (currentUser?.plan_tier === 'elite' ? 'Custom Domain + SSL' : 'Live Subdomain (.dreemfolio)')"></span>
                   </div>
-                  <span class="text-[10px] font-semibold"
-                    :class="(!currentUser.plan_tier || currentUser.plan_tier === 'free') ? 'text-amber-400' : 'text-emerald-400'"
-                    x-text="(!currentUser.plan_tier || currentUser.plan_tier === 'free') ? 'Preview Only' : 'Hosted Active'"></span>
+
+                  <!-- Cloud Auto-Save -->
+                  <div class="flex items-center justify-between p-1.5 rounded-lg border"
+                    :class="darkMode ? 'bg-slate-800 border-slate-700/60' : 'bg-slate-50 border-slate-200/90'"
+                    :style="darkMode ? 'background-color: #1e293b;' : 'background-color: #f8fafc;'">
+                    <div class="flex items-center gap-1.5" :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                      <i data-lucide="cloud" class="w-3.5 h-3.5 text-sky-500"></i>
+                      <span>Cloud Auto-Save:</span>
+                    </div>
+                    <span class="text-[10px] font-semibold"
+                      :class="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? (darkMode ? 'text-amber-300' : 'text-amber-700') : (darkMode ? 'text-emerald-400' : 'text-emerald-700')"
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? 'Auto-Save (Restore: Pro)' : 'Auto-Save & Full Restore'"></span>
+                  </div>
                 </div>
               </div>
 
               <!-- CTA in Popover -->
-              <template x-if="!currentUser.plan_tier || currentUser.plan_tier === 'free'">
+              <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free' || currentUser?.plan_tier === 'sprint'">
                 <button @click="showPricingModal = true; showQuotaDropdown = false;"
                   class="w-full py-2 px-3 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow transition flex items-center justify-center gap-1.5">
                   <i data-lucide="crown" class="w-3.5 h-3.5"></i>
-                  <span>Upgrade to Pro Career ($9/mo)</span>
+                  <span x-text="'Upgrade to Pro (' + (activeProPrice || 'Rs. 590') + '/mo)'">Upgrade to Pro</span>
                 </button>
               </template>
-              <template x-if="currentUser.plan_tier && currentUser.plan_tier !== 'free'">
+              <template x-if="currentUser?.plan_tier && currentUser?.plan_tier !== 'free' && currentUser?.plan_tier !== 'sprint'">
                 <button @click="showPricingModal = true; showQuotaDropdown = false;"
-                  class="w-full py-1.5 px-3 rounded-lg font-semibold text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                  class="w-full py-1.5 px-3 rounded-lg font-semibold text-[11px] border transition"
+                  :class="darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'">
                   Manage Subscription Plans
                 </button>
               </template>
@@ -916,6 +1197,25 @@
                 <span>AI Cover Letter Generator</span>
               </span>
               <span x-show="activeTab === 'cover_letter'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </button>
+
+            <button @click="activeTab = 'jobs'; mobileWorkspaceTab = 'preview'; mobileMenuOpen = false; $nextTick(() => { if (window.lucide) window.lucide.createIcons(); });"
+              :class="activeTab === 'jobs' ? 'bg-emerald-600 text-white font-bold' : 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/60'"
+              class="w-full p-2.5 rounded-xl flex items-center justify-between text-xs transition">
+              <span class="flex items-center gap-2.5">
+                <i data-lucide="crosshair" class="w-4 h-4 text-emerald-400"></i>
+                <span class="font-bold">🎯 Matched Career Opportunities</span>
+              </span>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/30 text-emerald-200">Jobs</span>
+            </button>
+
+            <button @click="openVoiceInterviewModal(); mobileMenuOpen = false;"
+              class="w-full p-2.5 rounded-xl bg-violet-950/40 hover:bg-violet-900/60 border border-violet-500/30 text-violet-300 font-bold flex items-center justify-between text-xs transition">
+              <span class="flex items-center gap-2.5">
+                <i data-lucide="mic" class="w-4 h-4 text-violet-400"></i>
+                <span>🎙️ AI Voice Mock Interview Studio</span>
+              </span>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-violet-500/30 text-violet-200">Live</span>
             </button>
 
           </div>

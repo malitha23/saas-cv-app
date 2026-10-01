@@ -15,7 +15,7 @@ from app.reviews_service import get_public_reviews_data, sanitize_review_text
 from app.state import templates
 from app.routers.payments import sync_order_status_from_payhere
 from app.guide_service import get_dynamic_guide_catalog
-from app.pricing import _get_country_pricing_dict
+from app.pricing import _get_country_pricing_dict, get_dynamic_pricing_context
 
 router = APIRouter(tags=["Pages & Public Views"])
 
@@ -57,9 +57,16 @@ async def serve_privacy_policy(request: Request):
 
 
 @router.get("/terms", response_class=HTMLResponse)
-async def serve_terms_of_service(request: Request):
+async def serve_terms_of_service(request: Request, db: Session = Depends(get_db)):
     """Serve official Terms of Service & Subscription Agreement."""
-    return templates.TemplateResponse(request=request, name="legal/terms.html", context={"active_page": "terms"})
+    return templates.TemplateResponse(
+        request=request,
+        name="legal/terms.html",
+        context={
+            "active_page": "terms",
+            "pricing": get_dynamic_pricing_context(db)
+        }
+    )
 
 
 @router.get("/refund", response_class=HTMLResponse)
@@ -325,6 +332,12 @@ async def serve_payment_status(
     elif order and order.status in ["initiated", "pending"]:
         sync_order_status_from_payhere(order, db, background_tasks)
         db.refresh(order)
+        # If still in initiated state after PayHere sync, candidate closed/backed out of the gateway without paying
+        if order.status == "initiated":
+            order.status = "canceled"
+            order.status_message = "Checkout session was closed or canceled before payment completion."
+            db.commit()
+            db.refresh(order)
 
     # Determine effective status
     effective_status = (order.status if order else None) or status or "failed"
@@ -360,9 +373,9 @@ async def serve_payment_status(
     failure_reason_en = ""
     failure_reason_si = ""
 
-    if effective_status == "canceled":
-        failure_reason_en = "The transaction was canceled by the user during the PayHere checkout session. No charges were deducted from your card or account."
-        failure_reason_si = "PayHere ගෙවීම් පිටුවේදී ඔබ විසින් ගෙවීම අවලංගු කරන ලදී. ඔබගේ ගිණුමෙන් කිසිදු මුදලක් අය වී නොමැත."
+    if effective_status in ["canceled", "incomplete"]:
+        failure_reason_en = "The checkout session was closed or canceled before payment was completed. No charges were deducted from your card or account. You can safely try again or choose another payment option."
+        failure_reason_si = "ගෙවීම සම්පූර්ණ කිරීමට පෙර Checkout සැසිය අවසන් කර හෝ අවලංගු කර ඇත. ඔබගේ කාඩ්පතෙන් හෝ බැංකු ගිණුමෙන් කිසිදු මුදලක් අය වී නොමැත. ඔබට නැවත පහසුවෙන්ම උත්සාහ කළ හැක."
     elif effective_status == "amount_tampered":
         failure_reason_en = "Security integrity verification failed: The transaction amount or currency did not match the official order price."
         failure_reason_si = "ආරක්ෂණ පරීක්ෂාව අසාර්ථක විය: ගෙවීමට උත්සාහ කළ මුදල සහ ඇණවුමේ නිල මුදල අතර නොගැලපීමක් පවතී."
@@ -381,8 +394,8 @@ async def serve_payment_status(
         page_title = "Payment Successful"
     elif effective_status == "pending":
         page_title = "Payment Processing"
-    elif effective_status == "canceled":
-        page_title = "Payment Canceled"
+    elif effective_status in ["canceled", "incomplete"]:
+        page_title = "Checkout Incomplete"
     else:
         page_title = "Payment Failed"
     formatted_date = order.created_at.strftime("%b %d, %Y - %I:%M %p") if (order and order.created_at) else datetime.datetime.utcnow().strftime("%b %d, %Y - %I:%M %p")
@@ -478,6 +491,7 @@ async def serve_landing(request: Request, db: Session = Depends(get_db)):
             "reviews": reviews_data["reviews"],
             "average_rating": reviews_data["average_rating"],
             "total_reviews": reviews_data["total_reviews"],
+            "pricing": get_dynamic_pricing_context(db),
             "active_page": "home"
         }
     )
@@ -496,9 +510,13 @@ async def serve_landing(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/ai-resume-builder", response_class=HTMLResponse)
 @router.get("/ai-resume-builder/", response_class=HTMLResponse)
-async def serve_ai_resume_builder(request: Request):
+async def serve_ai_resume_builder(request: Request, db: Session = Depends(get_db)):
     """Serve the high-converting, authoritative AI Resume Builder SEO Money Page."""
-    response = templates.TemplateResponse(request=request, name="ai_resume_builder.html")
+    response = templates.TemplateResponse(
+        request=request,
+        name="ai_resume_builder.html",
+        context={"pricing": get_dynamic_pricing_context(db)}
+    )
     ref_param = request.query_params.get("ref")
     if ref_param and ref_param.strip():
         response.set_cookie(
@@ -514,9 +532,13 @@ async def serve_ai_resume_builder(request: Request):
 
 @router.get("/app", response_class=HTMLResponse)
 @router.get("/app/", response_class=HTMLResponse)
-async def serve_app(request: Request):
+async def serve_app(request: Request, db: Session = Depends(get_db)):
     """Serve the complete ATS AI Resume Builder, Editor & Portfolio Studio application."""
-    response = templates.TemplateResponse(request=request, name="index.html")
+    response = templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"pricing": get_dynamic_pricing_context(db)}
+    )
     ref_param = request.query_params.get("ref")
     if ref_param and ref_param.strip():
         response.set_cookie(

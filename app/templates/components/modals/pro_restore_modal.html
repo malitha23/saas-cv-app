@@ -77,7 +77,7 @@
           <i data-lucide="zap" class="w-4 h-4"></i>
           <span>Upgrade to Pro Pass</span>
         </span>
-        <span class="text-[10px] font-semibold text-slate-900 mt-0.5">$9/month • Cancel anytime</span>
+        <span class="text-[10px] font-semibold text-slate-900 mt-0.5" x-text="(getCalculatedPrice('pro')?.price_display || 'Rs. 590') + '/month • Cancel anytime'">$9/month • Cancel anytime</span>
       </button>
 
       <button @click="showProRestoreModal = false; upgradePlan('sprint', 1);"
@@ -86,7 +86,7 @@
           <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
           <span>7-Day Sprint Pass</span>
         </span>
-        <span class="text-[10px] font-medium text-slate-400 mt-0.5">$3 one-time • Ideal for interview week</span>
+        <span class="text-[10px] font-medium text-slate-400 mt-0.5" x-text="(activeSprintPrice || 'Rs. 290') + ' one-time • Ideal for interview week'">Rs. 290 one-time • Ideal for interview week</span>
       </button>
     </div>
 

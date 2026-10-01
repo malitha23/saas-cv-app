@@ -301,9 +301,9 @@ async def on_startup():
                         c_data["LK"]["sprint_price"] = "Rs. 290"
                         for p in lk_plans:
                             if p.get("plan_key") == "pro":
-                                p["price_display"] = "Rs. 690"
-                                p["sub_billing_text"] = "or Rs. 1,750 for 3-Month Job Hunt Pass"
-                                p["button_text"] = "Upgrade to Pro (Rs. 690/mo)"
+                                p["price_display"] = "Rs. 590"
+                                p["sub_billing_text"] = "or Rs. 1,590 for 3-Month Job Hunt Pass"
+                                p["button_text"] = "Upgrade to Pro (Rs. 590/mo)"
                             elif p.get("plan_key") == "elite":
                                 p["price_display"] = "Rs. 1,950"
                                 p["sub_billing_text"] = "or Rs. 4,950 for 3-Month Elite Pass"

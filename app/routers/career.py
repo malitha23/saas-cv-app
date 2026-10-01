@@ -51,13 +51,20 @@ async def search_jobs_endpoint(
     """
     Real-time Job Hunter & Aggregator.
     Searches active remote & global tech job vacancies with direct LinkedIn Easy Apply URLs.
-    Free tier / Guest: capped at 4 vacancies. Pro / Elite: unlimited full search results.
+    - Free: 2 vacancies
+    - Sprint: 4 vacancies
+    - Pro: 8 vacancies
+    - Elite: Unlimited full search results
     """
     try:
         user_tier = (current_user.plan_tier or "free").lower() if current_user else "free"
         effective_limit = payload.limit or 8
-        if user_tier == "free" and effective_limit > 4:
-            effective_limit = 4
+        if user_tier == "free":
+            effective_limit = min(effective_limit, 2)
+        elif user_tier == "sprint":
+            effective_limit = min(effective_limit, 4)
+        elif user_tier == "pro":
+            effective_limit = min(effective_limit, 8)
 
         return await asyncio.to_thread(
             search_live_jobs,

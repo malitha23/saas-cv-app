@@ -138,7 +138,7 @@
           {
             "@type": "Offer",
             "name": "Pro Career Plan (Sri Lanka PPP)",
-            "price": "990.00",
+            "price": "{{ pricing.pro_price_lkr if pricing else 690 }}.00",
             "priceCurrency": "LKR",
             "description": "Fair local currency pricing for Sri Lankan job seekers."
           }
@@ -190,7 +190,7 @@
             "name": "Is DreemFolio AI free to use?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes! DreemFolio AI offers a Lifetime Free Starter tier with daily AI tailoring runs, 2 Classic ATS PDF downloads, 1 Visual Photo CV download, and 3 AI cover letters. Upgrades to Pro Career ($9/mo or Rs. 990/mo in Sri Lanka) unlock unlimited downloads and custom portfolio hosting."
+              "text": "Yes! DreemFolio AI offers a Lifetime Free Starter tier with daily AI tailoring runs, 2 Classic ATS PDF downloads, 1 Visual Photo CV download, and 3 AI cover letters. Upgrades to Pro Career (${{ pricing.pro_price_usd if pricing else 9 }}/mo or {{ pricing.pro_price_lkr_formatted if pricing else 'Rs. 690' }}/mo in Sri Lanka) unlock unlimited downloads and custom portfolio hosting."
             }
           },
           {
@@ -1492,21 +1492,21 @@
 
     <!-- 2.1 Mobile & Tablet Responsive View Switcher (Visible on < lg when tailoredData exists) -->
     <template x-if="tailoredData">
-      <div class="lg:hidden col-span-1 sticky top-16 z-30 bg-slate-900/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between gap-2">
-        <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs flex-1">
+      <div class="lg:hidden col-span-1 sticky top-16 z-30 bg-slate-900/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800/80 text-xs flex-1">
           <button @click="mobileWorkspaceTab = 'editor'"
-            :class="{'bg-indigo-600 text-white font-bold shadow': mobileWorkspaceTab === 'editor', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'editor'}"
-            class="flex-1 py-2 rounded-lg transition flex items-center justify-center gap-1.5 text-xs font-semibold">
-            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-            <span>Edit Resume</span>
+            :class="{'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30': mobileWorkspaceTab === 'editor', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'editor'}"
+            class="flex-1 py-2.5 px-3 rounded-lg transition-all duration-150 flex items-center justify-center gap-1.5 text-xs font-semibold">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5 shrink-0"></i>
+            <span class="truncate">Edit Resume</span>
           </button>
           <button @click="mobileWorkspaceTab = 'preview'; $nextTick(() => { refreshAllPreviews(); if (window.lucide) window.lucide.createIcons(); });"
-            :class="{'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-bold shadow': mobileWorkspaceTab === 'preview', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'preview'}"
-            class="flex-1 py-2 rounded-lg transition flex items-center justify-center gap-1.5 text-xs font-semibold">
-            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-            <span>Preview & Download</span>
+            :class="{'bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-bold shadow-md shadow-emerald-600/30': mobileWorkspaceTab === 'preview', 'text-slate-400 hover:text-slate-200': mobileWorkspaceTab !== 'preview'}"
+            class="flex-1 py-2.5 px-3 rounded-lg transition-all duration-150 flex items-center justify-center gap-1.5 text-xs font-semibold min-w-0">
+            <i data-lucide="eye" class="w-3.5 h-3.5 shrink-0"></i>
+            <span class="truncate">Preview<span class="hidden sm:inline"> & Download</span></span>
             <template x-if="tailoredData.ats_analysis">
-              <span class="px-1.5 py-0.5 bg-emerald-400/20 text-emerald-300 text-[10px] font-bold rounded-full" x-text="tailoredData.ats_analysis.overall_score + '%'"></span>
+              <span class="ml-1 px-1.5 py-0.5 bg-emerald-400/25 text-emerald-200 text-[10px] font-extrabold rounded-md border border-emerald-400/30 shrink-0 shadow-sm" x-text="tailoredData.ats_analysis.overall_score + '%'"></span>
             </template>
           </button>
         </div>

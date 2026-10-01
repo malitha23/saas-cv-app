@@ -109,7 +109,7 @@
           {
             "@type": "Offer",
             "name": "Pro Career Plan (Sri Lanka PPP)",
-            "price": "990.00",
+            "price": "{{ pricing.pro_price_lkr if pricing else 690 }}.00",
             "priceCurrency": "LKR",
             "description": "Fair local currency pricing for Sri Lankan job seekers."
           }
@@ -161,7 +161,7 @@
             "name": "Is DreemFolio AI free to use?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes! DreemFolio AI offers a Lifetime Free Starter tier with daily AI tailoring runs, 2 Classic ATS PDF downloads, 1 Visual Photo CV download, and 3 AI cover letters. Upgrades to Pro Career ($9/mo or Rs. 990/mo in Sri Lanka) unlock unlimited downloads and custom portfolio hosting."
+              "text": "Yes! DreemFolio AI offers a Lifetime Free Starter tier with daily AI tailoring runs, 2 Classic ATS PDF downloads, 1 Visual Photo CV download, and 3 AI cover letters. Upgrades to Pro Career (${{ pricing.pro_price_usd if pricing else 9 }}/mo or {{ pricing.pro_price_lkr_formatted if pricing else 'Rs. 690' }}/mo in Sri Lanka) unlock unlimited downloads and custom portfolio hosting."
             }
           },
           {
@@ -662,7 +662,7 @@
             </div>
             <h3 class="text-base font-bold text-white mb-2">Fair Country PPP Pricing</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Localized purchasing power parity rates (Rs. 990 in Sri Lanka / $9 globally) make premium features
+              Localized purchasing power parity rates ({{ pricing.pro_price_lkr_formatted if pricing else "Rs. 690" }} in Sri Lanka / ${{ pricing.pro_price_usd if pricing else 9 }} globally) make premium features
               affordable anywhere.
             </p>
           </div>
@@ -743,7 +743,7 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                <span>AI Job Hunter (Basic Search • 4 Vacancies)</span>
+                <span>AI Job Hunter (2 Vacancies)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -751,7 +751,11 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                <span>Job Application Tracker (Up to 3 Jobs)</span>
+                <span>Job Application Tracker (Up to 2 Jobs Kanban)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                <span>AI Voice & Video Interview (3 Sessions Trial)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -759,7 +763,7 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                <span>Interactive Web Portfolio Studio (Live Preview)</span>
+                <span>Interactive Web Portfolio Studio (In-App Preview)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
@@ -787,10 +791,10 @@
           <div>
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase text-indigo-400">Pro Career</span>
-              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Save up to 40%</span>
+              <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Most Popular</span>
             </div>
             <div class="flex items-baseline gap-1 mt-2 mb-1">
-              <span class="text-4xl font-black text-white" x-text="proPrice">Rs. 990</span>
+              <span class="text-4xl font-black text-white" x-text="proPrice">{{ pricing.pro_price_lkr_formatted if pricing else "Rs. 590" }}</span>
               <span class="text-xs text-slate-400 font-semibold" x-text="'/ ' + billingCycle">/ month</span>
             </div>
             <p class="text-[11px] text-emerald-400 font-medium mb-3">Billed monthly • One-time prepaid checkout</p>
@@ -803,7 +807,7 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span><strong>Unlimited</strong> ATS & Visual Photo CV Downloads</span>
+                <span><strong>10 Classic ATS</strong> + <strong>10 Visual Photo CV</strong> Downloads / mo</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
@@ -823,19 +827,27 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>✨ <strong>Unlimited</strong> AI Job Recommendations & Re-Tailoring</span>
+                <span>✨ <strong>Top 12</strong> AI Matched Jobs & Tailored Recommendations</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>⚡ <strong>Unlimited</strong> AI Job Hunter with LinkedIn Easy Apply</span>
+                <span>⚡ <strong>AI Job Hunter</strong> (8 Vacancies with LinkedIn Easy Apply)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>🚀 <strong>Unlimited</strong> 1-Click Application Screening Kits</span>
+                <span>🚀 <strong>1-Click Application Copilot</strong> (4 Kits / day)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
-                <span>📊 <strong>Unlimited</strong> Kanban Job Application Tracker</span>
+                <span>📊 <strong>Kanban Job Tracker</strong> (Up to 5 Active Jobs)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+                <span>🎙️ <strong>AI Voice Mock Interview</strong> (12 Sessions / month)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
+                <span>📹 <strong>Real-time Video Conference Coaching</strong> (12 Sessions / month)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-indigo-400 shrink-0"></i>
@@ -846,8 +858,9 @@
 
           <div class="mt-8">
             <a href="/app"
+              x-text="proButtonText"
               class="w-full block py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm text-center shadow-lg shadow-indigo-600/30 transition">
-              Upgrade to Pro (Rs. 690)
+              Upgrade to Pro
             </a>
           </div>
         </div>
@@ -860,7 +873,7 @@
               <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Personal Brand</span>
             </div>
             <div class="flex items-baseline gap-1 mt-2 mb-1">
-              <span class="text-4xl font-black text-white" x-text="elitePrice">Rs. 1,950</span>
+              <span class="text-4xl font-black text-white" x-text="elitePrice">{{ pricing.elite_price_lkr_formatted if pricing else "Rs. 1,950" }}</span>
               <span class="text-xs text-slate-400 font-semibold">/ month</span>
             </div>
             <p class="text-[11px] text-amber-400/80 font-medium mb-3">Billed monthly • One-time prepaid checkout</p>
@@ -873,35 +886,48 @@
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span><strong>Unlimited</strong> Classic ATS & Visual Photo CV Downloads</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span><strong>Unlimited</strong> AI Matched Jobs & Hunter Searches</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span><strong>Unlimited</strong> 1-Click Application Screening Kits</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span><strong>Unlimited</strong> Kanban Pipeline Job Tracking</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
                 <span>Priority AI Processing Queue (Ultra-Fast Copilot)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
-                <span>Executive Mock Interviews (C-Level & Leadership)</span>
+                <span>🎙️ <strong>Executive Mock Interviews</strong> (Unlimited C-Level Simulations)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
-                <span>All 8 Portfolio Web Architectures</span>
+                <span>📹 <strong>Real-time Video Conference</strong> (Unlimited High-Priority)</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
-                <span>100% Full CRUD Portfolio Studio</span>
+                <span>All 8 Portfolio Web Architectures + Standalone HTML Export</span>
               </li>
               <li class="flex items-center gap-2">
                 <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
                 <span>Connect Custom Private Domain & SSL</span>
-              </li>
-              <li class="flex items-center gap-2">
-                <i data-lucide="check" class="w-4 h-4 text-amber-400 shrink-0"></i>
-                <span>Standalone Website HTML Export</span>
               </li>
             </ul>
           </div>
 
           <div class="mt-8">
             <a href="/app"
+              x-text="eliteButtonText"
               class="w-full block py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm text-center transition border border-slate-700">
-              Upgrade to Elite (Rs. 1,950)
+              Upgrade to Elite
             </a>
           </div>
         </div>
@@ -1175,8 +1201,10 @@
         userPlan: initialPlan,
         openFaq: 1,
         freePrice: 'Rs. 0',
-        proPrice: 'Rs. 690',
-        elitePrice: 'Rs. 1,950',
+        proPrice: '{{ pricing.pro_price_lkr_formatted if pricing else "Rs. 690" }}',
+        elitePrice: '{{ pricing.elite_price_lkr_formatted if pricing else "Rs. 1,950" }}',
+        proButtonText: 'Upgrade to Pro ({{ pricing.pro_price_lkr_formatted if pricing else "Rs. 690" }})',
+        eliteButtonText: 'Upgrade to Elite ({{ pricing.elite_price_lkr_formatted if pricing else "Rs. 1,950" }})',
         billingCycle: 'month',
         activeCurrency: 'LKR',
         activeCurrencySymbol: 'Rs.',
@@ -1219,14 +1247,24 @@
                   if (free && free.price_display) {
                     this.freePrice = free.price_display;
                   }
-                  if (pro && pro.price_display) {
-                    this.proPrice = pro.price_display;
+                  if (pro) {
+                    if (pro.price_display) this.proPrice = pro.price_display;
+                    if (pro.button_text) {
+                      this.proButtonText = pro.button_text.replace(/\/mo/i, '').trim();
+                    } else {
+                      this.proButtonText = `Upgrade to Pro (${this.proPrice})`;
+                    }
                     if (pro.period_display) {
                       this.billingCycle = pro.period_display.replace('/', '').trim();
                     }
                   }
-                  if (elite && elite.price_display) {
-                    this.elitePrice = elite.price_display;
+                  if (elite) {
+                    if (elite.price_display) this.elitePrice = elite.price_display;
+                    if (elite.button_text) {
+                      this.eliteButtonText = elite.button_text.replace(/\/mo/i, '').trim();
+                    } else {
+                      this.eliteButtonText = `Upgrade to Elite (${this.elitePrice})`;
+                    }
                   }
                 }
               }

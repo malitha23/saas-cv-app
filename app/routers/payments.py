@@ -52,7 +52,10 @@ async def upgrade_subscription(
 
     if tier == "sprint":
         days = 7
-        actual_tier = "pro"  # Sprint Pass activates Pro features for 7 calendar days
+        actual_tier = "sprint"
+        current_user.sprint_ats_downloads_count = 0
+        current_user.sprint_visual_downloads_count = 0
+        current_user.sprint_ai_generations_count = 0
     else:
         months = max(1, min(req.duration_months, 12))
         days = months * 30
@@ -91,19 +94,19 @@ async def get_subscription_status(
         pdf_limit = DEFAULT_FREE_DAILY_PDF_LIMIT
 
     features = {
-        "ai_tailoring": "Unlimited" if tier in ["pro", "elite"] else f"{ai_limit} runs/day",
-        "ats_pdf_download": "Unlimited" if tier in ["pro", "elite"] else f"{pdf_limit} ATS PDF/day",
-        "visual_cv_formats": ["classic", "indigo_banner", "emerald_prestige", "tech_noir"] if tier in ["pro", "elite"] else ["classic"],
-        "cloud_autosave": tier in ["pro", "elite"],
-        "ai_cover_letter": tier in ["pro", "elite"],
+        "ai_tailoring": "7 Runs (Sprint Pass)" if tier == "sprint" else ("Unlimited" if tier in ["pro", "elite"] else f"{ai_limit} runs/day"),
+        "ats_pdf_download": "2 Downloads (Sprint Pass)" if tier == "sprint" else ("Unlimited" if tier in ["pro", "elite"] else f"{pdf_limit} ATS PDF/day"),
+        "visual_cv_formats": ["classic", "indigo_banner", "emerald_prestige", "tech_noir"] if tier in ["pro", "elite", "sprint"] else ["classic"],
+        "cloud_autosave": tier in ["pro", "elite", "sprint"],
+        "ai_cover_letter": tier in ["pro", "elite", "sprint"],
         "portfolio_themes": 8 if tier == "elite" else (1 if tier in ["pro", "sprint"] else 0),
         "custom_domain_support": tier == "elite",
         "code_export": tier == "elite",
-        "job_hunter": "Unlimited" if tier in ["pro", "elite"] else "Basic (4 vacancies)",
-        "application_copilot": "Unlimited" if tier in ["pro", "elite"] else "1 Free Kit / day",
-        "job_tracker": "Unlimited" if tier in ["pro", "elite"] else "Up to 3 Jobs",
-        "career_copilot_chat": "Unlimited 24/7" if tier in ["pro", "elite"] else "3 Messages / day",
-        "voice_mock_interview": "Unlimited Full Studio" if tier in ["pro", "elite"] else "1 Practice Session / day"
+        "job_hunter": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Basic (4 vacancies)",
+        "application_copilot": "Unlimited" if tier in ["pro", "elite", "sprint"] else "1 Free Kit / day",
+        "job_tracker": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Up to 3 Jobs",
+        "career_copilot_chat": "Unlimited 24/7" if tier in ["pro", "elite", "sprint"] else "3 Messages / day",
+        "voice_mock_interview": "Unlimited Full Studio" if tier in ["pro", "elite", "sprint"] else "1 Practice Session / day"
     }
 
     return SubscriptionStatusResponse(
@@ -115,19 +118,19 @@ async def get_subscription_status(
         subscription_days_remaining=u_resp.subscription_days_remaining,
         subscription_validity_label=u_resp.subscription_validity_label,
         daily_ai_generations_count=u_resp.daily_ai_generations_count,
-        daily_generations_limit=None if tier in ["pro", "elite"] else ai_limit,
+        daily_generations_limit=7 if tier == "sprint" else (None if tier in ["pro", "elite"] else ai_limit),
         daily_generations_remaining=u_resp.daily_generations_remaining,
         daily_pdf_downloads_count=u_resp.daily_pdf_downloads_count,
         daily_pdf_downloads_limit=None if tier in ["pro", "elite"] else pdf_limit,
         daily_pdf_downloads_remaining=u_resp.daily_pdf_downloads_remaining,
         lifetime_ats_downloads_count=u_resp.lifetime_ats_downloads_count,
-        lifetime_ats_downloads_limit=None if tier in ["pro", "elite"] else 2,
+        lifetime_ats_downloads_limit=2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 2),
         lifetime_ats_downloads_remaining=u_resp.lifetime_ats_downloads_remaining,
         lifetime_visual_downloads_count=u_resp.lifetime_visual_downloads_count,
-        lifetime_visual_downloads_limit=None if tier in ["pro", "elite"] else 1,
+        lifetime_visual_downloads_limit=2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 1),
         lifetime_visual_downloads_remaining=u_resp.lifetime_visual_downloads_remaining,
         lifetime_cover_letter_downloads_count=u_resp.lifetime_cover_letter_downloads_count,
-        lifetime_cover_letter_downloads_limit=None if tier in ["pro", "elite"] else 3,
+        lifetime_cover_letter_downloads_limit=None if tier in ["pro", "elite", "sprint"] else 3,
         lifetime_cover_letter_downloads_remaining=u_resp.lifetime_cover_letter_downloads_remaining,
         has_pending_order=u_resp.has_pending_order,
         pending_order=u_resp.pending_order,
@@ -445,19 +448,26 @@ async def initiate_payhere_payment(
     ).first()
 
     if existing_active and not req.force:
-        plan_name = existing_active.target_plan.upper()
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "payment_in_progress",
-                "message": f"You already have a payment in progress for {plan_name} (Order: {existing_active.order_id}). Please check its status before starting a new payment.",
-                "order_id": existing_active.order_id,
-                "status": existing_active.status,
-                "target_plan": existing_active.target_plan,
-                "status_url": f"/payment/status?order_id={existing_active.order_id}&status={existing_active.status}",
-                "can_force": True
-            }
-        )
+        if existing_active.status == "initiated":
+            # Candidate previously opened checkout but returned without submitting payment; auto-supersede cleanly
+            existing_active.status = "superseded"
+            existing_active.status_message = "Superseded by a new checkout session."
+            db.commit()
+            existing_active = None
+        else:
+            plan_name = existing_active.target_plan.upper()
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "payment_in_progress",
+                    "message": f"You already have a payment in progress for {plan_name} (Order: {existing_active.order_id}). Please check its status before starting a new payment.",
+                    "order_id": existing_active.order_id,
+                    "status": existing_active.status,
+                    "target_plan": existing_active.target_plan,
+                    "status_url": f"/payment/status?order_id={existing_active.order_id}&status={existing_active.status}",
+                    "can_force": True
+                }
+            )
 
     if req.force:
         # User explicitly requested a fresh checkout; supersede previous in-flight initiated orders
@@ -701,7 +711,10 @@ async def payhere_ipn_notify(
             if order.target_plan == "sprint":
                 duration_days = 7
                 plan_title = "7-Day Sprint Pass"
-                candidate.plan_tier = "pro"
+                candidate.plan_tier = "sprint"
+                candidate.sprint_ats_downloads_count = 0
+                candidate.sprint_visual_downloads_count = 0
+                candidate.sprint_ai_generations_count = 0
                 candidate.subscription_expires_at = now + timedelta(days=7)
             else:
                 candidate.plan_tier = order.target_plan
@@ -895,7 +908,10 @@ def sync_order_status_from_payhere(
             now = datetime.utcnow()
             duration_days = 7 if order.target_plan == "sprint" else 30
             if order.target_plan == "sprint":
-                candidate.plan_tier = "pro"
+                candidate.plan_tier = "sprint"
+                candidate.sprint_ats_downloads_count = 0
+                candidate.sprint_visual_downloads_count = 0
+                candidate.sprint_ai_generations_count = 0
                 candidate.subscription_expires_at = now + timedelta(days=7)
             else:
                 candidate.plan_tier = order.target_plan

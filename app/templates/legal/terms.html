@@ -127,16 +127,17 @@
             Unlocks unlimited AI resume tailoring runs; unlimited Classic ATS and Visual Photo PDF downloads without watermarks; unlimited cloud resume save and restore; and live web portfolio hosting.
           </p>
           <ul class="list-disc pl-5 text-slate-400 text-[11px] space-y-0.5 mt-1">
-            <li><strong>1-Month Pass (30 Days):</strong> LKR 990 / USD $9.00</li>
-            <li><strong>3-Month Job Hunter Pass (90 Days):</strong> LKR 2,490 / USD $24.00 (Standard 16% Discount)</li>
-            <li><strong>6-Month Career Accelerate (180 Days):</strong> LKR 4,490 / USD $44.00 (Standard 24% Discount)</li>
-            <li><strong>12-Month Annual Pass (365 Days):</strong> LKR 7,990 / USD $79.00 (Standard 33% Discount)</li>
-            <li><strong>Lifetime Unlimited Pass (Permanent VIP Access):</strong> LKR 14,990 / USD $149.00 (One-time payment, permanent access)</li>
+            <li><strong>7-Day Interview Sprint Pass (7 Days):</strong> {{ pricing.sprint_price_lkr_formatted if pricing else "Rs. 290" }} / USD ${{ pricing.sprint_price_usd if pricing else 4.99 }} (Includes 2 Classic ATS downloads, 2 Visual Photo CV downloads, 7 AI tailoring runs, and unlimited clean cover letters)</li>
+            <li><strong>1-Month Pass (30 Days):</strong> {{ pricing.pro_price_lkr_formatted if pricing else "Rs. 690" }} / USD ${{ pricing.pro_price_usd if pricing else 9 }}.00</li>
+            <li><strong>3-Month Job Hunter Pass (90 Days):</strong> {{ pricing.pro_3m_lkr_formatted if pricing else "Rs. 1,750" }} / USD ${{ pricing.pro_3m_usd if pricing else 22 }}.00 {% if pricing and pricing.disc_3m > 0 %}(Save {{ pricing.disc_3m }}%){% endif %}</li>
+            <li><strong>6-Month Career Accelerate (180 Days):</strong> {{ pricing.pro_6m_lkr_formatted if pricing else "Rs. 3,105" }} / USD ${{ pricing.pro_6m_usd if pricing else 40 }}.00 {% if pricing and pricing.disc_6m > 0 %}(Save {{ pricing.disc_6m }}%){% endif %}</li>
+            <li><strong>12-Month Annual Pass (365 Days):</strong> {{ pricing.pro_12m_lkr_formatted if pricing else "Rs. 4,968" }} / USD ${{ pricing.pro_12m_usd if pricing else 64 }}.00 {% if pricing and pricing.disc_12m > 0 %}(Super Saver {{ pricing.disc_12m }}% OFF){% endif %}</li>
+            <li><strong>Lifetime Unlimited Pass (Permanent VIP Access):</strong> {{ pricing.pro_lifetime_lkr_formatted if pricing else "Rs. 7,900" }} / USD ${{ pricing.pro_lifetime_usd if pricing else 99 }}.00 (One-time payment, permanent access)</li>
           </ul>
         </div>
 
         <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-          <strong class="text-amber-300 font-bold uppercase text-[11px]">Executive Elite Plan (LKR 2,490/mo or USD $19/mo):</strong>
+          <strong class="text-amber-300 font-bold uppercase text-[11px]">Executive Elite Plan ({{ pricing.elite_price_lkr_formatted if pricing else "Rs. 1,950" }}/mo or USD ${{ pricing.elite_price_usd if pricing else 19 }}/mo):</strong>
           <p class="text-slate-400">
             Includes all Pro Career features plus custom domain mapping with automated SSL provisioning, high-priority Gemini AI reasoning latency, and dedicated candidate support.
           </p>

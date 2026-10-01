@@ -199,6 +199,11 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         remaining = max(0, ai_limit - daily_count)
         pdf_remaining = max(0, pdf_limit - pdf_count)
         cl_remaining = max(0, cl_limit - cl_count)
+    elif tier == "sprint":
+        sprint_ai_used = getattr(user, "sprint_ai_generations_count", 0) or 0
+        remaining = max(0, 7 - sprint_ai_used)
+        pdf_remaining = None
+        cl_remaining = None
 
     # Compute days remaining and human-readable validity label
     days_left = None
@@ -247,9 +252,26 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
     bonus_ats = getattr(user, "referral_bonus_downloads", 0) or 0
     effective_ats_limit = life_ats_limit + bonus_ats
 
-    life_ats_remaining = None if tier in ["pro", "elite"] else max(0, effective_ats_limit - life_ats_used)
-    life_visual_remaining = None if tier in ["pro", "elite"] else max(0, life_visual_limit - life_visual_used)
-    life_cl_remaining = None if tier in ["pro", "elite"] else max(0, life_cl_limit - life_cl_used)
+    if tier == "elite":
+        life_ats_remaining = None
+        life_visual_remaining = None
+        life_cl_remaining = None
+    elif tier == "pro":
+        pro_ats_used = getattr(user, "pro_ats_downloads_count", 0) or 0
+        life_ats_remaining = max(0, 10 - pro_ats_used)
+        pro_visual_used = getattr(user, "pro_visual_downloads_count", 0) or 0
+        life_visual_remaining = max(0, 10 - pro_visual_used)
+        life_cl_remaining = None
+    elif tier == "sprint":
+        sprint_ats_used = getattr(user, "sprint_ats_downloads_count", 0) or 0
+        life_ats_remaining = max(0, 3 - sprint_ats_used)
+        sprint_visual_used = getattr(user, "sprint_visual_downloads_count", 0) or 0
+        life_visual_remaining = max(0, 3 - sprint_visual_used)
+        life_cl_remaining = None
+    else:
+        life_ats_remaining = max(0, effective_ats_limit - life_ats_used)
+        life_visual_remaining = max(0, life_visual_limit - life_visual_used)
+        life_cl_remaining = max(0, life_cl_limit - life_cl_used)
 
     started_str = user.subscription_started_at.strftime("%B %d, %Y") if user.subscription_started_at else None
     exp_str = user.subscription_expires_at.strftime("%B %d, %Y") if user.subscription_expires_at else None
@@ -299,6 +321,17 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
             ).first()
 
             if pending_order:
+                # If an initiated order is older than 10 minutes without completion, auto-expire it
+                if pending_order.status == "initiated" and pending_order.created_at < (now - datetime.timedelta(minutes=10)):
+                    pending_order.status = "expired"
+                    pending_order.status_message = "Checkout session expired after 10 minutes of inactivity."
+                    try:
+                        db.commit()
+                    except Exception:
+                        pass
+                    pending_order = None
+
+            if pending_order:
                 has_pending = True
                 created_str = pending_order.created_at.strftime("%b %d, %Y %I:%M %p") if pending_order.created_at else ""
                 pending_info = PendingOrderInfo(
@@ -323,6 +356,24 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         except Exception:
             pass
 
+    if tier == "elite":
+        copilot_kits_remaining = None
+    elif tier == "pro":
+        copilot_kits_remaining = max(0, 4 - (getattr(user, "daily_copilot_kits_count", 0) or 0))
+    elif tier == "sprint":
+        copilot_kits_remaining = max(0, 2 - (getattr(user, "daily_copilot_kits_count", 0) or 0))
+    else:
+        copilot_kits_remaining = max(0, 1 - (getattr(user, "daily_copilot_kits_count", 0) or 0))
+
+    if tier == "elite":
+        interview_remaining = None
+    elif tier == "pro":
+        interview_remaining = max(0, 12 - (getattr(user, "pro_interview_count", 0) or 0))
+    elif tier == "sprint":
+        interview_remaining = max(0, 5 - (getattr(user, "sprint_interview_count", 0) or 0))
+    else:
+        interview_remaining = max(0, 3 - (getattr(user, "lifetime_interview_count", 0) or 0))
+
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -342,11 +393,11 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         daily_cover_letter_downloads_count=cl_count,
         daily_cover_letter_downloads_remaining=cl_remaining,
         daily_copilot_kits_count=getattr(user, "daily_copilot_kits_count", 0) or 0,
-        daily_copilot_kits_remaining=None if tier in ["pro", "elite"] else max(0, 1 - (getattr(user, "daily_copilot_kits_count", 0) or 0)),
+        daily_copilot_kits_remaining=copilot_kits_remaining,
         daily_chat_count=getattr(user, "daily_chat_count", 0) or 0,
-        daily_chat_remaining=None if tier in ["pro", "elite"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
+        daily_chat_remaining=None if tier in ["pro", "elite", "sprint"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
         daily_interview_count=getattr(user, "daily_interview_count", 0) or 0,
-        daily_interview_remaining=None if tier in ["pro", "elite"] else max(0, 1 - (getattr(user, "daily_interview_count", 0) or 0)),
+        daily_interview_remaining=interview_remaining,
         lifetime_ats_downloads_count=life_ats_used,
         lifetime_ats_downloads_remaining=life_ats_remaining,
         lifetime_visual_downloads_count=life_visual_used,
