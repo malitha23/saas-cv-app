@@ -186,6 +186,8 @@ def ensure_daily_counters_reset(user: User, db: Session):
         user.daily_chat_count = 0
         if hasattr(user, "daily_interview_count"):
             user.daily_interview_count = 0
+        if hasattr(user, "daily_conference_count"):
+            user.daily_conference_count = 0
         user.last_generation_date = today_str
         db.commit()
         db.refresh(user)
@@ -759,7 +761,8 @@ def check_voice_interview_quota(
 
 def check_conference_quota(
     current_user: User,
-    db: Session
+    db: Session,
+    consume: bool = True
 ) -> tuple[bool, int, str]:
     """
     Checks session allowance for Real-Time AI Video Conference & Live Coaching.
@@ -784,17 +787,31 @@ def check_conference_quota(
 
     if tier == "pro":
         limit = 12
-        used = getattr(current_user, "pro_interview_count", 0) or 0
+        used = getattr(current_user, "pro_conference_count", 0) or 0
         if used >= limit:
-            return False, 0, f"You have reached your Pro Career limit of {limit} Video Conference sessions. Upgrade to Executive Elite for unlimited sessions!"
-        return True, max(0, limit - used), f"{max(0, limit - used)} sessions remaining this month"
+            return False, 0, f"You have reached your Pro Career monthly limit of {limit} Video Conference sessions. Upgrade to Executive Elite for unlimited sessions!"
+        if consume:
+            current_user.pro_conference_count = used + 1
+            db.commit()
+            db.refresh(current_user)
+            remaining = max(0, limit - (used + 1))
+        else:
+            remaining = max(0, limit - used)
+        return True, remaining, f"{remaining} Video Conference sessions remaining this month"
 
     if tier == "sprint":
         limit = 5
-        used = getattr(current_user, "sprint_interview_count", 0) or 0
+        used = getattr(current_user, "sprint_conference_count", 0) or 0
         if used >= limit:
             return False, 0, f"You have reached your 7-Day Sprint limit of {limit} Video Conference sessions. Upgrade to Pro Career for 12 sessions or Elite for unlimited!"
-        return True, max(0, limit - used), f"{max(0, limit - used)} sessions remaining"
+        if consume:
+            current_user.sprint_conference_count = used + 1
+            db.commit()
+            db.refresh(current_user)
+            remaining = max(0, limit - (used + 1))
+        else:
+            remaining = max(0, limit - used)
+        return True, remaining, f"{remaining} Sprint Video Conference sessions remaining"
 
     limit_str = get_saas_setting(db, "free_lifetime_interview_limit", str(DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT))
     try:
@@ -802,11 +819,20 @@ def check_conference_quota(
     except ValueError:
         limit = DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT
 
-    used = getattr(current_user, "lifetime_interview_count", 0) or 0
+    used = getattr(current_user, "lifetime_conference_count", 0) or 0
     if used >= limit:
         return False, 0, f"You have completed your {limit} free Video Conference trial sessions. Get a 7-Day Sprint Pass or Pro Career to continue!"
 
-    return True, max(0, limit - used), f"{max(0, limit - used)} free trial sessions remaining"
+    if consume:
+        current_user.lifetime_conference_count = used + 1
+        current_user.daily_conference_count = (getattr(current_user, "daily_conference_count", 0) or 0) + 1
+        db.commit()
+        db.refresh(current_user)
+        remaining = max(0, limit - (used + 1))
+    else:
+        remaining = max(0, limit - used)
+
+    return True, remaining, f"{remaining} free trial sessions remaining"
 
 
 

@@ -706,7 +706,9 @@ class UserResponse(BaseModel):
     daily_chat_count: int = 0
     daily_chat_remaining: Optional[int] = 3
     daily_interview_count: int = 0
-    daily_interview_remaining: Optional[int] = 1
+    daily_interview_remaining: Optional[int] = 3
+    daily_conference_count: int = 0
+    daily_conference_remaining: Optional[int] = 3
     # Strategic Lifetime Quotas
     lifetime_ats_downloads_count: int = 0
     lifetime_ats_downloads_remaining: Optional[int] = 2
@@ -1261,6 +1263,18 @@ class MistakeItem(BaseModel):
     )
     explanation: str = Field(..., description="Why this weakens the interview response")
     suggestion: str = Field(..., description="How to rephrase or correct it")
+
+
+class ConferenceStartRequest(BaseModel):
+    target_role: Optional[str] = "Senior Software Engineer"
+    target_company: Optional[str] = None
+
+
+class ConferenceStartResponse(BaseModel):
+    status: str = "ok"
+    session_id: str
+    remaining: Optional[int] = None
+    message: str = "Conference session initialized"
 
 
 class ConferenceTurnRequest(BaseModel):

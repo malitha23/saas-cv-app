@@ -604,7 +604,7 @@
                         'text-emerald-400 uppercase': darkMode && currentUser?.plan_tier === 'elite',
                         'text-emerald-700 uppercase': !darkMode && currentUser?.plan_tier === 'elite'
                       }"
-                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 3) + ' left (3 Trial)') : (currentUser?.plan_tier === 'sprint' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 5) + ' left (5 Pass)') : (currentUser?.plan_tier === 'pro' ? ((currentUser?.daily_interview_remaining !== null && currentUser?.daily_interview_remaining !== undefined ? currentUser.daily_interview_remaining : 12) + ' left (12/mo)') : 'Unlimited Elite'))">
+                      x-text="(!currentUser?.plan_tier || currentUser?.plan_tier === 'free') ? ((currentUser?.daily_conference_remaining !== null && currentUser?.daily_conference_remaining !== undefined ? currentUser.daily_conference_remaining : 3) + ' left (3 Trial)') : (currentUser?.plan_tier === 'sprint' ? ((currentUser?.daily_conference_remaining !== null && currentUser?.daily_conference_remaining !== undefined ? currentUser.daily_conference_remaining : 5) + ' left (5 Pass)') : (currentUser?.plan_tier === 'pro' ? ((currentUser?.daily_conference_remaining !== null && currentUser?.daily_conference_remaining !== undefined ? currentUser.daily_conference_remaining : 12) + ' left (12/mo)') : 'Unlimited Elite'))">
                     </span>
                   </div>
 

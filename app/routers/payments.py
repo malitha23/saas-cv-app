@@ -105,8 +105,8 @@ async def get_subscription_status(
         "job_hunter": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Basic (4 vacancies)",
         "application_copilot": "Unlimited" if tier in ["pro", "elite", "sprint"] else "1 Free Kit / day",
         "job_tracker": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Up to 3 Jobs",
-        "career_copilot_chat": "Unlimited 24/7" if tier in ["pro", "elite", "sprint"] else "3 Messages / day",
-        "voice_mock_interview": "Unlimited Full Studio" if tier in ["pro", "elite", "sprint"] else "1 Practice Session / day"
+        "voice_mock_interview": "Unlimited Full Studio" if tier == "elite" else ("12 Sessions / mo" if tier == "pro" else ("5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions")),
+        "video_conference": "Unlimited Priority" if tier == "elite" else ("12 Sessions / mo" if tier == "pro" else ("5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions"))
     }
 
     return SubscriptionStatusResponse(

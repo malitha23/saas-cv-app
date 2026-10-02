@@ -106,7 +106,11 @@ def init_engine():
                 ("pro_interview_count", "INT NOT NULL DEFAULT 0"),
                 ("pro_ats_downloads_count", "INT NOT NULL DEFAULT 0"),
                 ("pro_visual_downloads_count", "INT NOT NULL DEFAULT 0"),
-                ("lifetime_interview_count", "INT NOT NULL DEFAULT 0")
+                ("lifetime_interview_count", "INT NOT NULL DEFAULT 0"),
+                ("daily_conference_count", "INT NOT NULL DEFAULT 0"),
+                ("sprint_conference_count", "INT NOT NULL DEFAULT 0"),
+                ("pro_conference_count", "INT NOT NULL DEFAULT 0"),
+                ("lifetime_conference_count", "INT NOT NULL DEFAULT 0")
             ]
             with engine.connect() as mig_conn:
                 for col_name, col_def in needed_cols:

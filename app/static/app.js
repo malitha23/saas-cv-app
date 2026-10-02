@@ -4870,12 +4870,18 @@ function resumeApp() {
         return;
       }
 
-      if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
+      const voiceRem = this.currentUser.daily_interview_remaining;
+      if (voiceRem !== undefined && voiceRem !== null && voiceRem <= 0 && this.currentUser.plan_tier !== 'elite') {
+        const tier = (this.currentUser.plan_tier || 'free').toLowerCase();
         this.openQuotaLimitModal({
           title: 'Voice Interview Quota Reached',
-          message: 'Free Starter accounts include 3 lifetime trial AI Voice Mock Interview sessions. Get a 7-Day Sprint Pass or Pro Career for more practice sessions!',
+          message: tier === 'free'
+            ? 'Free Starter accounts include 3 lifetime trial AI Voice Mock Interview sessions. Get a 7-Day Sprint Pass or Pro Career for more practice sessions!'
+            : (tier === 'sprint'
+              ? 'You have used all 5 Voice Mock Interview sessions included with your 7-Day Sprint Pass. Upgrade to Pro Career for 12 monthly sessions or Elite for unlimited practice!'
+              : 'You have used all 12 Voice Mock Interview sessions for this billing cycle. Upgrade to Executive Elite for unlimited practice sessions!'),
           feature: 'voice_interview',
-          requiredPlan: 'sprint'
+          requiredPlan: tier === 'free' ? 'sprint' : (tier === 'sprint' ? 'pro' : 'elite')
         });
         return;
       }
@@ -4960,6 +4966,9 @@ function resumeApp() {
         this.candidateAnswerTranscript = '';
         this.recordingDurationSeconds = 0;
         this.interviewStep = 'interviewing';
+
+        // Real-time refresh of quotas to immediately reflect new count in header without reload!
+        await this.refreshCurrentUser();
 
         this.$nextTick(() => {
           if (window.lucide) window.lucide.createIcons();
@@ -5285,18 +5294,24 @@ function resumeApp() {
       }
     },
 
-    startRealtimeConference(role = '', company = '') {
+    async startRealtimeConference(role = '', company = '') {
       if (!this.currentUser) {
         this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to join the Real-Time AI Video Conference & Live Coaching Studio!');
         return;
       }
 
-      if (this.currentUser.plan_tier === 'free' && this.currentUser.daily_interview_remaining === 0) {
+      const confRem = this.currentUser.daily_conference_remaining;
+      if (confRem !== undefined && confRem !== null && confRem <= 0 && this.currentUser.plan_tier !== 'elite') {
+        const tier = (this.currentUser.plan_tier || 'free').toLowerCase();
         this.openQuotaLimitModal({
           title: 'Video Conference Quota Reached',
-          message: 'Free Starter accounts include 3 lifetime trial AI Video Conference & Live Coaching sessions. Get a 7-Day Sprint Pass or Pro Career for more coaching sessions!',
+          message: tier === 'free'
+            ? 'Free Starter accounts include 3 lifetime trial AI Video Conference & Live Coaching sessions. Get a 7-Day Sprint Pass or Pro Career for more coaching sessions!'
+            : (tier === 'sprint'
+              ? 'You have used all 5 Video Conference sessions included with your 7-Day Sprint Pass. Upgrade to Pro Career for 12 monthly sessions or Elite for unlimited coaching!'
+              : 'You have used all 12 Video Conference sessions for this billing cycle. Upgrade to Executive Elite for unlimited coaching sessions!'),
           feature: 'video_conference',
-          requiredPlan: 'sprint'
+          requiredPlan: tier === 'free' ? 'sprint' : (tier === 'sprint' ? 'pro' : 'elite')
         });
         return;
       }
@@ -5308,9 +5323,51 @@ function resumeApp() {
       // 🔊 CRITICAL MOBILE AUDIO UNLOCK: must execute immediately within user touch gesture
       this.unlockMobileAudio();
 
-      this.conferenceTargetRole = role || this.tailoredData?.target_job_title || this.targetJobTitle || 'Automotive Technician';
-      this.conferenceTargetCompany = company || this.targetCompany || '';
+      const activeRole = role || this.tailoredData?.target_job_title || this.targetJobTitle || 'Automotive Technician';
+      const activeCompany = company || this.targetCompany || '';
+
+      this.conferenceTargetRole = activeRole;
+      this.conferenceTargetCompany = activeCompany;
       this.conferenceSessionId = 'conf_' + Math.random().toString(36).substring(2, 11);
+
+      // Verify and consume server-side Video Conference quota
+      const token = localStorage.getItem('saas_token');
+      try {
+        const startRes = await fetch('/api/conference/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            target_role: activeRole,
+            target_company: activeCompany || null
+          })
+        });
+
+        if (startRes.status === 403) {
+          const errData = await startRes.json().catch(() => ({}));
+          const tier = (this.currentUser.plan_tier || 'free').toLowerCase();
+          this.openQuotaLimitModal({
+            title: 'Video Conference Quota Reached',
+            message: errData.detail?.message || errData.detail || 'Free Starter accounts include 3 lifetime trial AI Video Conference & Live Coaching sessions. Get a 7-Day Sprint Pass or Pro Career for more coaching sessions!',
+            feature: 'video_conference',
+            requiredPlan: tier === 'free' ? 'sprint' : (tier === 'sprint' ? 'pro' : 'elite')
+          });
+          return;
+        }
+
+        if (startRes.ok) {
+          const startData = await startRes.json();
+          if (startData.session_id) {
+            this.conferenceSessionId = startData.session_id;
+          }
+          // Real-time refresh of quotas to immediately reflect new count in header without reload!
+          await this.refreshCurrentUser();
+        }
+      } catch (err) {
+        console.warn('Conference session initialization check warning:', err);
+      }
       this.conferenceDurationSeconds = 0;
       this.conferenceConversationHistory = [];
       this.conferenceMistakes = [];

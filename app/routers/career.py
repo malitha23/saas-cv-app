@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import datetime
 import asyncio
 from collections import defaultdict
@@ -17,6 +18,7 @@ from app.schemas import (
     MockInterviewStartRequest, MockInterviewStartResponse,
     EvaluateAnswerRequest, AnswerEvaluationResponse,
     FinalInterviewReportRequest, FinalInterviewReportResponse,
+    ConferenceStartRequest, ConferenceStartResponse,
     ConferenceTurnRequest, ConferenceTurnResponse,
     ConferenceDebriefRequest, ConferenceDebriefResponse,
     ConferenceTTSRequest,
@@ -236,6 +238,37 @@ async def final_interview_report_endpoint(
         raise HTTPException(status_code=500, detail=f"Failed to compile interview report: {str(e)}")
 
 
+@router.post("/api/conference/start", response_model=ConferenceStartResponse)
+async def start_conference_endpoint(
+    payload: Optional[ConferenceStartRequest] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Validates and consumes quota for an AI Video Conference & Live Coaching session.
+    Decrements dedicated conference quota independently from voice mock interviews.
+    """
+    is_allowed, remaining, msg = check_conference_quota(current_user, db, consume=True)
+    if not is_allowed:
+        tier = (current_user.plan_tier or "free").lower()
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "conference_quota_exceeded",
+                "message": msg,
+                "upgrade_required": True,
+                "required_tier": "sprint" if tier == "free" else "pro"
+            }
+        )
+    session_id = f"conf_{uuid.uuid4().hex[:10]}"
+    return ConferenceStartResponse(
+        status="ok",
+        session_id=session_id,
+        remaining=remaining,
+        message=msg
+    )
+
+
 @router.post("/api/conference/turn", response_model=ConferenceTurnResponse)
 async def conference_turn_endpoint(
     payload: ConferenceTurnRequest,
@@ -264,7 +297,7 @@ async def conference_turn_endpoint(
                 }
             )
 
-    is_allowed, remaining, msg = check_conference_quota(current_user, db)
+    is_allowed, remaining, msg = check_conference_quota(current_user, db, consume=False)
     if not is_allowed and session_turns == 0:
         raise HTTPException(
             status_code=403,
@@ -275,13 +308,6 @@ async def conference_turn_endpoint(
                 "required_tier": "pro"
             }
         )
-
-    # Consume daily session quota upon starting first turn
-    if tier == "free" and session_turns == 0 and hasattr(current_user, "daily_interview_count"):
-        if (current_user.daily_interview_count or 0) < 1:
-            current_user.daily_interview_count = 1
-            db.commit()
-            db.refresh(current_user)
 
     CONFERENCE_SESSION_TURNS[payload.session_id] = session_turns + 1
 

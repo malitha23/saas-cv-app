@@ -374,6 +374,15 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
     else:
         interview_remaining = max(0, 3 - (getattr(user, "lifetime_interview_count", 0) or 0))
 
+    if tier == "elite":
+        conference_remaining = None
+    elif tier == "pro":
+        conference_remaining = max(0, 12 - (getattr(user, "pro_conference_count", 0) or 0))
+    elif tier == "sprint":
+        conference_remaining = max(0, 5 - (getattr(user, "sprint_conference_count", 0) or 0))
+    else:
+        conference_remaining = max(0, 3 - (getattr(user, "lifetime_conference_count", 0) or 0))
+
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -398,6 +407,8 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         daily_chat_remaining=None if tier in ["pro", "elite", "sprint"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
         daily_interview_count=getattr(user, "daily_interview_count", 0) or 0,
         daily_interview_remaining=interview_remaining,
+        daily_conference_count=getattr(user, "daily_conference_count", 0) or 0,
+        daily_conference_remaining=conference_remaining,
         lifetime_ats_downloads_count=life_ats_used,
         lifetime_ats_downloads_remaining=life_ats_remaining,
         lifetime_visual_downloads_count=life_visual_used,
