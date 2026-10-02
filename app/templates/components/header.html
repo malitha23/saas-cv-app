@@ -619,7 +619,7 @@
                     <template x-if="!currentUser?.plan_tier || currentUser?.plan_tier === 'free'">
                       <span class="font-mono font-bold"
                         :class="darkMode ? 'text-slate-200' : 'text-slate-900'"
-                        x-text="(currentUser?.daily_chat_remaining !== null && currentUser?.daily_chat_remaining !== undefined ? currentUser.daily_chat_remaining : 3) + ' left today (3/day)'"></span>
+                        x-text="(currentUser?.daily_chat_remaining !== null && currentUser?.daily_chat_remaining !== undefined ? currentUser.daily_chat_remaining : 10) + ' left today (10/day)'"></span>
                     </template>
                     <template x-if="currentUser?.plan_tier && currentUser?.plan_tier !== 'free'">
                       <span class="font-bold text-[10px] uppercase"

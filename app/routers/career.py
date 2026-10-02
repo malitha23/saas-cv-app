@@ -122,8 +122,8 @@ async def chat_copilot_endpoint(
     is_allowed, remaining, msg = check_chat_copilot_quota(current_user, db)
     if not is_allowed:
         return ChatCopilotResponse(
-            reply="🔒 **Daily Free Limit Reached**\n\nYou have reached your **3 free Career Copilot messages** for today. Upgrade to **Pro Career ($9/mo)** or **Executive Elite** for unlimited 24/7 technical mock interviews, resume bullet rewrites, and cold recruiter outreach scripts!",
-            suggested_prompts=["Upgrade to Pro ($9/mo)", "View Subscription Plans"],
+            reply="🔒 **Daily Free Limit Reached**\n\nYou have completed your **10 free Career Copilot messages** for today. Upgrade to **Pro Career (Rs. 590/mo)** or **Executive Elite** for unlimited 24/7 technical mock interviews, resume bullet rewrites, and cold recruiter outreach scripts!",
+            suggested_prompts=["Upgrade to Pro (Rs. 590/mo)", "View Subscription Plans"],
             action_trigger={"type": "upgrade_modal", "plan": "pro"}
         )
 

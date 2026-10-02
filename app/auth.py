@@ -158,7 +158,7 @@ DEFAULT_FREE_DAILY_PDF_LIMIT = 1
 DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT = 3
 DEFAULT_FREE_DAILY_COPILOT_KITS_LIMIT = 1
 DEFAULT_FREE_MAX_TRACKED_JOBS = 2
-DEFAULT_FREE_DAILY_CHAT_LIMIT = 3
+DEFAULT_FREE_DAILY_CHAT_LIMIT = 10
 DEFAULT_FREE_DAILY_INTERVIEW_LIMIT = 1
 DEFAULT_FREE_LIFETIME_INTERVIEW_LIMIT = 3
 
@@ -678,12 +678,6 @@ def check_chat_copilot_quota(
     used = current_user.daily_chat_count or 0
     if used >= limit:
         return False, 0, f"Daily free Career Copilot limit ({limit} messages) reached. Upgrade to Pro Career for unlimited 24/7 coaching!"
-
-    current_user.daily_chat_count = used + 1
-    db.commit()
-    db.refresh(current_user)
-    remaining = max(0, limit - (used + 1))
-    return True, remaining, f"{remaining} free messages remaining today"
 
     current_user.daily_chat_count = used + 1
     db.commit()

@@ -704,7 +704,7 @@ class UserResponse(BaseModel):
     daily_copilot_kits_count: int = 0
     daily_copilot_kits_remaining: Optional[int] = 1
     daily_chat_count: int = 0
-    daily_chat_remaining: Optional[int] = 3
+    daily_chat_remaining: Optional[int] = 10
     daily_interview_count: int = 0
     daily_interview_remaining: Optional[int] = 3
     daily_conference_count: int = 0

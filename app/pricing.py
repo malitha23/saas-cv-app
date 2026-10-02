@@ -31,7 +31,7 @@ DEFAULT_COUNTRY_PRICING_DATA: Dict[str, Dict[str, Any]] = {
                     "Job Application Tracker (Up to 2 Jobs Kanban)",
                     "AI Voice Mock Interview (3 Sessions Trial)",
                     "AI Video Conference (3 Sessions Trial)",
-                    "AI Career Copilot Chat (3 Free Prompts/day)",
+                    "AI Career Copilot Chat (10 Free Prompts/day)",
                     "Interactive Web Portfolio Studio (In-App Preview)",
                     "Cloud Auto-Save (Restoring drafts requires Pro)"
                 ],

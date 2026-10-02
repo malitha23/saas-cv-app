@@ -178,6 +178,7 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
     ai_limit = DEFAULT_FREE_DAILY_AI_LIMIT
     pdf_limit = DEFAULT_FREE_DAILY_PDF_LIMIT
     cl_limit = DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT
+    chat_limit = 10
     if db is not None:
         try:
             ai_limit = int(get_saas_setting(db, "free_daily_ai_limit", str(DEFAULT_FREE_DAILY_AI_LIMIT)))
@@ -191,6 +192,10 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
             cl_limit = int(get_saas_setting(db, "free_daily_cover_letter_limit", str(DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT)))
         except (ValueError, TypeError):
             cl_limit = DEFAULT_FREE_DAILY_COVER_LETTER_LIMIT
+        try:
+            chat_limit = int(get_saas_setting(db, "free_daily_chat_limit", "10"))
+        except (ValueError, TypeError):
+            chat_limit = 10
 
     remaining = None
     pdf_remaining = None
@@ -404,7 +409,7 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         daily_copilot_kits_count=getattr(user, "daily_copilot_kits_count", 0) or 0,
         daily_copilot_kits_remaining=copilot_kits_remaining,
         daily_chat_count=getattr(user, "daily_chat_count", 0) or 0,
-        daily_chat_remaining=None if tier in ["pro", "elite", "sprint"] else max(0, 3 - (getattr(user, "daily_chat_count", 0) or 0)),
+        daily_chat_remaining=None if tier in ["pro", "elite", "sprint"] else max(0, chat_limit - (getattr(user, "daily_chat_count", 0) or 0)),
         daily_interview_count=getattr(user, "daily_interview_count", 0) or 0,
         daily_interview_remaining=interview_remaining,
         daily_conference_count=getattr(user, "daily_conference_count", 0) or 0,
