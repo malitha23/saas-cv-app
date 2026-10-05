@@ -35,7 +35,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Primary SEO Metadata -->
-  <title>{% block title %}{{ post.title if post else 'Blog & Career Guides' }} | DreemFolio AI{% endblock %}</title>
+  <title>{% block title %}{{ post.title if post else 'Blog & Career Guides' }} | DreemFolio{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}{{ post.description if post else 'Actionable career advice, ATS optimization strategies, and tech resume guides from DreemFolio AI.' }}{% endblock %}">
   <meta name="keywords" content="{% block meta_keywords %}{{ (post.target_keywords | join(', ')) if post and post.target_keywords else 'ATS resume, AI resume builder, CV optimization, career guide' }}{% endblock %}">
   <link rel="canonical" href="{% block canonical %}{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}{% endblock %}">

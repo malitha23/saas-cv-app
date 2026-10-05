@@ -38,9 +38,9 @@ async def render_blog_catalog(request: Request):
     categories = sorted(list({p.get("category", "Guides") for p in posts}))
     
     titles = {
-        "en": "DreemFolio AI Career & ATS Resume Blog — 2026 Hiring Guides",
-        "si": "DreemFolio AI වෘත්තීය සහ ATS CV බ්ලොග් අඩවිය — 2026 මඟපෙන්වීම්",
-        "ta": "DreemFolio AI தொழில் & ATS CV வலைப்பதிவு — 2026 வழிகாட்டிகள்"
+        "en": "AI Resume & Career Guides Blog | DreemFolio",
+        "si": "ATS CV සහ වෘත්තීය මඟපෙන්වීම් | DreemFolio",
+        "ta": "ATS CV & தொழில் வழிகாட்டிகள் | DreemFolio"
     }
     descriptions = {
         "en": "Authoritative guides on passing Applicant Tracking Systems (ATS), optimizing tech resumes, avoiding CV rejection errors, and winning remote jobs in 2026.",
