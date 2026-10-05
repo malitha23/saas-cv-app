@@ -1485,6 +1485,24 @@
   <!-- Main Grid Workspace -->
   <main class="flex-1 max-w-8xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 lg:pb-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
 
+    <!-- Workspace Title & Semantic H1 Header (SEO & Screen Readers) -->
+    <div class="col-span-1 lg:col-span-12 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800/80">
+      <div>
+        <h1 class="text-lg sm:text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
+          <span>AI Resume Builder & ATS Optimization Studio</span>
+          <span class="inline-flex px-2 py-0.5 text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Pro Workspace</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Tailor your CV to any job description, optimize ATS keywords, and generate recruiter-approved PDFs in minutes.
+        </p>
+      </div>
+      <div class="hidden md:flex items-center gap-3 text-xs text-slate-400">
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> ATS Compatible</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Keyword Matcher</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="file-text" class="w-3.5 h-3.5 text-cyan-400"></i> PDF & Portfolio</span>
+      </div>
+    </div>
+
     <!-- 2. Free Guest Exploration Banner Component -->
     {% include 'components/guest_banner.html' %}
 

@@ -332,6 +332,24 @@
   <!-- ═══════════════════════════════════════════════════════════════════ -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
+    <!-- Semantic Page Heading (Accessibility & SEO) -->
+    <div class="border-b border-slate-800/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-100 tracking-tight flex items-center gap-2">
+          <span>My Profile & Subscription Dashboard</span>
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Manage your account credentials, AI quota usages, and billing invoices.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-400">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Secure Session</span>
+        </span>
+      </div>
+    </div>
+
     <!-- Loading Skeleton -->
     <div x-show="isLoading" class="p-12 text-center text-slate-400 space-y-3">
       <div class="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -361,7 +379,7 @@
               x-text="(currentUser?.full_name || currentUser?.email || 'U').charAt(0)">
             </div>
             <div class="min-w-0">
-              <h2 class="font-black text-white text-lg truncate" x-text="currentUser?.full_name || 'Candidate'"></h2>
+              <h2 class="font-black text-white text-lg truncate" x-text="currentUser?.full_name || 'Candidate'">Candidate Profile</h2>
               <p class="text-xs text-slate-400 font-mono truncate" x-text="currentUser?.email"></p>
               <div class="flex items-center gap-2 mt-1">
                 <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"

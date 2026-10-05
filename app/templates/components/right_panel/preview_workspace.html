@@ -688,7 +688,7 @@
                 <template x-if="(tailoredData.cover_letter.layout_style || 'modern_banner') === 'modern_banner'">
                   <div class="rounded-lg overflow-hidden border border-slate-200 mb-5 shadow-sm">
                     <div class="p-4" :style="'background-color: ' + (tailoredData.custom_accent_color || '#1E3A8A') + '; color: white;'">
-                      <h2 class="text-xl font-bold tracking-tight uppercase" x-text="tailoredData.personal_info.full_name"></h2>
+                      <div class="text-xl font-bold tracking-tight uppercase" x-text="tailoredData.personal_info.full_name">Candidate Name</div>
                       <p class="text-xs text-slate-200 uppercase font-semibold tracking-wider mt-0.5"
                         x-text="tailoredData.cover_letter.sign_off_title || tailoredData.target_job_title || 'Software Engineer'"></p>
                     </div>
@@ -704,8 +704,8 @@
                 <!-- B. Classic Corporate Letterhead -->
                 <template x-if="tailoredData.cover_letter.layout_style === 'classic_corporate'">
                   <div class="border-b pb-3 mb-4" :style="'border-color: ' + (tailoredData.custom_accent_color || '#1E3A8A')">
-                    <h2 class="text-2xl font-bold tracking-tight uppercase" :style="'color: ' + (tailoredData.custom_accent_color || '#1E3A8A')"
-                      x-text="tailoredData.personal_info.full_name"></h2>
+                    <div class="text-2xl font-bold tracking-tight uppercase" :style="'color: ' + (tailoredData.custom_accent_color || '#1E3A8A')"
+                      x-text="tailoredData.personal_info.full_name">Candidate Name</div>
                     <p class="text-xs text-slate-600 mt-1">
                       <span x-text="tailoredData.personal_info.location"></span> •
                       <span x-text="tailoredData.personal_info.email"></span> •
@@ -720,7 +720,7 @@
                 <!-- C. Minimal Clean Letterhead -->
                 <template x-if="tailoredData.cover_letter.layout_style === 'minimal_clean'">
                   <div class="text-center pb-3 mb-4 border-b border-slate-200">
-                    <h2 class="text-2xl font-bold tracking-wider uppercase text-slate-900" x-text="tailoredData.personal_info.full_name"></h2>
+                    <div class="text-2xl font-bold tracking-wider uppercase text-slate-900" x-text="tailoredData.personal_info.full_name">Candidate Name</div>
                     <p class="text-xs text-slate-500 mt-1">
                       <span x-text="tailoredData.personal_info.email"></span> •
                       <span x-text="tailoredData.personal_info.phone"></span> •
