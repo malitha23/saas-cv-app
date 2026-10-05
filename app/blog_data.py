@@ -12,7 +12,7 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "slug": "how-to-write-an-ats-friendly-cv",
         "title": "How to Write an ATS-Friendly Resume in 2026",
         "subtitle": "Step-by-step blueprint to pass modern Applicant Tracking Systems (Workday, Greenhouse, Lever) with 95%+ match scores.",
-        "description": "Learn step-by-step how to write an ATS-friendly CV that passes Applicant Tracking Systems. Discover formatting rules, keyword optimization, and free ATS checkers.",
+        "description": "Step-by-step guide to writing an ATS-friendly CV that passes Applicant Tracking Systems. Learn formatting rules, keyword matching, and test ATS scores.",
         "template": "blogs/ats_cv_guide.html",
         "published_date": "2026-10-05",
         "modified_date": "2026-10-05",

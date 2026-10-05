@@ -41,6 +41,7 @@
   <link rel="canonical" href="{% block canonical %}{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}{% endblock %}">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
   <!-- Google Multilingual Hreflang Tags -->
   {% if slug %}

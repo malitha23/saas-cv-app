@@ -37,6 +37,7 @@
   <meta name="description" content="{{ page_description }}">
   <link rel="canonical" href="{{ canonical_url }}">
   <meta name="robots" content="index, follow">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
   <!-- Open Graph / Meta -->
   <meta property="og:site_name" content="DreemFolio AI">
@@ -154,18 +155,18 @@
 
       <!-- Right Actions: Country Currency Switcher + Open App -->
       <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-        <!-- Currency Dropdown -->
+        <!-- Currency Selector -->
         <div class="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
-          <a href="/guide?country=LK"
+          <button type="button" onclick="window.location.search = '?country=lk'"
              class="px-2.5 py-1 rounded font-bold text-[11px] transition flex items-center gap-1 {{ 'bg-indigo-600 text-white shadow' if active_country == 'LK' else 'text-slate-400 hover:text-slate-200' }}">
             <span>Rs.</span>
             <span>LKR</span>
-          </a>
-          <a href="/guide?country=DEFAULT"
+          </button>
+          <button type="button" onclick="window.location.search = '?country=default'"
              class="px-2.5 py-1 rounded font-bold text-[11px] transition flex items-center gap-1 {{ 'bg-indigo-600 text-white shadow' if active_country != 'LK' else 'text-slate-400 hover:text-slate-200' }}">
             <span>$</span>
             <span>USD</span>
-          </a>
+          </button>
         </div>
 
         <a href="/app"

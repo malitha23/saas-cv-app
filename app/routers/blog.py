@@ -45,7 +45,7 @@ async def render_blog_catalog(request: Request):
     descriptions = {
         "en": "Authoritative guides on passing Applicant Tracking Systems (ATS), optimizing tech resumes, avoiding CV rejection errors, and winning remote jobs in 2026.",
         "si": "Applicant Tracking Systems (ATS) හරහා සාර්ථකව CV සමත් කරගන්නා ආකාරය, Tech CV සකස් කිරීම, සහ විදේශීය Remote රැකියා දිනාගැනීමේ සම්පූර්ණ මඟපෙන්වීම්.",
-        "ta": "Applicant Tracking Systems (ATS) இல் தேர்ச்சி பெறுதல், தொழில்நுட்ப CV களை மேம்படுத்துதல் மற்றும் சர்வதேச ரிமோட் வேலைகளை வெல்வதற்கான அதிகாரப்பூர்வ வழிகாட்டிகள்."
+        "ta": "Applicant Tracking Systems (ATS) இல் தேர்ச்சி பெறுதல், தொழில்நுட்ப CV களை மேம்படுத்துதல் மற்றும் ரிமோட் வேலைகளுக்கான வழிகாட்டிகள்."
     }
 
     canonical = f"https://www.dreemfolio.com/blog/{lang}" if lang != "en" else "https://www.dreemfolio.com/blog"

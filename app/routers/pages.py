@@ -123,7 +123,7 @@ async def serve_feature_guide_page(
             "active_country": country_code,
             "active_page": "guide",
             "page_title": "DreemFolio AI Feature Guide & Support Documentation — Step-by-Step Instructions & Plan Quotas",
-            "page_description": "Comprehensive, step-by-step user guide for DreemFolio AI ATS resume builder, cover letters, mock interviews, and live portfolios. Detailed breakdown of Free, Pro, and Elite quotas.",
+            "page_description": "User guide for DreemFolio AI resume builder, cover letters, and live portfolios. Detailed breakdown of Free, Pro, and Elite subscription plan quotas.",
             "canonical_url": "https://www.dreemfolio.com/guide"
         }
     )
