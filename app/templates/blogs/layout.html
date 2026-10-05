@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100 scroll-smooth">
+
+<head>
+  <!-- Anti-Flicker Theme Detection -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('dreemfolio_theme');
+        if (t === 'light') {
+          document.documentElement.classList.add('light-mode');
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.backgroundColor = '#f1f5f9';
+          document.documentElement.style.color = '#0f172a';
+        } else {
+          document.documentElement.classList.remove('light-mode');
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#020617';
+          document.documentElement.style.color = '#f1f5f9';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9K8HE8EJ3W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-9K8HE8EJ3W');
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Primary SEO Metadata -->
+  <title>{% block title %}{{ post.title if post else 'Blog & Career Guides' }} | DreemFolio AI{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ post.description if post else 'Actionable career advice, ATS optimization strategies, and tech resume guides from DreemFolio AI.' }}{% endblock %}">
+  <meta name="keywords" content="{% block meta_keywords %}{{ (post.target_keywords | join(', ')) if post and post.target_keywords else 'ATS resume, AI resume builder, CV optimization, career guide' }}{% endblock %}">
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}{% endblock %}">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large">
+
+  <!-- Open Graph Meta Tags (Social Media Share Previews) -->
+  <meta property="og:site_name" content="DreemFolio AI">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}">
+  <meta property="og:title" content="{{ post.title if post else 'DreemFolio AI Blog' }} | DreemFolio AI">
+  <meta property="og:description" content="{{ post.description if post else 'Actionable guides on passing ATS, optimizing tech resumes, and winning remote jobs.' }}">
+  <meta property="og:image" content="{{ post.og_image if post and post.og_image else 'https://www.dreemfolio.com/static/images/hero_showcase.jpg' }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  <meta property="og:locale" content="en_US">
+  {% if post and post.published_date %}
+  <meta property="article:published_time" content="{{ post.published_date }}">
+  <meta property="article:modified_time" content="{{ post.modified_date or post.published_date }}">
+  <meta property="article:author" content="{{ post.author.name if post.author else 'DreemFolio AI' }}">
+  <meta property="article:section" content="{{ post.category if post else 'Career Advice' }}">
+  {% endif %}
+
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@DreemFolio">
+  <meta name="twitter:creator" content="@DreemFolio">
+  <meta name="twitter:url" content="{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}">
+  <meta name="twitter:title" content="{{ post.title if post else 'DreemFolio AI Blog' }} | DreemFolio AI">
+  <meta name="twitter:description" content="{{ post.description if post else 'Actionable career advice, ATS resume tips, and tech hiring blueprints.' }}">
+  <meta name="twitter:image" content="{{ post.og_image if post and post.og_image else 'https://www.dreemfolio.com/static/images/hero_showcase.jpg' }}">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">
+  <link rel="apple-touch-icon" href="/static/images/logo.png?v=2">
+
+  <!-- Google Structured Data (JSON-LD) -->
+  {% if post %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "{{ post.title }}",
+    "description": "{{ post.description }}",
+    "url": "https://www.dreemfolio.com/blog/{{ slug }}",
+    "image": "{{ post.og_image if post.og_image else 'https://www.dreemfolio.com/static/images/hero_showcase.jpg' }}",
+    "author": {
+      "@type": "Organization",
+      "name": "DreemFolio AI",
+      "url": "https://www.dreemfolio.com"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "DreemFolio AI",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.dreemfolio.com/static/images/logo.png"
+      }
+    },
+    "datePublished": "{{ post.published_date }}",
+    "dateModified": "{{ post.modified_date or post.published_date }}",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://www.dreemfolio.com/blog/{{ slug }}"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.dreemfolio.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://www.dreemfolio.com/blog"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "{{ post.title }}",
+        "item": "https://www.dreemfolio.com/blog/{{ slug }}"
+      }
+    ]
+  }
+  </script>
+  {% else %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "DreemFolio AI Career & ATS Resume Blog",
+    "description": "Authoritative guides on passing Applicant Tracking Systems, optimizing tech resumes, and landing remote jobs.",
+    "url": "https://www.dreemfolio.com/blog"
+  }
+  </script>
+  {% endif %}
+
+  <!-- Tailwind CSS & Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons & Alpine.js -->
+  <script src="/static/vendor/lucide.min.js"></script>
+  <script defer src="/static/vendor/alpine.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    ::selection { background: #4f46e5; color: #ffffff; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .prose-custom h2 { color: #f8fafc; font-weight: 800; font-size: 1.65rem; margin-top: 2.25rem; margin-bottom: 0.85rem; scroll-margin-top: 5rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.4rem; }
+    .prose-custom h3 { color: #e2e8f0; font-weight: 700; font-size: 1.25rem; margin-top: 1.75rem; margin-bottom: 0.6rem; scroll-margin-top: 5rem; }
+    .prose-custom p { color: #94a3b8; font-size: 1.025rem; line-height: 1.8; margin-bottom: 1.25rem; }
+    .prose-custom strong { color: #f1f5f9; font-weight: 600; }
+    .prose-custom ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; color: #94a3b8; }
+    .prose-custom ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; color: #94a3b8; }
+    .prose-custom li { margin-bottom: 0.5rem; line-height: 1.7; }
+    .prose-custom blockquote { border-left: 4px solid #6366f1; padding-left: 1.25rem; margin: 1.5rem 0; color: #cbd5e1; font-style: italic; background: rgba(99, 102, 241, 0.05); padding-top: 0.75rem; padding-bottom: 0.75rem; border-radius: 0 0.5rem 0.5rem 0; }
+    .prose-custom code { font-family: 'JetBrains Mono', monospace; font-size: 0.9em; background: #0f172a; border: 1px solid #334155; padding: 0.15rem 0.4rem; border-radius: 0.3rem; color: #a5b4fc; }
+  </style>
+</head>
+
+<body class="min-h-full flex flex-col bg-slate-950 font-sans text-slate-100 antialiased selection:bg-indigo-600 selection:text-white"
+      x-data="{
+        copySuccess: false,
+        copyPostUrl() {
+          navigator.clipboard.writeText(window.location.href);
+          this.copySuccess = true;
+          setTimeout(() => { this.copySuccess = false; }, 2500);
+        }
+      }"
+      x-init="$nextTick(() => { if (window.lucide) window.lucide.createIcons(); })">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- TOP NAVBAR -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <header class="border-b border-slate-800/80 bg-slate-900/95 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center space-x-2.5 group">
+        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" class="w-9 h-9 object-contain filter drop-shadow-sm group-hover:scale-105 transition">
+        <div class="flex items-center space-x-1.5">
+          <span class="font-black text-xl tracking-tight text-white">Dreem<span class="text-indigo-400">Folio</span></span>
+          <span class="ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">Blog</span>
+        </div>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
+        <a href="/ai-resume-builder" class="hover:text-indigo-400 transition">AI Resume Builder</a>
+        <a href="/blog" class="text-indigo-400 font-semibold transition">Blog & Insights</a>
+        <a href="/guide" class="hover:text-indigo-400 transition">Feature Guide</a>
+        <a href="/#pricing" class="hover:text-indigo-400 transition">Pricing</a>
+      </nav>
+
+      <!-- Right Action CTA -->
+      <div class="flex items-center space-x-3">
+        <a href="/app" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/25 transition flex items-center gap-1.5">
+          <span>Build ATS Resume Free</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- MAIN BLOG CONTENT -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <main class="flex-grow">
+    {% block blog_content %}{% endblock %}
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- GLOBAL FOOTER COMPONENT -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  {% include 'components/footer.html' %}
+
+</body>
+</html>

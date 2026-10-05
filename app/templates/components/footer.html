@@ -30,6 +30,13 @@
             </a>
           </li>
           <li>
+            <a href="/blog" 
+               class="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors flex items-center gap-1">
+              <span>Career & ATS Blog</span>
+              <span class="text-[10px] px-1 rounded bg-indigo-500/20 text-indigo-300">New</span>
+            </a>
+          </li>
+          <li>
             <a href="/#features" 
                @click="if (window.location.pathname === '/' || window.location.pathname === '') { const el = document.getElementById('features'); if (el) { $event.preventDefault(); el.scrollIntoView({behavior: 'smooth'}); } }"
                class="text-slate-400 hover:text-purple-400 transition-colors">

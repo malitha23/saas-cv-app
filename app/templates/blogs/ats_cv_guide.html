@@ -1,0 +1,249 @@
+{% extends "blogs/layout.html" %}
+
+{% block title %}How to Write an ATS-Friendly Resume in 2026 (Pass Any Scanner) | DreemFolio AI{% endblock %}
+{% block meta_description %}Learn step-by-step how to write an ATS-friendly CV that passes Applicant Tracking Systems like Workday and Greenhouse. Formatting rules, keyword optimization, and free ATS checkers.{% endblock %}
+{% block meta_keywords %}ATS friendly CV, pass ATS scanner, free ATS checker, ATS resume format 2026, Applicant Tracking System resume, ATS score check{% endblock %}
+{% block canonical %}https://www.dreemfolio.com/blog/how-to-write-an-ats-friendly-cv{% endblock %}
+
+{% block blog_content %}
+<div class="py-12 bg-slate-950">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- Breadcrumb Navigation -->
+    <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-white transition">Home</a>
+      <span>/</span>
+      <a href="/blog" class="hover:text-white transition">Blog</a>
+      <span>/</span>
+      <span class="text-indigo-400 truncate">How to Write an ATS-Friendly Resume</span>
+    </nav>
+
+    <!-- Article Header -->
+    <header class="mb-10 pb-8 border-b border-slate-800">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="px-3 py-1 text-xs font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          ATS Resume Guide
+        </span>
+        <span class="text-xs text-slate-400">• {{ post.reading_time or '7 min read' }}</span>
+        <span class="text-xs text-slate-500">• Updated for 2026 Hiring Standards</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+        How to Write an ATS-Friendly Resume in 2026
+      </h1>
+
+      <p class="text-slate-300 text-lg leading-relaxed mb-6">
+        Over 75% of qualified applicants never receive an interview because modern Applicant Tracking Systems (ATS) fail to parse their formatting or identify required keywords. Here is the definitive guide to passing any scanner.
+      </p>
+
+      <!-- Author and Social Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-900 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400">
+            DF
+          </div>
+          <div>
+            <div class="font-bold text-white text-sm">DreemFolio AI Career Team</div>
+            <div class="text-slate-400">Published on October 05, 2026 • Verified by Recruiters</div>
+          </div>
+        </div>
+
+        <!-- Share Actions -->
+        <div class="flex items-center gap-2">
+          <button @click="copyPostUrl()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+            <span x-text="copySuccess ? 'Link Copied!' : 'Share Article'">Share Article</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Top Key Highlights Box -->
+    <div class="p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 mb-10">
+      <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm mb-3">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <span>Quick Takeaways (TL;DR)</span>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Stick to single-column layout:</strong> Multi-column tables, sidebars, and graphics scramble ATS parsing order.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Mirror the Job Description:</strong> Use exact phrase matches for technical skills and certifications rather than generic buzzwords.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Use the Google XYZ Formula:</strong> Frame every bullet point around quantifiable results rather than passive job tasks.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Article Body -->
+    <article class="prose-custom">
+
+      <h2>1. What Is an Applicant Tracking System (ATS)?</h2>
+      <p>
+        An <strong>Applicant Tracking System (ATS)</strong> is enterprise software utilized by 99% of Fortune 500 corporations and over 75% of fast-growing startups—including tools like <em>Workday, Greenhouse, Lever, Taleo, and iCIMS</em>. When you upload your CV through a company careers portal or job board, the ATS acts as an automated first-line gatekeeper.
+      </p>
+      <p>
+        Rather than presenting your beautifully styled layout to a human recruiter right away, the ATS extracts your text into database fields: <strong>Contact Information, Work Experience, Education, Technical Skills, and Certifications</strong>. If the parser cannot understand your resume geometry, or if your document lacks the specific keywords matching the recruiter's search filter, your application is automatically ranked at the bottom of the candidate stack or quietly rejected without human eyes ever glancing at it.
+      </p>
+
+      <!-- FIRST INLINE CONVERSION CTA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>Instant ATS Compliance Scanner</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">Check Your Resume ATS Score Now</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            Upload your CV to DreemFolio AI and test your parsing score against Workday and Greenhouse algorithms in under 15 seconds.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>Try ATS Checker Free</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. The 5 Non-Negotiable Rules of ATS Formatting</h2>
+      <p>
+        To ensure 100% optical character recognition (OCR) and accurate database mapping, your resume must strictly obey these structural principles:
+      </p>
+
+      <h3>Rule #1: Enforce a Clean, Single-Column Layout</h3>
+      <p>
+        While two-column templates with colorful left sidebars look aesthetically pleasing in graphic design software like Canva or Figma, ATS parsers read documents horizontally from left to right. When an ATS encounters two columns, it reads across columns in a single line, turning your job titles, dates, and bullet points into an unintelligible word salad. DreemFolio AI generates strictly verified single-column vector geometry that guarantees zero parsing collisions.
+      </p>
+
+      <h3>Rule #2: Eliminate Tables, Text Boxes, and Floating Graphics</h3>
+      <p>
+        Many job seekers place their contact information or skills inside invisible HTML/Word tables or floating graphical text boxes. <strong>Modern ATS scanners frequently drop all content enclosed inside text boxes or floating frames.</strong> Keep all text in the standard body flow.
+      </p>
+
+      <h3>Rule #3: Use Standard, Universal Headings</h3>
+      <p>
+        Do not try to be overly creative with section titles. An ATS uses natural language algorithms programmed to look for specific standard headings:
+      </p>
+      <ul>
+        <li><strong>Use:</strong> <code>Work Experience</code> or <code>Professional Experience</code> (Avoid: <em>My Career Voyage</em>)</li>
+        <li><strong>Use:</strong> <code>Technical Skills</code> or <code>Core Competencies</code> (Avoid: <em>Things I Am Great At</em>)</li>
+        <li><strong>Use:</strong> <code>Education</code> (Avoid: <em>Academic Credentials</em>)</li>
+      </ul>
+
+      <h3>Rule #4: Standard Typography and Safe Margins</h3>
+      <p>
+        Use modern, clean fonts with universal unicode glyphs such as <strong>Inter, Roboto, Arial, Calibri, or Helvetica</strong>. Avoid obscure custom web fonts or icon-based bullet symbols that decode as missing character squares (<code>&#9633;</code>). Maintain margins between 0.5 inches and 0.75 inches to ensure standard page boundaries.
+      </p>
+
+      <h3>Rule #5: File Format: PDF vs. DOCX in 2026</h3>
+      <p>
+        Years ago, career coaches recommended Word <code>.docx</code> because older ATS systems struggled with PDFs. <strong>In 2026, standard vector PDF is the gold standard</strong>, provided it is generated with selectable text rather than flattened raster images. PDFs preserve exact layout and typography across every recruiter's operating system (Mac, Windows, Linux).
+      </p>
+
+      <h2>3. How to Optimize Keywords Without "Keyword Stuffing"</h2>
+      <p>
+        Recruiters search ATS databases using Boolean queries such as: <code>("Python" OR "Golang") AND ("Kubernetes" OR "Docker") AND "AWS"</code>. If your resume uses different acronyms or omits the exact tool names, your profile will never appear in their search filter.
+      </p>
+      <p>
+        Follow this 3-step keyword strategy:
+      </p>
+      <ol>
+        <li><strong>Identify Exact Keywords from the Job Description:</strong> Copy the target JD and highlight every tool, library, framework, and certification mentioned more than twice.</li>
+        <li><strong>Include Both Full Terms and Common Acronyms:</strong> Write out <code>Search Engine Optimization (SEO)</code>, <code>Amazon Web Services (AWS)</code>, or <code>Continuous Integration / Continuous Deployment (CI/CD)</code> so that either search term triggers a match.</li>
+        <li><strong>Never Resort to "White Text" Hacks:</strong> In the early 2010s, candidates attempted to hide keywords in 1pt white font. In 2026, modern ATS algorithms automatically convert all text to raw plain-text ASCII during extraction. White text is instantly exposed, triggering an automated red flag and disqualification for fraud.</li>
+      </ol>
+
+      <h2>4. The Google XYZ Formula for High-Impact Bullet Points</h2>
+      <p>
+        Passing the ATS is step one; persuading the human recruiter who opens your resume is step two. Avoid listing mundane daily responsibilities like <em>"Responsible for writing unit tests and fixing bugs."</em> Instead, adopt the battle-tested Google XYZ formula:
+      </p>
+      <blockquote>
+        "Accomplished <strong>[X]</strong>, as measured by <strong>[Y]</strong>, by doing <strong>[Z]</strong>."
+      </blockquote>
+      <p>
+        <strong>Weak Bullet:</strong> Managed database migrations and improved backend speed.<br>
+        <strong>High-Converting ATS Bullet:</strong> Optimized PostgreSQL query indexing across 14 high-throughput microservices <strong>[Z]</strong>, reducing 99th-percentile API response latency by 42% <strong>[Y]</strong> and supporting 1.2M daily active users <strong>[X]</strong>.
+      </p>
+
+      <h2>5. The 10-Point Pre-Submission ATS Checklist</h2>
+      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 not-prose space-y-3">
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Layout is single-column with zero nested tables or text boxes.</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Standard section headings (Experience, Education, Skills) are clearly identifiable.</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Contact details (email, phone, LinkedIn, city) are placed in the main body, not headers/footers.</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Dates of employment use consistent month/year formatting (e.g. <code>03/2023 – Present</code>).</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Every bullet point begins with a powerful past-tense action verb (Built, Spearheaded, Architected).</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Target job description hard skills are integrated into context bullets and skills sections.</span>
+        </div>
+        <div class="flex items-center gap-3 text-slate-200 text-sm">
+          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
+          <span>Text is fully selectable in Adobe Acrobat or browser PDF viewer (not an image scan).</span>
+        </div>
+      </div>
+
+    </article>
+
+    <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
+    <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/50 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto mb-4">
+        <i data-lucide="zap" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        Tailor Your Resume with DreemFolio AI in Seconds
+      </h3>
+      <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        Paste your job description into DreemFolio AI. Our Gemini-powered engine automatically tailors your bullet points, aligns keywords, and compiles a guaranteed 100% single-column ATS PDF.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+          <span>Generate ATS Resume Now (Free)</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- RELATED ARTICLES SECTION -->
+    {% if related_posts %}
+    <div class="mt-16 pt-12 border-t border-slate-800">
+      <h3 class="text-xl font-bold text-white mb-6">Related Career Guides</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for r in related_posts %}
+        <a href="/blog/{{ r.slug }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            {{ r.category }}
+          </span>
+          <h4 class="text-base font-bold text-white group-hover:text-indigo-300 transition mt-3 mb-2 leading-snug">
+            {{ r.title }}
+          </h4>
+          <p class="text-slate-400 text-xs line-clamp-2 leading-relaxed">
+            {{ r.description }}
+          </p>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

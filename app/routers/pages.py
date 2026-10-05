@@ -16,6 +16,7 @@ from app.state import templates
 from app.routers.payments import sync_order_status_from_payhere
 from app.guide_service import get_dynamic_guide_catalog
 from app.pricing import _get_country_pricing_dict, get_dynamic_pricing_context
+from app.blog_data import BLOG_DATABASE
 
 router = APIRouter(tags=["Pages & Public Views"])
 
@@ -162,6 +163,8 @@ async def serve_robots_txt():
     content = """User-agent: *
 Allow: /
 Allow: /ai-resume-builder
+Allow: /blog
+Allow: /blog/
 Allow: /app
 Allow: /guide
 Allow: /contact
@@ -179,26 +182,32 @@ Disallow: /portfolio/preview/
 # AI Search & Training Crawlers (Welcome ChatGPT, Perplexity, Claude & Gemini)
 User-agent: GPTBot
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 User-agent: OAI-SearchBot
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 User-agent: Google-Extended
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 User-agent: Applebot-Extended
 Allow: /
+Allow: /blog
 Allow: /llms.txt
 
 # Search Engine Sitemaps & LLM Context
@@ -223,66 +232,35 @@ async def serve_llms_txt():
 
 @router.get("/sitemap.xml", response_class=Response)
 async def serve_sitemap_xml():
-    """Serve dynamic XML Sitemap complying with sitemaps.org standard."""
+    """Serve dynamic XML Sitemap complying with sitemaps.org standard with auto-updating blog entries."""
     today = datetime.date.today().isoformat()
-    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.dreemfolio.com/</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/ai-resume-builder</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/app</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/guide</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/contact</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/security</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/privacy</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/terms</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.dreemfolio.com/refund</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-</urlset>"""
-    return Response(content=sitemap, media_type="application/xml")
+    static_urls = [
+        ("https://www.dreemfolio.com/", today, "daily", "1.0"),
+        ("https://www.dreemfolio.com/ai-resume-builder", today, "daily", "0.95"),
+        ("https://www.dreemfolio.com/app", today, "daily", "0.95"),
+        ("https://www.dreemfolio.com/blog", today, "daily", "0.90"),
+        ("https://www.dreemfolio.com/guide", today, "weekly", "0.85"),
+        ("https://www.dreemfolio.com/contact", today, "monthly", "0.80"),
+        ("https://www.dreemfolio.com/security", today, "monthly", "0.75"),
+        ("https://www.dreemfolio.com/privacy", today, "monthly", "0.70"),
+        ("https://www.dreemfolio.com/terms", today, "monthly", "0.70"),
+        ("https://www.dreemfolio.com/refund", today, "monthly", "0.60"),
+    ]
+    xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    # 1. Primary Static Pages
+    for loc, lastmod, freq, priority in static_urls:
+        xml_content += f'  <url>\n    <loc>{loc}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
+    
+    # 2. Auto Loop All Dynamic Blog Posts from BLOG_DATABASE
+    for slug, data in BLOG_DATABASE.items():
+        lastmod = data.get("published_date") or today
+        priority = data.get("priority", "0.85")
+        xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
+    
+    xml_content += '</urlset>'
+    return Response(content=xml_content, media_type="application/xml")
 
 
 @router.get("/manifest.json")

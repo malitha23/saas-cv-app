@@ -1,0 +1,196 @@
+{% extends "blogs/layout.html" %}
+
+{% block title %}How to Tailor Your CV for Remote Tech Jobs in 2026 | DreemFolio AI{% endblock %}
+{% block meta_description %}Learn how to optimize your resume specifically for remote software engineer, developer, and tech roles. Async communication, remote tech stack, and portfolio strategies.{% endblock %}
+{% block meta_keywords %}remote job CV, tech resume template, software engineer ATS resume, remote developer resume, global tech jobs CV, remote work resume tailoring{% endblock %}
+{% block canonical %}https://www.dreemfolio.com/blog/tailor-cv-for-remote-jobs{% endblock %}
+
+{% block blog_content %}
+<div class="py-12 bg-slate-950">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- Breadcrumb Navigation -->
+    <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
+      <a href="/" class="hover:text-white transition">Home</a>
+      <span>/</span>
+      <a href="/blog" class="hover:text-white transition">Blog</a>
+      <span>/</span>
+      <span class="text-indigo-400 truncate">How to Tailor Your CV for Remote Tech Jobs</span>
+    </nav>
+
+    <!-- Article Header -->
+    <header class="mb-10 pb-8 border-b border-slate-800">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          Remote Tech Jobs
+        </span>
+        <span class="text-xs text-slate-400">• {{ post.reading_time or '6 min read' }}</span>
+        <span class="text-xs text-slate-500">• Global Hiring Strategy</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+        How to Tailor Your CV for Remote Tech Jobs in 2026
+      </h1>
+
+      <p class="text-slate-300 text-lg leading-relaxed mb-6">
+        When competing against 1,000+ software engineers across the globe for a single high-paying remote role, generic resumes fail. Here is how to position your experience for remote engineering teams.
+      </p>
+
+      <!-- Author and Social Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-900 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400">
+            DF
+          </div>
+          <div>
+            <div class="font-bold text-white text-sm">DreemFolio AI Career Team</div>
+            <div class="text-slate-400">Published on October 05, 2026 • Global Tech Recruitment</div>
+          </div>
+        </div>
+
+        <!-- Share Actions -->
+        <div class="flex items-center gap-2">
+          <button @click="copyPostUrl()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+            <span x-text="copySuccess ? 'Link Copied!' : 'Share Article'">Share Article</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Article Body -->
+    <article class="prose-custom">
+
+      <h2>1. The Global Remote Hiring Reality in 2026</h2>
+      <p>
+        The shift toward distributed engineering organizations (GitLab, Automattic, Stripe, Shopify) has unlocked unprecedented compensation for engineers worldwide. However, because geographical boundaries have disappeared, an open Remote Senior Full-Stack role frequently attracts over <strong>1,200 applicants within 48 hours</strong>.
+      </p>
+      <p>
+        Remote engineering managers do not hire based on years of tenure alone. They look for candidates who can operate autonomously with minimal synchronous handholding, communicate clearly across written documentation, and deliver production-grade code.
+      </p>
+
+      <!-- FIRST INLINE CONVERSION CTA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span>Remote Tailoring Engine</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">Optimize Your CV for Global Remote Tech Roles</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI aligns your technical stack and async communication bullets to beat competition in US, European, and global tech pools.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>Tailor for Remote Free</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. Demonstrate Asynchronous Communication Mastery</h2>
+      <p>
+        In an office, miscommunication is resolved by tapping a coworker on the shoulder. In a distributed team spanning 5 time zones, poor communication halts engineering velocity.
+      </p>
+      <p>
+        Showcase explicit evidence of your written and async communication competencies in your bullet points:
+      </p>
+      <ul>
+        <li><em>"Authored 12 comprehensive Technical Architecture RFCs and PRDs in Notion, aligning 8 cross-functional engineers across US and APAC time zones without synchronous meeting overhead."</em></li>
+        <li><em>"Instituted automated code review guidelines and pull request templates on GitHub, reducing average PR merge cycle time from 3.2 days to 14 hours."</em></li>
+        <li><em>"Conducted asynchronous technical knowledge transfers using Loom screencasts and Markdown documentation, onboarding 4 junior remote engineers seamlessly."</em></li>
+      </ul>
+
+      <h2>3. Highlight the Distributed Tooling Stack</h2>
+      <p>
+        Remote tech recruiters filter specifically for tools indicating you are familiar with modern distributed workflows. Ensure these tools appear naturally in your Skills or Experience sections:
+      </p>
+      <ul>
+        <li><strong>Collaboration:</strong> Slack, Linear, Notion, Jira, Miro, Loom</li>
+        <li><strong>Version Control & CI/CD:</strong> Git, GitHub Actions, GitLab CI, ArgoCD, Docker</li>
+        <li><strong>Observability & Monitoring:</strong> Datadog, Sentry, Prometheus, CloudWatch</li>
+        <li><strong>Cloud Infrastructure:</strong> AWS (ECS, Lambda, S3), GCP, Terraform, Kubernetes</li>
+      </ul>
+
+      <h2>4. State Timezone Overlap and Location Clearly</h2>
+      <p>
+        Remote job postings frequently specify: <em>"Must have 4 hours overlap with EST/PST"</em> or <em>"Remote (Europe/Americas time zones)"</em>.
+      </p>
+      <p>
+        At the top of your resume, under your name and contact details, state your geographical base along with your timezone flexibility:
+      </p>
+      <blockquote>
+        <strong>Location:</strong> Colombo, Sri Lanka (UTC+5:30) • <strong>Availability:</strong> 4+ hours daily overlap with US Eastern (EST) and European (CET) business hours.
+      </blockquote>
+      <p>
+        This immediately alleviates the recruiter's primary concern regarding team sync and sprint participation.
+      </p>
+
+      <h2>5. Include Live "Proof of Work" & Custom Portfolios</h2>
+      <p>
+        In 2026, a static PDF is only half the equation. Remote hiring managers want to click a link and see proof of what you have built.
+      </p>
+      <p>
+        Always link:
+      </p>
+      <ol>
+        <li><strong>Your GitHub / GitLab:</strong> Demonstrating consistent commit history and clean commit messages.</li>
+        <li><strong>Live Production Deployments:</strong> Working URLs to web applications, API endpoints, or open-source packages you maintain.</li>
+        <li><strong>A Live Developer Portfolio:</strong> Rather than a bloated PDF, include a fast, interactive developer portfolio. <em>DreemFolio AI allows you to generate and host a published developer portfolio in 1-click at <code>yourname.dreemfolio.com</code> or your own custom domain.</em></li>
+      </ol>
+
+      <h2>6. Engineering Metrics That Impress Remote Tech Leads</h2>
+      <p>
+        Replace generic claims with high-signal engineering metrics:
+      </p>
+      <ul>
+        <li><strong>System Latency:</strong> <em>"Reduced API P95 latency from 850ms to 120ms by implementing Redis caching and database connection pooling."</em></li>
+        <li><strong>Deployment Velocity:</strong> <em>"Automated staging deployment pipeline with GitHub Actions and Docker, reducing release cycle from weekly to daily."</em></li>
+        <li><strong>Scale & Reliability:</strong> <em>"Engineered asynchronous queue worker handling 50,000+ daily webhook events with 99.98% uptime."</em></li>
+      </ul>
+
+    </article>
+
+    <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
+    <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/50 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mx-auto mb-4">
+        <i data-lucide="sparkles" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        Build Your Remote Tech Resume & Live Portfolio Today
+      </h3>
+      <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        Generate your tailored ATS-friendly PDF and launch your personal live developer portfolio website in under 2 minutes with DreemFolio AI.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+          <span>Start Building Free</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- RELATED ARTICLES SECTION -->
+    {% if related_posts %}
+    <div class="mt-16 pt-12 border-t border-slate-800">
+      <h3 class="text-xl font-bold text-white mb-6">Related Career Guides</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for r in related_posts %}
+        <a href="/blog/{{ r.slug }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            {{ r.category }}
+          </span>
+          <h4 class="text-base font-bold text-white group-hover:text-indigo-300 transition mt-3 mb-2 leading-snug">
+            {{ r.title }}
+          </h4>
+          <p class="text-slate-400 text-xs line-clamp-2 leading-relaxed">
+            {{ r.description }}
+          </p>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
