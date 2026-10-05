@@ -1,39 +1,59 @@
 {% extends "blogs/layout.html" %}
 
-{% block title %}How to Write an ATS-Friendly Resume in 2026 (Pass Any Scanner) | DreemFolio AI{% endblock %}
-{% block meta_description %}Learn step-by-step how to write an ATS-friendly CV that passes Applicant Tracking Systems like Workday and Greenhouse. Formatting rules, keyword optimization, and free ATS checkers.{% endblock %}
-{% block meta_keywords %}ATS friendly CV, pass ATS scanner, free ATS checker, ATS resume format 2026, Applicant Tracking System resume, ATS score check{% endblock %}
-{% block canonical %}https://www.dreemfolio.com/blog/how-to-write-an-ats-friendly-cv{% endblock %}
+{% block title %}{{ post.title }} | DreemFolio AI{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
+{% block meta_keywords %}{{ post.target_keywords | join(', ') }}{% endblock %}
+{% block canonical %}{{ canonical_url }}{% endblock %}
 
 {% block blog_content %}
 <div class="py-12 bg-slate-950">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <!-- Breadcrumb Navigation -->
-    <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-white transition">Home</a>
-      <span>/</span>
-      <a href="/blog" class="hover:text-white transition">Blog</a>
-      <span>/</span>
-      <span class="text-indigo-400 truncate">How to Write an ATS-Friendly Resume</span>
-    </nav>
+    <!-- Breadcrumb Navigation & In-Page Language Selector -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <nav class="flex items-center space-x-2 text-xs text-slate-400" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <span>/</span>
+        <a href="{{ '/blog/' + current_lang if current_lang != 'en' else '/blog' }}" class="hover:text-white transition">
+          {% if current_lang == 'si' %}බ්ලොග් අඩවිය{% elif current_lang == 'ta' %}வலைப்பதிவு{% else %}Blog{% endif %}
+        </a>
+        <span>/</span>
+        <span class="text-indigo-400 truncate">{{ post.title }}</span>
+      </nav>
+
+      <!-- Language Switcher Bar -->
+      <div class="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <span class="text-[11px] text-slate-400 px-2 font-medium">
+          {% if current_lang == 'si' %}භාෂාව:{% elif current_lang == 'ta' %}மொழி:{% else %}Language:{% endif %}
+        </span>
+        <a href="{{ en_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'en' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          English
+        </a>
+        <a href="{{ si_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'si' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          සිංහල
+        </a>
+        <a href="{{ ta_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'ta' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          தமிழ்
+        </a>
+      </div>
+    </div>
 
     <!-- Article Header -->
     <header class="mb-10 pb-8 border-b border-slate-800">
       <div class="flex items-center gap-2 mb-4">
         <span class="px-3 py-1 text-xs font-bold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-          ATS Resume Guide
+          {{ post.category }}
         </span>
-        <span class="text-xs text-slate-400">• {{ post.reading_time or '7 min read' }}</span>
-        <span class="text-xs text-slate-500">• Updated for 2026 Hiring Standards</span>
+        <span class="text-xs text-slate-400">• {{ post.reading_time }}</span>
+        <span class="text-xs text-slate-500">• 2026 Hiring Standards</span>
       </div>
 
       <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
-        How to Write an ATS-Friendly Resume in 2026
+        {{ post.title }}
       </h1>
 
       <p class="text-slate-300 text-lg leading-relaxed mb-6">
-        Over 75% of qualified applicants never receive an interview because modern Applicant Tracking Systems (ATS) fail to parse their formatting or identify required keywords. Here is the definitive guide to passing any scanner.
+        {{ post.subtitle or post.description }}
       </p>
 
       <!-- Author and Social Actions -->
@@ -43,7 +63,7 @@
             DF
           </div>
           <div>
-            <div class="font-bold text-white text-sm">DreemFolio AI Career Team</div>
+            <div class="font-bold text-white text-sm">{{ post.author.name if post.author else 'DreemFolio AI Career Team' }}</div>
             <div class="text-slate-400">Published on October 05, 2026 • Verified by Recruiters</div>
           </div>
         </div>
@@ -58,7 +78,199 @@
       </div>
     </header>
 
-    <!-- Top Key Highlights Box -->
+    {% if current_lang == 'si' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SINHALA CONTENT (ස්වභාවික තාක්ෂණික සිංහල) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 mb-10">
+      <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm mb-3">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <span>කෙටි සාරාංශය (Quick Key Points)</span>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Single-Column Layout එකක් පමණක් තෝරන්න:</strong> Two-column tables සහ sidebars නිසා ATS parsers වල අකුරු එකිනෙක පැටලේ.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Job Description එකේ Keywords ගලපන්න:</strong> පොදු වචන වෙනුවට ඉල්ලුම් කරන විශේෂිත Tools සහ Frameworks නියමිත අකුරින්ම දක්වන්න.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Google XYZ Formula එක භාවිත කරන්න:</strong> සාමාන්‍ය වගකීම් වෙනුවට ඔබ කළ කාර්යය සහ එයින් ලැබුණු ප්‍රතිඵල සංඛ්‍යාත්මකව (Metrics) පෙන්වන්න.</span>
+        </li>
+      </ul>
+    </div>
+
+    <article class="prose-custom">
+      <h2>1. Applicant Tracking System (ATS) එකක් යනු කුමක්ද?</h2>
+      <p>
+        <strong>Applicant Tracking System (ATS)</strong> යනු Fortune 500 සමාගම් වලින් 99%ක් සහ අන්තර්ජාතික Startups බහුතරයක් (Workday, Greenhouse, Lever, Taleo) විසින් භාවිතා කරනු ලබන ස්වයංක්‍රීය මෘදුකාංග පද්ධතියකි. ඔබ රැකියාවකට CV එකක් Upload කළ විට, මුලින්ම එය කියවන්නේ මිනිස් Recruiter කෙනෙකු නොව මෙම ATS පද්ධතියයි.
+      </p>
+      <p>
+        ATS එක මඟින් ඔබගේ CV එකෙහි ඇති <strong>Contact Information, Work Experience, Education, Technical Skills</strong> වැනි තොරතුරු දත්ත පද්ධතියකට Extract කරගනී. ඔබගේ CV එකෙහි Layout එක සංකීර්ණ නම් හෝ Job Description එකෙහි ඇති Keywords නිවැරදිව නැතිනම්, ඔබ කොතරම් සුදුසුකම් සහිත අයෙකු වුවද CV එක ස්වයංක්‍රීයවම Reject වේ.
+      </p>
+
+      <!-- FIRST INLINE CONVERSION CTA (SINHALA) -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>නොමිලේ ATS Compliance Scanner එක</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">ඔබේ CV එකෙහි ATS Score එක දැන්ම පරීක්ෂා කරන්න</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI වෙත ඔබගේ CV එක Upload කර Workday සහ Greenhouse ඇල්ගොරිතම වලට අනුව ඔබගේ ලකුණු ප්‍රමාණය තත්පර 15න් බලාගන්න.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>ATS Checker නොමිලේ භාවිත කරන්න</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. ATS-Friendly CV එකක තිබිය යුතු අනිවාර්ය රීති 5</h2>
+      <h3>රීතිය 1: Single-Column Layout එකක් පමණක් භාවිතා කරන්න</h3>
+      <p>
+        Canva හෝ Figma වැනි මෘදුකාංග වලින් සාදන Two-column (තීරු දෙකේ) CV බැලූ බැල්මට ලස්සන වුවද, ATS Scanner එකක් ලේඛනයක් කියවන්නේ තිරස් අතට වමේ සිට දකුණටයි. තීරු දෙකක් ඇති විට වම් තීරුවේ ඇති Skills සහ දකුණු තීරුවේ ඇති Experience එකට මිශ්‍ර වී අර්ථ විරහිත වචන බවට පත්වේ. DreemFolio AI මඟින් 100% ක් පිරිසිදු Single-Column ReportLab Vector PDF සකස් කරන්නේ එබැවිනි.
+      </p>
+
+      <h3>රීතිය 2: Tables, Text Boxes සහ Floating Graphics ඉවත් කරන්න</h3>
+      <p>
+        බොහෝ දෙනෙකු Contact info හෝ Skills දැමීමට Word/HTML Tables හෝ Text Boxes භාවිතා කරයි. <strong>නූතන ATS බොහෝමයක් Text Box හෝ Table එකක් තුළ ඇති දත්ත නොසලකා හරිමින් Drop කර දමයි.</strong> එබැවින් සියලුම දත්ත සාමාන්‍ය Page Flow එක තුළ තබන්න.
+      </p>
+
+      <h3>රීතිය 3: සම්මත Section Titles පමණක් භාවිතා කරන්න</h3>
+      <p>
+        ፈጠරාත්මක වචන වෙනුවට ATS පද්ධති පහසුවෙන් හඳුනාගන්නා සම්මත ශීර්ෂ පාඨ භාවිතා කරන්න:
+      </p>
+      <ul>
+        <li><code>Work Experience</code> හෝ <code>Professional Experience</code> (යොදන්න එපා: <em>My Career Story</em>)</li>
+        <li><code>Technical Skills</code> හෝ <code>Core Competencies</code> (යොදන්න එපා: <em>Things I Love Doing</em>)</li>
+        <li><code>Education</code> (යොදන්න එපා: <em>Academic Odyssey</em>)</li>
+      </ul>
+
+      <h3>රීතිය 4: සම්මත Fonts සහ Margins</h3>
+      <p>
+        <strong>Inter, Roboto, Arial, Calibri, හෝ Helvetica</strong> වැනි විශ්වීය Unicode fonts භාවිතා කරන්න. Margin එක 0.5 inches සිට 0.75 inches අතර තබාගන්න.
+      </p>
+
+      <h3>රීතිය 5: PDF vs. DOCX — 2026 දී හොඳම කුමක්ද?</h3>
+      <p>
+        අතීතයේදී Word (.docx) වඩාත් සුදුසු යැයි පැවසුවද, <strong>2026 වන විට Selectable Text සහිත Vector PDF වඩාත්ම සුදුසු Format එකයි</strong>. PDF මඟින් Mac, Windows, Linux ඕනෑම පරිගණකයක Layout එක සහ Fonts වෙනස් නොවී සුරක්ෂිතව තබා දෙයි.
+      </p>
+
+      <h2>3. Job Description එකට අනුව Keywords ගලපන ආකාරය</h2>
+      <p>
+        Recruiters ලා ATS එක තුළ Search කරන්නේ Boolean Queries මඟිනි (උදා: <code>("Python" OR "Golang") AND "Docker" AND "AWS"</code>). ඔබගේ CV එකේ අදාළ Tools සහ Frameworks නියමිත අකුරින්ම සඳහන් නොවුනහොත් ඔබේ profile එක ඔවුන්ගේ සෙවුම් ලැයිස්තුවේ නොපෙනේ.
+      </p>
+      <ul>
+        <li><strong>Full Forms සහ Acronyms දෙකම දක්වන්න:</strong> උදා: <code>Amazon Web Services (AWS)</code>, <code>Search Engine Optimization (SEO)</code>.</li>
+        <li><strong>White Text Hacks කිසිදා භාවිත නොකරන්න:</strong> සුදු පැහැයෙන් Keywords සඟවා තැබීම නූතන AI ATS මඟින් පහසුවෙන්ම හඳුනාගෙන, වංචනික ක්‍රියාවක් ලෙස සලකා ඔබගේ අයදුම්පත ස්වයංක්‍රීයවම Blacklist කරනු ඇත.</li>
+      </ul>
+
+      <h2>4. Google XYZ Formula එක මඟින් Bullet Points ලිවීම</h2>
+      <p>
+        Recruiter කෙනෙකුගේ අවධානය දිනාගැනීමට සාමාන්‍ය රාජකාරී ලැයිස්තුගත නොකර Google සමාගම විසින් නිර්දේශ කරන <strong>XYZ Formula</strong> එක භාවිත කරන්න:
+      </p>
+      <blockquote>
+        "Accomplished <strong>[X]</strong>, as measured by <strong>[Y]</strong>, by doing <strong>[Z]</strong>."
+      </blockquote>
+      <p>
+        <strong>දුර්වල වාක්‍යයක්:</strong> Database speed වැඩි කර backend code එක ලිවීම.<br>
+        <strong>ප්‍රබල ATS වාක්‍යයක්:</strong> Optimized PostgreSQL query indexing across 14 microservices <strong>[Z]</strong>, reducing 99th-percentile API response latency by 42% <strong>[Y]</strong> and supporting 1.2M daily active users <strong>[X]</strong>.
+      </p>
+    </article>
+
+    {% elif current_lang == 'ta' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- TAMIL CONTENT (தமிழ் பதிப்பு) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 mb-10">
+      <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm mb-3">
+        <i data-lucide="sparkles" class="w-4 h-4"></i>
+        <span>முக்கிய குறிப்புகள் (Quick Key Points)</span>
+      </div>
+      <ul class="space-y-2 text-slate-300 text-sm">
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Single-Column அமைப்பை மட்டுமே பயன்படுத்துங்கள்:</strong> பல நெடுவரிசை அட்டவணைகள் மற்றும் பக்கப்பட்டிகள் ATS வாசிப்பை குழப்புகின்றன.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Job Description இல் உள்ள முக்கிய சொற்களை பொருத்துங்கள்:</strong> தொழில்நுட்ப கருவிகள் மற்றும் சான்றிதழ்களை சரியான எழுத்துக்களில் குறிப்பிடவும்.</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+          <span><strong>Google XYZ சூத்திரத்தைப் பயன்படுத்துங்கள்:</strong> வெறும் பொறுப்புகளை மட்டும் எழுதாமல், அடைந்த அளவிடக்கூடிய முடிவுகளை குறிப்பிடவும்.</span>
+        </li>
+      </ul>
+    </div>
+
+    <article class="prose-custom">
+      <h2>1. Applicant Tracking System (ATS) என்றால் என்ன?</h2>
+      <p>
+        <strong>Applicant Tracking System (ATS)</strong> என்பது உலகின் முன்னணி நிறுவனங்களால் (Workday, Greenhouse, Lever, Taleo) பயன்படுத்தப்படும் தானியங்கி மென்பொருளாகும். ஒரு வேலைக்கு உங்கள் CV ஐ சமர்ப்பிக்கும் போது, முதலில் அதை மனித ஆட்சேர்ப்பாளர் வாசிப்பதில்லை; இந்த ATS மென்பொருளே பரிசீலிக்கிறது.
+      </p>
+      <p>
+        உங்கள் CV இல் உள்ள Contact Details, Work Experience, Education மற்றும் Skills ஆகியவற்றை ATS தரவுத்தளத்தில் பிரித்தெடுக்கிறது. உங்கள் CV இன் கட்டமைப்பு குழப்பமாக இருந்தாலோ அல்லது தேவையான முக்கிய வார்த்தைகள் இல்லையென்றாலோ, உங்கள் விண்ணப்பம் உடனடியாக நிராகரிக்கப்படும்.
+      </p>
+
+      <!-- FIRST INLINE CONVERSION CTA (TAMIL) -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>இலவச ATS இணக்க ஸ்கேனர்</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">உங்கள் CV இன் ATS மதிப்பெண்ணை இப்போது சரிபார்க்கவும்</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI இல் உங்கள் CV ஐ பதிவேற்றி, 15 வினாடிகளுக்குள் Workday மற்றும் Greenhouse அமைப்புகளுக்கு ஏற்ப உங்கள் மதிப்பெண்ணைக் கண்டறியவும்.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>இலவசமாக முயற்சிக்கவும்</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. ATS-நட்பு CV எழுதுவதற்கான 5 கட்டாய விதிகள்</h2>
+      <h3>விதி 1: ஒற்றை நெடுவரிசை (Single-Column) அமைப்பை மட்டும் தேர்வு செய்யவும்</h3>
+      <p>
+        Canva அல்லது Figma போன்ற கருவிகளில் தயாரிக்கப்படும் இரண்டு நெடுவரிசை (Two-Column) வடிவங்கள் அழகாக இருந்தாலும், ATS மென்பொருட்கள் உரையை கிடைமட்டமாக இடமிருந்து வலமாகப் படிக்கின்றன. இரண்டு நெடுவரிசைகள் இருக்கும்போது வார்த்தைகள் ஒன்றோடொன்று கலந்து அர்த்தமற்றதாகிவிடும். DreemFolio AI 100% ஒற்றை நெடுவரிசை Vector PDF ஐ உருவாக்குவது இதனால்தான்.
+      </p>
+
+      <h3>விதி 2: Tables மற்றும் Text Boxes ஐத் தவிர்க்கவும்</h3>
+      <p>
+        தகவல்களை உள்ளிட Tables அல்லது Text Boxes ஐப் பயன்படுத்த வேண்டாம். நவீன ATS மென்பொருட்கள் Text Box உள்ளே இருக்கும் தகவல்களை பெரும்பாலும் கைவிட்டு விடுகின்றன.
+      </p>
+
+      <h3>விதி 3: நிலையான தலைப்புகளைப் பயன்படுத்தவும்</h3>
+      <p>
+        சாதாரணமான மற்றும் அங்கீகரிக்கப்பட்ட தலைப்புகளைப் பயன்படுத்துங்கள்:
+      </p>
+      <ul>
+        <li><code>Work Experience</code> அல்லது <code>Professional Experience</code></li>
+        <li><code>Technical Skills</code> அல்லது <code>Core Competencies</code></li>
+        <li><code>Education</code></li>
+      </ul>
+
+      <h3>விதி 4: சரியான எழுத்துருக்கள் மற்றும் விளிம்புகள்</h3>
+      <p>
+        <strong>Inter, Roboto, Arial, Calibri, அல்லது Helvetica</strong> போன்ற யுனிகோட் எழுத்துருக்களைப் பயன்படுத்துங்கள். பக்க விளிம்புகளை 0.5 முதல் 0.75 அங்குலங்கள் வரை பராமரிக்கவும்.
+      </p>
+
+      <h3>விதி 5: PDF vs. DOCX — 2026 இல் எது சிறந்தது?</h3>
+      <p>
+        2026 இல் தேர்ந்தெடுக்கக்கூடிய உரையுடன் (Selectable text) கூடிய <strong>Vector PDF</strong> மிகவும் பாதுகாப்பானது மற்றும் தரமானது. இது எந்த இயக்க முறைமையிலும் வடிவமைப்பை சிதைக்காமல் பாதுகாக்கிறது.
+      </p>
+    </article>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ENGLISH CONTENT (DEFAULT) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="p-6 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 mb-10">
       <div class="flex items-center gap-2 text-indigo-400 font-bold text-sm mb-3">
         <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -80,9 +292,7 @@
       </ul>
     </div>
 
-    <!-- Article Body -->
     <article class="prose-custom">
-
       <h2>1. What Is an Applicant Tracking System (ATS)?</h2>
       <p>
         An <strong>Applicant Tracking System (ATS)</strong> is enterprise software utilized by 99% of Fortune 500 corporations and over 75% of fast-growing startups—including tools like <em>Workday, Greenhouse, Lever, Taleo, and iCIMS</em>. When you upload your CV through a company careers portal or job board, the ATS acts as an automated first-line gatekeeper.
@@ -136,30 +346,26 @@
 
       <h3>Rule #4: Standard Typography and Safe Margins</h3>
       <p>
-        Use modern, clean fonts with universal unicode glyphs such as <strong>Inter, Roboto, Arial, Calibri, or Helvetica</strong>. Avoid obscure custom web fonts or icon-based bullet symbols that decode as missing character squares (<code>&#9633;</code>). Maintain margins between 0.5 inches and 0.75 inches to ensure standard page boundaries.
+        Use modern, clean fonts with universal unicode glyphs such as <strong>Inter, Roboto, Arial, Calibri, or Helvetica</strong>. Avoid obscure custom web fonts or icon-based bullet symbols that decode as missing character squares. Maintain margins between 0.5 inches and 0.75 inches to ensure standard page boundaries.
       </p>
 
       <h3>Rule #5: File Format: PDF vs. DOCX in 2026</h3>
       <p>
-        Years ago, career coaches recommended Word <code>.docx</code> because older ATS systems struggled with PDFs. <strong>In 2026, standard vector PDF is the gold standard</strong>, provided it is generated with selectable text rather than flattened raster images. PDFs preserve exact layout and typography across every recruiter's operating system (Mac, Windows, Linux).
+        In 2026, standard vector PDF is the gold standard, provided it is generated with selectable text rather than flattened raster images. PDFs preserve exact layout and typography across every recruiter's operating system (Mac, Windows, Linux).
       </p>
 
       <h2>3. How to Optimize Keywords Without "Keyword Stuffing"</h2>
       <p>
         Recruiters search ATS databases using Boolean queries such as: <code>("Python" OR "Golang") AND ("Kubernetes" OR "Docker") AND "AWS"</code>. If your resume uses different acronyms or omits the exact tool names, your profile will never appear in their search filter.
       </p>
-      <p>
-        Follow this 3-step keyword strategy:
-      </p>
-      <ol>
-        <li><strong>Identify Exact Keywords from the Job Description:</strong> Copy the target JD and highlight every tool, library, framework, and certification mentioned more than twice.</li>
-        <li><strong>Include Both Full Terms and Common Acronyms:</strong> Write out <code>Search Engine Optimization (SEO)</code>, <code>Amazon Web Services (AWS)</code>, or <code>Continuous Integration / Continuous Deployment (CI/CD)</code> so that either search term triggers a match.</li>
-        <li><strong>Never Resort to "White Text" Hacks:</strong> In the early 2010s, candidates attempted to hide keywords in 1pt white font. In 2026, modern ATS algorithms automatically convert all text to raw plain-text ASCII during extraction. White text is instantly exposed, triggering an automated red flag and disqualification for fraud.</li>
-      </ol>
+      <ul>
+        <li><strong>Include Both Full Terms and Common Acronyms:</strong> Write out <code>Search Engine Optimization (SEO)</code>, <code>Amazon Web Services (AWS)</code>, or <code>Continuous Integration / Continuous Deployment (CI/CD)</code>.</li>
+        <li><strong>Never Resort to "White Text" Hacks:</strong> In 2026, modern ATS algorithms automatically convert all text to raw plain-text ASCII during extraction. White text is instantly exposed, triggering an automated red flag and disqualification for fraud.</li>
+      </ul>
 
       <h2>4. The Google XYZ Formula for High-Impact Bullet Points</h2>
       <p>
-        Passing the ATS is step one; persuading the human recruiter who opens your resume is step two. Avoid listing mundane daily responsibilities like <em>"Responsible for writing unit tests and fixing bugs."</em> Instead, adopt the battle-tested Google XYZ formula:
+        Passing the ATS is step one; persuading the human recruiter who opens your resume is step two. Avoid listing mundane daily responsibilities. Instead, adopt the battle-tested Google XYZ formula:
       </p>
       <blockquote>
         "Accomplished <strong>[X]</strong>, as measured by <strong>[Y]</strong>, by doing <strong>[Z]</strong>."
@@ -168,40 +374,8 @@
         <strong>Weak Bullet:</strong> Managed database migrations and improved backend speed.<br>
         <strong>High-Converting ATS Bullet:</strong> Optimized PostgreSQL query indexing across 14 high-throughput microservices <strong>[Z]</strong>, reducing 99th-percentile API response latency by 42% <strong>[Y]</strong> and supporting 1.2M daily active users <strong>[X]</strong>.
       </p>
-
-      <h2>5. The 10-Point Pre-Submission ATS Checklist</h2>
-      <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 not-prose space-y-3">
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Layout is single-column with zero nested tables or text boxes.</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Standard section headings (Experience, Education, Skills) are clearly identifiable.</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Contact details (email, phone, LinkedIn, city) are placed in the main body, not headers/footers.</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Dates of employment use consistent month/year formatting (e.g. <code>03/2023 – Present</code>).</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Every bullet point begins with a powerful past-tense action verb (Built, Spearheaded, Architected).</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Target job description hard skills are integrated into context bullets and skills sections.</span>
-        </div>
-        <div class="flex items-center gap-3 text-slate-200 text-sm">
-          <input type="checkbox" checked disabled class="w-4 h-4 accent-indigo-500 rounded">
-          <span>Text is fully selectable in Adobe Acrobat or browser PDF viewer (not an image scan).</span>
-        </div>
-      </div>
-
     </article>
+    {% endif %}
 
     <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
     <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/50 shadow-2xl text-center">
@@ -209,14 +383,28 @@
         <i data-lucide="zap" class="w-6 h-6"></i>
       </div>
       <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        {% if current_lang == 'si' %}
+        DreemFolio AI සමඟ ඔබගේ CV එක තත්පර 15න් හදාගන්න
+        {% elif current_lang == 'ta' %}
+        DreemFolio AI உடன் உங்கள் CV ஐ சில நொடிகளில் உருவாக்குங்கள்
+        {% else %}
         Tailor Your Resume with DreemFolio AI in Seconds
+        {% endif %}
       </h3>
       <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        {% if current_lang == 'si' %}
+        ඔබගේ Job Description එක DreemFolio AI වෙත ලබා දෙන්න. අපගේ Gemini-powered engine එක මඟින් 100% Single-column ATS PDF එකක් ස්වයංක්‍රීයව සකසා දෙයි.
+        {% elif current_lang == 'ta' %}
+        உங்கள் Job Description ஐ DreemFolio AI இல் பதிவிடுங்கள். எங்கள் AI அமைப்பு தானாகவே 100% ATS இணக்கமான PDF ஐ உருவாக்குகிறது.
+        {% else %}
         Paste your job description into DreemFolio AI. Our Gemini-powered engine automatically tailors your bullet points, aligns keywords, and compiles a guaranteed 100% single-column ATS PDF.
+        {% endif %}
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-          <span>Generate ATS Resume Now (Free)</span>
+          <span>
+            {% if current_lang == 'si' %}දැන්ම ATS CV එකක් සාදන්න (Free){% elif current_lang == 'ta' %}இப்போது இலவசமாக உருவாக்கவும்{% else %}Generate ATS Resume Now (Free){% endif %}
+          </span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
@@ -225,10 +413,13 @@
     <!-- RELATED ARTICLES SECTION -->
     {% if related_posts %}
     <div class="mt-16 pt-12 border-t border-slate-800">
-      <h3 class="text-xl font-bold text-white mb-6">Related Career Guides</h3>
+      <h3 class="text-xl font-bold text-white mb-6">
+        {% if current_lang == 'si' %}අදාළ තවත් වෘත්තීය මඟපෙන්වීම්{% elif current_lang == 'ta' %}தொடர்புடைய பிற வழிகாட்டிகள்{% else %}Related Career Guides{% endif %}
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {% for r in related_posts %}
-        <a href="/blog/{{ r.slug }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+        {% set r_url = '/blog/' + current_lang + '/' + r.slug if current_lang != 'en' else '/blog/' + r.slug %}
+        <a href="{{ r_url }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
           <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             {{ r.category }}
           </span>

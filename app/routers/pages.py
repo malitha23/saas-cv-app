@@ -253,11 +253,16 @@ async def serve_sitemap_xml():
     for loc, lastmod, freq, priority in static_urls:
         xml_content += f'  <url>\n    <loc>{loc}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>{freq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
     
-    # 2. Auto Loop All Dynamic Blog Posts from BLOG_DATABASE
+    # 2. Auto Loop All Dynamic Blog Posts (en, si, ta) from BLOG_DATABASE
     for slug, data in BLOG_DATABASE.items():
         lastmod = data.get("published_date") or today
         priority = data.get("priority", "0.85")
+        # English (Default)
         xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
+        # Sinhala Localization
+        xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/si/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
+        # Tamil Localization
+        xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/ta/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
     
     xml_content += '</urlset>'
     return Response(content=xml_content, media_type="application/xml")

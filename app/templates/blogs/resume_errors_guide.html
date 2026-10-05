@@ -1,39 +1,59 @@
 {% extends "blogs/layout.html" %}
 
-{% block title %}Top 10 Resume Errors That Cause Rejection (And How to Fix Them) | DreemFolio AI{% endblock %}
-{% block meta_description %}Discover the top 10 resume formatting and content mistakes that trigger instant ATS rejection in 2026. Learn how to fix formatting traps, missing metrics, and keyword errors.{% endblock %}
-{% block meta_keywords %}resume formatting mistakes, CV rejection reasons, ATS parsing errors, why resumes get rejected, resume red flags, fix resume errors{% endblock %}
-{% block canonical %}https://www.dreemfolio.com/blog/top-10-resume-errors-that-cause-rejection{% endblock %}
+{% block title %}{{ post.title }} | DreemFolio AI{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
+{% block meta_keywords %}{{ post.target_keywords | join(', ') }}{% endblock %}
+{% block canonical %}{{ canonical_url }}{% endblock %}
 
 {% block blog_content %}
 <div class="py-12 bg-slate-950">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <!-- Breadcrumb Navigation -->
-    <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-white transition">Home</a>
-      <span>/</span>
-      <a href="/blog" class="hover:text-white transition">Blog</a>
-      <span>/</span>
-      <span class="text-indigo-400 truncate">Top 10 Resume Errors</span>
-    </nav>
+    <!-- Breadcrumb Navigation & In-Page Language Selector -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <nav class="flex items-center space-x-2 text-xs text-slate-400" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <span>/</span>
+        <a href="{{ '/blog/' + current_lang if current_lang != 'en' else '/blog' }}" class="hover:text-white transition">
+          {% if current_lang == 'si' %}බ්ලොග් අඩවිය{% elif current_lang == 'ta' %}வலைப்பதிவு{% else %}Blog{% endif %}
+        </a>
+        <span>/</span>
+        <span class="text-indigo-400 truncate">{{ post.title }}</span>
+      </nav>
+
+      <!-- Language Switcher Bar -->
+      <div class="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <span class="text-[11px] text-slate-400 px-2 font-medium">
+          {% if current_lang == 'si' %}භාෂාව:{% elif current_lang == 'ta' %}மொழி:{% else %}Language:{% endif %}
+        </span>
+        <a href="{{ en_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'en' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          English
+        </a>
+        <a href="{{ si_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'si' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          සිංහල
+        </a>
+        <a href="{{ ta_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'ta' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          தமிழ்
+        </a>
+      </div>
+    </div>
 
     <!-- Article Header -->
     <header class="mb-10 pb-8 border-b border-slate-800">
       <div class="flex items-center gap-2 mb-4">
         <span class="px-3 py-1 text-xs font-bold rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
-          Resume Optimization
+          {{ post.category }}
         </span>
-        <span class="text-xs text-slate-400">• {{ post.reading_time or '8 min read' }}</span>
-        <span class="text-xs text-slate-500">• Comprehensive Audit</span>
+        <span class="text-xs text-slate-400">• {{ post.reading_time }}</span>
+        <span class="text-xs text-slate-500">• 2026 Audit</span>
       </div>
 
       <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
-        Top 10 Resume Errors That Cause Instant Rejection (And How to Fix Them)
+        {{ post.title }}
       </h1>
 
       <p class="text-slate-300 text-lg leading-relaxed mb-6">
-        Recruiters spend an average of 6 seconds on an initial resume screen, while automated ATS algorithms take less than 1 second to filter out non-compliant formats. Avoid these 10 fatal mistakes.
+        {{ post.subtitle or post.description }}
       </p>
 
       <!-- Author and Social Actions -->
@@ -43,12 +63,11 @@
             DF
           </div>
           <div>
-            <div class="font-bold text-white text-sm">DreemFolio AI Career Team</div>
+            <div class="font-bold text-white text-sm">{{ post.author.name if post.author else 'DreemFolio AI Career Team' }}</div>
             <div class="text-slate-400">Published on October 05, 2026 • Recruitment Operations</div>
           </div>
         </div>
 
-        <!-- Share Actions -->
         <div class="flex items-center gap-2">
           <button @click="copyPostUrl()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1.5">
             <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
@@ -58,9 +77,162 @@
       </div>
     </header>
 
-    <!-- Article Body -->
+    {% if current_lang == 'si' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SINHALA CONTENT -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <article class="prose-custom">
+      <p>
+        අධික තරඟකාරී රැකියා වෙළඳපොළ තුළ එක් Software Engineer හෝ Tech ඇබෑර්තුවක් සඳහා පැය 24ක් තුළ අයදුම්පත් 500කට වඩා ලැබේ. Recruiter කෙනෙකු එක් CV එකක් බැලීමට ගතකරන්නේ තත්පර 6ක් පමණක් වන අතර, ATS Scanner එකක් එය Reject කිරීමට ගතකරන්නේ තත්පර 1කටත් අඩු කාලයකි.
+      </p>
+      <p>
+        බොහෝ දෙනෙකු අතින් සිදුවන ප්‍රධානතම වැරදි 10ක් සහ ඒවා DreemFolio AI මඟින් නිවැරදි කරගන්නා ආකාරය පහත දැක්වේ:
+      </p>
 
+      <h2>වැරැද්ද 1: Two-Column සහ Sidebar Layouts</h2>
+      <p>
+        <strong>ගැටලුව:</strong> වම්පස තීරුවක් (sidebar) සහිත ලස්සන Templates වල ඇති දත්ත ATS Scanner එකක් කියවන්නේ වමේ සිට දකුණටයි. මෙවිට වම්පස ඇති Skills සහ දකුණුපස ඇති Experience එකට මිශ්‍ර වී අර්ථයක් නොමැති වාක්‍ය බවට පත්වේ.
+      </p>
+      <p>
+        <strong>විසඳුම:</strong> සැමවිටම තනි තීරුවේ (Single-Column) පිරිසිදු Layout එකක් භාවිතා කරන්න.
+      </p>
+
+      <!-- CTA SINHALA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+            <span>දෝෂ ස්කෑනරය</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">ඔබේ CV එකෙහි Formatting වැරදි ඇත්දැයි බලන්න</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI වෙත ඔබගේ CV එක Upload කර ATS මඟින් ඔබගේ දත්ත නිවැරදිව කියවනවාදැයි ක්ෂණිකව පරීක්ෂා කරන්න.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>නොමිලේ Error Check කරන්න</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>වැරැද්ද 2: Graphical Skill Ratings සහ Progress Bars (තාරකා සහ තීරු)</h2>
+      <p>
+        <strong>ගැටලුව:</strong> Skills ඉදිරියෙන් තාරකා 4ක් (★★★★☆) හෝ 80% ක් පිරවූ Progress Bars ඇඳීම. ATS මෘදුකාංගයකට මේ රූප හෝ ග්‍රැෆික්ස් කියවිය නොහැක. තවද Senior Recruiters ලා මෙය ආධුනික ක්‍රියාවක් ලෙස සලකයි.
+      </p>
+      <p>
+        <strong>විසඳුම:</strong> Skills කාණ්ඩ අනුව (Languages, Frameworks, Cloud & Tools) ලැයිස්තුගත කර, ඔබගේ ප්‍රවීණත්වය Bullet Points වල ප්‍රතිඵල මඟින් පෙන්වන්න.
+      </p>
+
+      <h2>වැරැද්ද 3: සම්මත නොවන Section Titles</h2>
+      <p>
+        <em>"My Career Voyage"</em> හෝ <em>"Skills Arsenal"</em> වැනි විසිතුරු වචන වෙනුවට <code>Work Experience</code>, <code>Education</code>, <code>Technical Skills</code> වැනි සම්මත වචන පමණක් යොදන්න.
+      </p>
+
+      <h2>වැරැද්ද 4: Scanned Image PDFs (Canva Flattened Exports)</h2>
+      <p>
+        ඔබගේ PDF එකෙහි අකුරු Mouse එකෙන් Select කර Copy කළ නොහැකි නම්, ATS එකටද එය කියවිය නොහැක. සැමවිටම Selectable Text සහිත Vector PDF භාවිතා කරන්න.
+      </p>
+
+      <h2>වැරැද්ද 5: Job Description එකේ ඇති Keywords අඩංගු නොවීම</h2>
+      <p>
+        Job Description එකෙහි <code>PostgreSQL</code> ඉල්ලා ඇති විට ඔබ <code>Relational DBs</code> ලෙස පමණක් දැමුවහොත් ATS ලකුණු 0ක් ලැබේ. නියමිත වචනම යොදන්න.
+      </p>
+
+      <h2>වැරැද්ද 6: ප්‍රතිඵල සහ සංඛ්‍යා (Metrics) නොමැති Bullet Points</h2>
+      <p>
+        සාමාන්‍ය වැඩ විස්තර වෙනුවට ප්‍රතිශත, පරිශීලක සංඛ්‍යා සහ ආදායම් වර්ධනය සංඛ්‍යාත්මකව දක්වන්න (උදා: <em>"API latency 42% කින් අඩු කිරීම"</em>).
+      </p>
+
+      <h2>වැරැද්ද 7: Contact Info ලේඛනයේ Header/Footer තුළ සිරවීම</h2>
+      <p>
+        Word හි Header/Footer තුළ දමන ඊමේල් සහ දුරකථන අංක ATS එක මඟින් බොහෝ විට කපා හරියි. එබැවින් ප්‍රධාන පිටුවේ ඉහළින්ම Contact Info තබන්න.
+      </p>
+
+      <h2>වැරැද්ද 8: Technical Terms වල Spelling සහ Case වැරදීම</h2>
+      <p>
+        <code>Javascript</code> වෙනුවට <code>JavaScript</code>, <code>NodeJS</code> වෙනුවට <code>Node.js</code>, සහ <code>Kubernetes</code> නිවැරදි අක්ෂර වින්‍යාසයෙන් දක්වන්න.
+      </p>
+
+      <h2>වැරැද්ද 9: සුදු අකුරින් Keywords සැඟවීම (White Text Hacks)</h2>
+      <p>
+        නූතන AI ATS පද්ධති ලේඛනය Plain text බවට පත්කරන බැවින් සුදු පාටින් සඟවා ඇති වචන ක්ෂණිකව හසුවී ඔබ Blacklist වේ.
+      </p>
+
+      <h2>වැරැද්ද 10: එකම Generic CV එක සියලුම රැකියාවලට යැවීම</h2>
+      <p>
+        එක් එක් සමාගමට ගැලපෙන පරිදි CV එක Tailor නොකිරීම නිසා මාස ගණන් පිළිතුරු නොලැබී යා හැක. DreemFolio AI මඟින් තත්පර 15න් Job Description එකට ගැලපෙන පරිදි CV එක Tailor කරගත හැක.
+      </p>
+    </article>
+
+    {% elif current_lang == 'ta' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- TAMIL CONTENT -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
+      <p>
+        போட்டி நிறைந்த வேலை சந்தையில் ஒரு மென்பொருள் பொறியாளர் பதவிக்கு 500க்கும் மேற்பட்ட விண்ணப்பங்கள் குவிகின்றன. ஆட்சேர்ப்பாளர்கள் உங்கள் CV ஐப் பார்க்க 6 வினாடிகள் மட்டுமே எடுத்துக்கொள்கிறார்கள்.
+      </p>
+      <p>
+        பெரும்பாலான விண்ணப்பதாரர்கள் செய்யும் முதல் 10 தவறுகள் மற்றும் DreemFolio AI மூலம் அவற்றை எவ்வாறு சரிசெய்வது என்பது இங்கே:
+      </p>
+
+      <h2>தவறு 1: பல நெடுவரிசை மற்றும் பக்கப்பட்டி வடிவமைப்பு</h2>
+      <p>
+        <strong>பிரச்சனை:</strong> பக்கப்பட்டிகள் கொண்ட வடிவங்களை ATS அமைப்புகள் இடமிருந்து வலமாகப் படிக்கின்றன. இதனால் திறன்கள் மற்றும் பணி அனுபவ வார்த்தைகள் கலந்து விடுகின்றன.
+      </p>
+      <p>
+        <strong>தீர்வு:</strong> எப்போதும் ஒற்றை நெடுவரிசை (Single-Column) அமைப்பையே பயன்படுத்துங்கள்.
+      </p>
+
+      <!-- CTA TAMIL -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+            <span>பிழை கண்டறிதல்</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">உங்கள் CV இல் வடிவமைப்பு பிழைகள் உள்ளதா?</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI இல் உங்கள் CV ஐ பதிவேற்றி, ATS அமைப்புகள் அதை எவ்வாறு படிக்கின்றன என்பதை இலவசமாக சோதிக்கவும்.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>இலவச சோதனை</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>தவறு 2: வரைபட மதிப்பீடுகள் மற்றும் சதவீத பார்கள்</h2>
+      <p>
+        திறன்களுக்கு 4/5 நட்சத்திரங்கள் அல்லது 80% பார் வரைவது ATS அமைப்புகளுக்கு புரிவதில்லை. திறன்களை வகைகளாக பட்டியலிட்டு அனுபவத்தில் காட்டுங்கள்.
+      </p>
+
+      <h2>தவறு 3: வழக்கத்திற்கு மாறான தலைப்புகள்</h2>
+      <p>
+        கற்பனை தலைப்புகளுக்குப் பதிலாக <code>Work Experience</code>, <code>Education</code>, <code>Technical Skills</code> போன்ற நிலையான தலைப்புகளைப் பயன்படுத்துங்கள்.
+      </p>
+
+      <h2>தவறு 4: படமாக மாற்றப்பட்ட PDF கோப்புகள்</h2>
+      <p>
+        உங்கள் PDF இல் உள்ள உரையை தேர்ந்தெடுக்க (Select text) முடியாவிட்டால், ATS அதை படிக்க முடியாது.
+      </p>
+
+      <h2>தவறு 5: சரியான முக்கிய வார்த்தைகள் விடுபடுதல்</h2>
+      <p>
+        வேலை விவரக்குறிப்பில் உள்ள சரியான தொழில்நுட்ப பெயர்களை உங்கள் CV இல் பயன்படுத்துங்கள்.
+      </p>
+
+      <h2>தவறு 6: அளவிடக்கூடிய எண்கள் இல்லாத வரிகள்</h2>
+      <p>
+        வெறும் பணிகளை எழுதாமல், சதவிகிதங்கள் மற்றும் அடைந்த முடிவுகளை எண்களில் குறிப்பிடுங்கள்.
+      </p>
+    </article>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ENGLISH CONTENT (DEFAULT) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
       <p>
         In an ultra-competitive hiring climate where a single software engineer or product manager opening can attract over 500 applicants within 24 hours, even minor technical or formatting flaws can completely disqualify your candidacy.
       </p>
@@ -73,7 +245,7 @@
         <strong>The Problem:</strong> Templates featuring colorful left-side columns, skill progress bars, and dual-column layouts look stylish on a designer's portfolio screen. However, when an ATS (Workday, Taleo, Greenhouse) reads the PDF, it extracts text strictly from left-to-right across the entire page geometry.
       </p>
       <p>
-        <strong>The Result:</strong> The text from your left sidebar (e.g. <em>"Skills: Python, React"</em>) gets intermingled into your work history lines (e.g. <em>"Led team of 5 engineers"</em>), producing nonsense text strings like <em>"Led team Python of 5 React engineers"</em>. The parser marks your experience invalid.
+        <strong>The Result:</strong> The text from your left sidebar (e.g. <em>"Skills: Python, React"</em>) gets intermingled into your work history lines, producing nonsense text strings. The parser marks your experience invalid.
       </p>
       <p>
         <strong>The Fix:</strong> Use a clean, strictly vertical <strong>single-column hierarchy</strong>. DreemFolio AI enforces single-column ReportLab vector geometry to prevent column collision completely.
@@ -102,74 +274,50 @@
         <strong>The Problem:</strong> Visual ratings (e.g. 4 out of 5 stars or an 80% filled progress bar next to "TypeScript") are completely invisible to text parsers. An ATS cannot parse canvas graphics, images, or CSS progress meters.
       </p>
       <p>
-        <strong>The Recruiter View:</strong> Furthermore, senior hiring managers view arbitrary percentage bars as amateur. What does <em>"80% Java"</em> actually mean? Does it mean you know 80% of the entire language specification?
-      </p>
-      <p>
-        <strong>The Fix:</strong> List your skills in clear, comma-separated categories: <strong>Languages</strong>, <strong>Frameworks & Libraries</strong>, <strong>Cloud & DevOps</strong>, and <strong>Databases</strong>. Let your bullet point achievements demonstrate your depth of mastery.
+        <strong>The Fix:</strong> List your skills in clear, comma-separated categories: Languages, Frameworks, and Cloud & DevOps.
       </p>
 
       <h2>Error #3: Non-Standard Section Titles</h2>
       <p>
-        <strong>The Problem:</strong> Naming your experience section <em>"My Professional Odyssey"</em> or your skills section <em>"Arsenal of Competencies"</em> confuses the parsing dictionary.
-      </p>
-      <p>
-        <strong>The Fix:</strong> Stick to standard semantic headers: <code>Professional Experience</code>, <code>Education</code>, <code>Technical Skills</code>, <code>Certifications</code>, and <code>Projects</code>.
+        Stick to standard semantic headers: <code>Professional Experience</code>, <code>Education</code>, <code>Technical Skills</code>, <code>Certifications</code>, and <code>Projects</code>.
       </p>
 
       <h2>Error #4: Exporting as Scanned Raster Images</h2>
       <p>
-        <strong>The Problem:</strong> Generating a resume in graphic design suites and exporting as a flattened image PDF (where text cannot be selected or copied with your mouse cursor).
-      </p>
-      <p>
-        <strong>The Fix:</strong> Highlight text on your PDF. If you cannot select and copy individual letters, the ATS cannot read it either. Always use vector PDF generators like DreemFolio AI with native character encodings.
+        Generating a resume in graphic design suites and exporting as a flattened image PDF prevents text selection. Always use vector PDF generators with native character encodings.
       </p>
 
       <h2>Error #5: Missing Exact Job Description Keywords</h2>
       <p>
-        <strong>The Problem:</strong> If the job posting asks for <code>PostgreSQL</code> and your resume only says <code>Relational DBs</code>, the keyword matching algorithm will score you at 0% for that requirement.
-      </p>
-      <p>
-        <strong>The Fix:</strong> Read the target job posting thoroughly. Align your terminology with the specific frameworks and tools listed in the requirements.
+        If the job posting asks for <code>PostgreSQL</code> and your resume only says <code>Relational DBs</code>, the keyword matching algorithm will score you at 0% for that requirement.
       </p>
 
       <h2>Error #6: Passive "Job Description" Bullets without Numbers</h2>
       <p>
-        <strong>The Problem:</strong> Bullets that read like HR job descriptions: <em>"Assisted with front-end tasks and participated in daily standups."</em>
-      </p>
-      <p>
-        <strong>The Fix:</strong> Quantify every achievement. Who did it impact? What percentage did it improve? How many users did it serve?
-        <blockquote>
-          "Spearheaded redesign of checkout funnel with Next.js and Tailwind, slashing page load times by 65% and boosting conversion rate by 18% ($240K annual ARR impact)."
-        </blockquote>
+        Quantify every achievement using metrics (percentage improved, users served, latency reduced).
       </p>
 
       <h2>Error #7: Critical Contact Info Buried in Document Headers/Footers</h2>
       <p>
-        <strong>The Problem:</strong> Word and Google Docs headers/footers are often stripped by ATS software to prevent repeating page numbers. If your email address and phone number are located within the Word document header, the ATS extracts an anonymous profile with no contact info.
-      </p>
-      <p>
-        <strong>The Fix:</strong> Place your full name, email, phone number, LinkedIn URL, and portfolio link directly in the main body flow at the top of page 1.
+        Word and Google Docs headers/footers are often stripped by ATS software. Place contact information directly in the main body flow.
       </p>
 
       <h2>Error #8: Spelling and Case Typos in Technical Terms</h2>
       <p>
-        Writing <code>NodeJS</code> vs <code>Node.js</code>, <code>Javascript</code> vs <code>JavaScript</code>, or misspelling <code>Kubernetes</code> can prevent Boolean match filters from triggering. Keep technical spelling precise.
+        Ensure exact capitalization for technical terms like <code>JavaScript</code>, <code>Node.js</code>, and <code>Kubernetes</code>.
       </p>
 
       <h2>Error #9: Keyword Stuffing and Hidden White Text Hacks</h2>
       <p>
-        Old "SEO hacks" such as pasting the entire job description in tiny white 1pt font at the bottom of the document are detected instantly by 2026 AI-driven parsers. This triggers an automated blacklist warning for deceptive submission.
+        Modern ATS convert all text to plain ASCII. White text hacks are caught instantly, triggering blacklisting.
       </p>
 
       <h2>Error #10: One-Size-Fits-All Applications</h2>
       <p>
-        Sending the exact same resume to 50 distinct job postings is the number one reason candidates face months of radio silence. Each company emphasizes different sub-skills, architectures, and business priorities.
+        Sending the exact same resume to 50 distinct job postings leads to rejection. Tailor your resume to each job description with DreemFolio AI.
       </p>
-      <p>
-        With DreemFolio AI, you can paste the target company's job description, and in 15 seconds receive a tailored, ATS-compliant PDF with tailored keywords that match the job description perfectly.
-      </p>
-
     </article>
+    {% endif %}
 
     <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
     <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/50 shadow-2xl text-center">
@@ -177,14 +325,28 @@
         <i data-lucide="check-circle" class="w-6 h-6 text-emerald-400"></i>
       </div>
       <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        {% if current_lang == 'si' %}
+        DreemFolio AI සමඟ මෙම වැරදි 10ම එකවර විසඳාගන්න
+        {% elif current_lang == 'ta' %}
+        DreemFolio AI மூலம் இந்த 10 தவறுகளையும் உடனடியாக சரிசெய்யுங்கள்
+        {% else %}
         Fix All 10 Errors Automatically with DreemFolio AI
+        {% endif %}
       </h3>
       <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        {% if current_lang == 'si' %}
+        ඔබේ margins හෝ fonts ගැන සැක සිතන්න එපා. DreemFolio AI මඟින් 100% තනි තීරුවේ ATS CV එකක් ක්ෂණිකව සාදා දෙයි.
+        {% elif current_lang == 'ta' %}
+        உங்கள் CV வடிவமைப்பு பற்றி கவலைப்பட வேண்டாம். DreemFolio AI சில நொடிகளில் சரியான ATS CV ஐ உருவாக்குகிறது.
+        {% else %}
         No need to guess whether your margins or fonts are compliant. DreemFolio AI builds single-column, verified ATS resumes in seconds.
+        {% endif %}
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-          <span>Create Flawless Resume Free</span>
+          <span>
+            {% if current_lang == 'si' %}නොමිලේ CV එකක් සාදන්න{% elif current_lang == 'ta' %}இலவசமாக உருவாக்கவும்{% else %}Create Flawless Resume Free{% endif %}
+          </span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
@@ -193,10 +355,13 @@
     <!-- RELATED ARTICLES SECTION -->
     {% if related_posts %}
     <div class="mt-16 pt-12 border-t border-slate-800">
-      <h3 class="text-xl font-bold text-white mb-6">Related Career Guides</h3>
+      <h3 class="text-xl font-bold text-white mb-6">
+        {% if current_lang == 'si' %}අදාළ තවත් වෘත්තීය මඟපෙන්වීම්{% elif current_lang == 'ta' %}தொடர்புடைய பிற வழிகாட்டிகள்{% else %}Related Career Guides{% endif %}
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {% for r in related_posts %}
-        <a href="/blog/{{ r.slug }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+        {% set r_url = '/blog/' + current_lang + '/' + r.slug if current_lang != 'en' else '/blog/' + r.slug %}
+        <a href="{{ r_url }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
           <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             {{ r.category }}
           </span>

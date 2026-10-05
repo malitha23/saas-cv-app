@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950 text-slate-100 scroll-smooth">
+<html lang="{{ current_lang or 'en' }}" class="h-full bg-slate-950 text-slate-100 scroll-smooth">
 
 <head>
   <!-- Anti-Flicker Theme Detection -->
@@ -41,6 +41,19 @@
   <link rel="canonical" href="{% block canonical %}{{ canonical_url or ('https://www.dreemfolio.com/blog/' + slug if slug else 'https://www.dreemfolio.com/blog') }}{% endblock %}">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large">
+
+  <!-- Google Multilingual Hreflang Tags -->
+  {% if slug %}
+  <link rel="alternate" hreflang="en" href="{{ en_url or ('https://www.dreemfolio.com/blog/' + slug) }}">
+  <link rel="alternate" hreflang="si" href="{{ si_url or ('https://www.dreemfolio.com/blog/si/' + slug) }}">
+  <link rel="alternate" hreflang="ta" href="{{ ta_url or ('https://www.dreemfolio.com/blog/ta/' + slug) }}">
+  <link rel="alternate" hreflang="x-default" href="{{ en_url or ('https://www.dreemfolio.com/blog/' + slug) }}">
+  {% else %}
+  <link rel="alternate" hreflang="en" href="https://www.dreemfolio.com/blog">
+  <link rel="alternate" hreflang="si" href="https://www.dreemfolio.com/blog/si">
+  <link rel="alternate" hreflang="ta" href="https://www.dreemfolio.com/blog/ta">
+  <link rel="alternate" hreflang="x-default" href="https://www.dreemfolio.com/blog">
+  {% endif %}
 
   <!-- Open Graph Meta Tags (Social Media Share Previews) -->
   <meta property="og:site_name" content="DreemFolio AI">
@@ -232,10 +245,24 @@
         <a href="/#pricing" class="hover:text-indigo-400 transition">Pricing</a>
       </nav>
 
-      <!-- Right Action CTA -->
-      <div class="flex items-center space-x-3">
-        <a href="/app" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/25 transition flex items-center gap-1.5">
-          <span>Build ATS Resume Free</span>
+      <!-- Right Action CTA & Language Switcher -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Language Switcher -->
+        <div class="flex items-center bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 text-xs font-semibold">
+          <a href="{{ en_url or '/blog' }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'en' %}bg-indigo-600 text-white font-bold shadow-sm{% else %}text-slate-400 hover:text-white{% endif %}" title="English">
+            EN
+          </a>
+          <a href="{{ si_url or '/blog/si' }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'si' %}bg-indigo-600 text-white font-bold shadow-sm{% else %}text-slate-400 hover:text-white{% endif %}" title="සිංහල">
+            සිං
+          </a>
+          <a href="{{ ta_url or '/blog/ta' }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'ta' %}bg-indigo-600 text-white font-bold shadow-sm{% else %}text-slate-400 hover:text-white{% endif %}" title="தமிழ்">
+            தமி
+          </a>
+        </div>
+
+        <a href="/app" class="px-3.5 py-2 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-indigo-600/25 transition flex items-center gap-1.5 shrink-0">
+          <span class="hidden sm:inline">Build ATS Resume Free</span>
+          <span class="sm:hidden">Try Free</span>
           <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </a>
       </div>

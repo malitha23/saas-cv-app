@@ -1,9 +1,9 @@
 {% extends "blogs/layout.html" %}
 
-{% block title %}DreemFolio AI Career & ATS Resume Blog — 2026 Hiring Blueprint{% endblock %}
-{% block meta_description %}Authoritative, recruiter-backed guides on passing Applicant Tracking Systems (ATS), optimizing technical CVs, avoiding resume rejection traps, and tailoring resumes for remote roles.{% endblock %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block meta_description %}{{ page_description }}{% endblock %}
 {% block meta_keywords %}ATS friendly CV, pass ATS scanner, free ATS checker, tech resume template, remote job CV, resume mistakes, AI resume builder{% endblock %}
-{% block canonical %}https://www.dreemfolio.com/blog{% endblock %}
+{% block canonical %}{{ canonical_url }}{% endblock %}
 
 {% block blog_content %}
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -16,15 +16,23 @@
     <!-- Badge -->
     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-6">
       <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-      <span>Career Strategy & ATS Optimization Hub</span>
+      <span>
+        {% if current_lang == 'si' %}වෘත්තීය උපදෙස් සහ ATS CV දැනුම{% elif current_lang == 'ta' %}தொழில் உத்திகள் & ATS வழிகாட்டிகள்{% else %}Career Strategy & ATS Optimization Hub{% endif %}
+      </span>
     </div>
 
     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto mb-6">
+      {% if current_lang == 'si' %}
+      2026 Hiring Funnel එක ජයගන්න <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">විශේෂඥ දැනුම</span>
+      {% elif current_lang == 'ta' %}
+      2026 ஆட்சேர்ப்பு சுழற்சியை வெல்ல <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">முன்னணி வழிகாட்டிகள்</span>
+      {% else %}
       Master the 2026 Hiring Funnel with <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Recruiter-Grade Insights</span>
+      {% endif %}
     </h1>
 
     <p class="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-      Actionable engineering and career guides to help you decode Applicant Tracking Systems (ATS), craft interview-winning bullets, and win high-paying global tech roles.
+      {{ page_description }}
     </p>
 
     <!-- Fast Quick Stats Bar -->
@@ -55,17 +63,22 @@
     <!-- Section Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-800">
       <div>
-        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Latest Career & ATS Articles</h2>
-        <p class="text-xs sm:text-sm text-slate-400">Deep-dive technical articles written by recruitment and AI practitioners.</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
+          {% if current_lang == 'si' %}නවතම ලිපි පෙළ{% elif current_lang == 'ta' %}சமீபத்திய கட்டுரைகள்{% else %}Latest Career & ATS Articles{% endif %}
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400">
+          {% if current_lang == 'si' %}Recruiters සහ AI ඉංජිනේරුවන් විසින් ලියන ලද තාක්ෂණික මඟපෙන්වීම්.{% elif current_lang == 'ta' %}தொழில்நுட்ப வல்லுநர்களால் எழுதப்பட்ட ஆழமான வழிகாட்டிகள்.{% else %}Deep-dive technical articles written by recruitment and AI practitioners.{% endif %}
+        </p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-500 font-medium">{{ posts | length }} In-Depth Guides</span>
+        <span class="text-xs text-slate-500 font-medium">{{ posts | length }} Guides</span>
       </div>
     </div>
 
     <!-- Articles Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {% for p in posts %}
+      {% set post_url = '/blog/' + current_lang + '/' + p.slug if current_lang != 'en' else '/blog/' + p.slug %}
       <article class="flex flex-col bg-slate-900/70 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/5 transition duration-200 group">
         
         <!-- Post Header / Category Badge -->
@@ -81,7 +94,7 @@
           </div>
 
           <h3 class="text-lg sm:text-xl font-bold text-white group-hover:text-indigo-300 transition line-clamp-2 leading-snug">
-            <a href="/blog/{{ p.slug }}">{{ p.title }}</a>
+            <a href="{{ post_url }}">{{ p.title }}</a>
           </h3>
 
           <p class="text-slate-400 text-sm mt-3 line-clamp-3 leading-relaxed">
@@ -111,8 +124,10 @@
               <span class="text-slate-400 font-medium">{{ p.author.name if p.author else 'DreemFolio AI' }}</span>
             </div>
 
-            <a href="/blog/{{ p.slug }}" class="text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition">
-              <span>Read Guide</span>
+            <a href="{{ post_url }}" class="text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition">
+              <span>
+                {% if current_lang == 'si' %}සම්පූර්ණ ලිපිය කියවන්න{% elif current_lang == 'ta' %}முழு வழிகாட்டியைப் படியுங்கள்{% else %}Read Guide{% endif %}
+              </span>
               <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
             </a>
           </div>
@@ -134,18 +149,23 @@
       <i data-lucide="file-check" class="w-8 h-8"></i>
     </div>
     <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-3">
-      Does Your Resume Pass 2026 ATS Filters?
+      {% if current_lang == 'si' %}ඔබේ CV එක 2026 ATS පරීක්ෂාවෙන් සමත් වේද?{% elif current_lang == 'ta' %}உங்கள் CV 2026 ATS சோதனையில் தேர்ச்சி பெறுமா?{% else %}Does Your Resume Pass 2026 ATS Filters?{% endif %}
     </h2>
     <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-8">
+      {% if current_lang == 'si' %}
+      ඔබගේ CV එක Upload කර ලකුණු පරීක්ෂා කරගන්න. DreemFolio AI මඟින් ඔබගේ Keywords සහ Formatting ක්ෂණිකව සකසා දෙයි.
+      {% elif current_lang == 'ta' %}
+      உங்கள் CV ஐ பதிவேற்றி மதிப்பெண்களை சரிபார்க்கவும். DreemFolio AI முக்கிய வார்த்தைகள் மற்றும் வடிவமைப்பு பிழைகளை சரிசெய்கிறது.
+      {% else %}
       Upload your existing PDF or paste your job description. DreemFolio AI scans keywords, checks formatting geometry, and optimizes your score instantly.
+      {% endif %}
     </p>
     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
       <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
         <i data-lucide="sparkles" class="w-4 h-4"></i>
-        <span>Scan & Optimize My Resume (Free)</span>
-      </a>
-      <a href="/ai-resume-builder" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-sm border border-slate-700 transition">
-        Learn About AI ATS Engine
+        <span>
+          {% if current_lang == 'si' %}නොමිලේ ATS Score එක බලන්න{% elif current_lang == 'ta' %}இலவசமாக ஸ்கேன் செய்து மேம்படுத்தவும்{% else %}Scan & Optimize My Resume (Free){% endif %}
+        </span>
       </a>
     </div>
   </div>

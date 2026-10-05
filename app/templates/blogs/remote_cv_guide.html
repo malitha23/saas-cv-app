@@ -1,39 +1,59 @@
 {% extends "blogs/layout.html" %}
 
-{% block title %}How to Tailor Your CV for Remote Tech Jobs in 2026 | DreemFolio AI{% endblock %}
-{% block meta_description %}Learn how to optimize your resume specifically for remote software engineer, developer, and tech roles. Async communication, remote tech stack, and portfolio strategies.{% endblock %}
-{% block meta_keywords %}remote job CV, tech resume template, software engineer ATS resume, remote developer resume, global tech jobs CV, remote work resume tailoring{% endblock %}
-{% block canonical %}https://www.dreemfolio.com/blog/tailor-cv-for-remote-jobs{% endblock %}
+{% block title %}{{ post.title }} | DreemFolio AI{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
+{% block meta_keywords %}{{ post.target_keywords | join(', ') }}{% endblock %}
+{% block canonical %}{{ canonical_url }}{% endblock %}
 
 {% block blog_content %}
 <div class="py-12 bg-slate-950">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <!-- Breadcrumb Navigation -->
-    <nav class="flex items-center space-x-2 text-xs text-slate-400 mb-8" aria-label="Breadcrumb">
-      <a href="/" class="hover:text-white transition">Home</a>
-      <span>/</span>
-      <a href="/blog" class="hover:text-white transition">Blog</a>
-      <span>/</span>
-      <span class="text-indigo-400 truncate">How to Tailor Your CV for Remote Tech Jobs</span>
-    </nav>
+    <!-- Breadcrumb Navigation & In-Page Language Selector -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <nav class="flex items-center space-x-2 text-xs text-slate-400" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <span>/</span>
+        <a href="{{ '/blog/' + current_lang if current_lang != 'en' else '/blog' }}" class="hover:text-white transition">
+          {% if current_lang == 'si' %}බ්ලොග් අඩවිය{% elif current_lang == 'ta' %}வலைப்பதிவு{% else %}Blog{% endif %}
+        </a>
+        <span>/</span>
+        <span class="text-indigo-400 truncate">{{ post.title }}</span>
+      </nav>
+
+      <!-- Language Switcher Bar -->
+      <div class="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <span class="text-[11px] text-slate-400 px-2 font-medium">
+          {% if current_lang == 'si' %}භාෂාව:{% elif current_lang == 'ta' %}மொழி:{% else %}Language:{% endif %}
+        </span>
+        <a href="{{ en_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'en' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          English
+        </a>
+        <a href="{{ si_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'si' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          සිංහල
+        </a>
+        <a href="{{ ta_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'ta' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          தமிழ்
+        </a>
+      </div>
+    </div>
 
     <!-- Article Header -->
     <header class="mb-10 pb-8 border-b border-slate-800">
       <div class="flex items-center gap-2 mb-4">
         <span class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          Remote Tech Jobs
+          {{ post.category }}
         </span>
-        <span class="text-xs text-slate-400">• {{ post.reading_time or '6 min read' }}</span>
-        <span class="text-xs text-slate-500">• Global Hiring Strategy</span>
+        <span class="text-xs text-slate-400">• {{ post.reading_time }}</span>
+        <span class="text-xs text-slate-500">• Global Remote Strategy</span>
       </div>
 
       <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
-        How to Tailor Your CV for Remote Tech Jobs in 2026
+        {{ post.title }}
       </h1>
 
       <p class="text-slate-300 text-lg leading-relaxed mb-6">
-        When competing against 1,000+ software engineers across the globe for a single high-paying remote role, generic resumes fail. Here is how to position your experience for remote engineering teams.
+        {{ post.subtitle or post.description }}
       </p>
 
       <!-- Author and Social Actions -->
@@ -43,12 +63,11 @@
             DF
           </div>
           <div>
-            <div class="font-bold text-white text-sm">DreemFolio AI Career Team</div>
+            <div class="font-bold text-white text-sm">{{ post.author.name if post.author else 'DreemFolio AI Career Team' }}</div>
             <div class="text-slate-400">Published on October 05, 2026 • Global Tech Recruitment</div>
           </div>
         </div>
 
-        <!-- Share Actions -->
         <div class="flex items-center gap-2">
           <button @click="copyPostUrl()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1.5">
             <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
@@ -58,15 +77,131 @@
       </div>
     </header>
 
-    <!-- Article Body -->
+    {% if current_lang == 'si' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SINHALA CONTENT -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <article class="prose-custom">
-
-      <h2>1. The Global Remote Hiring Reality in 2026</h2>
+      <h2>1. 2026 ගෝලීය Remote රැකියා වෙළඳපොළේ සැබෑ තත්ත්වය</h2>
       <p>
-        The shift toward distributed engineering organizations (GitLab, Automattic, Stripe, Shopify) has unlocked unprecedented compensation for engineers worldwide. However, because geographical boundaries have disappeared, an open Remote Senior Full-Stack role frequently attracts over <strong>1,200 applicants within 48 hours</strong>.
+        GitLab, Automattic, Stripe, සහ Shopify වැනි සමාගම් ලොව පුරා විසිරී සිටින ඉංජිනේරුවන් බඳවා ගැනීම නිසා ශ්‍රී ලංකාවේ සහ දකුණු ආසියාවේ වෙසෙන අයට ඉහළ ඩොලර් වැටුප් සහිත රැකියා විවෘත වී ඇත. නමුත් එක් Remote Senior Full-Stack ඇබෑර්තුවකට ලොව පුරා රටවලින් <strong>අයදුම්පත් 1,200කට වඩා පැය 48ක් තුළ</strong> ලැබේ.
       </p>
       <p>
-        Remote engineering managers do not hire based on years of tenure alone. They look for candidates who can operate autonomously with minimal synchronous handholding, communicate clearly across written documentation, and deliver production-grade code.
+        Remote Engineering Managers ලා සොයන්නේ සේවා කාලය පමණක් නොව, තනිව වැඩ කළ හැකි, ලියවිලි මඟින් පැහැදිලිව අදහස් හුවමාරු කළ හැකි (Async communication), සහ සැබෑ වැඩ පෙන්විය හැකි අයයි.
+      </p>
+
+      <!-- FIRST INLINE CONVERSION CTA SINHALA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span>Remote Tailoring Engine</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">ඔබේ CV එක Foreign & Remote රැකියා සඳහා සකසන්න</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI මඟින් ඔබගේ තාක්ෂණික කුසලතා US සහ European සමාගම් වල අවශ්‍යතාවලට ගැලපෙන පරිදි ක්ෂණිකව සකසා දෙයි.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>නොමිලේ Tailor කරගන්න</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. Asynchronous Communication හැකියාව පෙන්වීම</h2>
+      <p>
+        විවිධ Timezones වල සිටින කණ්ඩායම් වලදී පැහැදිලි ලිඛිත සන්නිවේදනය අත්‍යවශ්‍ය වේ. ඔබගේ CV එකෙහි මෙවැනි කරුණු ඇතුළත් කරන්න:
+      </p>
+      <ul>
+        <li><em>"Authored 12 comprehensive Technical RFCs in Notion, aligning cross-functional teams across US and APAC time zones."</em></li>
+        <li><em>"Instituted automated code review guidelines on GitHub, reducing average PR merge cycle time from 3 days to 14 hours."</em></li>
+        <li><em>"Conducted asynchronous technical knowledge transfers using Loom and Markdown docs."</em></li>
+      </ul>
+
+      <h2>3. Remote Collaboration Tooling Stack එක</h2>
+      <p>
+        ඔබ දුරස්ථව වැඩ කිරීමට දන්නා බව පෙන්වීමට මෙම Tools CV එකෙහි දක්වන්න:
+      </p>
+      <ul>
+        <li><strong>සන්නිවේදනය:</strong> Slack, Linear, Notion, Jira, Loom</li>
+        <li><strong>Version Control & DevOps:</strong> Git, GitHub Actions, Docker, CI/CD</li>
+        <li><strong>Cloud & Monitoring:</strong> AWS, GCP, Sentry, Datadog</li>
+      </ul>
+
+      <h2>4. Timezone Overlap එක පැහැදිලිව සඳහන් කරන්න</h2>
+      <p>
+        විදේශීය සමාගම් බොහෝ විට US (EST) හෝ Europe (CET) වේලාවන් සමඟ පැය 4ක අතිපිහිත වීමක් (Overlap) බලාපොරොත්තු වේ. ඔබගේ CV එකේ ඉහළින්ම මෙසේ දක්වන්න:
+      </p>
+      <blockquote>
+        <strong>Location:</strong> Colombo, Sri Lanka (UTC+5:30) • <strong>Availability:</strong> 4+ hours daily overlap with US Eastern (EST) and European (CET) business hours.
+      </blockquote>
+
+      <h2>5. Live Proof of Work සහ Personal Web Portfolio</h2>
+      <p>
+        2026 දී PDF එකක් පමණක් ප්‍රමාණවත් නොවේ. Remote Hiring Managers ලා ඔබ කළ දේ සජීවීව බැලීමට කැමතිය.
+      </p>
+      <ol>
+        <li><strong>GitHub Profile:</strong> පිරිසිදු commits සහ open-source දායකත්වයන්.</li>
+        <li><strong>Live Production Deployments:</strong> ඔබ සාදන ලද වෙබ් යෙදුම් වල සැබෑ URLs.</li>
+        <li><strong>Live Developer Web Portfolio:</strong> DreemFolio AI මඟින් තත්පර 30න් 1-Click Live Web Portfolio එකක් සාදා <code>yourname.dreemfolio.com</code> හරහා නොමිලේ host කරගත හැක.</li>
+      </ol>
+    </article>
+
+    {% elif current_lang == 'ta' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- TAMIL CONTENT -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
+      <h2>1. 2026 இல் சர்வதேச ரிமோட் வேலை சந்தை</h2>
+      <p>
+        உலகளாவிய நிறுவனங்கள் சர்வதேச அளவில் பணியாளர்களை நியமிப்பதால் மிகப்பெரிய வாய்ப்புகள் உருவாகியுள்ளன. ஆனால் ஒரு பதவிக்கு 1,000 க்கும் மேற்பட்ட சர்வதேச விண்ணப்பதாரர்கள் போட்டியிடுகின்றனர்.
+      </p>
+
+      <!-- CTA TAMIL -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span>ரிமோட் வேலை உகப்பாக்கம்</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">உங்கள் CV ஐ ரிமோட் வேலைகளுக்கு மேம்படுத்துங்கள்</h3>
+          <p class="text-slate-300 text-sm max-w-md">
+            DreemFolio AI மூலம் சர்வதேச வேலைகளுக்கான தேவைகளுக்கு ஏற்ப உங்கள் CV ஐ சில நொடிகளில் வடிவமைக்கவும்.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>இலவசமாக முயற்சிக்கவும்</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. Asynchronous தொடர்பு திறன்களை வெளிப்படுத்துங்கள்</h2>
+      <p>
+        வெவ்வேறு நேர மண்டலங்களில் இயங்கும் அணிகளில் தெளிவான எழுத்துப்பூர்வ தொடர்பு அவசியம். Notion, GitHub Pull Requests மற்றும் Loom போன்ற கருவிகளைப் பயன்படுத்திய அனுபவத்தை விவரிக்கவும்.
+      </p>
+
+      <h2>3. நேர மண்டல ஒத்துப்போகும் தன்மையைக் குறிப்பிடவும்</h2>
+      <p>
+        உங்கள் CV இன் மேல் பகுதியில் உங்கள் இருப்பிடம் மற்றும் அமெரிக்க/ஐரோப்பிய நேரங்களுடன் குறைந்தபட்சம் 4 மணிநேரம் ஒத்துப்போகும் தன்மையைக் குறிப்பிடவும் (UTC+5:30 with 4+ hours US/EU overlap).
+      </p>
+
+      <h2>4. நேரடி போர்ட்ஃபோலியோ (Live Web Portfolio)</h2>
+      <p>
+        வெறும் PDF ஐ விட ஒரு நேரடி இணையதள போர்ட்ஃபோலியோ அதிக தாக்கத்தை ஏற்படுத்தும். DreemFolio AI மூலம் ஒரு நொடியில் தனிப்பயன் போர்ட்ஃபோலியோவை உருவாக்கலாம்.
+      </p>
+    </article>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ENGLISH CONTENT (DEFAULT) -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
+      <h2>1. The Global Remote Hiring Reality in 2026</h2>
+      <p>
+        The shift toward distributed engineering organizations (GitLab, Automattic, Stripe, Shopify) has unlocked unprecedented compensation for engineers worldwide. However, an open Remote Senior Full-Stack role frequently attracts over <strong>1,200 applicants within 48 hours</strong>.
+      </p>
+      <p>
+        Remote engineering managers look for candidates who can operate autonomously with minimal synchronous handholding, communicate clearly across written documentation, and deliver production-grade code.
       </p>
 
       <!-- FIRST INLINE CONVERSION CTA -->
@@ -89,66 +224,34 @@
 
       <h2>2. Demonstrate Asynchronous Communication Mastery</h2>
       <p>
-        In an office, miscommunication is resolved by tapping a coworker on the shoulder. In a distributed team spanning 5 time zones, poor communication halts engineering velocity.
-      </p>
-      <p>
-        Showcase explicit evidence of your written and async communication competencies in your bullet points:
+        In a distributed team spanning 5 time zones, poor communication halts engineering velocity. Showcase explicit evidence of written async communication:
       </p>
       <ul>
-        <li><em>"Authored 12 comprehensive Technical Architecture RFCs and PRDs in Notion, aligning 8 cross-functional engineers across US and APAC time zones without synchronous meeting overhead."</em></li>
-        <li><em>"Instituted automated code review guidelines and pull request templates on GitHub, reducing average PR merge cycle time from 3.2 days to 14 hours."</em></li>
-        <li><em>"Conducted asynchronous technical knowledge transfers using Loom screencasts and Markdown documentation, onboarding 4 junior remote engineers seamlessly."</em></li>
+        <li><em>"Authored 12 comprehensive Technical Architecture RFCs in Notion, aligning cross-functional teams across US and APAC time zones."</em></li>
+        <li><em>"Instituted automated code review guidelines on GitHub, reducing average PR merge cycle time from 3 days to 14 hours."</em></li>
+        <li><em>"Conducted asynchronous technical knowledge transfers using Loom screencasts and Markdown docs."</em></li>
       </ul>
 
       <h2>3. Highlight the Distributed Tooling Stack</h2>
-      <p>
-        Remote tech recruiters filter specifically for tools indicating you are familiar with modern distributed workflows. Ensure these tools appear naturally in your Skills or Experience sections:
-      </p>
       <ul>
-        <li><strong>Collaboration:</strong> Slack, Linear, Notion, Jira, Miro, Loom</li>
-        <li><strong>Version Control & CI/CD:</strong> Git, GitHub Actions, GitLab CI, ArgoCD, Docker</li>
-        <li><strong>Observability & Monitoring:</strong> Datadog, Sentry, Prometheus, CloudWatch</li>
-        <li><strong>Cloud Infrastructure:</strong> AWS (ECS, Lambda, S3), GCP, Terraform, Kubernetes</li>
+        <li><strong>Collaboration:</strong> Slack, Linear, Notion, Jira, Loom</li>
+        <li><strong>Version Control & CI/CD:</strong> Git, GitHub Actions, Docker, CI/CD</li>
+        <li><strong>Cloud Infrastructure:</strong> AWS (ECS, Lambda, S3), GCP, Terraform</li>
       </ul>
 
       <h2>4. State Timezone Overlap and Location Clearly</h2>
-      <p>
-        Remote job postings frequently specify: <em>"Must have 4 hours overlap with EST/PST"</em> or <em>"Remote (Europe/Americas time zones)"</em>.
-      </p>
-      <p>
-        At the top of your resume, under your name and contact details, state your geographical base along with your timezone flexibility:
-      </p>
       <blockquote>
         <strong>Location:</strong> Colombo, Sri Lanka (UTC+5:30) • <strong>Availability:</strong> 4+ hours daily overlap with US Eastern (EST) and European (CET) business hours.
       </blockquote>
-      <p>
-        This immediately alleviates the recruiter's primary concern regarding team sync and sprint participation.
-      </p>
 
       <h2>5. Include Live "Proof of Work" & Custom Portfolios</h2>
-      <p>
-        In 2026, a static PDF is only half the equation. Remote hiring managers want to click a link and see proof of what you have built.
-      </p>
-      <p>
-        Always link:
-      </p>
       <ol>
-        <li><strong>Your GitHub / GitLab:</strong> Demonstrating consistent commit history and clean commit messages.</li>
-        <li><strong>Live Production Deployments:</strong> Working URLs to web applications, API endpoints, or open-source packages you maintain.</li>
-        <li><strong>A Live Developer Portfolio:</strong> Rather than a bloated PDF, include a fast, interactive developer portfolio. <em>DreemFolio AI allows you to generate and host a published developer portfolio in 1-click at <code>yourname.dreemfolio.com</code> or your own custom domain.</em></li>
+        <li><strong>Your GitHub:</strong> Demonstrating consistent commit history and clean PRs.</li>
+        <li><strong>Live Production Deployments:</strong> Working URLs to web apps or packages you maintain.</li>
+        <li><strong>A Live Developer Portfolio:</strong> DreemFolio AI allows you to host an interactive web portfolio in 1-click at <code>yourname.dreemfolio.com</code>.</li>
       </ol>
-
-      <h2>6. Engineering Metrics That Impress Remote Tech Leads</h2>
-      <p>
-        Replace generic claims with high-signal engineering metrics:
-      </p>
-      <ul>
-        <li><strong>System Latency:</strong> <em>"Reduced API P95 latency from 850ms to 120ms by implementing Redis caching and database connection pooling."</em></li>
-        <li><strong>Deployment Velocity:</strong> <em>"Automated staging deployment pipeline with GitHub Actions and Docker, reducing release cycle from weekly to daily."</em></li>
-        <li><strong>Scale & Reliability:</strong> <em>"Engineered asynchronous queue worker handling 50,000+ daily webhook events with 99.98% uptime."</em></li>
-      </ul>
-
     </article>
+    {% endif %}
 
     <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
     <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-indigo-500/50 shadow-2xl text-center">
@@ -156,14 +259,28 @@
         <i data-lucide="sparkles" class="w-6 h-6"></i>
       </div>
       <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        {% if current_lang == 'si' %}
+        ඔබගේ Remote Tech CV එක සහ Live Portfolio එක අදම සාදාගන්න
+        {% elif current_lang == 'ta' %}
+        உங்கள் ரிமோட் டெக் CV மற்றும் நேரடி போர்ட்ஃபோலியோவை இன்றே உருவாக்குங்கள்
+        {% else %}
         Build Your Remote Tech Resume & Live Portfolio Today
+        {% endif %}
       </h3>
       <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        {% if current_lang == 'si' %}
+        DreemFolio AI මඟින් ATS-friendly PDF එකක් සහ පුද්ගලික Live Web Portfolio එකක් විනාඩි 2කින් නොමිලේ සාදාගන්න.
+        {% elif current_lang == 'ta' %}
+        DreemFolio AI மூலம் உங்கள் ATS-நட்பு PDF மற்றும் தனிப்பட்ட இணைய போர்ட்ஃபோலியோவை 2 நிமிடங்களில் இலவசமாக உருவாக்குங்கள்.
+        {% else %}
         Generate your tailored ATS-friendly PDF and launch your personal live developer portfolio website in under 2 minutes with DreemFolio AI.
+        {% endif %}
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-          <span>Start Building Free</span>
+          <span>
+            {% if current_lang == 'si' %}නොමිලේ අරඹන්න{% elif current_lang == 'ta' %}இலவசமாகத் தொடங்குங்கள்{% else %}Start Building Free{% endif %}
+          </span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
@@ -172,10 +289,13 @@
     <!-- RELATED ARTICLES SECTION -->
     {% if related_posts %}
     <div class="mt-16 pt-12 border-t border-slate-800">
-      <h3 class="text-xl font-bold text-white mb-6">Related Career Guides</h3>
+      <h3 class="text-xl font-bold text-white mb-6">
+        {% if current_lang == 'si' %}අදාළ තවත් වෘත්තීය මඟපෙන්වීම්{% elif current_lang == 'ta' %}தொடர்புடைய பிற வழிகாட்டிகள்{% else %}Related Career Guides{% endif %}
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {% for r in related_posts %}
-        <a href="/blog/{{ r.slug }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+        {% set r_url = '/blog/' + current_lang + '/' + r.slug if current_lang != 'en' else '/blog/' + r.slug %}
+        <a href="{{ r_url }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
           <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
             {{ r.category }}
           </span>

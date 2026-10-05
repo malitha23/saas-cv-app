@@ -21,6 +21,16 @@
     <priority>0.90</priority>
   </url>
   <url>
+    <loc>https://www.dreemfolio.com/blog/si</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/ta</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
     <loc>https://www.dreemfolio.com/guide</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
@@ -51,7 +61,7 @@
     <priority>0.60</priority>
   </url>
 
-  <!-- High-Traffic SEO Blog Guides -->
+  <!-- Topic 1: How to Write an ATS-Friendly Resume (EN, SI, TA) -->
   <url>
     <loc>https://www.dreemfolio.com/blog/how-to-write-an-ats-friendly-cv</loc>
     <lastmod>2026-10-05</lastmod>
@@ -59,13 +69,53 @@
     <priority>0.90</priority>
   </url>
   <url>
+    <loc>https://www.dreemfolio.com/blog/si/how-to-write-an-ats-friendly-cv</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/ta/how-to-write-an-ats-friendly-cv</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- Topic 2: Top 10 Resume Errors (EN, SI, TA) -->
+  <url>
     <loc>https://www.dreemfolio.com/blog/top-10-resume-errors-that-cause-rejection</loc>
     <lastmod>2026-10-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://www.dreemfolio.com/blog/si/top-10-resume-errors-that-cause-rejection</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/ta/top-10-resume-errors-that-cause-rejection</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Topic 3: Tailor CV for Remote Tech Jobs (EN, SI, TA) -->
+  <url>
     <loc>https://www.dreemfolio.com/blog/tailor-cv-for-remote-jobs</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/si/tailor-cv-for-remote-jobs</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/ta/tailor-cv-for-remote-jobs</loc>
     <lastmod>2026-10-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
