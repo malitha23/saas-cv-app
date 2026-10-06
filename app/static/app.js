@@ -1141,6 +1141,11 @@ function resumeApp() {
       if (!this.currentUser) {
         this.pendingAction = 'tailor';
         this.openAuthModal('register', '🔒 Free Account Required: Sign in or register in seconds to generate your AI-optimized resume, access all visual formats, and download PDFs!');
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          try {
+            window.google.accounts.id.prompt();
+          } catch (e) {}
+        }
         return;
       }
 
@@ -3227,6 +3232,7 @@ function resumeApp() {
             s.async = true;
             s.defer = true;
             s.onload = () => {
+              if (this.isGoogleAuthEnabled) this.setupGoogleOneTap();
               if (this.showAuthModal) this.renderGoogleButton();
             };
             document.head.appendChild(s);
@@ -3239,20 +3245,67 @@ function resumeApp() {
           this.googleClientId = data.client_id || '';
           this.isGoogleAuthEnabled = Boolean(data.is_enabled && data.client_id);
 
-          if (this.isGoogleAuthEnabled && window.google && window.google.accounts && window.google.accounts.id) {
-            if (this.googleAuthInitialized) return;
+          if (this.isGoogleAuthEnabled) {
+            this.setupGoogleOneTap();
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load Google Auth configuration:', err);
+      }
+    },
+
+    setupGoogleOneTap() {
+      if (!this.isGoogleAuthEnabled || !this.googleClientId) return;
+      if (this.currentUser) return; // Never show to already authenticated users
+
+      const triggerPrompt = () => {
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+        if (this.currentUser) return;
+
+        try {
+          if (!this.googleAuthInitialized) {
             this.googleAuthInitialized = true;
             window.google.accounts.id.initialize({
               client_id: this.googleClientId,
               callback: (response) => this.handleGoogleCredentialResponse(response),
               auto_select: false,
-              cancel_on_tap_outside: true,
-              ux_mode: 'popup'
+              cancel_on_tap_outside: false,
+              itp_support: true,
+              use_fedcm_for_prompt: true,
             });
           }
+
+          // Delay slightly so DOM is ready and page layout is stable
+          setTimeout(() => {
+            if (this.currentUser) return;
+            window.google.accounts.id.prompt((notification) => {
+              if (notification.isNotDisplayed()) {
+                console.info('Google One Tap suppressed:', notification.getNotDisplayedReason());
+              } else if (notification.isSkippedMoment()) {
+                console.info('Google One Tap skipped:', notification.getSkippedReason());
+              } else if (notification.isDismissedMoment()) {
+                console.info('Google One Tap dismissed:', notification.getDismissedReason());
+              }
+            });
+          }, 600);
+        } catch (e) {
+          console.warn('Google One Tap prompt error:', e);
         }
-      } catch (err) {
-        console.warn('Could not load Google Auth configuration:', err);
+      };
+
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        triggerPrompt();
+      } else {
+        let attempts = 0;
+        const checkTimer = setInterval(() => {
+          attempts++;
+          if (window.google && window.google.accounts && window.google.accounts.id) {
+            clearInterval(checkTimer);
+            triggerPrompt();
+          } else if (attempts > 30) {
+            clearInterval(checkTimer);
+          }
+        }, 150);
       }
     },
 
@@ -3420,6 +3473,11 @@ function resumeApp() {
       this.currentResumeId = null;
       this.currentUser = null;
       this.isAuthChecking = false;
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (e) {}
+      }
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
     },
 

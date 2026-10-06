@@ -209,6 +209,9 @@
   <!-- Alpine.js (Locally Hosted) -->
   <script defer src="/static/vendor/alpine.min.js"></script>
 
+  <!-- Google Identity Services for 1-Click Sign-In -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
     [x-cloak] {
       display: none !important;
@@ -1230,6 +1233,9 @@
             } catch (authErr) {
               console.warn('Session check warning:', authErr);
             }
+          } else {
+            // Unauthenticated guest visitor: prompt Google One Tap on top right
+            this.setupLandingGoogleOneTap();
           }
 
           // Fetch dynamic pricing
@@ -1320,11 +1326,89 @@
           this.token = '';
           this.userName = '';
           this.userPlan = '';
+          if (window.google && window.google.accounts && window.google.accounts.id) {
+            try { window.google.accounts.id.disableAutoSelect(); } catch (e) {}
+          }
           this.$nextTick(() => {
             if (window.lucide && typeof window.lucide.createIcons === 'function') {
               window.lucide.createIcons();
             }
           });
+        },
+
+        async setupLandingGoogleOneTap() {
+          try {
+            const gRes = await fetch('/api/auth/google-config');
+            if (!gRes.ok) return;
+            const gData = await gRes.json();
+            if (!gData.is_enabled || !gData.client_id) return;
+
+            const runOneTap = () => {
+              if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+              if (this.token) return;
+
+              try {
+                window.google.accounts.id.initialize({
+                  client_id: gData.client_id,
+                  callback: async (response) => {
+                    if (response && response.credential) {
+                      try {
+                        const refStored = localStorage.getItem('dreemfolio_ref') || '';
+                        const authRes = await fetch('/api/auth/google', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            credential: response.credential,
+                            client_id: gData.client_id,
+                            referral_code: refStored || null
+                          })
+                        });
+                        if (authRes.ok) {
+                          const authData = await authRes.json();
+                          localStorage.setItem('saas_token', authData.access_token);
+                          if (authData.user) {
+                            localStorage.setItem('saas_user', JSON.stringify(authData.user));
+                          }
+                          window.location.href = '/app';
+                        }
+                      } catch (e) {
+                        console.warn('Google One Tap auth failed on landing:', e);
+                      }
+                    }
+                  },
+                  auto_select: false,
+                  cancel_on_tap_outside: false,
+                  itp_support: true,
+                  use_fedcm_for_prompt: true,
+                });
+
+                setTimeout(() => {
+                  if (!this.token) {
+                    window.google.accounts.id.prompt();
+                  }
+                }, 700);
+              } catch (err) {
+                console.warn('Google One Tap init error on landing:', err);
+              }
+            };
+
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+              runOneTap();
+            } else {
+              let attempts = 0;
+              const checkTimer = setInterval(() => {
+                attempts++;
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                  clearInterval(checkTimer);
+                  runOneTap();
+                } else if (attempts > 30) {
+                  clearInterval(checkTimer);
+                }
+              }, 150);
+            }
+          } catch (e) {
+            console.warn('Landing Google One Tap setup error:', e);
+          }
         },
 
         toggleFaq(idx) {
