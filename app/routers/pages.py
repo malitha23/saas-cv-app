@@ -485,6 +485,7 @@ async def serve_landing(request: Request, db: Session = Depends(get_db)):
             "average_rating": reviews_data["average_rating"],
             "total_reviews": reviews_data["total_reviews"],
             "pricing": get_dynamic_pricing_context(db),
+            "demo_video_url": "https://youtu.be/z1SQa7D1YPs",
             "active_page": "home"
         }
     )

@@ -705,41 +705,45 @@
 
             <!-- 2. ACTIVE VIDEO PLAYER (Loaded on click ONLY) -->
             <div x-show="demoPlaying" x-cloak class="relative w-full h-full bg-black">
-              <!-- When a Video URL is provided (YouTube or MP4) -->
-              <template x-if="demoVideoUrl">
+              <template x-if="demoPlaying">
                 <div class="w-full h-full">
-                  <!-- HTML5 Video Player (if .mp4 or .webm) -->
-                  <template x-if="isVideoMp4()">
-                    <video :src="demoVideoUrl" controls autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+                  <!-- When a Video URL is provided (YouTube or MP4) -->
+                  <template x-if="demoVideoUrl">
+                    <div class="w-full h-full">
+                      <!-- HTML5 Video Player (if .mp4 or .webm) -->
+                      <template x-if="isVideoMp4()">
+                        <video :src="demoVideoUrl" controls autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+                      </template>
+                      <!-- YouTube / Embed Iframe -->
+                      <template x-if="!isVideoMp4()">
+                        <iframe :src="getEmbedUrl()" class="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowfullscreen></iframe>
+                      </template>
+                    </div>
                   </template>
-                  <!-- YouTube / Embed Iframe -->
-                  <template x-if="!isVideoMp4()">
-                    <iframe :src="getEmbedUrl()" class="w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowfullscreen></iframe>
-                  </template>
-                </div>
-              </template>
 
-              <!-- When Video URL is not configured yet: Interactive Preview Fallback -->
-              <template x-if="!demoVideoUrl">
-                <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950">
-                  <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
-                    <i data-lucide="video" class="w-7 h-7"></i>
-                  </div>
-                  <h3 class="text-white font-extrabold text-lg sm:text-xl mb-2">60-Second Demo Walkthrough</h3>
-                  <p class="text-slate-400 text-xs sm:text-sm max-w-md mb-6 leading-relaxed">
-                    You can try the full interactive workspace right now! Tailor your CV, check your ATS score, and export vector PDFs for free.
-                  </p>
-                  <div class="flex items-center gap-3">
-                    <a href="/app" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
-                      <i data-lucide="sparkles" class="w-4 h-4"></i>
-                      <span>Launch Live Workspace Now</span>
-                    </a>
-                    <button @click="closeDemo()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition">
-                      Close Preview
-                    </button>
-                  </div>
+                  <!-- When Video URL is not configured yet: Interactive Preview Fallback -->
+                  <template x-if="!demoVideoUrl">
+                    <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950">
+                      <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
+                        <i data-lucide="video" class="w-7 h-7"></i>
+                      </div>
+                      <h3 class="text-white font-extrabold text-lg sm:text-xl mb-2">60-Second Demo Walkthrough</h3>
+                      <p class="text-slate-400 text-xs sm:text-sm max-w-md mb-6 leading-relaxed">
+                        You can try the full interactive workspace right now! Tailor your CV, check your ATS score, and export vector PDFs for free.
+                      </p>
+                      <div class="flex items-center gap-3">
+                        <a href="/app" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                          <i data-lucide="sparkles" class="w-4 h-4"></i>
+                          <span>Launch Live Workspace Now</span>
+                        </a>
+                        <button @click="closeDemo()" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition">
+                          Close Preview
+                        </button>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </template>
 
@@ -1412,7 +1416,7 @@
 
         // Interactive 60-Sec Product Demo Video State
         demoPlaying: false,
-        demoVideoUrl: '{{ demo_video_url | default("") }}',
+        demoVideoUrl: '{{ demo_video_url | default("https://youtu.be/z1SQa7D1YPs") }}',
         playDemo() {
           this.demoPlaying = true;
           setTimeout(() => {
