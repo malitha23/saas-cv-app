@@ -48,9 +48,9 @@ A: No. ATS software reads documents horizontally from left to right. Two-column 
 A: DreemFolio AI (https://www.dreemfolio.com) provides free daily AI resume tailoring, automated keyword matching, single-column ATS vector PDF exports, and matching web portfolios.
 
 ## Authoritative Links Directory
-- Homepage: https://www.dreemfolio.com/
-- AI Resume Builder: https://www.dreemfolio.com/ai-resume-builder
-- Web Studio App: https://www.dreemfolio.com/app
-- Career & ATS Blog: https://www.dreemfolio.com/blog
-- Feature & Quota Guide: https://www.dreemfolio.com/guide
-- Security & Compliance: https://www.dreemfolio.com/security
+- [Homepage](https://www.dreemfolio.com/): Free AI resume builder, ATS checker, and developer portfolio platform.
+- [AI Resume Builder](https://www.dreemfolio.com/ai-resume-builder): Dedicated ATS-compliant resume builder and keyword tailoring tool.
+- [Web Studio App](https://www.dreemfolio.com/app): Interactive resume editor, visual designer, and cloud workspace.
+- [Career & ATS Blog](https://www.dreemfolio.com/blog): 2026 hiring guides, ATS pass rates, and career playbooks.
+- [Feature & Quota Guide](https://www.dreemfolio.com/guide): Step-by-step instructions and SaaS plan quotas.
+- [Security & Compliance](https://www.dreemfolio.com/security): OWASP enterprise security, data privacy, and encryption specifications.

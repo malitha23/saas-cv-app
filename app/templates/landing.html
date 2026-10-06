@@ -195,16 +195,22 @@
   }
   </script>
 
-  <!-- Tailwind CSS & Fonts -->
+  <!-- Preload Critical LCP Hero Image (Mobile & Desktop WebP) -->
+  <link rel="preload" as="image" href="/static/images/hero_showcase_mobile.webp" type="image/webp" fetchpriority="high" media="(max-width: 640px)">
+  <link rel="preload" as="image" href="/static/images/hero_showcase.webp" type="image/webp" fetchpriority="high" media="(min-width: 641px)">
+
+  <!-- Tailwind CSS & Asynchronous Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
-    rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  </noscript>
 
-  <!-- Lucide Icons (Locally Hosted) -->
-  <script src="/static/vendor/lucide.min.js"></script>
+  <!-- Lucide Icons (Deferred for Zero Render Blocking) -->
+  <script defer src="/static/vendor/lucide.min.js"></script>
 
   <!-- Alpine.js (Locally Hosted) -->
   <script defer src="/static/vendor/alpine.min.js"></script>
@@ -256,7 +262,7 @@
 
       <!-- Brand Logo -->
       <a href="/" class="flex items-center space-x-3 group">
-        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo"
+        <img src="/static/images/logo.png?v=2" alt="DreemFolio Logo" width="40" height="40"
           class="w-10 h-10 object-contain shrink-0 group-hover:scale-105 transition filter drop-shadow-sm">
         <div class="flex flex-col">
           <span class="font-black text-xl tracking-tight text-white">Dreem<span
@@ -322,6 +328,11 @@
   </header>
 
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
+  <!-- MAIN CONTENT LANDMARK (WCAG & LIGHTHOUSE ACCESSIBILITY STANDARD) -->
+  <!-- ───────────────────────────────────────────────────────────────────────────── -->
+  <main id="main-content" class="flex-grow">
+
+  <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <!-- HERO SECTION -->
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <section class="relative pt-16 pb-20 sm:pt-24 sm:pb-32 overflow-hidden bg-grid-pattern">
@@ -338,10 +349,10 @@
 
       <!-- Top Badge -->
       <div
-        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs sm:text-sm font-medium mb-6 shadow-sm">
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-800 text-slate-300 text-xs sm:text-sm font-medium mb-6 shadow-sm min-h-[32px]">
         <span class="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span class="text-indigo-400 font-semibold">DreemFolio 2.0</span>
-        <span class="text-slate-600">•</span>
+        <span class="text-slate-400">•</span>
         <span>Recruiter-Approved ATS Format • 95%+ Match Rate</span>
       </div>
 
@@ -401,7 +412,7 @@
         <a href="#reviews" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition group">
           <span class="text-amber-400 text-xs">★★★★★</span>
           <span class="text-slate-200 font-bold text-xs">{{ average_rating | default('4.9') }}/5</span>
-          <span class="text-slate-500 text-xs font-medium">• {{ total_reviews | default('140+') }} Verified Candidates</span>
+          <span class="text-slate-400 text-xs font-medium">• {{ total_reviews | default('140+') }} Verified Candidates</span>
         </a>
         <div class="flex items-center gap-1.5">
           <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
@@ -420,7 +431,7 @@
     </div>
 
     <!-- ───────────────────────────────────────────────────────────────────────────── -->
-    <!-- INTERACTIVE PRODUCT SHOWCASE CARD -->
+    <!-- INTERACTIVE PRODUCT SHOWCASE CARD (ZERO CLS & OPTIMIZED WEBP) -->
     <!-- ───────────────────────────────────────────────────────────────────────────── -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
       <div class="rounded-2xl border border-slate-800 bg-slate-900/60 shadow-2xl overflow-hidden backdrop-blur">
@@ -440,12 +451,16 @@
           <div class="w-12"></div>
         </div>
 
-        <!-- 3D Platform Showcase Banner -->
-        <div class="relative overflow-hidden bg-slate-950 border-b border-slate-800">
-          <img src="/static/images/hero_showcase.jpg" alt="DreemFolio AI Resume Builder and ATS Checker Workspace"
-            width="1376" height="768"
-            class="w-full h-auto max-h-[480px] object-cover object-center shadow-2xl transition duration-700 hover:scale-[1.01]"
-            loading="eager">
+        <!-- 3D Platform Showcase Banner (Locked Aspect-Ratio for Zero Layout Shift) -->
+        <div class="relative overflow-hidden bg-slate-950 border-b border-slate-800" style="aspect-ratio: 1376 / 768;">
+          <picture>
+            <source media="(max-width: 640px)" srcset="/static/images/hero_showcase_mobile.webp" type="image/webp">
+            <source srcset="/static/images/hero_showcase.webp" type="image/webp">
+            <img src="/static/images/hero_showcase.jpg" alt="DreemFolio AI Resume Builder and ATS Checker Workspace"
+              width="1376" height="768"
+              class="w-full h-auto max-h-[480px] object-cover object-center shadow-2xl transition duration-700 hover:scale-[1.01]"
+              fetchpriority="high" loading="eager" decoding="async">
+          </picture>
           <div
             class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none">
           </div>
@@ -1023,9 +1038,9 @@
             {% endif %}
 
             <div class="min-w-0 flex-1">
-              <h4 class="text-white font-bold text-xs sm:text-sm truncate">{{ r.name }}</h4>
+              <h3 class="text-white font-bold text-xs sm:text-sm truncate">{{ r.name }}</h3>
               <p class="text-indigo-400 text-[11px] font-medium truncate">{{ r.role }}</p>
-              <p class="text-slate-500 text-[10px] truncate">{{ r.company }} • {{ r.date }}</p>
+              <p class="text-slate-400 text-[10px] truncate">{{ r.company }} • {{ r.date }}</p>
             </div>
           </div>
         </div>
@@ -1177,6 +1192,7 @@
       </template>
     </div>
   </section>
+  </main>
 
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <!-- FOOTER -->

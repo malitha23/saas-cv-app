@@ -200,10 +200,10 @@ async def add_security_headers(request: Request, call_next):
         "camera=(), microphone=(), geolocation=()"
     )
 
-    # Static assets cache header (speeds up subsequent loads dramatically)
+    # Static assets cache header (1-year immutable caching for Google Lighthouse & CDN performance)
     if request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = (
-            "public, max-age=86400, stale-while-revalidate=604800"
+            "public, max-age=31536000, immutable"
         )
 
     return response
