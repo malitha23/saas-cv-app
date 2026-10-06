@@ -671,6 +671,11 @@ class ResetPasswordRequest(BaseModel):
     )
 
 
+class DeleteAccountRequest(BaseModel):
+    confirmation: str = Field(..., description="Must be confirmed with uppercase 'DELETE'")
+    password: Optional[str] = Field(None, description="Current password for verification (if email account)")
+
+
 class PendingOrderInfo(BaseModel):
     order_id: str
     target_plan: str

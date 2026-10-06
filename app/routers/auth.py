@@ -1,10 +1,11 @@
 import os
 import re
+import json
 import secrets
 import datetime
 import logging
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, or_
 from sqlalchemy.exc import IntegrityError
@@ -14,7 +15,7 @@ from app.models import User, EmailVerificationOtp
 from app.schemas import (
     GoogleConfigResponse, GoogleAuthRequest, TokenResponse,
     UserRegisterRequest, UserLoginRequest, ForgotPasswordRequest,
-    ResetPasswordRequest, UserResponse,
+    ResetPasswordRequest, UserResponse, DeleteAccountRequest,
     SendRegistrationOtpRequest, VerifyRegistrationOtpRequest
 )
 from app.auth import (
@@ -560,3 +561,224 @@ async def get_my_profile(
     """Fetch profile of currently authenticated user with real-time quota status."""
     check_and_update_subscription(current_user, db)
     return build_user_response(current_user, db)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DATA PROTECTION & STATUTORY USER RIGHTS (SRI LANKA PDPA NO. 9 OF 2022 & GDPR)
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/auth/export-data")
+async def export_my_personal_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Statutory Right of Access & Data Portability (PDPA No. 9 of 2022 Sec 13 / GDPR Art 20).
+    Packages all user profile data, tailored resumes, and career logs into machine-readable JSON.
+    """
+    # 1. User Profile Record
+    user_info = {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "plan_tier": current_user.plan_tier,
+        "subscription_status": current_user.subscription_status,
+        "subscription_started_at": current_user.subscription_started_at.isoformat() if current_user.subscription_started_at else None,
+        "subscription_expires_at": current_user.subscription_expires_at.isoformat() if current_user.subscription_expires_at else None,
+        "auth_provider": current_user.auth_provider,
+        "referral_code": current_user.referral_code,
+        "referral_bonus_downloads": current_user.referral_bonus_downloads,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+    }
+
+    # 2. Resumes & Tailored Documents
+    resumes_list = []
+    for r in current_user.resumes:
+        parsed_content = {}
+        if r.resume_data_json:
+            try:
+                parsed_content = json.loads(r.resume_data_json)
+            except Exception:
+                parsed_content = {"raw": r.resume_data_json}
+        resumes_list.append({
+            "id": r.id,
+            "title": r.title,
+            "target_role": r.target_role,
+            "template_style": r.template_style,
+            "resume_data": parsed_content,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+        })
+
+    # 3. Tracked Job Applications
+    jobs_list = []
+    for j in current_user.job_applications:
+        app_kit = {}
+        if j.application_kit_json:
+            try:
+                app_kit = json.loads(j.application_kit_json)
+            except Exception:
+                app_kit = {"raw": j.application_kit_json}
+        jobs_list.append({
+            "id": j.id,
+            "job_title": j.job_title,
+            "company_name": j.company_name,
+            "location": j.location,
+            "work_mode": j.work_mode,
+            "salary_range": j.salary_range,
+            "match_score": j.match_score,
+            "status": j.status,
+            "job_url": j.job_url,
+            "applied_date": j.applied_date,
+            "notes": j.notes,
+            "application_kit": app_kit,
+            "created_at": j.created_at.isoformat() if j.created_at else None,
+        })
+
+    # 4. Billing Audit History
+    orders_list = [
+        {
+            "order_id": o.order_id,
+            "target_plan": o.target_plan,
+            "billing_cycle": o.billing_cycle,
+            "amount": o.amount,
+            "currency": o.currency,
+            "gateway": o.gateway,
+            "status": o.status,
+            "payment_method": o.payment_method,
+            "created_at": o.created_at.isoformat() if o.created_at else None,
+        }
+        for o in current_user.online_orders
+    ]
+
+    slips_list = [
+        {
+            "id": s.id,
+            "target_plan": s.target_plan,
+            "amount_paid": s.amount_paid,
+            "currency": s.currency,
+            "status": s.status,
+            "bank_reference": s.bank_reference,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in current_user.bank_payment_slips
+    ]
+
+    # 5. Compile Compliant Export Bundle
+    export_bundle = {
+        "_compliance_metadata": {
+            "legal_framework": "Sri Lanka Personal Data Protection Act No. 9 of 2022 (PDPA) & EU GDPR",
+            "statutory_right": "Section 13 (Right of Access) & Article 20 (Data Portability)",
+            "data_controller": "DreemFolio AI (privacy@dreemfolio.com, Hambanthota, Sri Lanka)",
+            "privacy_policy_url": "https://dreemfolio.com/privacy",
+            "export_timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "ai_training_guarantee": "Zero AI retention: Resumes and personal texts are never used to train base foundation AI models.",
+            "payment_security": "PCI-DSS Level 1 compliant: Zero credit/debit card numbers stored on our servers."
+        },
+        "user_profile": user_info,
+        "saved_resumes": resumes_list,
+        "job_applications": jobs_list,
+        "billing_records": {
+            "online_orders": orders_list,
+            "bank_deposit_slips": slips_list,
+        }
+    }
+
+    file_slug = re.sub(r'[^a-zA-Z0-9_-]', '_', current_user.email.split('@')[0])
+    date_str = datetime.date.today().strftime("%Y%m%d")
+    filename = f"dreemfolio_data_{file_slug}_{date_str}.json"
+    json_bytes = json.dumps(export_bundle, indent=2, ensure_ascii=False).encode("utf-8")
+
+    return Response(
+        content=json_bytes,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@router.delete("/api/auth/delete-account")
+async def delete_my_account(
+    req: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Statutory Right to Erasure / 'Right to Be Forgotten' (PDPA No. 9 of 2022 Sec 15 / GDPR Art 17).
+    Permanently erases all user profile records, resumes, cover letters, and associated personal assets.
+    """
+    # 1. Validate confirmation keyword
+    if req.confirmation.strip().upper() != "DELETE":
+        raise HTTPException(
+            status_code=400,
+            detail="Confirmation mismatch. Please enter 'DELETE' in uppercase to permanently erase your account."
+        )
+
+    # 2. Check password verification for email-registered accounts
+    if current_user.auth_provider == "email" and current_user.hashed_password:
+        if not req.password:
+            raise HTTPException(
+                status_code=400,
+                detail="Your current password is required to verify identity and authorize account deletion."
+            )
+        if not verify_password(req.password, current_user.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="Incorrect password. Account deletion aborted."
+            )
+
+    # 3. Protect against accidental deletion of the last admin
+    if current_user.is_admin:
+        admin_count = db.scalar(
+            select(func.count(User.id)).where(
+                User.is_admin == True,
+                User.id != current_user.id,
+                User.is_active == True
+            )
+        ) or 0
+        if admin_count == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="This account is the sole active administrator of DreemFolio AI and cannot be deleted. Please appoint another administrator first."
+            )
+
+    user_id = current_user.id
+    user_email = current_user.email
+
+    # 4. Clean up any stored bank slip uploads on disk
+    try:
+        slips_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "uploads", "slips")
+        for slip in current_user.bank_payment_slips:
+            if slip.slip_image_url and "/static/uploads/slips/" in slip.slip_image_url:
+                file_name = os.path.basename(slip.slip_image_url)
+                full_path = os.path.join(slips_dir, file_name)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+    except Exception as e:
+        logger.warning("Error purging user slip uploads during account erasure: %s", e)
+
+    # 5. Purge user from in-memory caches and published portfolio registry
+    try:
+        from app.state import PUBLISHED_PORTFOLIOS, PUBLISHED_RESUMES
+        slugs_to_remove = []
+        for slug, res_obj in list(PUBLISHED_RESUMES.items()):
+            if getattr(res_obj, "user_id", None) == user_id or getattr(res_obj, "email", None) == user_email:
+                slugs_to_remove.append(slug)
+        for s in slugs_to_remove:
+            PUBLISHED_RESUMES.pop(s, None)
+            PUBLISHED_PORTFOLIOS.pop(s, None)
+    except Exception as e:
+        logger.warning("Error cleaning in-memory state for user %s: %s", user_id, e)
+
+    # 6. Permanently delete user from database (triggers ON DELETE CASCADE for resumes, job applications, orders)
+    db.delete(current_user)
+    db.commit()
+
+    logger.info("PDPA Section 15 Erasure completed: User ID %s (%s) erased permanently.", user_id, user_email)
+
+    return {
+        "success": True,
+        "message": "Your account and all associated personal data have been permanently erased in compliance with the Sri Lanka Personal Data Protection Act No. 9 of 2022."
+    }
+

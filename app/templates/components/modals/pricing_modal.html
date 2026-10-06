@@ -33,7 +33,7 @@
 
   <!-- SaaS Subscription Plans / Monetization Modal -->
   <div x-show="showPricingModal" x-cloak
-    class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
+    class="fixed inset-0 z-[105] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
     @keydown.escape.window="showPricingModal = false">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-5 sm:p-8 shadow-2xl space-y-6 my-auto max-h-[92vh] flex flex-col overflow-y-auto"
       @click.outside="showPricingModal = false">

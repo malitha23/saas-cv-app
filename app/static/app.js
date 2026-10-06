@@ -250,6 +250,12 @@ function resumeApp() {
     // In-App Logout Confirmation Modal State
     showLogoutModal: false,
 
+    // In-App Permanent Account Deletion Modal State (Sri Lanka PDPA Sec 15)
+    showDeleteAccountModal: false,
+    deleteAccountConfirmation: '',
+    deleteAccountPassword: '',
+    isDeletingAccount: false,
+
     // In-App Welcome & Success Modal State
     showWelcomeModal: false,
     welcomeModalData: { title: '', message: '' },
@@ -676,6 +682,7 @@ function resumeApp() {
     },
 
     openQuotaLimitModal(opts = {}) {
+      this.showPricingModal = false;
       const proPrice = this.getCalculatedPrice('pro')?.price_display || (this.activeCurrency === 'USD' ? '$9' : 'Rs. 590');
       const sprintPrice = this.activeSprintPrice || (this.activeCurrency === 'USD' ? '$4.99' : 'Rs. 290');
       const elitePrice = this.getCalculatedPrice('elite')?.price_display || (this.activeCurrency === 'USD' ? '$19' : 'Rs. 1,950');
@@ -695,6 +702,23 @@ function resumeApp() {
       };
       this.showQuotaLimitModal = true;
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    openPricingModal(plan = 'pro') {
+      this.showQuotaLimitModal = false;
+      this.showDomainModal = false;
+      this.showApiModal = false;
+      if (plan === 'sprint') {
+        this.showSprintFeatures = true;
+      }
+      setTimeout(() => {
+        this.showPricingModal = true;
+        this.$nextTick(() => {
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+          }
+        });
+      }, 50);
     },
 
     openLegalModal(tab = 'privacy') {
@@ -1221,7 +1245,6 @@ function resumeApp() {
         if (!res.ok) {
           const errData = await res.json();
           if (res.status === 402) {
-            this.showPricingModal = true;
             const quotaMsg = typeof errData.detail === 'object' ? errData.detail.message : errData.detail;
             throw new Error(quotaMsg || 'Daily free AI quota reached (2/2 runs). Upgrade to Pro Career or Executive Elite for unlimited AI tailoring!');
           }
@@ -3506,6 +3529,67 @@ function resumeApp() {
         } catch (e) {}
       }
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    openDeleteAccountModal() {
+      this.deleteAccountConfirmation = '';
+      this.deleteAccountPassword = '';
+      this.showDeleteAccountModal = true;
+      this.$nextTick(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+    },
+
+    async confirmDeleteAccount() {
+      if (this.deleteAccountConfirmation.trim().toUpperCase() !== 'DELETE') {
+        return;
+      }
+      this.isDeletingAccount = true;
+      try {
+        const token = localStorage.getItem('saas_token');
+        const res = await fetch('/api/auth/delete-account', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            confirmation: 'DELETE',
+            password: this.deleteAccountPassword ? this.deleteAccountPassword : null
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to erase account. Please verify your credentials.');
+        }
+
+        this.showDeleteAccountModal = false;
+        // Purge local sessions and tokens
+        localStorage.removeItem('saas_token');
+        localStorage.removeItem('saas_user');
+        localStorage.removeItem('dreemfolio_user');
+        this.clearActiveResumeLocalSnapshot();
+        this.tailoredData = null;
+        this.currentResumeId = null;
+        this.currentUser = null;
+
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          try {
+            window.google.accounts.id.disableAutoSelect();
+          } catch (e) {}
+        }
+
+        await this.alertModal(
+          'Your account and all associated personal data have been permanently erased in compliance with the Sri Lanka Personal Data Protection Act No. 9 of 2022.',
+          'Account Erased',
+          'success'
+        );
+        window.location.href = '/';
+      } catch (e) {
+        this.alertModal(e.message || 'Error deleting account.', 'Deletion Error', 'error');
+      } finally {
+        this.isDeletingAccount = false;
+      }
     },
 
     // ═══════════════════════════════════════════════════════════════════════════

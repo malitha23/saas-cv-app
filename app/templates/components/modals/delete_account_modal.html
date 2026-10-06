@@ -1,0 +1,96 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: PERMANENT ACCOUNT DELETION (SRI LANKA PDPA SEC 15 & GDPR ART 17) -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="showDeleteAccountModal" x-cloak
+  class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm"
+  x-transition:enter="transition ease-out duration-200"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-150"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+  @keydown.escape.window="if(!isDeletingAccount) showDeleteAccountModal = false">
+  
+  <div @click.away="if(!isDeletingAccount) showDeleteAccountModal = false"
+    class="w-full max-w-lg rounded-3xl border border-rose-500/40 bg-slate-900 p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden animate-in fade-in zoom-in-95">
+    
+    <!-- Top Decorative Glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-rose-500/15 blur-3xl pointer-events-none"></div>
+
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30 shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-100 text-base">Erase Account & Personal Data</h4>
+          <p class="text-[11px] text-slate-400">Statutory Right to Erasure (Sri Lanka PDPA No. 9 of 2022 Sec 15)</p>
+        </div>
+      </div>
+      <button @click="showDeleteAccountModal = false" :disabled="isDeletingAccount" class="text-slate-400 hover:text-white p-1 rounded-lg">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Warning Box -->
+    <div class="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/30 text-xs text-rose-200 space-y-2 leading-relaxed">
+      <p class="font-bold flex items-center gap-1.5 text-rose-300">
+        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+        This action is permanent and completely irreversible!
+      </p>
+      <ul class="list-disc pl-4 space-y-1 text-slate-300 text-[11px]">
+        <li>All saved resumes, versions, and cover letters will be erased immediately.</li>
+        <li>All tracked job applications and interview histories will be destroyed.</li>
+        <li>Any active subscription period or pass will be permanently cancelled without refund.</li>
+        <li>Published portfolio URLs will be unlinked and purged from edge routing.</li>
+      </ul>
+    </div>
+
+    <form @submit.prevent="confirmDeleteAccount()" class="space-y-4 text-xs">
+      <!-- Password confirmation if email account -->
+      <template x-if="currentUser?.auth_provider === 'email'">
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">
+            Confirm your current password <span class="text-rose-400">*</span>
+          </label>
+          <input type="password" required x-model="deleteAccountPassword"
+            placeholder="Enter your account password..."
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:border-rose-500 focus:outline-none font-mono">
+        </div>
+      </template>
+
+      <!-- DELETE confirmation keyword -->
+      <div>
+        <label class="block text-slate-300 font-semibold mb-1">
+          Type <span class="text-rose-400 font-mono font-bold">DELETE</span> to confirm permanent erasure <span class="text-rose-400">*</span>
+        </label>
+        <input type="text" required x-model="deleteAccountConfirmation"
+          placeholder="Type DELETE"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:border-rose-500 focus:outline-none uppercase font-mono tracking-wider font-bold">
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button" @click="showDeleteAccountModal = false" :disabled="isDeletingAccount"
+          class="px-4 py-2.5 text-slate-400 hover:text-slate-200 font-medium transition">
+          Cancel & Keep Account
+        </button>
+        <button type="submit" :disabled="isDeletingAccount || deleteAccountConfirmation.trim().toUpperCase() !== 'DELETE'"
+          class="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-rose-600/30 border border-rose-500/30 transition flex items-center gap-2">
+          <template x-if="isDeletingAccount">
+            <div class="flex items-center gap-2">
+              <div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Erasing All Data...</span>
+            </div>
+          </template>
+          <template x-if="!isDeletingAccount">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Permanently Erase Account</span>
+            </div>
+          </template>
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>

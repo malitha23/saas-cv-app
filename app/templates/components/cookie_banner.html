@@ -1,0 +1,62 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- DATA PRIVACY & ESSENTIAL STORAGE CONSENT BANNER (SRI LANKA PDPA & GDPR) -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="dreemfolio-privacy-banner"
+     class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl text-xs space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+  
+  <div class="flex items-start gap-3">
+    <div class="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    
+    <div class="space-y-1 pr-2">
+      <div class="flex items-center gap-2">
+        <h4 class="font-bold text-slate-100 text-xs">Data Privacy & Essential Storage</h4>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[9px] font-bold uppercase">PDPA 2022</span>
+      </div>
+      <p class="text-[11px] text-slate-300 leading-relaxed">
+        We use essential local storage for authentication and UI preferences in accordance with the <strong>Sri Lanka Personal Data Protection Act No. 9 of 2022</strong>. We do not use third-party ad trackers.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-800/80 text-[11px]">
+    <a href="/privacy" class="text-indigo-400 hover:text-indigo-300 underline font-semibold flex items-center gap-1">
+      <span>Read Privacy Policy</span>
+      <span>&rarr;</span>
+    </a>
+    
+    <div class="flex items-center gap-2">
+      <button type="button" id="btn-accept-privacy"
+              class="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition shadow-md shadow-indigo-600/20 active:scale-95">
+        Acknowledge & Accept
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    try {
+      var consentKey = 'dreemfolio_privacy_consent_v1';
+      var banner = document.getElementById('dreemfolio-privacy-banner');
+      var acceptBtn = document.getElementById('btn-accept-privacy');
+      
+      if (!banner || !acceptBtn) return;
+
+      if (!localStorage.getItem(consentKey)) {
+        setTimeout(function() {
+          banner.classList.remove('hidden');
+        }, 1200);
+      }
+
+      acceptBtn.addEventListener('click', function() {
+        localStorage.setItem(consentKey, 'true');
+        banner.classList.add('hidden');
+      });
+    } catch(e) {}
+  })();
+</script>
