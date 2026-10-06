@@ -1464,11 +1464,11 @@ class EmailQueueListResponse(BaseModel):
 
 
 class CreateUserReviewRequest(BaseModel):
-    rating: int = Field(..., ge=1, le=5, description="Star rating from 1 to 5")
-    reviewer_name: str = Field(..., min_length=2, max_length=150, description="Full name of candidate")
-    reviewer_role: str = Field(..., min_length=2, max_length=150, description="Job title or role")
+    rating: int = Field(default=5, ge=1, le=5, description="Star rating from 1 to 5")
+    reviewer_name: Optional[str] = Field(default="Candidate", max_length=150, description="Full name of candidate")
+    reviewer_role: Optional[str] = Field(default="Professional", max_length=150, description="Job title or role")
     reviewer_company: Optional[str] = Field(None, max_length=150, description="Company or university")
-    review_text: str = Field(..., min_length=5, max_length=1500, description="Candidate feedback or review text")
+    review_text: Optional[str] = Field(default="", max_length=1500, description="Candidate feedback or review text (Optional)")
     avatar_url: Optional[str] = Field(None, max_length=500, description="Avatar image URL")
 
 

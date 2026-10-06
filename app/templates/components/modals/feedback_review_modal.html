@@ -84,10 +84,26 @@
 
         <!-- Review Comment / Feedback -->
         <div>
-          <label class="block text-slate-400 font-semibold mb-1 text-[11px]">Your Review / Feedback</label>
-          <textarea x-model="feedbackForm.review_text" required rows="3"
-                    placeholder="Share what worked well for you (e.g., ATS scoring, instant PDF tailoring, interview callbacks)..."
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-slate-400 font-semibold text-[11px]">Your Review / Feedback <span class="text-slate-500 font-normal">(Optional)</span></label>
+            <span class="text-[10px] text-indigo-400 font-medium">Click suggestion to auto-fill</span>
+          </div>
+          <textarea x-model="feedbackForm.review_text" rows="3"
+                    placeholder="Share what worked well for you (or click an auto-suggestion below)..."
                     class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+
+          <!-- Auto-Suggest Quick Feedback Chips -->
+          <div class="mt-2 space-y-1.5">
+            <div class="flex flex-wrap gap-1.5">
+              <template x-for="(chip, idx) in quickFeedbackSuggestions" :key="idx">
+                <button type="button" @click="applyFeedbackSuggestion(chip)"
+                        class="px-2.5 py-1 rounded-lg bg-slate-950/80 hover:bg-indigo-600/20 border border-slate-800 hover:border-indigo-500/50 text-slate-300 hover:text-white text-[11px] transition flex items-center gap-1.5 active:scale-95 group">
+                  <span x-text="chip.emoji"></span>
+                  <span x-text="chip.text" class="group-hover:text-indigo-200"></span>
+                </button>
+              </template>
+            </div>
+          </div>
         </div>
 
         <!-- Error Alert -->

@@ -2696,6 +2696,21 @@ function resumeApp() {
       }
     },
 
+    quickFeedbackSuggestions: [
+      { emoji: '⚡', text: 'Tailored my resume in under 2 minutes!' },
+      { emoji: '🎯', text: 'ATS score boosted from 45% to 92%!' },
+      { emoji: '⭐', text: 'Best AI resume builder I have used.' },
+      { emoji: '📄', text: 'Clean formatting that recruiters love.' },
+      { emoji: '💼', text: 'Helped me land recruiter callbacks!' },
+      { emoji: '👏', text: 'Super easy, modern, and intuitive!' }
+    ],
+
+    applyFeedbackSuggestion(chip) {
+      if (!this.feedbackForm) return;
+      this.feedbackForm.review_text = chip.text || chip;
+      this.feedbackForm.error = '';
+    },
+
     openFeedbackModal() {
       const candidateName = this.currentUser?.full_name || this.tailoredData?.personal_info?.full_name || '';
       const candidateRole = this.tailoredData?.target_job_title || 'Software Engineer';
@@ -2716,10 +2731,6 @@ function resumeApp() {
     },
 
     async submitFeedbackReview() {
-      if (!this.feedbackForm.review_text.trim()) {
-        this.feedbackForm.error = 'Please share a quick sentence or two about your experience.';
-        return;
-      }
       this.feedbackForm.isSubmitting = true;
       this.feedbackForm.error = '';
 
@@ -2728,22 +2739,38 @@ function resumeApp() {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
+        // Auto fallback if review text is left blank so it is truly optional
+        let textToSend = (this.feedbackForm.review_text || '').trim();
+        if (!textToSend) {
+          textToSend = this.feedbackForm.rating >= 5
+            ? 'Outstanding experience! The AI resume builder and ATS checker worked seamlessly.'
+            : 'Great experience tailoring my resume with DreemFolio AI. Highly recommended!';
+        }
+
         const res = await fetch('/api/reviews', {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            rating: this.feedbackForm.rating,
-            reviewer_name: this.feedbackForm.reviewer_name.trim() || 'Candidate',
-            reviewer_role: this.feedbackForm.reviewer_role.trim() || 'Software Engineer',
-            reviewer_company: this.feedbackForm.reviewer_company.trim() || null,
-            review_text: this.feedbackForm.review_text.trim(),
+            rating: this.feedbackForm.rating || 5,
+            reviewer_name: (this.feedbackForm.reviewer_name || '').trim() || 'Candidate',
+            reviewer_role: (this.feedbackForm.reviewer_role || '').trim() || 'Software Engineer',
+            reviewer_company: (this.feedbackForm.reviewer_company || '').trim() || null,
+            review_text: textToSend,
             avatar_url: this.currentUser?.avatar_url || this.tailoredData?.personal_info?.avatar_url || null
           })
         });
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          throw new Error(err.detail || 'Could not submit review');
+          let errMsg = 'Could not submit review';
+          if (typeof err.detail === 'string') {
+            errMsg = err.detail;
+          } else if (Array.isArray(err.detail) && err.detail.length > 0) {
+            errMsg = err.detail[0]?.msg || JSON.stringify(err.detail[0]);
+          } else if (err.message) {
+            errMsg = err.message;
+          }
+          throw new Error(errMsg);
         }
 
         this.feedbackForm.submittedSuccess = true;
@@ -2752,7 +2779,7 @@ function resumeApp() {
           this.showFeedbackModal = false;
         }, 2200);
       } catch (err) {
-        this.feedbackForm.error = err.message;
+        this.feedbackForm.error = err.message || 'Failed to submit review.';
       } finally {
         this.feedbackForm.isSubmitting = false;
       }

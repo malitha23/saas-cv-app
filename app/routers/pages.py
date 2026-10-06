@@ -416,14 +416,24 @@ async def submit_user_review(
     Allow candidates to submit feedback & star ratings at the end of CV tailoring or download.
     Includes XSS sanitization, length bounds, and automated approval for 4-5 star ratings.
     """
-    clean_name = sanitize_review_text(req.reviewer_name, 100) or "Candidate"
-    clean_role = sanitize_review_text(req.reviewer_role, 100) or "Software Engineer"
-    clean_company = sanitize_review_text(req.reviewer_company or "", 100)
-    clean_text = sanitize_review_text(req.review_text, 1500)
-    rating = max(1, min(5, req.rating))
+    clean_name = sanitize_review_text(req.reviewer_name or "", 100).strip() or "Candidate"
+    clean_role = sanitize_review_text(req.reviewer_role or "", 100).strip() or "Software Engineer"
+    clean_company = sanitize_review_text(req.reviewer_company or "", 100).strip()
+    raw_text = sanitize_review_text(req.review_text or "", 1500).strip()
+    rating = max(1, min(5, req.rating or 5))
 
-    if len(clean_text) < 5:
-        raise HTTPException(status_code=400, detail="Review feedback must be at least 5 characters.")
+    # Auto-fallback if feedback is empty so review text is optional
+    if not raw_text:
+        default_feedback = {
+            5: "Outstanding experience! The AI resume builder and ATS checker worked seamlessly.",
+            4: "Great experience tailoring my resume with DreemFolio AI. Highly recommended!",
+            3: "Good tool with helpful resume formatting and keyword suggestions.",
+            2: "Fair experience, looking forward to more features and updates.",
+            1: "Feedback submitted to help improve the platform."
+        }
+        clean_text = default_feedback.get(rating, "Great experience with DreemFolio AI.")
+    else:
+        clean_text = raw_text
 
     # High satisfaction reviews (4-5 stars) auto-approved for landing page showcase
     is_approved = rating >= 4
