@@ -268,7 +268,9 @@ async def serve_sitemap_xml():
         xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/ta/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
     
     xml_content += '</urlset>'
-    return Response(content=xml_content, media_type="application/xml")
+    response = Response(content=xml_content, media_type="application/xml")
+    response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, must-revalidate"
+    return response
 
 
 @router.get("/sitemap.xsl", response_class=Response)
