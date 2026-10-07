@@ -249,7 +249,6 @@ async def serve_sitemap_xml():
         ("https://www.dreemfolio.com/refund", today, "monthly", "0.60"),
     ]
     xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml_content += '<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>\n'
     xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     
     # 1. Primary Static Pages
@@ -268,86 +267,9 @@ async def serve_sitemap_xml():
         xml_content += f'  <url>\n    <loc>https://www.dreemfolio.com/blog/ta/{slug}</loc>\n    <lastmod>{lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>{priority}</priority>\n  </url>\n'
     
     xml_content += '</urlset>'
-    response = Response(content=xml_content, media_type="application/xml")
+    response = Response(content=xml_content, media_type="application/xml; charset=utf-8")
     response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, must-revalidate"
     return response
-
-
-@router.get("/sitemap.xsl", response_class=Response)
-async def serve_sitemap_xsl():
-    """Serve modern, branded XSLT stylesheet for human-friendly viewing of sitemap.xml in web browsers."""
-    xsl_content = '''<?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="2.0" 
-                xmlns:html="http://www.w3.org/TR/REC-html40"
-                xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-  <xsl:output method="html" version="1.0" encoding="UTF-8" indent="yes"/>
-  <xsl:template match="/">
-    <html xmlns="http://www.w3.org/1999/xhtml" lang="en">
-      <head>
-        <title>XML Sitemap | DreemFolio AI</title>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f1f5f9; padding: 2rem 1rem; margin: 0; }
-          .container { max-width: 1060px; margin: 0 auto; background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-          .badge { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); border-radius: 9999px; padding: 0.3rem 0.85rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
-          h1 { font-size: 1.65rem; font-weight: 800; margin: 0 0 0.5rem 0; color: #fff; letter-spacing: -0.025em; }
-          p { color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin-top: 0; margin-bottom: 1.5rem; }
-          .stats { display: flex; gap: 1.5rem; padding: 1rem 1.25rem; background: #020617; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.8125rem; color: #cbd5e1; }
-          .stats strong { color: #38bdf8; font-family: monospace; font-size: 1rem; }
-          table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
-          th { text-align: left; padding: 0.85rem 1rem; background: #1e293b; color: #94a3b8; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
-          td { padding: 0.75rem 1rem; border-bottom: 1px solid #1e293b; word-break: break-all; }
-          tr:hover td { background: rgba(99,102,241,0.06); }
-          a { color: #818cf8; text-decoration: none; font-weight: 500; }
-          a:hover { text-decoration: underline; color: #c7d2fe; }
-          .priority { font-family: monospace; font-weight: 700; color: #34d399; }
-          .changefreq { font-family: monospace; color: #cbd5e1; font-size: 0.75rem; }
-          .date { color: #64748b; font-family: monospace; font-size: 0.75rem; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <span class="badge">&#9889; Search Engine Discovery Index</span>
-          <h1>DreemFolio AI &bull; XML Sitemap</h1>
-          <p>This dynamic XML sitemap is maintained automatically for search engines (Google, Bing, Perplexity, GPTBot). It indexes all public landing pages, career tools, and localized ATS knowledge posts.</p>
-          <div class="stats">
-            <div>Total Indexed URLs: <strong><xsl:value-of select="count(sitemap:urlset/sitemap:url)"/></strong></div>
-            <div>Encoding: <strong>UTF-8</strong></div>
-            <div>Standard: <strong>Sitemaps.org 0.9</strong></div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 54%;">Page URL</th>
-                <th style="width: 14%;">Priority</th>
-                <th style="width: 16%;">Change Frequency</th>
-                <th style="width: 16%;">Last Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              <xsl:for-each select="sitemap:urlset/sitemap:url">
-                <tr>
-                  <td>
-                    <xsl:variable name="itemURL">
-                      <xsl:value-of select="sitemap:loc"/>
-                    </xsl:variable>
-                    <a href="{$itemURL}"><xsl:value-of select="sitemap:loc"/></a>
-                  </td>
-                  <td class="priority"><xsl:value-of select="sitemap:priority"/></td>
-                  <td class="changefreq"><xsl:value-of select="sitemap:changefreq"/></td>
-                  <td class="date"><xsl:value-of select="sitemap:lastmod"/></td>
-                </tr>
-              </xsl:for-each>
-            </tbody>
-          </table>
-        </div>
-      </body>
-    </html>
-  </xsl:template>
-</xsl:stylesheet>'''
-    return Response(content=xsl_content, media_type="application/xml")
 
 
 @router.get("/manifest.json")
