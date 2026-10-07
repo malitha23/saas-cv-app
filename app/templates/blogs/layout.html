@@ -97,7 +97,7 @@
     "@type": "BlogPosting",
     "headline": "{{ post.title }}",
     "description": "{{ post.description }}",
-    "url": "https://www.dreemfolio.com/blog/{{ slug }}",
+    "url": "{{ canonical_url }}",
     "image": "{{ post.og_image if post.og_image else 'https://www.dreemfolio.com/static/images/hero_showcase.jpg' }}",
     "author": {
       "@type": "Organization",
@@ -116,7 +116,7 @@
     "dateModified": "{{ post.modified_date or post.published_date }}",
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://www.dreemfolio.com/blog/{{ slug }}"
+      "@id": "{{ canonical_url }}"
     }
   }
   </script>
@@ -135,14 +135,14 @@
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "Blog",
-        "item": "https://www.dreemfolio.com/blog"
+        "name": "{% if current_lang == 'si' %}බ්ලොග් අඩවිය{% elif current_lang == 'ta' %}வலைப்பதிவு{% else %}Blog{% endif %}",
+        "item": "https://www.dreemfolio.com/blog{% if current_lang != 'en' %}/{{ current_lang }}{% endif %}"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": "{{ post.title }}",
-        "item": "https://www.dreemfolio.com/blog/{{ slug }}"
+        "item": "{{ canonical_url }}"
       }
     ]
   }
@@ -152,9 +152,9 @@
   {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "DreemFolio AI Career & ATS Resume Blog",
-    "description": "Authoritative guides on passing Applicant Tracking Systems, optimizing tech resumes, and landing remote jobs.",
-    "url": "https://www.dreemfolio.com/blog"
+    "name": "{{ page_title | default('DreemFolio AI Career & ATS Resume Blog') }}",
+    "description": "{{ page_description | default('Authoritative guides on passing Applicant Tracking Systems, optimizing tech resumes, and landing remote jobs.') }}",
+    "url": "{{ canonical_url }}"
   }
   </script>
   {% endif %}

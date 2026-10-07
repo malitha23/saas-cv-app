@@ -239,6 +239,8 @@ async def serve_sitemap_xml():
         ("https://www.dreemfolio.com/ai-resume-builder", today, "daily", "0.95"),
         ("https://www.dreemfolio.com/app", today, "daily", "0.95"),
         ("https://www.dreemfolio.com/blog", today, "daily", "0.90"),
+        ("https://www.dreemfolio.com/blog/si", today, "daily", "0.90"),
+        ("https://www.dreemfolio.com/blog/ta", today, "daily", "0.90"),
         ("https://www.dreemfolio.com/guide", today, "weekly", "0.85"),
         ("https://www.dreemfolio.com/contact", today, "monthly", "0.80"),
         ("https://www.dreemfolio.com/security", today, "monthly", "0.75"),
