@@ -536,6 +536,11 @@ async def reset_password(
     user.hashed_password = hash_password(req.new_password)
     user.reset_password_token = None
     user.reset_password_expires_at = None
+
+    # Server-Side Session Revocation (OWASP A07:2021 / CWE-613 / CWE-287):
+    # Invalidate all existing active sessions across all devices and browsers immediately
+    current_tv = getattr(user, "token_version", 1) or 1
+    user.token_version = current_tv + 1
     db.commit()
 
     base_url = str(request.base_url).rstrip("/")

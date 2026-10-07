@@ -48,6 +48,7 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     reset_password_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     reset_password_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    token_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False, server_default="1")
 
     # ═══════════════════════════════════════════════════════════════════════════
     # VIRAL GROWTH & REFERRAL ENGINE

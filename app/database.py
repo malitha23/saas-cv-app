@@ -96,6 +96,7 @@ def init_engine():
                 ("auth_provider", "VARCHAR(50) NOT NULL DEFAULT 'email'"),
                 ("reset_password_token", "VARCHAR(255) NULL"),
                 ("reset_password_expires_at", "DATETIME NULL"),
+                ("token_version", "INT NOT NULL DEFAULT 1"),
                 ("referral_code", "VARCHAR(50) NULL"),
                 ("referred_by_id", "INT NULL"),
                 ("referral_bonus_downloads", "INT NOT NULL DEFAULT 0"),

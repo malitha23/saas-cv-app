@@ -52,14 +52,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(user: User) -> str:
     """
     Generates a cryptographically signed JWT access token for the authenticated user.
+    Includes token_version ('tv') for instantaneous server-side session invalidation on password reset (CWE-613).
     """
     now = datetime.datetime.utcnow()
+    token_version = getattr(user, "token_version", 1) or 1
     payload = {
         "sub": str(user.id),
         "email": user.email,
         "name": user.full_name,
         "tier": user.plan_tier,
         "admin": user.is_admin,
+        "tv": int(token_version),
         "iat": now,
         "exp": now + datetime.timedelta(days=JWT_EXPIRATION_DAYS)
     }
@@ -85,7 +88,8 @@ def get_current_user(
     """
     FastAPI Security Dependency: Ensures the request carries a valid Bearer JWT.
     Extracts the user from the database via typed SQLAlchemy query.
-    Raises HTTP 401 if unauthenticated or invalid.
+    Enforces server-side session invalidation upon password reset (CWE-613 / CWE-287).
+    Raises HTTP 401 if unauthenticated, expired, or revoked.
     """
     if not auth or not auth.credentials:
         raise HTTPException(
@@ -119,6 +123,23 @@ def get_current_user(
             detail="Your user account is suspended or inactive.",
         )
 
+    # Server-Side Session Invalidation (OWASP A07:2021 / CWE-613 / CWE-287)
+    # Ensure this token was issued for the user's current password / token_version
+    expected_tv = int(getattr(user, "token_version", 1) or 1)
+    token_tv = payload.get("tv")
+    if token_tv is not None and int(token_tv) != expected_tv:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your session has expired due to a recent password reset or security revocation. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if token_tv is None and expected_tv > 1:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Your session has expired due to a recent password reset or security revocation. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return user
 
 
@@ -137,7 +158,16 @@ def get_optional_user(
     try:
         user_id = int(payload["sub"])
         stmt = select(User).where(User.id == user_id)
-        return db.scalars(stmt).first()
+        user = db.scalars(stmt).first()
+        if not user or not user.is_active:
+            return None
+        expected_tv = int(getattr(user, "token_version", 1) or 1)
+        token_tv = payload.get("tv")
+        if token_tv is not None and int(token_tv) != expected_tv:
+            return None
+        if token_tv is None and expected_tv > 1:
+            return None
+        return user
     except Exception:
         return None
 
