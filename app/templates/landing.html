@@ -282,6 +282,11 @@
         </a>
         <a href="/blog" class="hover:text-white transition">Blog</a>
         <a href="#pricing" class="hover:text-white transition">Pricing</a>
+        <button type="button" @click="openAtsChecker()"
+          class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-bold transition shadow-sm">
+          <i data-lucide="gauge" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span>Free ATS Score</span>
+        </button>
       </nav>
 
       <!-- Right Action CTA Buttons -->
@@ -370,20 +375,28 @@
       </p>
 
       <!-- CTA Buttons Group -->
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
         <!-- Logged In Hero CTA -->
         <template x-if="token">
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <button type="button" @click="openAtsChecker()"
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-600 via-teal-600 to-indigo-600 hover:brightness-110 text-white font-black text-base shadow-xl shadow-cyan-600/30 hover:shadow-cyan-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5 border border-cyan-400/40">
+              <i data-lucide="scan-line" class="w-5 h-5 text-cyan-200"></i>
+              <span>Check Free ATS Score</span>
+              <span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded-full bg-white/20 text-white">Instant</span>
+            </button>
+
             <a href="/app"
               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
               <i data-lucide="rocket" class="w-5 h-5"></i>
               <span>Open AI Workspace</span>
               <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
+
             <a href="/app?openPricing=true"
-              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
               <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
-              <span>Subscription & Plans</span>
+              <span>Plans</span>
             </a>
           </div>
         </template>
@@ -391,20 +404,53 @@
         <!-- Logged Out Hero CTA -->
         <template x-if="!token">
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+            <button type="button" @click="openAtsChecker()"
+              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-600 via-teal-600 to-indigo-600 hover:brightness-110 text-white font-black text-base shadow-xl shadow-cyan-600/30 hover:shadow-cyan-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5 border border-cyan-400/40">
+              <i data-lucide="scan-line" class="w-5 h-5 text-cyan-200"></i>
+              <span>Check Free ATS Score</span>
+              <span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded-full bg-white/20 text-white">Instant</span>
+            </button>
+
             <a href="/app"
               class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-base shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] transition flex items-center justify-center gap-2.5">
               <i data-lucide="sparkles" class="w-5 h-5"></i>
-              <span>Get Started for Free</span>
+              <span>Get Started Free</span>
               <i data-lucide="arrow-right" class="w-5 h-5"></i>
             </a>
 
             <a href="/app?demo=true"
-              class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
+              class="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-base transition flex items-center justify-center gap-2 hover:border-slate-600">
               <i data-lucide="play" class="w-4 h-4 text-indigo-400"></i>
-              <span>View Live Demo</span>
+              <span>Live Demo</span>
             </a>
           </div>
         </template>
+      </div>
+
+      <!-- Quick 1-Click Dropzone Banner -->
+      <div class="max-w-2xl mx-auto mb-10">
+        <div 
+          @click="openAtsChecker()"
+          class="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/30 hover:border-cyan-400/60 shadow-lg shadow-cyan-500/10 cursor-pointer transition group flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition shrink-0">
+              <i data-lucide="gauge" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-xs sm:text-sm font-bold text-white group-hover:text-cyan-300 transition flex items-center gap-2">
+                <span>Want to see your CV's real ATS compatibility score?</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">2 Clicks</span>
+              </div>
+              <p class="text-[11px] sm:text-xs text-slate-400">
+                Upload or drop PDF / DOCX • Instantly detect formatting, missing keywords & rejection risks
+              </p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition shrink-0">
+            <span>Scan Free</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </span>
+        </div>
       </div>
 
       <!-- Micro-Trust Signals -->
@@ -1384,6 +1430,336 @@
   {% include 'components/footer.html' %}
 
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
+  <!-- REAL-TIME ATS SCORE CHECKER MODAL (2-3 CLICKS USER-FRIENDLY FLOW)             -->
+  <!-- ───────────────────────────────────────────────────────────────────────────── -->
+  <div 
+    x-show="atsModalOpen" 
+    x-cloak 
+    class="fixed inset-0 z-50 overflow-y-auto"
+    @keydown.escape.window="closeAtsChecker()"
+    role="dialog" 
+    aria-modal="true"
+    aria-labelledby="ats-modal-heading">
+
+    <!-- Backdrop -->
+    <div 
+      x-show="atsModalOpen"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity" 
+      @click="closeAtsChecker()">
+    </div>
+
+    <div class="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
+      <div 
+        x-show="atsModalOpen"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="relative transform overflow-hidden rounded-3xl bg-slate-900 border border-slate-700/80 shadow-2xl text-left transition-all w-full max-w-2xl sm:max-w-3xl my-6">
+
+        <!-- Top Header -->
+        <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
+              <i data-lucide="gauge" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 id="ats-modal-heading" class="text-base sm:text-lg font-black text-white">Free Real ATS Resume Checker</h3>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">2026 Engine</span>
+              </div>
+              <p class="text-xs text-slate-400">
+                Audit your CV against Workday, Greenhouse & Lever ATS screening standards.
+              </p>
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            @click="closeAtsChecker()" 
+            class="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
+            aria-label="Close modal">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Body Area -->
+        <div class="p-6">
+
+          <!-- ─── STATE 1: UPLOAD & PASTE INPUT ─── -->
+          <div x-show="!atsResult && !atsScanning">
+            <!-- Tabs -->
+            <div class="flex items-center gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800 mb-5 max-w-xs mx-auto text-xs font-semibold">
+              <button 
+                type="button"
+                @click="atsActiveTab = 'upload'; atsError = ''" 
+                :class="atsActiveTab === 'upload' ? 'bg-cyan-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
+                class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+                <i data-lucide="file-up" class="w-3.5 h-3.5"></i>
+                <span>Upload File</span>
+              </button>
+              <button 
+                type="button"
+                @click="atsActiveTab = 'paste'; atsError = ''" 
+                :class="atsActiveTab === 'paste' ? 'bg-cyan-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-white'"
+                class="flex-1 py-1.5 px-3 rounded-lg transition flex items-center justify-center gap-1.5">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Paste Text</span>
+              </button>
+            </div>
+
+            <!-- Error Banner if any -->
+            <div x-show="atsError" x-cloak class="mb-4 p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300 flex items-center gap-2">
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-400"></i>
+              <span x-text="atsError"></span>
+            </div>
+
+            <!-- Tab 1: Upload Dropzone -->
+            <div x-show="atsActiveTab === 'upload'">
+              <div 
+                @dragover.prevent="atsDragOver = true"
+                @dragleave.prevent="atsDragOver = false"
+                @drop.prevent="handleAtsFileDrop($event)"
+                :class="atsDragOver ? 'border-cyan-400 bg-cyan-950/20 scale-[1.01]' : 'border-slate-700/80 bg-slate-950/60 hover:border-cyan-500/50 hover:bg-slate-950/90'"
+                class="border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition cursor-pointer relative group">
+                
+                <input 
+                  type="file" 
+                  id="atsFileInput"
+                  accept=".pdf,.docx,.doc,.txt"
+                  @change="handleAtsFileSelect($event)" 
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+
+                <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-4 group-hover:scale-110 transition shadow-inner">
+                  <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                </div>
+
+                <h4 class="text-base font-bold text-white mb-1">
+                  Drag & drop your CV here, or <span class="text-cyan-400 underline underline-offset-2">browse files</span>
+                </h4>
+                <p class="text-xs text-slate-400 mb-4">
+                  Supports PDF, DOCX, or TXT (Max 10MB) • Instant ATS Result
+                </p>
+
+                <div class="inline-flex items-center gap-4 text-[11px] text-slate-400 bg-slate-900/90 px-3.5 py-1.5 rounded-full border border-slate-800">
+                  <span class="flex items-center gap-1 text-emerald-400">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                    <span>100% In-Memory Safe</span>
+                  </span>
+                  <span>•</span>
+                  <span>Zero Sign-Up Required</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab 2: Paste Text -->
+            <div x-show="atsActiveTab === 'paste'" x-cloak>
+              <div class="space-y-4">
+                <textarea 
+                  x-model="atsText"
+                  rows="7"
+                  placeholder="Paste your CV text here (Summary, Experience, Education, Skills)..."
+                  class="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-slate-200 text-xs sm:text-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition font-mono leading-relaxed resize-none"></textarea>
+
+                <button 
+                  type="button"
+                  @click="handleAtsTextSubmit(atsText)"
+                  class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:brightness-110 text-white font-bold text-sm shadow-lg shadow-cyan-600/25 transition flex items-center justify-center gap-2">
+                  <i data-lucide="gauge" class="w-4 h-4"></i>
+                  <span>Analyze ATS Compatibility</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── STATE 2: SCANNING IN PROGRESS ─── -->
+          <div x-show="atsScanning" x-cloak class="py-12 text-center space-y-6">
+            <div class="relative w-20 h-20 mx-auto">
+              <div class="w-20 h-20 rounded-full border-4 border-slate-800 border-t-cyan-400 animate-spin"></div>
+              <div class="absolute inset-0 flex items-center justify-center text-cyan-400">
+                <i data-lucide="scan" class="w-8 h-8 animate-pulse"></i>
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <h4 class="text-lg font-bold text-white">Auditing Your Resume for ATS Screening...</h4>
+              <p class="text-xs sm:text-sm text-cyan-300 font-mono" x-text="atsScanStep"></p>
+            </div>
+
+            <div class="max-w-md mx-auto h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 animate-pulse w-full"></div>
+            </div>
+          </div>
+
+          <!-- ─── STATE 3: AUDIT RESULT ─── -->
+          <div x-show="atsResult && !atsScanning" x-cloak class="space-y-6">
+            
+            <!-- Top Score Summary Banner -->
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+              
+              <!-- Circular / Metric Score Display -->
+              <div class="flex items-center gap-5">
+                <div class="relative w-24 h-24 shrink-0 flex items-center justify-center">
+                  <!-- Ring background -->
+                  <svg class="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" class="text-slate-800" fill="transparent"/>
+                    <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" 
+                      :class="{
+                        'text-emerald-400': atsResult.overall_score >= 88,
+                        'text-cyan-400': atsResult.overall_score >= 74 && atsResult.overall_score < 88,
+                        'text-amber-400': atsResult.overall_score >= 55 && atsResult.overall_score < 74,
+                        'text-rose-400': atsResult.overall_score < 55
+                      }"
+                      :stroke-dasharray="251.2"
+                      :stroke-dashoffset="251.2 - (251.2 * atsResult.overall_score / 100)"
+                      stroke-linecap="round" fill="transparent" class="transition-all duration-1000 ease-out"/>
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-2xl font-black text-white" x-text="atsResult.overall_score"></span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">/ 100</span>
+                  </div>
+                </div>
+
+                <div class="space-y-1 text-left">
+                  <div class="flex items-center gap-2">
+                    <span 
+                      class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wide border"
+                      :class="{
+                        'bg-emerald-500/10 text-emerald-300 border-emerald-500/30': atsResult.overall_score >= 88,
+                        'bg-cyan-500/10 text-cyan-300 border-cyan-500/30': atsResult.overall_score >= 74 && atsResult.overall_score < 88,
+                        'bg-amber-500/10 text-amber-300 border-amber-500/30': atsResult.overall_score >= 55 && atsResult.overall_score < 74,
+                        'bg-rose-500/10 text-rose-300 border-rose-500/30': atsResult.overall_score < 55
+                      }"
+                      x-text="atsResult.rating">
+                    </span>
+                    <span class="text-xs text-slate-400" x-text="atsResult.reading_time"></span>
+                  </div>
+                  <h4 class="text-base font-bold text-white" x-text="'Candidate: ' + atsResult.extracted_name"></h4>
+                  <p class="text-xs text-slate-300 max-w-md leading-relaxed" x-text="atsResult.summary_verdict"></p>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                <button 
+                  type="button"
+                  @click="resetAtsChecker()"
+                  class="px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition">
+                  Scan Another
+                </button>
+              </div>
+            </div>
+
+            <!-- 4 Core Pillars Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+              <!-- Pillar 1: Sections -->
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Sections</span>
+                  <span class="font-bold text-cyan-400" x-text="atsResult.breakdown.sections.score + '/25'"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 font-medium truncate" x-text="atsResult.breakdown.sections.detected.length + ' detected'"></div>
+              </div>
+
+              <!-- Pillar 2: Formatting -->
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Parseability</span>
+                  <span class="font-bold text-emerald-400" x-text="atsResult.breakdown.formatting.score + '/25'"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 font-medium truncate" x-text="atsResult.word_count + ' words'"></div>
+              </div>
+
+              <!-- Pillar 3: Impact & Metrics -->
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Metrics Impact</span>
+                  <span class="font-bold text-amber-400" x-text="atsResult.breakdown.impact_metrics.score + '/25'"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 font-medium truncate" x-text="atsResult.breakdown.impact_metrics.metrics_found + ' metrics found'"></div>
+              </div>
+
+              <!-- Pillar 4: Skills Density -->
+              <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Skills Density</span>
+                  <span class="font-bold text-purple-400" x-text="atsResult.breakdown.skills.score + '/25'"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 font-medium truncate" x-text="atsResult.breakdown.skills.skills_count + ' recognized'"></div>
+              </div>
+            </div>
+
+            <!-- Strengths and Critical Rejection Risks -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left text-xs">
+              
+              <!-- Strengths -->
+              <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
+                <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                  <i data-lucide="check-circle" class="w-4 h-4"></i>
+                  <span>What's Working Well:</span>
+                </div>
+                <ul class="space-y-1.5 text-slate-300">
+                  <template x-for="(str, idx) in atsResult.strengths" :key="idx">
+                    <li class="flex items-start gap-1.5">
+                      <span class="text-emerald-400 mt-0.5">•</span>
+                      <span x-text="str"></span>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+
+              <!-- Critical Rejection Risks -->
+              <div class="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/20 space-y-2">
+                <div class="font-bold text-rose-400 flex items-center gap-1.5">
+                  <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                  <span>Critical Rejection Risks:</span>
+                </div>
+                <ul class="space-y-1.5 text-slate-300">
+                  <template x-for="(iss, idx) in atsResult.critical_issues" :key="idx">
+                    <li class="flex items-start gap-1.5">
+                      <span class="text-rose-400 mt-0.5">•</span>
+                      <span x-text="iss"></span>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+
+            </div>
+
+            <!-- Next Step CTA: Instant Boost to 95% -->
+            <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div class="text-left text-xs text-slate-400">
+                <strong class="text-white block font-semibold">Want to automatically fix these errors?</strong>
+                DreemFolio AI tailors your bullet points, injects metrics, and outputs a 100% ATS PDF.
+              </div>
+
+              <button 
+                type="button"
+                @click="proceedToWorkspaceFix()"
+                class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 hover:brightness-110 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-indigo-600/30 transition flex items-center justify-center gap-2 shrink-0">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Fix & Boost to 95%+ in AI Workspace (Free)</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <!-- SCRIPT -->
   <!-- ───────────────────────────────────────────────────────────────────────────── -->
   <script>
@@ -1447,6 +1823,146 @@
             return url.includes('autoplay=1') ? url : (url.includes('?') ? url + '&autoplay=1&rel=0' : url + '?autoplay=1&rel=0');
           }
           return url;
+        },
+
+        // Interactive ATS Resume Checker State
+        atsModalOpen: false,
+        atsActiveTab: 'upload',
+        atsScanning: false,
+        atsScanStep: 'Reading document text...',
+        atsResult: null,
+        atsError: '',
+        atsDragOver: false,
+        atsText: '',
+
+        openAtsChecker() {
+          this.atsModalOpen = true;
+          this.atsError = '';
+          this.$nextTick(() => {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          });
+        },
+
+        closeAtsChecker() {
+          this.atsModalOpen = false;
+        },
+
+        resetAtsChecker() {
+          this.atsResult = null;
+          this.atsError = '';
+          this.atsScanning = false;
+          this.atsText = '';
+          this.$nextTick(() => {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+              window.lucide.createIcons();
+            }
+          });
+        },
+
+        async handleAtsFileSelect(event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+          await this.executeAtsScan(file, null);
+        },
+
+        async handleAtsFileDrop(event) {
+          this.atsDragOver = false;
+          const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+          if (!file) return;
+          await this.executeAtsScan(file, null);
+        },
+
+        async handleAtsTextSubmit(text) {
+          if (!text || !text.trim()) {
+            this.atsError = 'Please paste your resume text.';
+            return;
+          }
+          await this.executeAtsScan(null, text.trim());
+        },
+
+        async executeAtsScan(file, rawText) {
+          this.atsError = '';
+          this.atsScanning = true;
+          this.atsScanStep = 'Parsing document & extracting text...';
+
+          const stepTimer = setInterval(() => {
+            if (this.atsScanStep.includes('Parsing')) {
+              this.atsScanStep = 'Auditing section hierarchy (Workday & Greenhouse)...';
+            } else if (this.atsScanStep.includes('Auditing')) {
+              this.atsScanStep = 'Scanning action verbs, metric density & formatting...';
+            } else {
+              this.atsScanStep = 'Calculating final ATS score...';
+            }
+          }, 350);
+
+          try {
+            const formData = new FormData();
+            if (file) {
+              const ext = file.name.split('.').pop().toLowerCase();
+              if (!['pdf', 'docx', 'doc', 'txt'].includes(ext)) {
+                clearInterval(stepTimer);
+                this.atsScanning = false;
+                this.atsError = 'Unsupported format. Please upload a PDF, DOCX, or TXT file.';
+                return;
+              }
+              if (file.size > 10 * 1024 * 1024) {
+                clearInterval(stepTimer);
+                this.atsScanning = false;
+                this.atsError = 'File exceeds 10MB limit. Please upload a smaller file.';
+                return;
+              }
+              formData.append('file', file);
+            } else if (rawText) {
+              formData.append('resume_text', rawText);
+            }
+
+            const res = await fetch('/api/ats/quick-scan', {
+              method: 'POST',
+              body: formData
+            });
+
+            clearInterval(stepTimer);
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.detail || 'Could not analyze document. Please ensure it has readable text.');
+            }
+
+            const data = await res.json();
+            this.atsResult = data;
+            this.atsScanning = false;
+
+            // Pre-save extracted text into localStorage so when user proceeds to /app, it is already loaded
+            if (data.raw_text_preview) {
+              try {
+                localStorage.setItem('dreemfolio_active_resume_text', data.raw_text_preview);
+              } catch(e) {}
+            }
+
+            this.$nextTick(() => {
+              if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+              }
+            });
+
+          } catch (err) {
+            clearInterval(stepTimer);
+            this.atsScanning = false;
+            this.atsError = err.message || 'An error occurred during scan.';
+          }
+        },
+
+        proceedToWorkspaceFix() {
+          if (this.atsResult && this.atsResult.raw_text_preview) {
+            try {
+              localStorage.setItem('dreemfolio_active_resume_text', this.atsResult.raw_text_preview);
+            } catch(e) {}
+          }
+          const refStored = localStorage.getItem('dreemfolio_ref');
+          const target = refStored ? `/app?ref=${encodeURIComponent(refStored)}` : '/app';
+          window.location.href = target;
         },
 
         async initLanding() {

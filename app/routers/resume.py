@@ -6,7 +6,7 @@ import logging
 import datetime
 import asyncio
 from typing import Optional, List
-from fastapi import APIRouter, File, UploadFile, HTTPException, Response, Depends, status
+from fastapi import APIRouter, File, UploadFile, HTTPException, Response, Depends, status, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models import User, UserResume
 from app.sample_data import SAMPLE_RESUMES
 from app.parser import parse_resume_file, extract_candidate_name
+from app.services.ats_scanner import audit_resume_ats
 from app.ai_engine import generate_with_gemini, validate_title_resume_match
 from app.pdf_generator import generate_resume_pdf, generate_cover_letter_pdf
 from app.schemas import ParseResponse, TailorRequest, TailoredResume, SaveResumeRequest, SavedResumeListItem
@@ -108,6 +109,81 @@ async def upload_resume(file: UploadFile = File(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/api/ats/quick-scan")
+async def quick_scan_ats(
+    file: Optional[UploadFile] = File(None),
+    resume_text: Optional[str] = Form(None)
+):
+    """
+    1-Click instant ATS Compatibility & Score Scanner for Landing Page visitors.
+    Accepts either an uploaded PDF/DOCX/TXT file or pasted raw text.
+    Provides detailed section analysis, formatting checks, power verbs, metrics density, and actionable advice.
+    """
+    filename = "pasted_resume.txt"
+    raw_text = ""
+
+    if file and file.filename:
+        filename = (file.filename or "uploaded_resume.pdf").strip()
+        lower_fn = filename.lower()
+        content = await file.read(MAX_UPLOAD_SIZE + 1)
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail="File size exceeds the 10MB limit. Please upload a smaller resume document."
+            )
+        if not content:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        # Strict magic bytes verification
+        if lower_fn.endswith(".pdf"):
+            if not content.startswith(b"%PDF-"):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid PDF format. The file header does not match a valid PDF."
+                )
+        elif lower_fn.endswith(".docx"):
+            if not (content.startswith(b"PK\x03\x04") or content.startswith(b"PK\x05\x06")):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid DOCX format. The file header does not match a valid Word document."
+                )
+        elif lower_fn.endswith(".txt"):
+            if b"\x00" in content[:2048]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid text format. Binary content detected."
+                )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported file format. Please upload a PDF, DOCX, or TXT file."
+            )
+
+        extracted_text, _ = await asyncio.to_thread(parse_resume_file, filename, content)
+        raw_text = extracted_text
+    elif resume_text and resume_text.strip():
+        if len(resume_text) > 100000:
+            raise HTTPException(
+                status_code=400,
+                detail="Resume text is too long (maximum 100,000 characters)."
+            )
+        raw_text = resume_text.strip()
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide a resume document (PDF/DOCX) or paste your resume text."
+        )
+
+    if not raw_text or len(raw_text.strip()) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract readable text from the document. Please ensure it is not a scanned image or empty."
+        )
+
+    audit_result = await asyncio.to_thread(audit_resume_ats, raw_text, filename)
+    return audit_result
 
 
 @router.post("/api/tailor", response_model=TailoredResume)
