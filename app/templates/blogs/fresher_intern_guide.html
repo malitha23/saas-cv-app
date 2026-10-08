@@ -1,0 +1,418 @@
+{% extends "blogs/layout.html" %}
+
+{% block title %}{{ post.title }} | DreemFolio AI{% endblock %}
+{% block meta_description %}{{ post.description }}{% endblock %}
+{% block meta_keywords %}{{ post.target_keywords | join(', ') }}{% endblock %}
+{% block canonical %}{{ canonical_url }}{% endblock %}
+
+{% block blog_content %}
+<div class="py-12 bg-slate-950">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+    <!-- Breadcrumb Navigation & In-Page Language Selector -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <nav class="flex items-center space-x-2 text-xs text-slate-400" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <span>/</span>
+        <a href="{{ '/blog/' + current_lang if current_lang != 'en' else '/blog' }}" class="hover:text-white transition">
+          {% if current_lang == 'si' %}බ්ලොග් අඩවිය{% elif current_lang == 'ta' %}வலைப்பதிவு{% else %}Blog{% endif %}
+        </a>
+        <span>/</span>
+        <span class="text-indigo-400 truncate">{{ post.title }}</span>
+      </nav>
+
+      <!-- Language Switcher Bar -->
+      <div class="inline-flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <span class="text-[11px] text-slate-400 px-2 font-medium">
+          {% if current_lang == 'si' %}භාෂාව:{% elif current_lang == 'ta' %}மொழி:{% else %}Language:{% endif %}
+        </span>
+        <a href="{{ en_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'en' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          English
+        </a>
+        <a href="{{ si_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'si' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          සිංහල
+        </a>
+        <a href="{{ ta_url }}" class="px-2.5 py-1 rounded-lg transition {% if current_lang == 'ta' %}bg-indigo-600 text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}">
+          தமிழ்
+        </a>
+      </div>
+    </div>
+
+    <!-- Article Header -->
+    <header class="mb-10 pb-8 border-b border-slate-800">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="px-3 py-1 text-xs font-bold rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          {{ post.category }}
+        </span>
+        <span class="text-xs text-slate-400 font-medium">
+          {{ post.reading_time }} • 2026 Edition
+        </span>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4">
+        {{ post.title }}
+      </h1>
+
+      <p class="text-slate-300 text-lg leading-relaxed mb-6">
+        {{ post.subtitle or post.description }}
+      </p>
+
+      <!-- Author and Share Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-900 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center font-bold text-cyan-400">
+            DF
+          </div>
+          <div>
+            <div class="font-bold text-white text-sm">{{ post.author.name if post.author else 'DreemFolio AI Career Team' }}</div>
+            <div class="text-slate-400">Published on October 08, 2026 • Graduate & Intern Hiring</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button @click="copyPostUrl()" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+            <span x-text="copySuccess ? 'Link Copied!' : 'Share Guide'">Share Guide</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    {% if current_lang == 'si' %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SINHALA CONTENT                                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
+      <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+        <em>"මට කිසිදු රැකියා පළපුරුද්දක් නැහැ. මම කොහොමද CV එකක් හදන්නේ?"</em> — මෙය ශ්‍රී ලංකාවේ විශ්වවිද්‍යාල, උසස් අධ්‍යාපන ආයතන වලින් පිටවන බොහෝ සිසුන් (Fresh Graduates & Undergraduates) නිතරම අසන ප්‍රශ්නයකි.
+      </p>
+
+      <div class="my-6 p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-cyan-400">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Recruiters ලා ඇත්තටම අපේක්ෂා කරන්නේ කුමක්ද?</span>
+        </div>
+        <p>
+          කිසිදු Hiring Manager කෙනෙකු හෝ Recruiter කෙනෙකු Intern කෙනෙකුගෙන් හෝ Fresher කෙනෙකුගෙන් වසර 5ක කර්මාන්ත පළපුරුද්දක් බලාපොරොත්තු නොවේ. ඔවුන් බලන්නේ: <strong>ඔබට මූලික තාක්ෂණික පදනම තිබේද? ඔබ සැබෑ Projects හදා තිබේද? සහ ඔබ ඉක්මනින් ඉගෙන ගැනීමට කැමති කෙනෙක්ද (Willingness to Learn)?</strong> යන්නයි.
+        </p>
+      </div>
+
+      <p>
+        ඔබට රැකියා පළපුරුද්දක් (Work Experience) නොතිබුණද, නිවැරදි <strong>ATS-Friendly Single-Column Format</strong> එකක් භාවිතා කරමින් ප්‍රමුඛ පෙළේ ආයතන වලින් සම්මුඛ පරීක්ෂණ කැඳවීම් (Interview Calls) ලබාගන්නා නිවැරදි ක්‍රමවේදය මෙන්න:
+      </p>
+
+      <!-- SECTION 1: HIERARCHY -->
+      <h2>1. Fresher / Intern CV එකක තිබිය යුතු නිවැරදි අනුපිළිවෙල (Hierarchy)</h2>
+      <p>
+        පළපුරුදු වෘත්තිකයින්ගේ CV එකක මුලින්ම යන්නේ Work Experience ය. නමුත් ඔබ Fresher කෙනෙකු නම්, ඔබේ ප්‍රබලතම වත්කම වන්නේ ඔබේ <strong>Education, Technical Skills, සහ Academic Projects</strong> ය. ඔබේ CV එක පහත අනුපිළිවෙලට සකස් විය යුතුය:
+      </p>
+
+      <ol class="space-y-2 my-4">
+        <li><strong>Contact Header & Live Links:</strong> නම, දුරකථන අංකය, Professional Email, LinkedIn, GitHub, සහ Live Portfolio Link.</li>
+        <li><strong>Education (අධ්‍යාපනය):</strong> උපාධිය (Degree / HND), විශ්වවිද්‍යාලය, අපේක්ෂිත වසර, සහ GPA අගය (3.0 ට වැඩි නම්).</li>
+        <li><strong>Technical Skills (තාක්ෂණික කුසලතා):</strong> Languages, Frameworks, Developer Tools, සහ Databases.</li>
+        <li><strong>Projects (ව්‍යාපෘති - ඔබේ CV එකේ වැදගත්ම කොටස!):</strong> විශ්වවිද්‍යාල ව්‍යාපෘති, Capstone Projects, සහ Personal Projects.</li>
+        <li><strong>Certifications & Hackathons:</strong> අන්තර්ජාල පාඨමාලා (Coursera, Udemy, AWS) සහ Hackathon ජයග්‍රහණ.</li>
+        <li><strong>Leadership & Extracurricular:</strong> Rotaract, AIESEC, ශිෂ්‍ය සංගම් හෝ ක්‍රීඩා නායකත්ව.</li>
+      </ol>
+
+      <!-- FIRST INLINE CTA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold">
+            <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+            <span>නොමිලේ Fresher CV Builder</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">තත්පර 15න් ATS Fresher CV එකක් හදන්න</h3>
+          <p class="text-slate-300 text-xs sm:text-sm max-w-md">
+            කිසිදු පළපුරුද්දක් නැති වුවද ඔබේ Projects සහ Skills ඇතුළත් කර 100% Single-Column ATS CV එකක් නොමිලේ සාදාගන්න.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-cyan-600/25 transition flex items-center gap-2 shrink-0">
+          <span>නොමිලේ CV එකක් හදන්න</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <!-- SECTION 2: HOW TO WRITE PROJECTS -->
+      <h2>2. පළපුරුද්දක් වෙනුවට Projects ලියන නිවැරදි ක්‍රමය (Google X-Y-Z Formula)</h2>
+      <p>
+        Fresher කෙනෙකුගේ CV එකක් තීරණය වන්නේ ඔහු කර ඇති Projects වල ගුණාත්මකභාවය මතයි. බොහෝ සිසුන් <em>"Final Year Project: Built an E-Commerce Website using PHP"</em> ලෙස එක් පේළියකින් ලියයි. එයින් Recruiter ට ඔබේ හැකියාව තේරුම් ගත නොහැක.
+      </p>
+      <p>
+        සෑම Project එකක් සඳහාම <strong>Bullet Points 2-3ක්</strong> ලියන්න. එහිදී ඔබ භාවිතා කළ Tech Stack එක, විසඳූ ගැටලුව, සහ ප්‍රතිඵලය දක්වන්න:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4 not-prose text-xs">
+        <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30">
+          <div class="font-bold text-rose-400 mb-1">❌ දුර්වල විස්තරයක්:</div>
+          <p class="text-slate-300 italic">
+            "Developed an online blood bank management system using React and Node.js for university final project."
+          </p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+          <div class="font-bold text-emerald-400 mb-1">✅ ප්‍රබල ATS විස්තරයක්:</div>
+          <p class="text-slate-300">
+            "Architected full-stack Blood Bank web app using <strong>React, Node.js, and MongoDB</strong>; integrated JWT authentication and automated email alerts, reducing donor match time by <strong>35%</strong> during campus pilot testing."
+          </p>
+        </div>
+      </div>
+
+      <p>
+        හැකි සෑම විටම ඔබගේ Projects වල <strong>GitHub Repository Link</strong> සහ <strong>Live Demo URL</strong> එක ඇතුළත් කරන්න. Recruiter ට ක්ලික් කර බැලිය හැකි Live Project එකක් තිබීම ඔබව අනෙක් තරඟකරුවන් 500 දෙනාගෙන්ම ඉදිරියට ගෙන යයි!
+      </p>
+
+      <!-- SECTION 3: SKILLS SECTION -->
+      <h2>3. Technical Skills ලැයිස්තුගත කිරීමේ රහස</h2>
+      <p>
+        Skills කොටසේ "Hard Worker", "Good Communicator", "Fast Learner" වැනි පොදු වචන දැමීමෙන් වළකින්න. මේවා Soft Skills වන අතර ඒවා පෙන්විය යුත්තේ ඔබේ Project විස්තර තුළිනි.
+      </p>
+      <p>
+        ATS Scanner එකක් කියවන්නේ නිශ්චිත තාක්ෂණික පද (Hard Keywords) ය. උදාහරණයක් ලෙස:
+      </p>
+      <ul>
+        <li><strong>Programming Languages:</strong> Java, Python, TypeScript, JavaScript, C#</li>
+        <li><strong>Frontend Technologies:</strong> React, HTML5, CSS3, Tailwind CSS, Next.js</li>
+        <li><strong>Backend & Frameworks:</strong> Node.js, Express, Spring Boot, FastAPI</li>
+        <li><strong>Databases:</strong> MySQL, PostgreSQL, MongoDB, Redis</li>
+        <li><strong>Tools & Platforms:</strong> Git, GitHub, Docker, Postman, Linux, VS Code</li>
+      </ul>
+
+      <!-- SECTION 4: 5 FATAL MISTAKES -->
+      <h2>4. ලංකාවේ Freshers ලා සහ Interns ලා කරන බරපතල වැරදි 5ක්</h2>
+
+      <h3>1. Objective Statement එකක් දැමීම</h3>
+      <p>
+        <em>"To obtain a challenging position in a prestigious organization where I can enhance my skills..."</em> — මෙම පරණ පාසල් Objective වාක්‍ය කිසිවෙකු කියවන්නේ නැත. ඒ වෙනුවට <strong>Professional Summary</strong> එකක් ලියන්න (උදා: <em>"Final-year Software Engineering undergraduate skilled in React and Node.js with 3 full-stack production projects..."</em>).
+      </p>
+
+      <h3>2. Canva වල තීරු දෙකේ (Two-Column) මෝස්තර තෝරාගැනීම</h3>
+      <p>
+        ලස්සන වුවද, Graphics සහ තීරු දෙකේ මෝස්තර ATS මෘදුකාංග මඟින් ප්‍රතික්ෂේප කරයි. මේ පිළිබඳ සම්පූර්ණ විස්තරයක් අපගේ <a href="/blog/si/top-10-resume-errors-that-cause-rejection" class="text-indigo-400 underline font-semibold">CV එකක් Reject වන ප්‍රධාන වැරදි 10</a> ලිපියෙන් කියවන්න.
+      </p>
+
+      <h3>3. පාසල් විභාග විස්තර ඕනෑවට වඩා දැමීම</h3>
+      <p>
+        ඔබ විශ්වවිද්‍යාල උපාධියක් හෝ ඩිප්ලෝමාවක් හදාරන්නේ නම්, O/L විභාගයේ විෂයන් 9ම ලකුණු සහිතව දැමීම අනවශ්‍යයි. A/L ප්‍රතිඵල සහ පාසල පමණක් කෙටියෙන් සඳහන් කිරීම ප්‍රමාණවත්ය.
+      </p>
+
+      <h3>4. "References Available Upon Request" කියා ලිවීම</h3>
+      <p>
+        මෙය පිටුවේ ඉඩ නාස්ති කරන යල්පැනගිය වාක්‍යයකි. අවශ්‍ය නම් සමාගම විසින් References ඉල්ලා සිටිනු ඇත. ඒ ඉඩෙහි තවත් හොඳ Project එකක් ලියන්න.
+      </p>
+
+      <h3>5. CV එක පිටු 2කට වඩා දිගු කිරීම</h3>
+      <p>
+        කිසිදු පළපුරුද්දක් නැති ශිෂ්‍යයෙකුගේ CV එකක් <strong>පිටු 1ක් (One-Page)</strong> විය යුතුය. පිටු 2ක් හෝ 3ක් දිගු කිරීමෙන් වැදගත් දත්ත මඟහැරේ.
+      </p>
+
+      <!-- FAQ SECTION -->
+      <div class="mt-12 pt-8 border-t border-slate-800 not-prose space-y-4">
+        <div class="flex items-center gap-2 mb-2">
+          <i data-lucide="help-circle" class="w-5 h-5 text-cyan-400"></i>
+          <h3 class="text-lg font-bold text-white">නිතර අසන ප්‍රශ්න (FAQ) - Freshers & Interns CV</h3>
+        </div>
+
+        <div class="space-y-3 text-xs sm:text-sm">
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-cyan-300">1. මගේ GPA එක අඩු නම් මම එය CV එකට දැමිය යුතුද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              ඔබගේ GPA අගය 3.0 ට වඩා අඩු නම්, එය CV එකෙහි සඳහන් නොකර සිටීම වඩාත් යෝග්‍ය වේ. ඒ වෙනුවට ඔබ කළ Projects සහ Practical Skills ඉහළින් පෙන්වන්න.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-cyan-300">2. Internship එකක් සඳහා අයදුම් කිරීමේදී Cover Letter එකක් අත්‍යවශ්‍යද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              ඔව්. විශේෂයෙන් Freshers ලා සඳහා හොඳ Cover Letter එකක් තිබීමෙන් ඔබට රැකියාව පිළිබඳ ඇති කැපවීම සහ උනන්දුව කැපී පෙනේ. DreemFolio AI මඟින් ඔබගේ CV එකට ගැලපෙන Cover Letter එකක් තත්පර කිහිපයකින් සාදාගත හැක.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-cyan-300">3. Non-Tech සිසුන්ට (Business / Marketing) මේ Format එක ගැලපෙනවද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              ඔව්! Business, Marketing හෝ Accounting සිසුන් Coding Projects වෙනුවට විශ්වවිද්‍යාලයේ කළ Case Studies, Market Research, සහ Leadership භූමිකාවන් මෙම Single-Column ක්‍රමයටම ලියන්න.
+            </p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ENGLISH CONTENT                                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <article class="prose-custom">
+      <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+        <em>"How do I write a resume when I have zero work experience?"</em> — this is the number one hurdle every university student, recent graduate, and career changer faces when entering the professional job market.
+      </p>
+
+      <div class="my-6 p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-cyan-400">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>What Recruiters Actually Look For in Interns:</span>
+        </div>
+        <p>
+          Hiring managers at top tech firms and global corporations do not expect five years of enterprise experience from an intern or entry-level candidate. They evaluate three core pillars: <strong>solid theoretical fundamentals, proven hands-on project work, and a demonstrated hunger to learn.</strong>
+        </p>
+      </div>
+
+      <h2>1. The Ideal Structure of an Entry-Level ATS Resume</h2>
+      <p>
+        Experienced professionals place work experience at the top. For a fresher, your strongest value drivers are your <strong>education, technical competencies, and academic/personal projects</strong>. Organize your single-column resume in this exact order:
+      </p>
+
+      <ol class="space-y-2 my-4">
+        <li><strong>Header & Digital Presence:</strong> Full name, verified contact info, professional email, LinkedIn URL, GitHub profile, and custom live portfolio.</li>
+        <li><strong>Education:</strong> Degree title, University / Institution, Graduation Year, and GPA (if 3.2+).</li>
+        <li><strong>Technical Skills:</strong> Clearly categorized (Languages, Frameworks, Developer Tools, Databases).</li>
+        <li><strong>Projects:</strong> 2 to 3 featured academic, capstone, or personal full-stack projects with live demo URLs.</li>
+        <li><strong>Certifications & Competitions:</strong> Industry certifications (AWS, Google Cloud, Meta) and Hackathon achievements.</li>
+        <li><strong>Extracurricular Leadership:</strong> Club leadership, tech community volunteering, or sports achievements.</li>
+      </ol>
+
+      <!-- FIRST INLINE CTA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold">
+            <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+            <span>Free Fresher Resume Builder</span>
+          </div>
+          <h3 class="text-xl font-bold text-white">Create a Single-Column ATS Resume in Seconds</h3>
+          <p class="text-slate-300 text-xs sm:text-sm max-w-md">
+            No design guesswork or broken tables. DreemFolio AI formats your projects and education into an ATS-compliant PDF for free.
+          </p>
+        </div>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg shadow-cyan-600/25 transition flex items-center gap-2 shrink-0">
+          <span>Build Entry-Level Resume</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+      <h2>2. Transforming Academic Projects into Enterprise Experience</h2>
+      <p>
+        Don't just write a one-line title like <em>"Final Year Project: University Library Management System"</em>. Use the standard <strong>Google X-Y-Z formula</strong>:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4 not-prose text-xs">
+        <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30">
+          <div class="font-bold text-rose-400 mb-1">❌ Weak Project Description:</div>
+          <p class="text-slate-300 italic">
+            "Built a movie recommendation app in Python using machine learning algorithms for an AI module."
+          </p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+          <div class="font-bold text-emerald-400 mb-1">✅ High-Impact ATS Description:</div>
+          <p class="text-slate-300">
+            "Engineered movie recommendation engine using <strong>Python, Scikit-learn, and FastAPI</strong>; implemented collaborative filtering algorithms, achieving <strong>89% accuracy</strong> across 10,000+ movie ratings."
+          </p>
+        </div>
+      </div>
+
+      <h2>3. 4 Critical Mistakes to Avoid as a Student or Intern</h2>
+      <ul>
+        <li><strong>Multi-column Canva templates:</strong> Complex graphics and sidebars cause text corruption in ATS parsers like Workday and Greenhouse.</li>
+        <li><strong>Fluffy Soft Skill Lists:</strong> Avoid self-proclaimed buzzwords like "hard worker" or "visionary thinker". Prove them through project delivery.</li>
+        <li><strong>Missing Live GitHub / Portfolio URLs:</strong> An engineer without a verifiable GitHub profile or portfolio has an uphill battle. DreemFolio automatically generates a hosted portfolio with your resume.</li>
+        <li><strong>Two-Page Resumes:</strong> Keep your resume strictly to <strong>one page</strong> until you have at least 4-5 years of full-time professional industry experience.</li>
+      </ul>
+    </article>
+    {% endif %}
+
+    <!-- BOTTOM HIGH-CONVERTING CALL TO ACTION -->
+    <div class="mt-14 p-8 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-cyan-500/50 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-4">
+        <i data-lucide="award" class="w-6 h-6 text-cyan-400"></i>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-black text-white mb-3">
+        {% if current_lang == 'si' %}
+        ඔබේ පළමු රැකියා CV එක අදම නොමිලේ හදාගන්න
+        {% elif current_lang == 'ta' %}
+        உங்கள் முதல் CV ஐ இன்றே இலவசமாக உருவாக்குங்கள்
+        {% else %}
+        Launch Your Career with an ATS-Optimized Resume
+        {% endif %}
+      </h3>
+      <p class="text-slate-300 text-sm sm:text-base max-w-xl mx-auto mb-6">
+        {% if current_lang == 'si' %}
+        පළපුරුද්දක් නැති වුවද ඔබේ Projects සහ Skills නිවැරදි ATS Format එකකට තත්පර 15න් සකසා ගන්න.
+        {% elif current_lang == 'ta' %}
+        எந்தவித அனுபவமும் இல்லாமல் சரியான ATS வடிவத்தில் உங்கள் CV ஐ சில நொடிகளில் உருவாக்குங்கள்.
+        {% else %}
+        Generate a single-column, verified ATS resume and hosted web portfolio in minutes with DreemFolio AI.
+        {% endif %}
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white font-extrabold text-sm shadow-xl shadow-cyan-600/30 transition flex items-center justify-center gap-2">
+          <span>
+            {% if current_lang == 'si' %}නොමිලේ CV එකක් සාදන්න{% elif current_lang == 'ta' %}இலவசமாக உருவாக்கவும்{% else %}Build Free Resume Now{% endif %}
+          </span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- RELATED ARTICLES SECTION -->
+    {% if related_posts %}
+    <div class="mt-16 pt-12 border-t border-slate-800">
+      <h3 class="text-xl font-bold text-white mb-6">
+        {% if current_lang == 'si' %}අදාළ තවත් වෘත්තීය මඟපෙන්වීම්{% elif current_lang == 'ta' %}தொடர்புடைய பிற வழிகாட்டிகள்{% else %}Related Career Guides{% endif %}
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for r in related_posts %}
+        {% set r_url = '/blog/' + current_lang + '/' + r.slug if current_lang != 'en' else '/blog/' + r.slug %}
+        <a href="{{ r_url }}" class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-indigo-500/40 transition group">
+          <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            {{ r.category }}
+          </span>
+          <h4 class="text-base font-bold text-white group-hover:text-indigo-300 transition mt-3 mb-2 leading-snug">
+            {{ r.title }}
+          </h4>
+          <p class="text-slate-400 text-xs line-clamp-2 leading-relaxed">
+            {{ r.description }}
+          </p>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% if current_lang == 'si' %}
+<!-- Google FAQ Rich Results Schema (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "මගේ GPA එක අඩු නම් මම එය CV එකට දැමිය යුතුද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ඔබගේ GPA අගය 3.0 ට වඩා අඩු නම්, එය CV එකෙහි සඳහන් නොකර සිටීම වඩාත් යෝග්‍ය වේ. ඒ වෙනුවට ඔබ කළ Projects සහ Practical Skills ඉහළින් පෙන්වන්න."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Internship එකක් සඳහා අයදුම් කිරීමේදී Cover Letter එකක් අත්‍යවශ්‍යද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ඔව්. විශේෂයෙන් Freshers ලා සඳහා හොඳ Cover Letter එකක් තිබීමෙන් ඔබට රැකියාව පිළිබඳ ඇති කැපවීම සහ උනන්දුව කැපී පෙනේ. DreemFolio AI මඟින් ඔබගේ CV එකට ගැලපෙන Cover Letter එකක් තත්පර කිහිපයකින් සාදාගත හැක."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Non-Tech සිසුන්ට (Business / Marketing) මේ Format එක ගැලපෙනවද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ඔව්! Business, Marketing හෝ Accounting සිසුන් Coding Projects වෙනුවට විශ්වවිද්‍යාලයේ කළ Case Studies, Market Research, සහ Leadership භූමිකාවන් මෙම Single-Column ක්‍රමයටම ලියන්න."
+      }
+    }
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}

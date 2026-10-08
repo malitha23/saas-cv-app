@@ -188,6 +188,67 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
                 ]
             }
         }
+    },
+    "best-resume-format-for-freshers-interns-sri-lanka": {
+        "slug": "best-resume-format-for-freshers-interns-sri-lanka",
+        "title": "Best Resume Format for Freshers & Interns (2026 Guide)",
+        "subtitle": "How to build an ATS-friendly resume with zero work experience. Highlight academic projects, technical skills, and land your first job.",
+        "description": "Complete resume blueprint for students, fresh graduates, and interns. Learn how to highlight projects, pass ATS scanners, and land top job offers.",
+        "template": "blogs/fresher_intern_guide.html",
+        "published_date": "2026-10-08",
+        "modified_date": "2026-10-08",
+        "author": {
+            "name": "DreemFolio AI Career Team",
+            "role": "Campus Recruitment & Hiring Mentors",
+            "avatar": "/static/images/logo.png"
+        },
+        "reading_time": "8 min read",
+        "category": "Fresher & Intern Guide",
+        "badge": "Career Launch",
+        "priority": "0.90",
+        "target_keywords": [
+            "fresher resume format",
+            "internship CV template",
+            "no experience resume",
+            "software engineer intern CV",
+            "student resume format 2026",
+            "Sri Lanka fresher CV",
+            "how to write resume for internship"
+        ],
+        "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
+        "translations": {
+            "si": {
+                "title": "අලුතින් රැකියා සොයන අයට සහ Interns ලාට සුදුසුම CV Format එක",
+                "subtitle": "පළපුරුද්දක් නැතිව වුවද ATS Pass වී පළමු රැකියාව හෝ Internship එක දිනාගැනීමට අවශ්‍ය සම්පූර්ණ මාර්ගෝපදේශය.",
+                "description": "පළපුරුද්දක් නැතිව CV එකක් හදන්නේ කෙසේද? Freshers සහ Interns ලාට ගැළපෙන ATS-friendly CV format එක, Projects දක්වන හැටි සහ නොමිලේ template එක මෙතැනින් බලන්න.",
+                "category": "Intern & Fresher මඟපෙන්වීම",
+                "badge": "ප්‍රමුඛ මාර්ගෝපදේශය",
+                "reading_time": "විනාඩි 8ක කියවීමක්",
+                "target_keywords": [
+                    "fresher CV format sinhala",
+                    "intern CV sri lanka",
+                    "CV එකක් හදන හැටි",
+                    "palapurooddak nathi CV",
+                    "university student CV",
+                    "software engineer intern CV sinhala",
+                    "first job CV format"
+                ]
+            },
+            "ta": {
+                "title": "புதியவர்கள் மற்றும் Intern களுக்கான சிறந்த CV வடிவம்",
+                "subtitle": "பணி அனுபவம் இல்லாமல் முதல் வேலை அல்லது Internship பெறுவதற்கான முழுமையான வழிகாட்டி.",
+                "description": "புதியவர்கள் மற்றும் மாணவர்களுக்கான சிறந்த ATS-நட்பு CV வழிகாட்டி. Projects முன்னிலைப்படுத்தி முதல் வேலையைப் பெறுங்கள்.",
+                "category": "Intern & Fresher வழிகாட்டி",
+                "badge": "சிறப்பு வழிகாட்டி",
+                "reading_time": "8 நிமிட வாசிப்பு",
+                "target_keywords": [
+                    "fresher CV format tamil",
+                    "internship CV tamil",
+                    "first job CV tamil",
+                    "student resume tamil"
+                ]
+            }
+        }
     }
 }
 
