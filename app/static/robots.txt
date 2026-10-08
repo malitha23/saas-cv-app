@@ -1,53 +1,105 @@
 User-agent: *
 Allow: /
-Allow: /ai-resume-builder
-Allow: /blog
-Allow: /blog/
-Allow: /app
-Allow: /guide
-Allow: /contact
-Allow: /privacy
-Allow: /terms
-Allow: /refund
-Allow: /security
-Allow: /llms.txt
-Allow: /static/
 Disallow: /api/
 Disallow: /admin
 Disallow: /paneladmin
 Disallow: /portfolio/preview/
+Disallow: /wp-admin/
+Disallow: /wp-includes/
+Disallow: /?s=
+Disallow: /search/
 
-# AI Search & Training Crawlers (Welcome ChatGPT, Perplexity, Claude & Gemini)
+User-agent: UptimeRobot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: facebot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Pinterest
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
 User-agent: GPTBot
 Allow: /
-Allow: /blog
-Allow: /llms.txt
 
 User-agent: OAI-SearchBot
 Allow: /
-Allow: /blog
-Allow: /llms.txt
+
+User-agent: ChatGPT-User
+Allow: /
 
 User-agent: PerplexityBot
 Allow: /
-Allow: /blog
-Allow: /llms.txt
 
 User-agent: ClaudeBot
 Allow: /
-Allow: /blog
-Allow: /llms.txt
 
 User-agent: Google-Extended
 Allow: /
-Allow: /blog
-Allow: /llms.txt
 
 User-agent: Applebot-Extended
 Allow: /
-Allow: /blog
-Allow: /llms.txt
 
-# Search Engine Sitemaps & LLM Context
 Sitemap: https://www.dreemfolio.com/sitemap.xml
-Host: https://www.dreemfolio.com

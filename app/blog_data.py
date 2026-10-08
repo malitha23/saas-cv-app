@@ -38,13 +38,14 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
             "si": {
                 "title": "2026 දී ATS-Friendly CV එකක් හදන හැටි",
                 "subtitle": "Workday, Greenhouse සහ Lever වැනි ATS පද්ධති වලින් 95%+ ලකුණු ලබාගනිමින් Pass වන CV එකක් හදන නිවැරදි ක්‍රමය.",
-                "description": "Applicant Tracking Systems (ATS) හරහා පහසුවෙන්ම Pass වන ATS-friendly CV එකක් සාදන ආකාරය, formatting නීති, සහ නොමිලේ ATS score පරීක්ෂා කරන හැටි.",
+                "description": "Applicant Tracking Systems (ATS) හරහා 95%+ Match Score එකක් ගන්නා ATS-friendly CV එකක් සාදන නිවැරදි ක්‍රමය සහ නොමිලේ ATS score පරීක්ෂාව.",
                 "category": "ATS CV මඟපෙන්වීම",
                 "badge": "ප්‍රමුඛ මාර්ගෝපදේශය",
                 "reading_time": "විනාඩි 7ක කියවීමක්",
                 "target_keywords": [
                     "ATS friendly CV සිංහලෙන්",
-                    "CV හදන හැටි",
+                    "CV එකක් හදන හැටි",
+                    "රැකියා CV format",
                     "ATS resume format sinhala",
                     "pass ATS scanner",
                     "free ATS checker",
@@ -96,18 +97,21 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
         "translations": {
             "si": {
-                "title": "CV එකක් Reject වන ප්‍රධාන වැරදි 10ක්",
+                "title": "CV එකක් Reject වන ATS වැරදි 10ක්",
                 "subtitle": "බොහෝ දෙනෙකුගේ CV පළමු තත්පර 6 තුළ Reject වීමට හේතුවන Formatting, Typography සහ Keyword දෝෂ 10ක්.",
-                "description": "ATS පද්ධති සහ Recruiters ලා අතින් CV Reject වීමට හේතුවන ප්‍රධාන වැරදි 10ක් සහ DreemFolio AI මඟින් ඒවා නිවැරදි කරගන්නා ආකාරය.",
+                "description": "ඔබේ CV එක පළමු තත්පර 6 තුළ Reject වෙනවද? ATS format, keyword සහ typography වැරදි 10 සහ ඒවා නිවැරදි කරගන්නා හැටි මෙතැනින් සම්පූර්ණයෙන්ම කියවන්න.",
                 "category": "CV නිවැරදි කිරීම",
                 "badge": "අත්‍යවශ්‍ය කියවීමක්",
                 "reading_time": "විනාඩි 8ක කියවීමක්",
                 "target_keywords": [
+                    "CV එකක් හදන හැටි",
                     "CV rejection reasons sinhala",
+                    "ATS friendly CV format",
+                    "රැකියා CV එකක්",
+                    "CV format sinhala",
                     "resume mistakes sinhala",
-                    "CV eke waradi",
-                    "ATS parsing errors",
-                    "CV hadana widiya"
+                    "ATS CV checker",
+                    "CV eke waradi"
                 ]
             },
             "ta": {
@@ -156,12 +160,13 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
             "si": {
                 "title": "Remote Tech රැකියා සඳහා CV එකක් හදන හැටි",
                 "subtitle": "ගෝලීය තරඟකරුවන් 1,000ක් අභිබවා Software Engineer සහ Tech රැකියා දිනාගැනීමට සාර්ථක උපක්‍රම.",
-                "description": "Remote Software Engineer සහ Developer රැකියා සඳහා CV එක Optimize කරගන්නා ආකාරය. Async communication, remote tech stacks සහ Live Web Portfolio භාවිතය.",
+                "description": "Remote Software Engineer සහ IT රැකියා සඳහා CV එක Optimize කරගන්නා ආකාරය. Async communication, remote tech stacks සහ Live Portfolio භාවිතය.",
                 "category": "Remote රැකියා මඟපෙන්වීම",
                 "badge": "Tech විශේෂාංගය",
                 "reading_time": "විනාඩි 6ක කියවීමක්",
                 "target_keywords": [
                     "remote job CV sinhala",
+                    "CV එකක් හදන හැටි",
                     "software engineer resume sinhala",
                     "foreign jobs CV",
                     "remote developer resume",

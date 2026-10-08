@@ -82,86 +82,225 @@
     <!-- SINHALA CONTENT -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <article class="prose-custom">
-      <p>
-        අධික තරඟකාරී රැකියා වෙළඳපොළ තුළ එක් Software Engineer හෝ Tech ඇබෑර්තුවක් සඳහා පැය 24ක් තුළ අයදුම්පත් 500කට වඩා ලැබේ. Recruiter කෙනෙකු එක් CV එකක් බැලීමට ගතකරන්නේ තත්පර 6ක් පමණක් වන අතර, ATS Scanner එකක් එය Reject කිරීමට ගතකරන්නේ තත්පර 1කටත් අඩු කාලයකි.
-      </p>
-      <p>
-        බොහෝ දෙනෙකු අතින් සිදුවන ප්‍රධානතම වැරදි 10ක් සහ ඒවා DreemFolio AI මඟින් නිවැරදි කරගන්නා ආකාරය පහත දැක්වේ:
+      <!-- Intro Section -->
+      <p class="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
+        වත්මන් අධික තරඟකාරී රැකියා වෙළඳපොළ තුළ එක් <strong>Software Engineer</strong>, <strong>DevOps</strong>, හෝ <strong>Tech / Corporate</strong> ඇබෑර්තුවක් සඳහා පළමු පැය 24 තුළ අයදුම්පත් 500කට වඩා ලැබේ. සමාගම් වලට මේ සියලුම CV අතින් කියවීමට නොහැකි බැවින්, ඔවුන් <strong>Applicant Tracking Systems (ATS)</strong> නම් වූ ස්වයංක්‍රීය මෘදුකාංග (Workday, Greenhouse, Lever, Taleo) භාවිතා කරයි.
       </p>
 
-      <h2>වැරැද්ද 1: Two-Column සහ Sidebar Layouts</h2>
+      <div class="my-6 p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs sm:text-sm text-slate-300 space-y-2">
+        <div class="flex items-center gap-2 font-bold text-amber-400">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          <span>ඔබ දැනගත යුතු කටුක සත්‍යය:</span>
+        </div>
+        <p>
+          Recruiter කෙනෙකු සාමාන්‍යයෙන් එක් CV එකක් බැලීමට වැය කරන්නේ <strong>තත්පර 6ක්</strong> පමණි. නමුත් ඊටත් පෙර, ලැබෙන CV වලින් <strong>75%ක්ම</strong> මිනිස් ඇසකටවත් නොගොස් ATS Scanner එක මඟින් Auto-Reject වේ. ඔබේ CV එකේ කොතෙක් පළපුරුද්ද තිබුණත්, ATS පද්ධතියට එය කියවාගත නොහැකි නම් සම්මුඛ පරීක්ෂණ (Interview) ඇරයුම් කිසිදා නොලැබේ.
+        </p>
+      </div>
+
       <p>
-        <strong>ගැටලුව:</strong> වම්පස තීරුවක් (sidebar) සහිත ලස්සන Templates වල ඇති දත්ත ATS Scanner එකක් කියවන්නේ වමේ සිට දකුණටයි. මෙවිට වම්පස ඇති Skills සහ දකුණුපස ඇති Experience එකට මිශ්‍ර වී අර්ථයක් නොමැති වාක්‍ය බවට පත්වේ.
-      </p>
-      <p>
-        <strong>විසඳුම:</strong> සැමවිටම තනි තීරුවේ (Single-Column) පිරිසිදු Layout එකක් භාවිතා කරන්න.
+        ඔබගේ රැකියා අයදුම්පත පළමු තත්පර 6 තුළ Reject වීමට හේතුවන ප්‍රධානතම වැරදි 10ක්, සැබෑ උදාහරණ (Before vs After) සහ ඒවා නිවැරදි කරගන්නා ආකාරය පහතින් විස්තර කෙරේ.
       </p>
 
-      <!-- CTA SINHALA -->
-      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/50 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
+      <!-- ERROR 1 -->
+      <h2>වැරැද්ද 1: Two-Column සහ Multi-Column Layouts (තීරු දෙකේ මෝස්තර)</h2>
+      <p>
+        <strong>ගැටලුව:</strong> බොහෝ දෙනෙක් Canva හෝ Graphic Design වෙබ් අඩවි මඟින් වම්පස Sidebar එකක් සහිත ලස්සන Two-Column Templates තෝරා ගනිති. නමුත් ATS Scanners කියවන්නේ ඉහළ සිට පහළට සහ වමේ සිට දකුණට සම්පූර්ණ තිරස් රේඛාවක් ලෙසයි.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4 not-prose text-xs">
+        <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30 space-y-1">
+          <div class="font-bold text-rose-400 flex items-center gap-1.5">
+            <span>❌ වැරදි ක්‍රමය (Two Columns)</span>
+          </div>
+          <p class="text-slate-300">
+            වම් තීරුවේ "Skills: Python, React" ද, දකුණු තීරුවේ "Experience: Senior Dev at ABC" ද ඇති විට, ATS එය කියවන්නේ <em>"Skills: Python Experience: Senior Dev React at ABC"</em> ලෙස අවුල් ජාලාවක් වශයෙනි.
+          </p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
+          <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+            <span>✅ නිවැරදි විසඳුම (Single-Column)</span>
+          </div>
+          <p class="text-slate-300">
+            සැමවිටම පිරිසිදු තනි තීරුවේ (Single-Column) සිරස් ධූරාවලියක් භාවිතා කරන්න. Contact Info &rarr; Summary &rarr; Skills &rarr; Experience &rarr; Education පිළිවෙලට තබන්න.
+          </p>
+        </div>
+      </div>
+      <p>
+        ඔබට තනි තීරුවේ පිරිසිදු layout එකක් සාදාගැනීමට අවශ්‍ය නම් අපගේ <a href="/blog/si/how-to-write-an-ats-friendly-cv" class="text-indigo-400 underline font-semibold">2026 දී ATS-Friendly CV එකක් හදන සම්පූර්ණ මාර්ගෝපදේශය</a> කියවන්න.
+      </p>
+
+      <!-- FIRST INLINE CTA -->
+      <div class="my-10 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-xl text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6 not-prose">
         <div class="space-y-2">
           <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-bold">
             <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
-            <span>දෝෂ ස්කෑනරය</span>
+            <span>නොමිලේ ATS Scanner පරීක්ෂාව</span>
           </div>
-          <h3 class="text-xl font-bold text-white">ඔබේ CV එකෙහි Formatting වැරදි ඇත්දැයි බලන්න</h3>
-          <p class="text-slate-300 text-sm max-w-md">
-            DreemFolio AI වෙත ඔබගේ CV එක Upload කර ATS මඟින් ඔබගේ දත්ත නිවැරදිව කියවනවාදැයි ක්ෂණිකව පරීක්ෂා කරන්න.
+          <h3 class="text-xl font-bold text-white">ඔබේ CV එකෙහි Formatting වැරදි තිබේදැයි බලන්න</h3>
+          <p class="text-slate-300 text-xs sm:text-sm max-w-md">
+            DreemFolio AI වෙත ඔබගේ CV එක Upload කර ATS මඟින් ඔබගේ දත්ත නිවැරදිව කියවනවාදැයි තත්පර 10කින් පරීක්ෂා කරගන්න.
           </p>
         </div>
-        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
-          <span>නොමිලේ Error Check කරන්න</span>
+        <a href="/app" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition flex items-center gap-2 shrink-0">
+          <span>නොමිලේ ATS ලකුණු බලන්න</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </a>
       </div>
 
+      <!-- ERROR 2 -->
       <h2>වැරැද්ද 2: Graphical Skill Ratings සහ Progress Bars (තාරකා සහ තීරු)</h2>
       <p>
-        <strong>ගැටලුව:</strong> Skills ඉදිරියෙන් තාරකා 4ක් (★★★★☆) හෝ 80% ක් පිරවූ Progress Bars ඇඳීම. ATS මෘදුකාංගයකට මේ රූප හෝ ග්‍රැෆික්ස් කියවිය නොහැක. තවද Senior Recruiters ලා මෙය ආධුනික ක්‍රියාවක් ලෙස සලකයි.
+        <strong>ගැටලුව:</strong> Photoshop හෝ Canva templates වල බහුලව දකින "Java ★★★★☆" හෝ "Python 85%" වැනි Progress Bars සහ Stars දැමීම.
       </p>
       <p>
-        <strong>විසඳුම:</strong> Skills කාණ්ඩ අනුව (Languages, Frameworks, Cloud & Tools) ලැයිස්තුගත කර, ඔබගේ ප්‍රවීණත්වය Bullet Points වල ප්‍රතිඵල මඟින් පෙන්වන්න.
+        ATS කියවන්නේ අකුරු පමණි (Plain Text). ග්‍රැෆික්ස්, තරු හෝ පාට තීරු ATS එකට සම්පූර්ණයෙන්ම අදෘශ්‍යමාන වේ (Zero visibility). මීට අමතරව Senior Hiring Managers ලා මෙවැනි ප්‍රතිශත දැකීම ආධුනික සහ මවාපෑමක් ලෙස සලකයි (Python 85% කියන්නේ කුමක්දැයි මැනිය නොහැක).
       </p>
-
-      <h2>වැරැද්ද 3: සම්මත නොවන Section Titles</h2>
       <p>
-        <em>"My Career Voyage"</em> හෝ <em>"Skills Arsenal"</em> වැනි විසිතුරු වචන වෙනුවට <code>Work Experience</code>, <code>Education</code>, <code>Technical Skills</code> වැනි සම්මත වචන පමණක් යොදන්න.
+        <strong>විසඳුම:</strong> Skills කාණ්ඩ අනුව වර්ග කරන්න:
       </p>
+      <ul>
+        <li><strong>Languages:</strong> TypeScript, Python, Java, SQL</li>
+        <li><strong>Frameworks & Libraries:</strong> React, Node.js, FastAPI, Next.js, Tailwind CSS</li>
+        <li><strong>Cloud & DevOps:</strong> AWS (EC2, S3), Docker, Kubernetes, GitHub Actions</li>
+        <li><strong>Databases:</strong> PostgreSQL, Redis, MongoDB</li>
+      </ul>
 
-      <h2>වැරැද්ද 4: Scanned Image PDFs (Canva Flattened Exports)</h2>
+      <!-- ERROR 3 -->
+      <h2>වැරැද්ද 3: විසිතුරු සහ සම්මත නොවන Section Headers</h2>
       <p>
-        ඔබගේ PDF එකෙහි අකුරු Mouse එකෙන් Select කර Copy කළ නොහැකි නම්, ATS එකටද එය කියවිය නොහැක. සැමවිටම Selectable Text සහිත Vector PDF භාවිතා කරන්න.
+        සමහරු තම CV එක විශේෂ කිරීමට සිතා <em>"My Professional Voyage"</em>, <em>"Where I've Been"</em>, හෝ <em>"Skills Arsenal"</em> වැනි විසිතුරු වචන භාවිතා කරති.
       </p>
-
-      <h2>වැරැද්ද 5: Job Description එකේ ඇති Keywords අඩංගු නොවීම</h2>
       <p>
-        Job Description එකෙහි <code>PostgreSQL</code> ඉල්ලා ඇති විට ඔබ <code>Relational DBs</code> ලෙස පමණක් දැමුවහොත් ATS ලකුණු 0ක් ලැබේ. නියමිත වචනම යොදන්න.
+        <strong>විසඳුම:</strong> ATS Parsing Algorithms පුහුණු කර ඇත්තේ සම්මත මාතෘකා කියවීමටයි. සැමවිටම පහත සම්මත ශීර්ෂ පාඨ (H2 Headings) පමණක් යොදන්න:
       </p>
+      <ul>
+        <li><code>Work Experience</code> හෝ <code>Professional Experience</code></li>
+        <li><code>Education</code></li>
+        <li><code>Technical Skills</code></li>
+        <li><code>Projects</code> හෝ <code>Key Projects</code></li>
+        <li><code>Certifications</code></li>
+      </ul>
 
-      <h2>වැරැද්ද 6: ප්‍රතිඵල සහ සංඛ්‍යා (Metrics) නොමැති Bullet Points</h2>
+      <!-- ERROR 4 -->
+      <h2>වැරැද්ද 4: Scanned Image PDFs සහ Canva Flattened Exports</h2>
       <p>
-        සාමාන්‍ය වැඩ විස්තර වෙනුවට ප්‍රතිශත, පරිශීලක සංඛ්‍යා සහ ආදායම් වර්ධනය සංඛ්‍යාත්මකව දක්වන්න (උදා: <em>"API latency 42% කින් අඩු කිරීම"</em>).
+        <strong>ගැටලුව:</strong> ඔබගේ CV එක Canva හෝ Illustrator මඟින් Export කිරීමේදී සමහරවිට එය Export වන්නේ Flattened Graphic Image එකක් ලෙසයි. එනම් පිටුව තුළ ඇත්තේ අකුරු නොව පින්තූරයකි.
+      </p>
+      <p>
+        <strong>ස්වයං පරීක්ෂාව (Self-Check Test):</strong> ඔබගේ PDF එක විවෘත කර, Mouse Cursor එක මඟින් අකුරු Highlight කර <code>Ctrl + C</code> (Copy) කර Notepad එකකට <code>Ctrl + V</code> (Paste) කිරීමට උත්සාහ කරන්න. අකුරු Copy කරගත නොහැකි නම්, ATS එකටද කිසිදු අකුරක් කියවිය නොහැක. එවිට ඔබේ Match Score එක <strong>0%</strong> වේ!
+      </p>
+      <p>
+        <strong>විසඳුම:</strong> සැමවිටම Native Text Vector PDF format එකෙන් CV එක Export කරන්න. <a href="/app" class="text-indigo-400 underline font-semibold">DreemFolio AI Builder</a> මඟින් සකසන සෑම PDF එකක්ම 100% Vector Text Engine එකකින් නිපදවනු ලබයි.
       </p>
 
+      <!-- ERROR 5 -->
+      <h2>වැරැද්ද 5: Job Description එකේ ඇති Keywords අඩංගු නොවීම (Keyword Mismatch)</h2>
+      <p>
+        සෑම රැකියා දැන්වීමකම (Job Description) අවශ්‍ය නිශ්චිත කුසලතා ලැයිස්තුගත කර ඇත. ATS එක එම Job Description එකෙහි ඇති Keywords සහ ඔබගේ CV එකෙහි ඇති වචන අතර ප්‍රතිශතය සංසන්දනය කරයි.
+      </p>
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs sm:text-sm my-4 space-y-2">
+        <p class="text-rose-400 font-semibold">❌ ඔබ ලියා ඇත්තේ: <em>"Experience in Relational Databases and Containerization"</em></p>
+        <p class="text-emerald-400 font-semibold">✅ සමාගම ඉල්ලා ඇත්තේ: <em>"PostgreSQL, Docker, Kubernetes"</em></p>
+        <p class="text-slate-300">
+          මෙහිදී ඔබ Relational DB ගැන දැන සිටියත්, <strong>PostgreSQL</strong> යන නිශ්චිත keyword එක ඔබේ CV එකේ නොමැති නම් ATS Scanner එක ඔබට ලකුණු 0ක් ලබා දෙයි.
+        </p>
+      </div>
+
+      <!-- ERROR 6 -->
+      <h2>වැරැද්ද 6: ප්‍රතිඵල සහ සංඛ්‍යා (Metrics) නොමැති දුර්වල Bullet Points</h2>
+      <p>
+        බොහෝ CV වල රැකියා පළපුරුද්ද යටතේ ලියා ඇත්තේ තමන් කළ දෛනික කාර්යයන් (Job Responsibilities) පමණි:
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 my-4 not-prose text-xs">
+        <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/30">
+          <div class="font-bold text-rose-400 mb-1">❌ දුර්වල විස්තරයක්:</div>
+          <p class="text-slate-300 italic">"Responsible for database maintenance and writing backend APIs."</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+          <div class="font-bold text-emerald-400 mb-1">✅ Google X-Y-Z ක්‍රමය:</div>
+          <p class="text-slate-300">"Optimized PostgreSQL queries and rebuilt 12 backend APIs using FastAPI, reducing database response latency by <strong>42%</strong> for <strong>50,000+</strong> active users."</p>
+        </div>
+      </div>
+      <p>
+        සැමවිටම <strong>ප්‍රතිශත (%), පරිශීලක සංඛ්‍යා, වේලාව ඉතිරි කිරීම, හෝ ආදායම් වර්ධනය</strong> සංඛ්‍යාත්මකව දක්වන්න.
+      </p>
+
+      <!-- ERROR 7 -->
       <h2>වැරැද්ද 7: Contact Info ලේඛනයේ Header/Footer තුළ සිරවීම</h2>
       <p>
-        Word හි Header/Footer තුළ දමන ඊමේල් සහ දුරකථන අංක ATS එක මඟින් බොහෝ විට කපා හරියි. එබැවින් ප්‍රධාන පිටුවේ ඉහළින්ම Contact Info තබන්න.
+        Microsoft Word හෝ Google Docs ලේඛනයක ඉහළ සහ පහළ ඇති Header/Footer කොටස් බොහෝ ATS පද්ධති මඟින් ස්වයංක්‍රීයව කපා හරිනු ලැබේ (Striped out to save space). ඔබගේ Email ලිපිනය, දුරකථන අංකය හෝ LinkedIn URL එක Header එක තුළ තිබුණහොත්, Recruiter ට ඔබව සම්බන්ධ කරගැනීමට තොරතුරු නොමැති වේ.
+      </p>
+      <p>
+        <strong>විසඳුම:</strong> ඔබගේ නම, දුරකථන අංකය, ඊමේල් ලිපිනය, සහ Portfolio / GitHub links ප්‍රධාන පිටුවේ ඉහළම ඡේදය ලෙස Body Flow එක ඇතුළතම තබන්න.
       </p>
 
-      <h2>වැරැද්ද 8: Technical Terms වල Spelling සහ Case වැරදීම</h2>
+      <!-- ERROR 8 -->
+      <h2>වැරැද්ද 8: Technical Terms වල Spelling සහ Case Sensitivity වැරදීම</h2>
       <p>
-        <code>Javascript</code> වෙනුවට <code>JavaScript</code>, <code>NodeJS</code> වෙනුවට <code>Node.js</code>, සහ <code>Kubernetes</code> නිවැරදි අක්ෂර වින්‍යාසයෙන් දක්වන්න.
+        තාක්ෂණික පද වල අකුරු වැරදීම ATS Keyword Match එක සම්පූර්ණයෙන්ම බිඳ දමයි:
+      </p>
+      <ul>
+        <li><code>Javascript</code> වෙනුවට නිවැරදිව <strong>JavaScript</strong></li>
+        <li><code>NodeJS</code> වෙනුවට නිවැරදිව <strong>Node.js</strong></li>
+        <li><code>Reactjs</code> වෙනුවට නිවැරදිව <strong>React</strong></li>
+        <li><code>Postgres</code> වෙනුවට <strong>PostgreSQL</strong></li>
+        <li><code>Kubernetes (K8s)</code> සහ <code>CI/CD Pipelines</code></li>
+      </ul>
+
+      <!-- ERROR 9 -->
+      <h2>වැරැද්ද 9: සුදු පාට අකුරින් Keywords සැඟවීම (White Text Hacks)</h2>
+      <p>
+        අන්තර්ජාලයේ සමහර උපදෙස් වල සඳහන් වන්නේ Job Description එකේ ඇති සියලුම Keywords සුදු පාට අකුරින් (Font Color: White) CV එකෙහි කුඩා තැනක සඟවා තබන ලෙසයි.
+      </p>
+      <p>
+        <strong>අවවාදයයි:</strong> 2026 වන විට මෙය අතිශය භයානක වැරැද්දකි. නවීන ATS පද්ධති PDF එක පරීක්ෂා කරන්නේ එහි ඇති Styling ඉවත් කර Plain ASCII Text බවට පරිවර්තනය කරමිනි. එවිට සුදු පාටින් සඟවා ඇති සියලුම වචන රතු එළි දල්වමින් Recruiter හට හසුවන අතර, ඔබගේ Profile එක එම සමාගම තුළ <strong>Blacklist</strong> වීමට මෙය හේතු වේ.
       </p>
 
-      <h2>වැරැද්ද 9: සුදු අකුරින් Keywords සැඟවීම (White Text Hacks)</h2>
+      <!-- ERROR 10 -->
+      <h2>වැරැද්ද 10: එකම Generic CV එක සියලුම රැකියාවලට යැවීම (Spray and Pray)</h2>
       <p>
-        නූතන AI ATS පද්ධති ලේඛනය Plain text බවට පත්කරන බැවින් සුදු පාටින් සඟවා ඇති වචන ක්ෂණිකව හසුවී ඔබ Blacklist වේ.
+        එකම CV එක රැකියා 100කට යැවීමෙන් කිසිදු සම්මුඛ පරීක්ෂණයක් නොලැබීමට ප්‍රධානතම හේතුව මෙයයි. සෑම සමාගමකම Tech Stack එක සහ අවශ්‍යතා එකිනෙකට වෙනස්ය.
+      </p>
+      <p>
+        ඔබ අයදුම් කරන එක් එක් රැකියාවට ගැලපෙන පරිදි ඔබගේ CV එකෙහි Projects සහ Skills තත්පර 15කින් වෙනස් කර ගැනීමට <a href="/app" class="text-indigo-400 underline font-semibold">DreemFolio AI Tailor Engine</a> එක නොමිලේ භාවිතා කරන්න. Remote Tech රැකියා සොයන අය සඳහා විශේෂ මාර්ගෝපදේශයක් අපගේ <a href="/blog/si/tailor-cv-for-remote-jobs" class="text-indigo-400 underline font-semibold">Remote Jobs CV සකස් කිරීමේ ලිපියෙන්</a> කියවිය හැක.
       </p>
 
-      <h2>වැරැද්ද 10: එකම Generic CV එක සියලුම රැකියාවලට යැවීම</h2>
-      <p>
-        එක් එක් සමාගමට ගැලපෙන පරිදි CV එක Tailor නොකිරීම නිසා මාස ගණන් පිළිතුරු නොලැබී යා හැක. DreemFolio AI මඟින් තත්පර 15න් Job Description එකට ගැලපෙන පරිදි CV එක Tailor කරගත හැක.
-      </p>
+      <!-- SINHALA FAQ ACCORDION SECTION (FOR RICH SNIPPETS) -->
+      <div class="mt-12 pt-8 border-t border-slate-800 not-prose space-y-4">
+        <div class="flex items-center gap-2 mb-2">
+          <i data-lucide="help-circle" class="w-5 h-5 text-indigo-400"></i>
+          <h3 class="text-lg font-bold text-white">නිතර අසන ප්‍රශ්න (FAQ) - ATS CV පිළියෙල කිරීම</h3>
+        </div>
+
+        <div class="space-y-3 text-xs sm:text-sm">
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">1. ATS මෘදුකාංගයක් මඟින් මගේ CV එක Reject කරනවද කියා දැනගන්නේ කොහොමද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              ඔබට <a href="/app" class="text-indigo-400 underline">DreemFolio AI Free Checker</a> එක වෙත ඔබගේ CV එක Upload කර, ඔබ අයදුම් කරන Job Description එක ඇතුළත් කළ විට, ATS එක මඟින් කියවන දත්ත සහ Match Score එක ක්ෂණිකව බලාගත හැක.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">2. Canva මඟින් හදන ලස්සන CV Reject වෙන්නේ ඇයි?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              Canva templates බොහෝ විට තීරු 2ක් (Columns), Icons, සහ Progress Bars වලින් සමන්විත වන අතර ඒවා Export වන්නේ Flattened Graphics ලෙසයි. ATS මෘදුකාංග වලට මේවා කියවීමට නොහැකි වී දත්ත විසිරී යයි.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">3. CV එකක් සඳහා වඩාත්ම සුදුසු File Format එක කුමක්ද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              සැමවිටම Selectable Text සහිත <strong>Vector PDF (.pdf)</strong> වඩාත් සුදුසුය. එය ඔබගේ Formatting වෙනස් නොවී සුරක්ෂිත කරන අතර නවීන සියලුම ATS (Workday, Greenhouse) මඟින් 100% නිවැරදිව කියවනු ලබයි.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">4. CV එකක දිග පිටු කීයක් විය යුතුද?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              වසර 0-5ක පළපුරුද්දක් ඇති අයට <strong>පිටු 1ක් (One-Page)</strong> වඩාත් යෝග්‍ය වේ. වසර 5කට වඩා වැඩි පළපුරුද්දක් ඇති ජ්‍යෙෂ්ඨ වෘත්තිකයින්ට පිටු 2ක් භාවිතා කළ හැක. කිසිවිටෙකත් පිටු 3 හෝ ඊට වැඩි නොකරන්න.
+            </p>
+          </div>
+        </div>
+      </div>
     </article>
 
     {% elif current_lang == 'ta' %}
@@ -379,4 +518,48 @@
 
   </div>
 </div>
+
+{% if current_lang == 'si' %}
+<!-- Google FAQ Rich Results Schema (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "ATS මෘදුකාංගයක් මඟින් මගේ CV එක Reject කරනවද කියා දැනගන්නේ කොහොමද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ඔබට DreemFolio AI Free Checker (https://www.dreemfolio.com/app) වෙත ඔබගේ CV එක Upload කර, ඔබ අයදුම් කරන Job Description එක ඇතුළත් කළ විට, ATS එක මඟින් කියවන දත්ත සහ Match Score එක ක්ෂණිකව බලාගත හැක."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Canva මඟින් හදන ලස්සන CV Reject වෙන්නේ ඇයි?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Canva templates බොහෝ විට තීරු 2ක් (Columns), Icons, සහ Progress Bars වලින් සමන්විත වන අතර ඒවා Export වන්නේ Flattened Graphics ලෙසයි. ATS මෘදුකාංග වලට මේවා කියවීමට නොහැකි වී දත්ත විසිරී යයි."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "CV එකක් සඳහා වඩාත්ම සුදුසු File Format එක කුමක්ද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "සැමවිටම Selectable Text සහිත Vector PDF (.pdf) වඩාත් සුදුසුය. එය ඔබගේ Formatting වෙනස් නොවී සුරක්ෂිත කරන අතර නවීන සියලුම ATS (Workday, Greenhouse) මඟින් 100% නිවැරදිව කියවනු ලබයි."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "CV එකක දිග පිටු කීයක් විය යුතුද?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "වසර 0-5ක පළපුරුද්දක් ඇති අයට පිටු 1ක් (One-Page) වඩාත් යෝග්‍ය වේ. වසර 5කට වඩා වැඩි පළපුරුද්දක් ඇති ජ්‍යෙෂ්ඨ වෘත්තිකයින්ට පිටු 2ක් භාවිතා කළ හැක. කිසිවිටෙකත් පිටු 3 හෝ ඊට වැඩි නොකරන්න."
+      }
+    }
+  ]
+}
+</script>
+{% endif %}
 {% endblock %}
