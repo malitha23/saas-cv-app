@@ -413,5 +413,65 @@ class UserReview(Base):
         return f"<UserReview(id={self.id}, name='{self.reviewer_name}', rating={self.rating}, approved={self.is_approved})>"
 
 
+class SiteVisitor(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Real Human Visitor & Pageview Analytics.
+    Deduplicates unique human visitors per day via anonymized session hashes
+    and filters out automated bot scrapers/crawlers.
+    """
+    __tablename__ = "site_visitors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    visitor_hash: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    country_code: Mapped[str] = mapped_column(String(10), default="UNKNOWN", index=True, nullable=False)
+    path: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    referrer: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    device_type: Mapped[str] = mapped_column(String(20), default="desktop", nullable=False)
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    is_bot: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    cookie_consented: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<SiteVisitor(id={self.id}, path='{self.path}', country='{self.country_code}', is_bot={self.is_bot})>"
+
+
+class MarketingLead(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for Captured Sales & Marketing Lead Emails.
+    Collected via Cookie Consent banner, ATS Career Lead Magnet, and Landing Page.
+    """
+    __tablename__ = "marketing_leads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    source: Mapped[str] = mapped_column(String(100), default="cookie_banner", nullable=False)
+    country_code: Mapped[str] = mapped_column(String(10), default="UNKNOWN", nullable=False)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    consent_given: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<MarketingLead(id={self.id}, email='{self.email}', source='{self.source}')>"
+
+
+class CookieConsentLog(Base):
+    """
+    Audit log for privacy and cookie consent acceptance events (GDPR & Sri Lanka PDPA compliance).
+    """
+    __tablename__ = "cookie_consent_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    visitor_hash: Mapped[Optional[str]] = mapped_column(String(64), index=True, nullable=True)
+    country_code: Mapped[str] = mapped_column(String(10), default="UNKNOWN", nullable=False)
+    consent_type: Mapped[str] = mapped_column(String(50), default="essential_and_analytics", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<CookieConsentLog(id={self.id}, country='{self.country_code}', created_at='{self.created_at}')>"
+
+
+
 
 

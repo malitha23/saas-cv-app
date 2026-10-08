@@ -179,6 +179,16 @@
                 class="px-2 py-0.5 rounded-full bg-amber-500 text-[10px] font-black text-slate-950 animate-pulse"
                 x-text="pendingReviewsCount"></span>
         </button>
+
+        <button @click="activeTab = 'analytics'; loadAdminAnalytics(); loadAdminLeads()"
+          :class="activeTab === 'analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="bar-chart-2" class="w-4 h-4 text-cyan-400"></i>
+          <span>Traffic & Leads (සජීවී Visitors & Leads)</span>
+          <span x-show="adminLeadsList.length > 0"
+                class="px-2 py-0.5 rounded-full bg-cyan-500 text-[10px] font-black text-slate-950"
+                x-text="adminLeadsList.length"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -2580,7 +2590,407 @@
         </div>
       </div>
 
-    <!-- Admin Footer -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: VISITOR ANALYTICS, CLOUDFLARE PROOF & MARKETING LEADS           -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'analytics'" class="space-y-6">
+        
+        <!-- Header Banner -->
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-indigo-500/20 p-5 rounded-2xl shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-semibold">
+              <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Live Traffic & Lead Capture Engine</span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <span>Verified Human Traffic & Sales Leads</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-normal">සජීවී පරිශීලකයින් සහ Leads</span>
+            </h2>
+            <p class="text-xs text-slate-400">Real browser sessions, crawler filtering, cookie consent compliance (PDPA 2022 / GDPR), and captured marketing emails.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" @click="loadAdminAnalytics(); loadAdminLeads()" :disabled="isLoadingAnalytics || isLoadingLeads"
+                    class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-2 transition border border-slate-700">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="{'animate-spin': isLoadingAnalytics || isLoadingLeads}"></i>
+              <span>Refresh Data</span>
+            </button>
+            <button type="button" @click="exportLeadsCsv()"
+                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export Leads CSV (<span x-text="adminLeadsList.length"></span>)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- CLOUDFLARE REQUESTS VS REAL HUMAN PROOF CARD                          -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-indigo-950/40 p-5 shadow-2xl relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="relative space-y-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                  <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Cloudflare Total Requests vs. Real Human Proof</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-300 font-mono font-bold">EXPLAINED</span>
+                  </h3>
+                  <p class="text-xs text-slate-300 mt-0.5">ඇයි Cloudflare charts වල Requests ගණන මෙතරම් වැඩිවී පෙන්වන්නේ?</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainer Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div class="flex items-center gap-2 text-rose-400 font-bold">
+                  <i data-lucide="cloud" class="w-4 h-4"></i>
+                  <span>Cloudflare Edge Requests (Raw HTTP Traffic)</span>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-[11px]">
+                  Cloudflare counts <strong>every single file download</strong>: CSS files, JavaScript bundles, images, icons, fonts, favicon, and bot crawler hits (Googlebot, Bing, Ahrefs, scrapers).
+                </p>
+                <div class="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300 font-medium">
+                  ⚡ <strong>1 Real Person visiting 1 page</strong> downloads ~25-35 static assets = <strong>25-35 Cloudflare requests</strong>!
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div class="flex items-center gap-2 text-emerald-400 font-bold">
+                  <i data-lucide="user-check" class="w-4 h-4"></i>
+                  <span>Verified Human Visitors (DreemFolio Proof)</span>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-[11px]">
+                  Our beacon runs inside <strong>real human web browsers</strong> only on actual web pages. It automatically ignores static asset downloads, filters out automated bots/scrapers, and counts genuine humans!
+                </p>
+                <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-medium">
+                  🛡️ <strong>100% Genuine Human Proof:</strong> Deduplicated daily via privacy-safe hash with real device and country detection.
+                </div>
+              </div>
+            </div>
+
+            <!-- Proof multiplier metrics strip -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400 font-semibold uppercase">Verified Humans Today</div>
+                <div class="text-lg font-black text-cyan-400 mt-0.5" x-text="analyticsData?.unique_visitors_today ?? 0"></div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400 font-semibold uppercase">Human Pageviews</div>
+                <div class="text-lg font-black text-emerald-400 mt-0.5" x-text="analyticsData?.pageviews_all_time ?? 0"></div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400 font-semibold uppercase">Est. Cloudflare Hits</div>
+                <div class="text-lg font-black text-indigo-400 mt-0.5" x-text="(analyticsData?.estimated_cloudflare_requests || 0).toLocaleString()"></div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+                <div class="text-[10px] text-slate-400 font-semibold uppercase">Bots / Scrapers Filtered</div>
+                <div class="text-lg font-black text-amber-400 mt-0.5" x-text="analyticsData?.bot_requests_filtered ?? 0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- CORE KPI STATS CARDS                                                  -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Unique Humans -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-semibold">Unique Humans (Today)</span>
+              <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                <i data-lucide="users" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-2xl font-black text-white" x-text="analyticsData?.unique_visitors_today ?? 0"></div>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Last 7 Days: <strong class="text-slate-200" x-text="analyticsData?.unique_visitors_7d ?? 0"></strong></span>
+                <span>All-Time: <strong class="text-slate-200" x-text="analyticsData?.total_human_visitors ?? 0"></strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Pageviews -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-semibold">Verified Pageviews</span>
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-2xl font-black text-emerald-400" x-text="analyticsData?.pageviews_today ?? 0"></div>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Today's Views</span>
+                <span>All-Time: <strong class="text-slate-200" x-text="analyticsData?.pageviews_all_time ?? 0"></strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cookie Consents -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400 font-semibold">Cookie Acceptance (PDPA)</span>
+              <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-2xl font-black text-purple-300" x-text="(analyticsData?.cookie_consent_rate ?? 0) + '%'"></div>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Consents Logged:</span>
+                <strong class="text-slate-200" x-text="analyticsData?.cookie_consents_count ?? 0"></strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Marketing Leads -->
+          <div class="p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-3 shadow-lg relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-cyan-300 font-semibold">Sales & Marketing Leads</span>
+              <div class="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <div class="text-2xl font-black text-cyan-300" x-text="adminLeadsList.length"></div>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Email Subscribers</span>
+                <span class="text-emerald-400 font-semibold cursor-pointer hover:underline" @click="exportLeadsCsv()">Export .CSV &rarr;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- TRAFFIC BREAKDOWN: PAGES, COUNTRIES, REFERRERS, DEVICES               -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Top Pages -->
+          <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-lg">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+                <span>Top Visited Pages</span>
+              </h3>
+              <span class="text-[11px] text-slate-400">Verified Human Views</span>
+            </div>
+
+            <div class="space-y-2.5">
+              <template x-for="(page, idx) in (analyticsData?.top_pages || [])" :key="idx">
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="font-mono text-slate-200 truncate max-w-[280px]" x-text="page.path"></span>
+                    <span class="font-bold text-indigo-300" x-text="page.hits + ' views'"></span>
+                  </div>
+                  <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full"
+                         :style="'width: ' + Math.min(100, Math.round((page.hits / (analyticsData?.top_pages[0]?.hits || 1)) * 100)) + '%'"></div>
+                  </div>
+                </div>
+              </template>
+              <div x-show="!analyticsData?.top_pages || analyticsData?.top_pages.length === 0" class="text-xs text-slate-500 py-4 text-center">
+                No pageview records logged yet.
+              </div>
+            </div>
+
+            <!-- Device Breakdown -->
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-around text-center text-xs">
+              <div>
+                <div class="text-slate-400 text-[10px] uppercase font-semibold">Desktop</div>
+                <div class="text-slate-200 font-bold mt-0.5" x-text="analyticsData?.device_stats?.desktop || 0"></div>
+              </div>
+              <div class="h-6 w-[1px] bg-slate-800"></div>
+              <div>
+                <div class="text-slate-400 text-[10px] uppercase font-semibold">Mobile</div>
+                <div class="text-cyan-400 font-bold mt-0.5" x-text="analyticsData?.device_stats?.mobile || 0"></div>
+              </div>
+              <div class="h-6 w-[1px] bg-slate-800"></div>
+              <div>
+                <div class="text-slate-400 text-[10px] uppercase font-semibold">Tablet</div>
+                <div class="text-slate-200 font-bold mt-0.5" x-text="analyticsData?.device_stats?.tablet || 0"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Countries & Referrers -->
+          <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-lg">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="globe" class="w-4 h-4 text-emerald-400"></i>
+                <span>Top Countries & Referrers</span>
+              </h3>
+              <span class="text-[11px] text-slate-400">Geographic & Inbound</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Countries -->
+              <div class="space-y-2">
+                <div class="text-[11px] font-bold text-slate-400 uppercase">Top Countries</div>
+                <div class="space-y-1.5">
+                  <template x-for="(c, idx) in (analyticsData?.top_countries || [])" :key="idx">
+                    <div class="flex items-center justify-between text-xs p-1.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                      <span class="font-bold text-slate-200" x-text="c.country"></span>
+                      <span class="text-slate-400 font-mono text-[11px]" x-text="c.hits + ' hits'"></span>
+                    </div>
+                  </template>
+                  <div x-show="!analyticsData?.top_countries || analyticsData?.top_countries.length === 0" class="text-xs text-slate-500 py-2">
+                    No country data yet.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Referrers -->
+              <div class="space-y-2">
+                <div class="text-[11px] font-bold text-slate-400 uppercase">Traffic Sources</div>
+                <div class="space-y-1.5">
+                  <template x-for="(ref, idx) in (analyticsData?.top_referrers || [])" :key="idx">
+                    <div class="flex items-center justify-between text-xs p-1.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
+                      <span class="font-medium text-slate-300 truncate max-w-[120px]" x-text="ref.referrer"></span>
+                      <span class="text-indigo-400 font-mono text-[11px]" x-text="ref.hits"></span>
+                    </div>
+                  </template>
+                  <div x-show="!analyticsData?.top_referrers || analyticsData?.top_referrers.length === 0" class="text-xs text-slate-500 py-2">
+                    Direct visits only.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- MARKETING LEADS LIST (SALES & NEWSLETTER EMAILS)                      -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-lg">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="mail-check" class="w-4 h-4 text-cyan-400"></i>
+                <span>Collected Sales & Marketing Leads (<span x-text="filteredAdminLeads.length"></span>)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Emails collected from cookie consent banners and landing page lead magnets for marketing outreach.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <input type="text" x-model="leadSearchQuery" placeholder="Search lead emails..."
+                     class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500 w-56" />
+              <button type="button" @click="exportLeadsCsv()"
+                      class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow">
+                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+                <span>Download .CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Leads Table -->
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">#</th>
+                  <th class="p-3">Email Address</th>
+                  <th class="p-3">Source Channel</th>
+                  <th class="p-3">Country</th>
+                  <th class="p-3">Captured At</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                <template x-for="(lead, idx) in filteredAdminLeads" :key="lead.id">
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3 font-mono text-slate-500" x-text="lead.id"></td>
+                    <td class="p-3 font-semibold text-white">
+                      <a :href="'mailto:' + lead.email" class="text-cyan-400 hover:underline" x-text="lead.email"></a>
+                    </td>
+                    <td class="p-3">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20" x-text="lead.source"></span>
+                    </td>
+                    <td class="p-3 font-bold text-slate-200" x-text="lead.country"></td>
+                    <td class="p-3 text-slate-400 font-mono text-[11px]" x-text="lead.created_at"></td>
+                    <td class="p-3 text-right">
+                      <button type="button" @click="deleteAdminLead(lead.id)"
+                              title="Delete Lead"
+                              class="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="filteredAdminLeads.length === 0">
+                  <td colspan="6" class="p-6 text-center text-slate-500 text-xs">
+                    No marketing leads captured yet. Visitors who accept cookies and enter their email will appear here immediately.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- LIVE HUMAN ACTIVITY LOG (RECENT 35 SESSIONS)                          -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-lg">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="radar" class="w-4 h-4 text-emerald-400"></i>
+                <span>Live Verified Human Activity Log (Last 35 Sessions)</span>
+              </h3>
+              <p class="text-xs text-slate-400">Chronological feed of genuine human visits to DreemFolio.</p>
+            </div>
+            <span class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Live Sensor Active</span>
+            </span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-3">Time (UTC)</th>
+                  <th class="p-3">Country</th>
+                  <th class="p-3">Device</th>
+                  <th class="p-3">Visited URL Path</th>
+                  <th class="p-3">Referrer</th>
+                  <th class="p-3">Cookie Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                <template x-for="(v, idx) in (analyticsData?.recent_visitors || [])" :key="idx">
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3 font-mono text-slate-400 text-[11px]" x-text="v.time"></td>
+                    <td class="p-3">
+                      <span class="font-bold text-slate-200" x-text="v.country"></span>
+                    </td>
+                    <td class="p-3">
+                      <span class="capitalize text-slate-300 font-medium" x-text="v.device"></span>
+                    </td>
+                    <td class="p-3 font-mono text-indigo-300 font-semibold" x-text="v.path"></td>
+                    <td class="p-3 text-slate-400 text-[11px] truncate max-w-[200px]" x-text="v.referrer"></td>
+                    <td class="p-3">
+                      <span x-show="v.cookie_consented" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Accepted</span>
+                      <span x-show="!v.cookie_consented" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">Essential</span>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="!analyticsData?.recent_visitors || analyticsData?.recent_visitors.length === 0">
+                  <td colspan="6" class="p-6 text-center text-slate-500 text-xs">
+                    No visitor logs recorded yet. Human visits to any page will show up here in real-time.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600 mt-auto">
       <p>DreemFolio.com Enterprise Admin Console • Strict RBAC Security Guard Active</p>
     </footer>
@@ -2678,6 +3088,21 @@
           avatar_url: '',
           is_featured: true,
           is_approved: true
+        },
+        analyticsData: null,
+        isLoadingAnalytics: false,
+        adminLeadsList: [],
+        isLoadingLeads: false,
+        leadSearchQuery: '',
+
+        get filteredAdminLeads() {
+          if (!this.leadSearchQuery || !this.leadSearchQuery.trim()) return this.adminLeadsList || [];
+          const q = this.leadSearchQuery.trim().toLowerCase();
+          return (this.adminLeadsList || []).filter(l =>
+            (l.email && l.email.toLowerCase().includes(q)) ||
+            (l.source && l.source.toLowerCase().includes(q)) ||
+            (l.country && l.country.toLowerCase().includes(q))
+          );
         },
 
         get pendingSlipsCount() {
@@ -2791,7 +3216,9 @@
               this.loadAdminPromos(),
               this.loadEmailQueue(),
               this.loadAdminAffiliate(),
-              this.loadAdminReviews()
+              this.loadAdminReviews(),
+              this.loadAdminAnalytics(),
+              this.loadAdminLeads()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -3984,6 +4411,85 @@
           } catch(e) {
             return String(iso);
           }
+        },
+
+        async loadAdminAnalytics() {
+          const token = localStorage.getItem('saas_token');
+          this.isLoadingAnalytics = true;
+          try {
+            const res = await fetch('/api/admin/analytics/stats', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.analyticsData = await res.json();
+            }
+          } catch (err) {
+            console.error('Failed to load analytics stats:', err);
+          } finally {
+            this.isLoadingAnalytics = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async loadAdminLeads() {
+          const token = localStorage.getItem('saas_token');
+          this.isLoadingLeads = true;
+          try {
+            const res = await fetch('/api/admin/marketing/leads', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.adminLeadsList = await res.json();
+            }
+          } catch (err) {
+            console.error('Failed to load marketing leads:', err);
+          } finally {
+            this.isLoadingLeads = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async deleteAdminLead(leadId) {
+          if (!confirm('Are you sure you want to remove this marketing lead?')) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/marketing/leads/${leadId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.adminLeadsList = this.adminLeadsList.filter(l => l.id !== leadId);
+              if (this.analyticsData && this.analyticsData.total_leads_count > 0) {
+                this.analyticsData.total_leads_count--;
+              }
+            } else {
+              alert('Could not delete lead.');
+            }
+          } catch (err) {
+            alert('Error deleting lead: ' + err.message);
+          }
+        },
+
+        exportLeadsCsv() {
+          const token = localStorage.getItem('saas_token');
+          fetch('/api/admin/marketing/leads/export-csv', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => {
+            if (!res.ok) throw new Error('Download failed');
+            return res.blob();
+          })
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `dreemfolio_leads_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+          })
+          .catch(err => alert('Failed to download CSV: ' + err.message));
         }
       };
     }

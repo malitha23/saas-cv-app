@@ -1,9 +1,10 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- DATA PRIVACY & ESSENTIAL STORAGE CONSENT BANNER (SRI LANKA PDPA & GDPR) -->
+<!-- DATA PRIVACY, COOKIE CONSENT & MARKETING LEAD CAPTURE (PDPA & GDPR)    -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="dreemfolio-privacy-banner"
-     class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl text-xs space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+     class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-xl text-xs space-y-3.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
   
+  <!-- Header & Privacy info -->
   <div class="flex items-start gap-3">
     <div class="w-9 h-9 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -18,11 +19,37 @@
         <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[9px] font-bold uppercase">PDPA 2022</span>
       </div>
       <p class="text-[11px] text-slate-300 leading-relaxed">
-        We use essential local storage for authentication and UI preferences in accordance with the <strong>Sri Lanka Personal Data Protection Act No. 9 of 2022</strong>. We do not use third-party ad trackers.
+        We use essential local cookies for security and session state in accordance with the <strong>Sri Lanka Personal Data Protection Act No. 9 of 2022</strong>.
       </p>
     </div>
   </div>
 
+  <!-- Optional Sales & Marketing Lead Capture Box -->
+  <div id="dreemfolio-lead-box" class="p-2.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/25 space-y-2">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-1.5 text-indigo-300 font-semibold text-[11px]">
+        <span>🎁</span>
+        <span>Get Free ATS Resume Tips & Job Hacks</span>
+      </div>
+      <span class="text-[10px] text-indigo-400 font-medium">Weekly Insights</span>
+    </div>
+    
+    <form id="dreemfolio-lead-form" class="flex items-center gap-1.5" onsubmit="return false;">
+      <input type="email" id="dreemfolio-lead-email" required
+             placeholder="Enter your email for free career perks"
+             class="flex-1 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-700 text-slate-200 text-[11px] placeholder:text-slate-500 focus:outline-none focus:border-indigo-500" />
+      <button type="submit" id="dreemfolio-lead-submit"
+              class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-[10px] shrink-0 transition active:scale-95">
+        Get Tips
+      </button>
+    </form>
+    <div id="dreemfolio-lead-feedback" class="hidden text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+      <span>✅</span>
+      <span>Subscribed! Check your inbox for ATS tips.</span>
+    </div>
+  </div>
+
+  <!-- Banner Actions -->
   <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-800/80 text-[11px]">
     <a href="/privacy" class="text-indigo-400 hover:text-indigo-300 underline font-semibold flex items-center gap-1">
       <span>Read Privacy Policy</span>
@@ -41,22 +68,104 @@
 <script>
   (function() {
     try {
+      // 1. AUTOMATIC REAL HUMAN VISITOR BEACON (Non-blocking, Asynchronous)
+      var payload = JSON.stringify({
+        path: window.location.pathname || '/',
+        referrer: document.referrer || '',
+        screen_width: window.innerWidth || (window.screen ? window.screen.width : 0)
+      });
+
+      if (navigator.sendBeacon) {
+        var blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon('/api/track/pageview', blob);
+      } else {
+        fetch('/api/track/pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true
+        }).catch(function() {});
+      }
+
+      // 2. COOKIE CONSENT & PRIVACY BANNER LOGIC
       var consentKey = 'dreemfolio_privacy_consent_v1';
+      var leadSubmittedKey = 'dreemfolio_lead_submitted_v1';
       var banner = document.getElementById('dreemfolio-privacy-banner');
       var acceptBtn = document.getElementById('btn-accept-privacy');
-      
+      var leadForm = document.getElementById('dreemfolio-lead-form');
+      var leadEmailInput = document.getElementById('dreemfolio-lead-email');
+      var leadFeedback = document.getElementById('dreemfolio-lead-feedback');
+      var leadBox = document.getElementById('dreemfolio-lead-box');
+
       if (!banner || !acceptBtn) return;
 
+      // Check if user already provided lead email previously
+      if (localStorage.getItem(leadSubmittedKey) && leadBox) {
+        leadBox.classList.add('hidden');
+      }
+
+      // Show banner after brief delay if not accepted yet
       if (!localStorage.getItem(consentKey)) {
         setTimeout(function() {
           banner.classList.remove('hidden');
         }, 1200);
       }
 
+      // Handle Accept Click
       acceptBtn.addEventListener('click', function() {
         localStorage.setItem(consentKey, 'true');
         banner.classList.add('hidden');
+
+        // Audit log consent to server
+        try {
+          fetch('/api/track/consent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ consent_type: 'essential_and_analytics' }),
+            keepalive: true
+          }).catch(function() {});
+        } catch(e) {}
       });
+
+      // Handle Marketing Lead Capture
+      if (leadForm && leadEmailInput) {
+        leadForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var emailVal = (leadEmailInput.value || '').trim();
+          if (!emailVal) return;
+
+          fetch('/api/marketing/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailVal, source: 'cookie_banner' })
+          })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            localStorage.setItem(leadSubmittedKey, 'true');
+            if (leadFeedback) leadFeedback.classList.remove('hidden');
+            if (leadEmailInput) leadEmailInput.disabled = true;
+            var submitBtn = document.getElementById('dreemfolio-lead-submit');
+            if (submitBtn) submitBtn.disabled = true;
+
+            // Auto accept consent when joining marketing list
+            localStorage.setItem(consentKey, 'true');
+            fetch('/api/track/consent', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ consent_type: 'marketing_lead_accepted' }),
+              keepalive: true
+            }).catch(function() {});
+
+            setTimeout(function() {
+              banner.classList.add('hidden');
+            }, 2500);
+          })
+          .catch(function() {
+            localStorage.setItem(consentKey, 'true');
+            banner.classList.add('hidden');
+          });
+        });
+      }
     } catch(e) {}
   })();
 </script>

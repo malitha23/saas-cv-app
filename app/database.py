@@ -136,6 +136,12 @@ def init_engine():
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)
 
+    # Create all defined tables if not yet created
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as create_err:
+        logger.warning("Base.metadata.create_all warning: %s", create_err)
+
     _session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return engine
 

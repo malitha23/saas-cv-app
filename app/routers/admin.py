@@ -2,12 +2,18 @@ import json
 import datetime
 import logging
 from typing import Optional, Dict, List, Any
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query
+import io
+import csv
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func, distinct
 
 from app.database import get_db
-from app.models import User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage, QueuedEmail, UserReview
+from app.models import (
+    User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder,
+    PromoCode, PromoCodeUsage, QueuedEmail, UserReview,
+    SiteVisitor, MarketingLead, CookieConsentLog
+)
 from app.schemas import (
     AdminOverviewResponse, AdminSettingItem, AdminUpdateSettingsRequest,
     AdminUserListItem, AdminUpdateUserPlanRequest,
@@ -1141,6 +1147,220 @@ async def admin_delete_review(
     db.delete(review)
     db.commit()
     return {"success": True, "message": f"Review #{review_id} has been permanently deleted."}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VISITOR ANALYTICS, HUMAN PROOF & SALES MARKETING LEADS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/api/admin/analytics/stats")
+async def get_admin_analytics_stats(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Real Human Traffic Proof & Visitor Analytics.
+    Differentiates verified human sessions from raw Cloudflare asset requests and bot crawlers.
+    """
+    today_start = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+
+    # 1. Human Unique Visitors & Pageviews
+    total_human_visitors = db.scalar(
+        select(func.count(distinct(SiteVisitor.visitor_hash))).where(SiteVisitor.is_bot == False)
+    ) or 0
+
+    unique_visitors_today = db.scalar(
+        select(func.count(distinct(SiteVisitor.visitor_hash))).where(
+            SiteVisitor.is_bot == False,
+            SiteVisitor.created_at >= today_start
+        )
+    ) or 0
+
+    unique_visitors_7d = db.scalar(
+        select(func.count(distinct(SiteVisitor.visitor_hash))).where(
+            SiteVisitor.is_bot == False,
+            SiteVisitor.created_at >= seven_days_ago
+        )
+    ) or 0
+
+    pageviews_today = db.scalar(
+        select(func.count(SiteVisitor.id)).where(
+            SiteVisitor.is_bot == False,
+            SiteVisitor.created_at >= today_start
+        )
+    ) or 0
+
+    pageviews_all_time = db.scalar(
+        select(func.count(SiteVisitor.id)).where(SiteVisitor.is_bot == False)
+    ) or 0
+
+    # 2. Automated Bots & Crawlers Filtered
+    bot_requests_filtered = db.scalar(
+        select(func.count(SiteVisitor.id)).where(SiteVisitor.is_bot == True)
+    ) or 0
+
+    # 3. Cookie Consents & Conversion
+    cookie_consents_count = db.scalar(select(func.count(CookieConsentLog.id))) or 0
+    cookie_consent_rate = round((cookie_consents_count / max(total_human_visitors, 1)) * 100, 1)
+
+    # 4. Total Marketing Leads Captured
+    total_leads_count = db.scalar(select(func.count(MarketingLead.id))) or 0
+
+    # 5. Cloudflare requests proof multiplier (Avg web page has ~25 sub-requests: JS, CSS, images, fonts)
+    cloudflare_multiplier = 25
+    estimated_cloudflare_requests = (pageviews_all_time * cloudflare_multiplier) + (bot_requests_filtered * 5)
+
+    # 6. Top Visited Pages
+    top_pages_rows = db.execute(
+        select(SiteVisitor.path, func.count(SiteVisitor.id).label("hits"))
+        .where(SiteVisitor.is_bot == False)
+        .group_by(SiteVisitor.path)
+        .order_by(func.count(SiteVisitor.id).desc())
+        .limit(7)
+    ).all()
+    top_pages = [{"path": row[0], "hits": row[1]} for row in top_pages_rows]
+
+    # 7. Top Countries
+    top_countries_rows = db.execute(
+        select(SiteVisitor.country_code, func.count(SiteVisitor.id).label("hits"))
+        .where(SiteVisitor.is_bot == False)
+        .group_by(SiteVisitor.country_code)
+        .order_by(func.count(SiteVisitor.id).desc())
+        .limit(7)
+    ).all()
+    top_countries = [{"country": row[0] or "UNKNOWN", "hits": row[1]} for row in top_countries_rows]
+
+    # 8. Device Breakdown
+    device_rows = db.execute(
+        select(SiteVisitor.device_type, func.count(SiteVisitor.id).label("hits"))
+        .where(SiteVisitor.is_bot == False)
+        .group_by(SiteVisitor.device_type)
+    ).all()
+    device_stats = {row[0]: row[1] for row in device_rows}
+
+    # 9. Top Referrers
+    referrer_rows = db.execute(
+        select(SiteVisitor.referrer, func.count(SiteVisitor.id).label("hits"))
+        .where(SiteVisitor.is_bot == False, SiteVisitor.referrer.isnot(None), SiteVisitor.referrer != "")
+        .group_by(SiteVisitor.referrer)
+        .order_by(func.count(SiteVisitor.id).desc())
+        .limit(7)
+    ).all()
+    top_referrers = [{"referrer": row[0], "hits": row[1]} for row in referrer_rows]
+
+    # 10. Recent 35 Verified Human Visitors
+    recent_rows = db.scalars(
+        select(SiteVisitor)
+        .where(SiteVisitor.is_bot == False)
+        .order_by(SiteVisitor.id.desc())
+        .limit(35)
+    ).all()
+    recent_visitors = [
+        {
+            "id": r.id,
+            "hash": f"{r.visitor_hash[:8]}..." if r.visitor_hash else "anon",
+            "country": r.country_code or "UNKNOWN",
+            "ip_anonymized": r.ip_address or "---",
+            "path": r.path,
+            "referrer": r.referrer or "Direct / None",
+            "device": r.device_type,
+            "cookie_consented": r.cookie_consented,
+            "time": r.created_at.strftime("%Y-%m-%d %H:%M:%S") if r.created_at else "---"
+        }
+        for r in recent_rows
+    ]
+
+    return {
+        "unique_visitors_today": unique_visitors_today,
+        "unique_visitors_7d": unique_visitors_7d,
+        "total_human_visitors": total_human_visitors,
+        "pageviews_today": pageviews_today,
+        "pageviews_all_time": pageviews_all_time,
+        "bot_requests_filtered": bot_requests_filtered,
+        "cookie_consents_count": cookie_consents_count,
+        "cookie_consent_rate": cookie_consent_rate,
+        "total_leads_count": total_leads_count,
+        "estimated_cloudflare_requests": estimated_cloudflare_requests,
+        "top_pages": top_pages,
+        "top_countries": top_countries,
+        "device_stats": device_stats,
+        "top_referrers": top_referrers,
+        "recent_visitors": recent_visitors
+    }
+
+
+@router.get("/api/admin/marketing/leads")
+async def get_admin_marketing_leads(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Retrieve collected sales & marketing lead emails."""
+    leads = db.scalars(
+        select(MarketingLead).order_by(MarketingLead.id.desc()).limit(500)
+    ).all()
+
+    return [
+        {
+            "id": lead.id,
+            "email": lead.email,
+            "source": lead.source,
+            "country": lead.country_code,
+            "ip_address": lead.ip_address,
+            "created_at": lead.created_at.strftime("%Y-%m-%d %H:%M") if lead.created_at else "---"
+        }
+        for lead in leads
+    ]
+
+
+@router.get("/api/admin/marketing/leads/export-csv")
+async def export_marketing_leads_csv(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Download marketing lead emails as a clean CSV file."""
+    leads = db.scalars(
+        select(MarketingLead).order_by(MarketingLead.id.desc())
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Email Address", "Source", "Country Code", "Captured At (UTC)"])
+
+    for lead in leads:
+        writer.writerow([
+            lead.id,
+            lead.email,
+            lead.source,
+            lead.country_code,
+            lead.created_at.strftime("%Y-%m-%d %H:%M:%S") if lead.created_at else ""
+        ])
+
+    csv_data = output.getvalue()
+    today_date = datetime.date.today().isoformat()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="dreemfolio_leads_{today_date}.csv"'
+        }
+    )
+
+
+@router.delete("/api/admin/marketing/leads/{lead_id}")
+async def delete_marketing_lead(
+    lead_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete a spam or requested deletion lead from marketing list."""
+    lead = db.scalar(select(MarketingLead).where(MarketingLead.id == lead_id))
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead record not found.")
+    db.delete(lead)
+    db.commit()
+    return {"success": True, "message": f"Lead #{lead_id} removed successfully."}
+
 
 
 
