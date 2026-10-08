@@ -120,4 +120,24 @@
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
+
+  <!-- Topic 4: Best Resume Format for Freshers & Interns (EN, SI, TA) -->
+  <url>
+    <loc>https://www.dreemfolio.com/blog/best-resume-format-for-freshers-interns-sri-lanka</loc>
+    <lastmod>2026-10-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/si/best-resume-format-for-freshers-interns-sri-lanka</loc>
+    <lastmod>2026-10-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://www.dreemfolio.com/blog/ta/best-resume-format-for-freshers-interns-sri-lanka</loc>
+    <lastmod>2026-10-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
 </urlset>

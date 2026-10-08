@@ -268,7 +268,8 @@ async def serve_sitemap_xml():
     
     xml_content += '</urlset>'
     response = Response(content=xml_content, media_type="application/xml; charset=utf-8")
-    response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, must-revalidate"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
     return response
 
 
