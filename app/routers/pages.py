@@ -178,6 +178,12 @@ Disallow: /api/
 Disallow: /admin
 Disallow: /paneladmin
 Disallow: /portfolio/preview/
+Disallow: /*?*
+Disallow: /*?payment=
+Disallow: /*?order_id=
+Disallow: /*?status=
+Disallow: /*?ref=
+Disallow: /*?error=
 
 # AI Search & Training Crawlers (Welcome ChatGPT, Perplexity, Claude & Gemini)
 User-agent: GPTBot
