@@ -13,7 +13,7 @@ import socket
 from typing import Dict, List
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
@@ -89,6 +89,28 @@ app.add_middleware(
 
 # Enable GZip compression (compresses JS/CSS/HTML responses >1KB by up to 80% for fast page loads)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CANONICAL REDIRECT MIDDLEWARE (Non-WWW -> WWW & HTTP -> HTTPS)
+# ─────────────────────────────────────────────────────────────────────────────
+@app.middleware("http")
+async def canonical_redirect_middleware(request: Request, call_next):
+    """
+    Enforce canonical host (non-www dreemfolio.com -> www.dreemfolio.com) and HTTPS in production.
+    Consolidates split ranking authority and prevents Google Search Console duplicate property indexation.
+    """
+    raw_host = request.headers.get("host", "").split(":")[0].strip().lower()
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme).lower()
+
+    if raw_host == "dreemfolio.com" or (raw_host == "www.dreemfolio.com" and proto == "http"):
+        path = request.url.path
+        query = f"?{request.url.query}" if request.url.query else ""
+        return RedirectResponse(
+            url=f"https://www.dreemfolio.com{path}{query}",
+            status_code=301
+        )
+    return await call_next(request)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

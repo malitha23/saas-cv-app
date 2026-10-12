@@ -59,9 +59,9 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
                 ]
             },
             "ta": {
-                "title": "2026 இல் ATS-நட்பு CV எழுதுவது எப்படி?",
+                "title": "2026 இல் ATS-நட்பு CV எழுதுவது எப்படி? | முழு வழிகாட்டி",
                 "subtitle": "Workday, Greenhouse மற்றும் Lever போன்ற ATS அமைப்புகளில் 95%+ மதிப்பெண்களுடன் தேர்ச்சி பெறுவதற்கான வழிகாட்டி.",
-                "description": "Applicant Tracking Systems (ATS) இல் எளிதாக தேர்ச்சி பெறும் ATS-நட்பு CV எழுதுவது எப்படி, வடிவமைப்பு விதிகள் மற்றும் இலவச ATS சரிபார்ப்பு.",
+                "description": "உங்கள் CV ஏன் நிராகரிக்கப்படுகிறது? 2026 இல் ATS தேர்ச்சி பெறும் எளிய முறைகள், வடிவமைப்பு விதிகள் மற்றும் இலவச ATS Score சோதனை வழிகாட்டி.",
                 "category": "ATS CV வழிகாட்டி",
                 "badge": "சிறந்த வழிகாட்டி",
                 "reading_time": "7 நிமிட வாசிப்பு",
@@ -77,12 +77,12 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
     },
     "top-10-resume-errors-that-cause-rejection": {
         "slug": "top-10-resume-errors-that-cause-rejection",
-        "title": "Top 10 Resume Errors That Cause Rejection",
+        "title": "Top 10 Resume Errors That Cause Rejection (2026 Fix)",
         "subtitle": "The critical formatting, typography, and keyword mistakes that trigger instant rejection in 2026 recruiting funnels.",
-        "description": "Discover the top 10 resume errors that cause instant ATS and recruiter rejection. Learn how to fix formatting traps, missing metrics, and keyword mistakes.",
+        "description": "Is your resume getting silently rejected? Fix the top 10 resume errors ATS scanners hate in 2026. Audit formatting traps, skill bars, and optimize your score now.",
         "template": "blogs/resume_errors_guide.html",
         "published_date": "2026-10-05",
-        "modified_date": "2026-10-05",
+        "modified_date": "2026-10-12",
         "author": {
             "name": "DreemFolio AI Career Team",
             "role": "Recruitment Operations & Career Mentors",

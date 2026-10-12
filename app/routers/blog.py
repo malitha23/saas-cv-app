@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.state import templates
 from app.blog_data import (
@@ -19,6 +19,8 @@ SUPPORTED_LANGUAGES = {"en", "si", "ta"}
 
 @router.get("/blog", response_class=HTMLResponse)
 @router.get("/blog/", response_class=HTMLResponse)
+@router.get("/blog/en", response_class=HTMLResponse)
+@router.get("/blog/en/", response_class=HTMLResponse)
 @router.get("/blog/si", response_class=HTMLResponse)
 @router.get("/blog/si/", response_class=HTMLResponse)
 @router.get("/blog/ta", response_class=HTMLResponse)
@@ -30,6 +32,8 @@ async def render_blog_catalog(request: Request):
     """
     path = request.url.path.strip("/")
     parts = path.split("/")
+    if len(parts) >= 2 and parts[1] == "en":
+        return RedirectResponse(url="/blog", status_code=301)
     lang = "en"
     if len(parts) >= 2 and parts[1] in SUPPORTED_LANGUAGES:
         lang = parts[1]
@@ -80,6 +84,8 @@ async def render_blog_post_en(slug: str, request: Request):
 @router.get("/blog/{lang}/{slug}", response_class=HTMLResponse)
 async def render_blog_post_localized(lang: str, slug: str, request: Request):
     """Serve localized blog post (Sinhala /blog/si/{slug} or Tamil /blog/ta/{slug})."""
+    if lang == "en":
+        return RedirectResponse(url=f"/blog/{slug}", status_code=301)
     if lang not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=404, detail="Language code not supported.")
     return await _serve_post(slug=slug, lang=lang, request=request)
