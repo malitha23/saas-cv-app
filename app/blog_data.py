@@ -93,12 +93,15 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "badge": "Essential Reading",
         "priority": "0.85",
         "target_keywords": [
+            "top 10 resume mistakes",
             "resume formatting mistakes",
             "CV rejection reasons",
             "ATS parsing errors",
             "why resumes get rejected",
             "resume red flags",
-            "fix resume errors"
+            "fix resume errors",
+            "job application resume mistakes",
+            "common CV errors"
         ],
         "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
         "translations": {

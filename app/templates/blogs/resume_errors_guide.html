@@ -455,6 +455,44 @@
       <p>
         Sending the exact same resume to 50 distinct job postings leads to rejection. Tailor your resume to each job description with DreemFolio AI.
       </p>
+
+      <!-- ENGLISH FAQ ACCORDION SECTION (DIRECT ANSWERS FOR RICH SNIPPETS) -->
+      <div class="mt-12 pt-8 border-t border-slate-800 not-prose space-y-4">
+        <div class="flex items-center gap-2 mb-2">
+          <i data-lucide="help-circle" class="w-5 h-5 text-indigo-400"></i>
+          <h3 class="text-lg font-bold text-white">Frequently Asked Questions About Resume Rejection Errors</h3>
+        </div>
+
+        <div class="space-y-3 text-xs sm:text-sm">
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">1. Why do 75% of job applicant resumes get rejected by ATS scanners?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              Most job applicant resumes get rejected because of two-column layouts, graphics/tables, and missing job description keywords. When an ATS parser cannot extract the candidate's work history or skills cleanly, it automatically assigns a low relevance score and discards the application before human recruiters see it.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">2. Why do Canva and graphic design resume templates fail ATS checks?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              Canva templates frequently use multi-column text boxes, icons, and non-selectable flattened graphics. When an ATS parser reads the file horizontally from left to right, it merges text from the left column into the right column, jumbling job titles, dates, and skills into gibberish.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">3. What is the best file format to avoid resume parsing errors in 2026?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              A standard selectable vector PDF (.pdf) is the most reliable format. It preserves exact layout and typography across Windows and Mac devices without layout shifting, provided the text is searchable and not saved as a flattened raster image.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <h4 class="font-bold text-indigo-300">4. How can I test my resume for errors before applying for jobs?</h4>
+            <p class="text-slate-300 leading-relaxed">
+              You can upload your CV to <a href="/app" class="text-indigo-400 underline font-semibold">DreemFolio AI's Free Resume Checker</a> to test ATS parsing, identify keyword gaps against your target job description, and get an instant compatibility score with automated formatting fixes.
+            </p>
+          </div>
+        </div>
+      </div>
     </article>
     {% endif %}
 
@@ -520,11 +558,16 @@
 </div>
 
 {% if current_lang == 'si' %}
-<!-- Google FAQ Rich Results Schema (JSON-LD) -->
+<!-- Google FAQ Rich Results Schema (JSON-LD) - Sinhala -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
+  "about": {
+    "@type": "Thing",
+    "name": "Curriculum Vitae",
+    "sameAs": "https://en.wikipedia.org/wiki/Curriculum_vitae"
+  },
   "mainEntity": [
     {
       "@type": "Question",
@@ -556,6 +599,53 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "වසර 0-5ක පළපුරුද්දක් ඇති අයට පිටු 1ක් (One-Page) වඩාත් යෝග්‍ය වේ. වසර 5කට වඩා වැඩි පළපුරුද්දක් ඇති ජ්‍යෙෂ්ඨ වෘත්තිකයින්ට පිටු 2ක් භාවිතා කළ හැක. කිසිවිටෙකත් පිටු 3 හෝ ඊට වැඩි නොකරන්න."
+      }
+    }
+  ]
+}
+</script>
+{% else %}
+<!-- Google FAQ Rich Results Schema (JSON-LD) - English with Explicit Career Entity -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "about": {
+    "@type": "Thing",
+    "name": "Curriculum Vitae",
+    "sameAs": "https://en.wikipedia.org/wiki/Curriculum_vitae"
+  },
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why do 75% of job applicant resumes get rejected by ATS scanners?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most job applicant resumes get rejected because of two-column layouts, graphics/tables, and missing job description keywords. When an ATS parser cannot extract the candidate's work history or skills cleanly, it automatically assigns a low relevance score and discards the application before human recruiters see it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do Canva and graphic design resume templates fail ATS checks?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Canva templates frequently use multi-column text boxes, icons, and non-selectable flattened graphics. When an ATS parser reads the file horizontally from left to right, it merges text from the left column into the right column, jumbling job titles, dates, and skills into gibberish."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best file format to avoid resume parsing errors in 2026?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A standard selectable vector PDF (.pdf) is the most reliable format. It preserves exact layout and typography across Windows and Mac devices without layout shifting, provided the text is searchable and not saved as a flattened raster image."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I test my resume for errors before applying for jobs?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can upload your CV to DreemFolio AI's Free Resume Checker (https://www.dreemfolio.com/app) to test ATS parsing, identify keyword gaps against your target job description, and get an instant compatibility score with automated formatting fixes."
       }
     }
   ]
