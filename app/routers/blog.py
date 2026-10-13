@@ -19,6 +19,12 @@ SUPPORTED_LANGUAGES = {"en", "si", "ta"}
 
 @router.get("/blog", response_class=HTMLResponse)
 @router.get("/blog/", response_class=HTMLResponse)
+@router.get("/blogs")
+@router.get("/blogs/")
+async def redirect_blogs_to_blog():
+    return RedirectResponse(url="/blog", status_code=301)
+
+
 @router.get("/blog/en", response_class=HTMLResponse)
 @router.get("/blog/en/", response_class=HTMLResponse)
 @router.get("/blog/si", response_class=HTMLResponse)
@@ -81,6 +87,12 @@ async def render_blog_post_en(slug: str, request: Request):
     return await _serve_post(slug=slug, lang="en", request=request)
 
 
+@router.get("/blogs/{slug}")
+async def redirect_plural_blogs_post_en(slug: str):
+    """301 Permanent Redirect plural /blogs/{slug} to authoritative canonical /blog/{slug}."""
+    return RedirectResponse(url=f"/blog/{slug}", status_code=301)
+
+
 @router.get("/blog/{lang}/{slug}", response_class=HTMLResponse)
 async def render_blog_post_localized(lang: str, slug: str, request: Request):
     """Serve localized blog post (Sinhala /blog/si/{slug} or Tamil /blog/ta/{slug})."""
@@ -89,6 +101,12 @@ async def render_blog_post_localized(lang: str, slug: str, request: Request):
     if lang not in SUPPORTED_LANGUAGES:
         raise HTTPException(status_code=404, detail="Language code not supported.")
     return await _serve_post(slug=slug, lang=lang, request=request)
+
+
+@router.get("/blogs/{lang}/{slug}")
+async def redirect_plural_blogs_post_localized(lang: str, slug: str):
+    """301 Permanent Redirect plural /blogs/{lang}/{slug} to canonical /blog/{lang}/{slug}."""
+    return RedirectResponse(url=f"/blog/{lang}/{slug}", status_code=301)
 
 
 async def _serve_post(slug: str, lang: str, request: Request):
