@@ -440,20 +440,50 @@ class SiteVisitor(Base):
 class MarketingLead(Base):
     """
     SQLAlchemy 2.0 Typed Model for Captured Sales & Marketing Lead Emails.
-    Collected via Cookie Consent banner, ATS Career Lead Magnet, and Landing Page.
+    Supports CSV imports, position tagging, and promotional email campaign tracking.
     """
     __tablename__ = "marketing_leads"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    position: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     source: Mapped[str] = mapped_column(String(100), default="cookie_banner", nullable=False)
     country_code: Mapped[str] = mapped_column(String(10), default="UNKNOWN", nullable=False)
     ip_address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     consent_given: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="pending", index=True, nullable=False)  # pending, sent, failed, unsubscribed
+    send_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    campaign_tag: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<MarketingLead(id={self.id}, email='{self.email}', name='{self.name}', position='{self.position}', status='{self.status}')>"
+
+
+class MarketingCampaignLog(Base):
+    """
+    Audit log for bulk promotional email campaigns dispatched from Admin.
+    """
+    __tablename__ = "marketing_campaign_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    template_type: Mapped[str] = mapped_column(String(50), default="promotional_offer", nullable=False)
+    headline: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    target_filter: Mapped[str] = mapped_column(String(100), default="all", nullable=False)
+    total_targeted: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_sent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_failed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    admin_user: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
 
     def __repr__(self) -> str:
-        return f"<MarketingLead(id={self.id}, email='{self.email}', source='{self.source}')>"
+        return f"<MarketingCampaignLog(id={self.id}, subject='{self.subject}', sent={self.total_sent})>"
 
 
 class CookieConsentLog(Base):

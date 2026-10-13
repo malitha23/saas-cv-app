@@ -640,3 +640,64 @@ def send_admin_user_refund_request(
         dispatch_email_in_background(admin, f"⚠️ Customer Refund Request: #{order_id} - {currency} {amount:.2f}", html, background_tasks)
 
 
+def render_marketing_campaign_html(
+    name: Optional[str] = None,
+    position: Optional[str] = None,
+    headline: Optional[str] = None,
+    message_body: Optional[str] = None,
+    cta_text: Optional[str] = None,
+    cta_url: Optional[str] = None,
+    base_url: str = "https://www.dreemfolio.com"
+) -> str:
+    """Renders the HTML content for a promotional marketing campaign email."""
+    template = jinja_env.get_template("emails/marketing_campaign.html")
+    return template.render(
+        name=name or "",
+        position=position or "",
+        headline=headline,
+        message_body=message_body,
+        cta_text=cta_text,
+        cta_url=cta_url,
+        base_url=base_url.rstrip("/"),
+        current_year=datetime.utcnow().year
+    )
+
+
+def send_promotional_campaign_email(
+    to_email: str,
+    subject: str,
+    name: Optional[str] = None,
+    position: Optional[str] = None,
+    headline: Optional[str] = None,
+    message_body: Optional[str] = None,
+    cta_text: Optional[str] = None,
+    cta_url: Optional[str] = None,
+    base_url: str = "https://www.dreemfolio.com",
+    enqueue_on_fail: bool = False
+) -> bool:
+    """Dispatches a promotional marketing email to a customer/lead."""
+    clean_to = to_email.strip()
+    html_content = render_marketing_campaign_html(
+        name=name,
+        position=position,
+        headline=headline,
+        message_body=message_body,
+        cta_text=cta_text,
+        cta_url=cta_url,
+        base_url=base_url
+    )
+    plain_content = (
+        f"Hi {name or 'there'},\n\n"
+        f"{headline or 'Land More Interviews with DreemFolio AI'}\n\n"
+        f"Check your ATS Score free at: {cta_url or 'https://www.dreemfolio.com/ats-resume-checker'}\n\n"
+        f"Best regards,\nDreemFolio AI Team"
+    )
+    return send_raw_email(
+        to_email=clean_to,
+        subject=subject,
+        html_body=html_content,
+        plain_body=plain_content,
+        enqueue_on_fail=enqueue_on_fail
+    )
+
+

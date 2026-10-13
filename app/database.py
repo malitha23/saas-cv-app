@@ -132,6 +132,23 @@ def init_engine():
                     if "payout_method" not in aw_cols:
                         mig_conn.execute(text("ALTER TABLE affiliate_withdrawals ADD COLUMN payout_method VARCHAR(50) NOT NULL DEFAULT 'bank'"))
 
+                if insp.has_table("marketing_leads"):
+                    lead_cols = {c["name"] for c in insp.get_columns("marketing_leads")}
+                    needed_lead_cols = [
+                        ("name", "VARCHAR(255) NULL"),
+                        ("phone", "VARCHAR(50) NULL"),
+                        ("position", "VARCHAR(255) NULL"),
+                        ("status", "VARCHAR(50) NOT NULL DEFAULT 'pending'"),
+                        ("send_count", "INT NOT NULL DEFAULT 0"),
+                        ("last_sent_at", "DATETIME NULL"),
+                        ("last_error", "TEXT NULL"),
+                        ("campaign_tag", "VARCHAR(100) NULL"),
+                        ("updated_at", "DATETIME NULL")
+                    ]
+                    for col_name, col_def in needed_lead_cols:
+                        if col_name not in lead_cols:
+                            mig_conn.execute(text(f"ALTER TABLE marketing_leads ADD COLUMN {col_name} {col_def}"))
+
                 mig_conn.commit()
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)

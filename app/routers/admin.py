@@ -4,15 +4,18 @@ import logging
 from typing import Optional, Dict, List, Any
 import io
 import csv
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query, Response
+import threading
+import time
+from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query, Response, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func, distinct, or_
 
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models import (
     User, UserResume, SaasSetting, BankPaymentSlip, OnlinePaymentOrder,
     PromoCode, PromoCodeUsage, QueuedEmail, UserReview,
-    SiteVisitor, MarketingLead, CookieConsentLog
+    SiteVisitor, MarketingLead, MarketingCampaignLog, CookieConsentLog
 )
 from app.schemas import (
     AdminOverviewResponse, AdminSettingItem, AdminUpdateSettingsRequest,
@@ -29,7 +32,8 @@ from app.pricing import _get_country_pricing_dict
 from app.payhere import PayHereGateway
 from app.email_service import (
     send_user_refund_processed, send_admin_refund_alert,
-    process_email_queue, retry_single_queued_email, retry_all_queued_emails
+    process_email_queue, retry_single_queued_email, retry_all_queued_emails,
+    send_promotional_campaign_email, render_marketing_campaign_html
 )
 
 logger = logging.getLogger("dreemfolio.admin")
@@ -1290,27 +1294,576 @@ async def get_admin_analytics_stats(
     }
 
 
-@router.get("/api/admin/marketing/leads")
-async def get_admin_marketing_leads(
+# ─────────────────────────────────────────────────────────────────────────────
+# EMAIL MARKETING, CSV IMPORTS & PROMOTIONAL CAMPAIGN ENGINE
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SendCampaignRequest(BaseModel):
+    target_type: str = "selected"  # "selected", "all", "never_sent", "position", "test"
+    selected_ids: Optional[List[int]] = None
+    position_filter: Optional[str] = None
+    test_email: Optional[str] = None
+    subject: str = "Land More Interviews with DreemFolio AI - ATS Resume & Live Portfolio"
+    template_type: str = "promotional_offer"
+    headline: Optional[str] = "Accelerate Your Career with a Recruiter-Approved ATS Resume"
+    message_body: Optional[str] = None
+    cta_text: Optional[str] = "Check Your ATS Score Free →"
+    cta_url: Optional[str] = "https://www.dreemfolio.com/ats-resume-checker"
+
+
+class PreviewEmailRequest(BaseModel):
+    subject: str = "Land More Interviews with DreemFolio AI"
+    headline: Optional[str] = "Accelerate Your Career with a Recruiter-Approved ATS Resume"
+    message_body: Optional[str] = None
+    cta_text: Optional[str] = "Check Your ATS Score Free →"
+    cta_url: Optional[str] = "https://www.dreemfolio.com/ats-resume-checker"
+    sample_name: Optional[str] = "Dimmithra Perera"
+    sample_position: Optional[str] = "Mobile Application Developer"
+
+
+class BatchDeleteLeadsRequest(BaseModel):
+    lead_ids: List[int]
+
+
+class ManualLeadImportItem(BaseModel):
+    email: str
+    name: Optional[str] = None
+    position: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class ManualLeadsImportRequest(BaseModel):
+    raw_csv: Optional[str] = None
+    leads: Optional[List[ManualLeadImportItem]] = None
+    campaign_tag: Optional[str] = "csv_import"
+
+
+def parse_csv_contacts(csv_text: str) -> List[Dict[str, str]]:
+    """
+    Robust CSV parser that detects Position, Name, Email, Phone columns
+    regardless of capitalization, order, or delimiter.
+    """
+    contacts = []
+    if not csv_text or not csv_text.strip():
+        return contacts
+
+    clean_text = csv_text.strip().replace("\r\n", "\n").replace("\r", "\n")
+    lines = [l for l in clean_text.split("\n") if l.strip()]
+    if not lines:
+        return contacts
+
+    reader = csv.reader(lines)
+    header = next(reader, None)
+    if not header:
+        return contacts
+
+    col_map = {}
+    for idx, raw_h in enumerate(header):
+        h = raw_h.strip().lower()
+        if any(k in h for k in ["email", "e-mail", "mail"]):
+            col_map["email"] = idx
+        elif any(k in h for k in ["name", "full name", "candidate", "applicant"]):
+            col_map["name"] = idx
+        elif any(k in h for k in ["position", "role", "title", "job", "designation"]):
+            col_map["position"] = idx
+        elif any(k in h for k in ["phone", "mobile", "tel", "contact"]):
+            col_map["phone"] = idx
+
+    # If header didn't specify 'email', check if header was actually data row
+    if "email" not in col_map:
+        for idx, cell in enumerate(header):
+            if "@" in cell:
+                col_map["email"] = idx
+            elif idx == 0 and "position" not in col_map:
+                col_map["position"] = 0
+            elif idx == 1 and "name" not in col_map:
+                col_map["name"] = 1
+            elif idx == 3 and "phone" not in col_map:
+                col_map["phone"] = 3
+        # treat first row as data
+        row_dict = {k: header[idx].strip() for k, idx in col_map.items() if idx < len(header)}
+        if row_dict.get("email") and "@" in row_dict["email"]:
+            contacts.append(row_dict)
+
+    for row in reader:
+        if not row:
+            continue
+        row_dict = {}
+        for k, idx in col_map.items():
+            if idx < len(row):
+                row_dict[k] = row[idx].strip()
+
+        email = row_dict.get("email", "").strip()
+        if email and "@" in email:
+            contacts.append(row_dict)
+
+    return contacts
+
+
+def _dispatch_campaign_worker(
+    campaign_log_id: int,
+    target_lead_ids: List[int],
+    subject_template: str,
+    headline_template: str,
+    message_body_template: Optional[str],
+    cta_text: str,
+    cta_url: str
+):
+    """Background worker that dispatches personalized marketing emails with rate-limiting."""
+    db = SessionLocal()
+    sent_count = 0
+    failed_count = 0
+    try:
+        leads = db.scalars(
+            select(MarketingLead).where(MarketingLead.id.in_(target_lead_ids))
+        ).all()
+
+        for lead in leads:
+            try:
+                cand_name = (lead.name or "").strip() or "there"
+                first_name = cand_name.split()[0] if cand_name != "there" else "there"
+                cand_pos = (lead.position or "").strip() or "Professional"
+
+                sub = subject_template.replace("{{name}}", first_name).replace("{name}", first_name)
+                sub = sub.replace("{{position}}", cand_pos).replace("{position}", cand_pos)
+
+                hd = headline_template.replace("{{name}}", first_name).replace("{name}", first_name)
+                hd = hd.replace("{{position}}", cand_pos).replace("{position}", cand_pos)
+
+                msg_body = None
+                if message_body_template:
+                    msg_body = message_body_template.replace("{{name}}", first_name).replace("{name}", first_name)
+                    msg_body = msg_body.replace("{{position}}", cand_pos).replace("{position}", cand_pos)
+
+                success = send_promotional_campaign_email(
+                    to_email=lead.email,
+                    subject=sub,
+                    name=first_name,
+                    position=cand_pos if lead.position else None,
+                    headline=hd,
+                    message_body=msg_body,
+                    cta_text=cta_text,
+                    cta_url=cta_url
+                )
+
+                if success:
+                    lead.status = "sent"
+                    lead.send_count = (lead.send_count or 0) + 1
+                    lead.last_sent_at = datetime.datetime.utcnow()
+                    lead.last_error = None
+                    sent_count += 1
+                else:
+                    lead.status = "failed"
+                    lead.last_error = "Email dispatcher failed or SMTP rejected recipient."
+                    failed_count += 1
+
+                db.commit()
+                # Friendly delay between sends
+                time.sleep(0.35)
+            except Exception as item_err:
+                logger.error("Error sending marketing campaign email to %s: %s", lead.email, item_err)
+                lead.status = "failed"
+                lead.last_error = str(item_err)[:350]
+                failed_count += 1
+                db.commit()
+
+        # Update Campaign Log
+        log = db.scalar(select(MarketingCampaignLog).where(MarketingCampaignLog.id == campaign_log_id))
+        if log:
+            log.total_sent = sent_count
+            log.total_failed = failed_count
+            db.commit()
+
+    except Exception as err:
+        logger.error("Fatal exception in marketing campaign background thread: %s", err)
+    finally:
+        db.close()
+
+
+@router.get("/api/admin/marketing/stats")
+async def get_admin_marketing_stats(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Retrieve collected sales & marketing lead emails."""
-    leads = db.scalars(
-        select(MarketingLead).order_by(MarketingLead.id.desc()).limit(500)
+    """Returns analytics and summary metrics for marketing leads and promotional campaigns."""
+    total_leads = db.scalar(select(func.count(MarketingLead.id))) or 0
+    total_sent = db.scalar(select(func.count(MarketingLead.id)).where(MarketingLead.send_count > 0)) or 0
+    total_never_sent = db.scalar(select(func.count(MarketingLead.id)).where(or_(MarketingLead.send_count == 0, MarketingLead.send_count.is_(None)))) or 0
+    total_failed = db.scalar(select(func.count(MarketingLead.id)).where(MarketingLead.status == "failed")) or 0
+
+    # Distinct positions breakdown
+    pos_rows = db.execute(
+        select(MarketingLead.position, func.count(MarketingLead.id))
+        .where(MarketingLead.position.isnot(None), MarketingLead.position != "")
+        .group_by(MarketingLead.position)
+        .order_by(func.count(MarketingLead.id).desc())
+        .limit(20)
     ).all()
+    positions = [{"position": r[0], "count": r[1]} for r in pos_rows]
+
+    # Recent campaign logs
+    campaigns = db.scalars(
+        select(MarketingCampaignLog).order_by(MarketingCampaignLog.id.desc()).limit(10)
+    ).all()
+
+    return {
+        "total_leads": total_leads,
+        "total_sent": total_sent,
+        "total_never_sent": total_never_sent,
+        "total_failed": total_failed,
+        "positions": positions,
+        "recent_campaigns": [
+            {
+                "id": c.id,
+                "subject": c.subject,
+                "template_type": c.template_type,
+                "headline": c.headline,
+                "target_filter": c.target_filter,
+                "total_targeted": c.total_targeted,
+                "total_sent": c.total_sent,
+                "total_failed": c.total_failed,
+                "admin_user": c.admin_user,
+                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else "---"
+            }
+            for c in campaigns
+        ]
+    }
+
+
+@router.get("/api/admin/marketing/leads")
+async def get_admin_marketing_leads(
+    search: Optional[str] = Query(None),
+    position: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    tag: Optional[str] = Query(None),
+    limit: int = Query(1000, le=2000),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Retrieve collected sales & marketing lead records with advanced filters."""
+    query = select(MarketingLead)
+
+    if search and search.strip():
+        q = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                MarketingLead.email.ilike(q),
+                MarketingLead.name.ilike(q),
+                MarketingLead.position.ilike(q),
+                MarketingLead.phone.ilike(q)
+            )
+        )
+
+    if position and position.strip() and position != "all":
+        query = query.where(MarketingLead.position == position.strip())
+
+    if status and status.strip() and status != "all":
+        if status == "never_sent":
+            query = query.where(or_(MarketingLead.send_count == 0, MarketingLead.send_count.is_(None)))
+        elif status == "sent":
+            query = query.where(MarketingLead.send_count > 0)
+        else:
+            query = query.where(MarketingLead.status == status.strip())
+
+    if tag and tag.strip() and tag != "all":
+        query = query.where(MarketingLead.campaign_tag == tag.strip())
+
+    leads = db.scalars(query.order_by(MarketingLead.id.desc()).limit(limit)).all()
 
     return [
         {
             "id": lead.id,
             "email": lead.email,
+            "name": lead.name or "",
+            "position": lead.position or "",
+            "phone": lead.phone or "",
             "source": lead.source,
-            "country": lead.country_code,
-            "ip_address": lead.ip_address,
+            "campaign_tag": lead.campaign_tag or "",
+            "status": lead.status or "pending",
+            "send_count": lead.send_count or 0,
+            "last_sent_at": lead.last_sent_at.strftime("%Y-%m-%d %H:%M") if lead.last_sent_at else None,
+            "last_error": lead.last_error,
             "created_at": lead.created_at.strftime("%Y-%m-%d %H:%M") if lead.created_at else "---"
         }
         for lead in leads
     ]
+
+
+@router.post("/api/admin/marketing/leads/import-csv")
+async def import_marketing_leads_csv_file(
+    file: UploadFile = File(...),
+    campaign_tag: Optional[str] = Form("csv_import"),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Import contacts from uploaded CSV file into the database."""
+    content_bytes = await file.read()
+    try:
+        csv_text = content_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        csv_text = content_bytes.decode("latin-1", errors="ignore")
+
+    parsed_contacts = parse_csv_contacts(csv_text)
+    if not parsed_contacts:
+        raise HTTPException(status_code=400, detail="No valid contacts with email addresses found in CSV.")
+
+    imported_count = 0
+    updated_count = 0
+
+    for item in parsed_contacts:
+        clean_email = item.get("email", "").strip().lower()
+        if not clean_email or "@" not in clean_email:
+            continue
+
+        existing = db.scalar(select(MarketingLead).where(MarketingLead.email == clean_email))
+        if existing:
+            # Update fields if new data present
+            if item.get("name"):
+                existing.name = item["name"]
+            if item.get("position"):
+                existing.position = item["position"]
+            if item.get("phone"):
+                existing.phone = item["phone"]
+            if campaign_tag:
+                existing.campaign_tag = campaign_tag
+            existing.updated_at = datetime.datetime.utcnow()
+            updated_count += 1
+        else:
+            new_lead = MarketingLead(
+                email=clean_email,
+                name=item.get("name"),
+                position=item.get("position"),
+                phone=item.get("phone"),
+                source="csv_upload",
+                campaign_tag=campaign_tag or "csv_import",
+                status="pending",
+                send_count=0
+            )
+            db.add(new_lead)
+            imported_count += 1
+
+    db.commit()
+    total_leads = db.scalar(select(func.count(MarketingLead.id))) or 0
+
+    return {
+        "success": True,
+        "message": f"Successfully processed {len(parsed_contacts)} contacts: {imported_count} imported as new, {updated_count} updated.",
+        "imported": imported_count,
+        "updated": updated_count,
+        "total_leads": total_leads
+    }
+
+
+@router.post("/api/admin/marketing/leads/import-text")
+async def import_marketing_leads_raw_text(
+    payload: ManualLeadsImportRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Import contacts via pasted CSV text or JSON contact list."""
+    contacts_to_process = []
+
+    if payload.raw_csv and payload.raw_csv.strip():
+        contacts_to_process = parse_csv_contacts(payload.raw_csv)
+    elif payload.leads:
+        contacts_to_process = [
+            {
+                "email": l.email,
+                "name": l.name or "",
+                "position": l.position or "",
+                "phone": l.phone or ""
+            }
+            for l in payload.leads
+        ]
+
+    if not contacts_to_process:
+        raise HTTPException(status_code=400, detail="No valid contact data provided.")
+
+    imported_count = 0
+    updated_count = 0
+
+    for item in contacts_to_process:
+        clean_email = item.get("email", "").strip().lower()
+        if not clean_email or "@" not in clean_email:
+            continue
+
+        existing = db.scalar(select(MarketingLead).where(MarketingLead.email == clean_email))
+        if existing:
+            if item.get("name"):
+                existing.name = item["name"]
+            if item.get("position"):
+                existing.position = item["position"]
+            if item.get("phone"):
+                existing.phone = item["phone"]
+            if payload.campaign_tag:
+                existing.campaign_tag = payload.campaign_tag
+            existing.updated_at = datetime.datetime.utcnow()
+            updated_count += 1
+        else:
+            new_lead = MarketingLead(
+                email=clean_email,
+                name=item.get("name"),
+                position=item.get("position"),
+                phone=item.get("phone"),
+                source="pasted_csv",
+                campaign_tag=payload.campaign_tag or "pasted_csv",
+                status="pending",
+                send_count=0
+            )
+            db.add(new_lead)
+            imported_count += 1
+
+    db.commit()
+    total_leads = db.scalar(select(func.count(MarketingLead.id))) or 0
+
+    return {
+        "success": True,
+        "message": f"Processed {len(contacts_to_process)} contacts: {imported_count} new imported, {updated_count} updated.",
+        "imported": imported_count,
+        "updated": updated_count,
+        "total_leads": total_leads
+    }
+
+
+@router.post("/api/admin/marketing/preview-email")
+async def preview_marketing_email(
+    payload: PreviewEmailRequest,
+    current_user: User = Depends(require_admin)
+):
+    """Renders HTML preview of promotional campaign email with dummy or sample variables."""
+    rendered_html = render_marketing_campaign_html(
+        name=payload.sample_name or "Candidate",
+        position=payload.sample_position or "Mobile Application Developer",
+        headline=payload.headline,
+        message_body=payload.message_body,
+        cta_text=payload.cta_text,
+        cta_url=payload.cta_url
+    )
+    return {"html": rendered_html}
+
+
+@router.post("/api/admin/marketing/send-campaign")
+async def send_marketing_campaign(
+    payload: SendCampaignRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Launches a promotional email campaign.
+    Supports targeting by: 'selected', 'never_sent', 'position', 'all', or 'test'.
+    """
+    if payload.target_type == "test":
+        target_email = (payload.test_email or "").strip() or current_user.email
+        if not target_email or "@" not in target_email:
+            raise HTTPException(status_code=400, detail="Invalid test email address.")
+
+        sample_name = current_user.full_name or "Administrator"
+        sample_position = payload.position_filter or "Software Engineer"
+        test_sub = f"[TEST PREVIEW] {payload.subject}".replace("{{name}}", sample_name).replace("{{position}}", sample_position)
+        test_hd = (payload.headline or "").replace("{{name}}", sample_name).replace("{{position}}", sample_position)
+
+        success = send_promotional_campaign_email(
+            to_email=target_email,
+            subject=test_sub,
+            name=sample_name,
+            position=sample_position,
+            headline=test_hd,
+            message_body=payload.message_body,
+            cta_text=payload.cta_text,
+            cta_url=payload.cta_url
+        )
+        return {
+            "success": success,
+            "message": f"Test promotional email dispatched to {target_email} successfully."
+        }
+
+    # Bulk Dispatch Logic
+    if payload.target_type == "selected":
+        if not payload.selected_ids:
+            raise HTTPException(status_code=400, detail="No lead IDs selected.")
+        target_ids = db.scalars(
+            select(MarketingLead.id).where(MarketingLead.id.in_(payload.selected_ids))
+        ).all()
+    elif payload.target_type == "never_sent":
+        target_ids = db.scalars(
+            select(MarketingLead.id).where(
+                or_(MarketingLead.send_count == 0, MarketingLead.send_count.is_(None))
+            )
+        ).all()
+    elif payload.target_type == "position":
+        if not payload.position_filter:
+            raise HTTPException(status_code=400, detail="Position filter is required.")
+        target_ids = db.scalars(
+            select(MarketingLead.id).where(MarketingLead.position == payload.position_filter)
+        ).all()
+    elif payload.target_type == "all":
+        target_ids = db.scalars(select(MarketingLead.id)).all()
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid target_type: {payload.target_type}")
+
+    if not target_ids:
+        raise HTTPException(status_code=400, detail="No matching leads found for this campaign criteria.")
+
+    # Record campaign log
+    campaign_log = MarketingCampaignLog(
+        subject=payload.subject,
+        template_type=payload.template_type,
+        headline=payload.headline,
+        target_filter=f"{payload.target_type}:{payload.position_filter or 'none'}",
+        total_targeted=len(target_ids),
+        total_sent=0,
+        total_failed=0,
+        admin_user=current_user.email
+    )
+    db.add(campaign_log)
+    db.commit()
+    db.refresh(campaign_log)
+
+    # Spawn background daemon worker thread
+    thread = threading.Thread(
+        target=_dispatch_campaign_worker,
+        args=(
+            campaign_log.id,
+            list(target_ids),
+            payload.subject,
+            payload.headline or "Accelerate Your Career with DreemFolio AI",
+            payload.message_body,
+            payload.cta_text or "Check ATS Score Free →",
+            payload.cta_url or "https://www.dreemfolio.com/ats-resume-checker"
+        ),
+        daemon=True
+    )
+    thread.start()
+
+    return {
+        "success": True,
+        "message": f"Promotional campaign successfully launched! Sending to {len(target_ids)} leads in background.",
+        "campaign_id": campaign_log.id,
+        "targeted_count": len(target_ids)
+    }
+
+
+@router.post("/api/admin/marketing/leads/batch-delete")
+async def batch_delete_marketing_leads(
+    payload: BatchDeleteLeadsRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Batch delete selected marketing leads."""
+    if not payload.lead_ids:
+        raise HTTPException(status_code=400, detail="No lead IDs provided.")
+
+    leads = db.scalars(select(MarketingLead).where(MarketingLead.id.in_(payload.lead_ids))).all()
+    deleted_count = len(leads)
+    for l in leads:
+        db.delete(l)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Successfully deleted {deleted_count} lead(s).",
+        "deleted_count": deleted_count
+    }
 
 
 @router.get("/api/admin/marketing/leads/export-csv")
@@ -1318,21 +1871,30 @@ async def export_marketing_leads_csv(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Download marketing lead emails as a clean CSV file."""
+    """Download all saved marketing leads as an enriched CSV file."""
     leads = db.scalars(
         select(MarketingLead).order_by(MarketingLead.id.desc())
     ).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Email Address", "Source", "Country Code", "Captured At (UTC)"])
+    writer.writerow([
+        "ID", "Full Name", "Position / Role", "Email Address", "Phone",
+        "Status", "Send Count", "Last Sent At (UTC)", "Campaign Tag", "Source", "Captured At (UTC)"
+    ])
 
     for lead in leads:
         writer.writerow([
             lead.id,
+            lead.name or "",
+            lead.position or "",
             lead.email,
+            lead.phone or "",
+            lead.status or "pending",
+            lead.send_count or 0,
+            lead.last_sent_at.strftime("%Y-%m-%d %H:%M:%S") if lead.last_sent_at else "",
+            lead.campaign_tag or "",
             lead.source,
-            lead.country_code,
             lead.created_at.strftime("%Y-%m-%d %H:%M:%S") if lead.created_at else ""
         ])
 
@@ -1353,7 +1915,7 @@ async def delete_marketing_lead(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    """Delete a spam or requested deletion lead from marketing list."""
+    """Delete a single lead from marketing list."""
     lead = db.scalar(select(MarketingLead).where(MarketingLead.id == lead_id))
     if not lead:
         raise HTTPException(status_code=404, detail="Lead record not found.")

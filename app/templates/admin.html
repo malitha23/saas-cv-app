@@ -189,6 +189,16 @@
                 class="px-2 py-0.5 rounded-full bg-cyan-500 text-[10px] font-black text-slate-950"
                 x-text="adminLeadsList.length"></span>
         </button>
+
+        <button @click="activeTab = 'campaigns'; loadMarketingCampaignsData()"
+          :class="activeTab === 'campaigns' ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-600/30' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="send" class="w-4 h-4 text-pink-400"></i>
+          <span>Campaigns & Leads (ඊමේල් ප්‍රචාරණය)</span>
+          <span x-show="marketingStats.total_leads > 0"
+                class="px-2 py-0.5 rounded-full bg-pink-500 text-[10px] font-black text-white"
+                x-text="marketingStats.total_leads"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -2991,6 +3001,267 @@
         </div>
 
       </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB: PROMOTIONAL EMAIL CAMPAIGNS, CSV IMPORTS & LEADS DATABASE       -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'campaigns'" class="space-y-6">
+
+        <!-- Top Header Card with Quick Stats -->
+        <div class="bg-slate-900/90 border border-pink-500/20 p-5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-300 text-xs font-semibold">
+              <i data-lucide="mail-check" class="w-3.5 h-3.5"></i>
+              <span>Customer Outreach & Automated Promotion Engine</span>
+            </div>
+            <h2 class="text-lg font-black text-slate-100">Promotional Email Campaigns & Leads Database (ඊමේල් ප්‍රචාරණය)</h2>
+            <p class="text-xs text-slate-400">Upload CSV lists once, save customers in DB, and send targeted ATS promo emails anytime without re-uploading.</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" @click="loadMarketingCampaignsData()" :disabled="isLoadingCampaignData"
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="{'animate-spin': isLoadingCampaignData}"></i>
+              <span>Refresh</span>
+            </button>
+            <button type="button" @click="showCsvUploadModal = true"
+              class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-1.5 transition">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Upload CSV File</span>
+            </button>
+            <button type="button" @click="showCsvPasteModal = true"
+              class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="clipboard" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Paste CSV Text</span>
+            </button>
+            <button type="button" @click="openSendCampaignModal('never_sent')"
+              class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:brightness-110 text-white font-bold text-xs rounded-xl shadow-lg shadow-pink-600/30 flex items-center gap-1.5 transition">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Send Promote Mail</span>
+            </button>
+            <button type="button" @click="exportLeadsCsv()"
+              class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Quick Stats Badges -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-medium">Total Leads in Database</span>
+            <div class="text-2xl font-black text-white mt-1" x-text="marketingStats.total_leads">0</div>
+            <span class="text-[11px] text-cyan-400 font-mono">Permanently Stored</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-medium">Pending / Never Sent</span>
+            <div class="text-2xl font-black text-amber-400 mt-1" x-text="marketingStats.total_never_sent">0</div>
+            <span class="text-[11px] text-amber-300/80 font-mono">Ready for Outreach</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-medium">Emails Dispatched</span>
+            <div class="text-2xl font-black text-emerald-400 mt-1" x-text="marketingStats.total_sent">0</div>
+            <span class="text-[11px] text-emerald-300/80 font-mono">Promoted Customers</span>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <span class="text-xs text-slate-400 font-medium">Targeted Roles / Positions</span>
+            <div class="text-2xl font-black text-purple-400 mt-1" x-text="(marketingStats.positions || []).length">0</div>
+            <span class="text-[11px] text-purple-300/80 font-mono">Segments Available</span>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3 flex-1 min-w-[280px] flex-wrap sm:flex-nowrap">
+            <div class="relative flex-1 min-w-[200px]">
+              <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+              <input type="text" x-model="campaignSearchQuery" placeholder="Search by name, email, phone, role, or campaign tag..."
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-pink-500">
+            </div>
+
+            <!-- Position Dropdown Filter -->
+            <select x-model="campaignPositionFilter"
+              class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+              <option value="all">All Positions / Roles</option>
+              <template x-for="p in (marketingStats.positions || [])" :key="p.position">
+                <option :value="p.position" x-text="p.position + ' (' + p.count + ')'"></option>
+              </template>
+            </select>
+
+            <!-- Status Dropdown Filter -->
+            <select x-model="campaignStatusFilter"
+              class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+              <option value="all">All Statuses</option>
+              <option value="never_sent">Never Sent / Pending</option>
+              <option value="sent">Already Sent</option>
+              <option value="failed">Failed Delivery</option>
+            </select>
+          </div>
+
+          <!-- Batch Action Controls -->
+          <div class="flex items-center gap-2">
+            <span x-show="selectedLeadIds.length > 0" class="text-xs font-semibold text-pink-400"
+              x-text="selectedLeadIds.length + ' selected'"></span>
+            <button x-show="selectedLeadIds.length > 0" type="button" @click="openSendCampaignModal('selected')"
+              class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-md shadow-pink-600/20">
+              <i data-lucide="send" class="w-3 h-3"></i>
+              <span>Send to Selected (<span x-text="selectedLeadIds.length"></span>)</span>
+            </button>
+            <button x-show="selectedLeadIds.length > 0" type="button" @click="batchDeleteSelectedLeads()"
+              class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white font-bold text-xs rounded-lg border border-rose-500/30 transition flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-3 h-3"></i>
+              <span>Delete (<span x-text="selectedLeadIds.length"></span>)</span>
+            </button>
+            <button type="button" @click="toggleSelectAllLeads()"
+              class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg border border-slate-700 transition">
+              <span x-text="selectedLeadIds.length === filteredCampaignLeads.length && filteredCampaignLeads.length > 0 ? 'Deselect All' : 'Select All'"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-3 w-8">
+                    <input type="checkbox" @change="toggleSelectAllLeads()"
+                      :checked="selectedLeadIds.length === filteredCampaignLeads.length && filteredCampaignLeads.length > 0"
+                      class="rounded bg-slate-900 border-slate-700 text-pink-600 focus:ring-0">
+                  </th>
+                  <th class="p-3">Candidate / Lead</th>
+                  <th class="p-3">Target Position / Role</th>
+                  <th class="p-3">Contact (Email & Phone)</th>
+                  <th class="p-3">Campaign Tag</th>
+                  <th class="p-3">Send Status</th>
+                  <th class="p-3">Last Sent At</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                <template x-for="lead in filteredCampaignLeads" :key="lead.id">
+                  <tr class="hover:bg-slate-800/40 transition" :class="{'bg-pink-950/20': selectedLeadIds.includes(lead.id)}">
+                    <td class="p-3">
+                      <input type="checkbox" :checked="selectedLeadIds.includes(lead.id)" @change="toggleLeadSelection(lead.id)"
+                        class="rounded bg-slate-900 border-slate-700 text-pink-600 focus:ring-0">
+                    </td>
+                    <td class="p-3">
+                      <div class="font-bold text-white" x-text="lead.name || 'Candidate #' + lead.id"></div>
+                      <div class="text-[10px] text-slate-500 font-mono" x-text="'ID: ' + lead.id"></div>
+                    </td>
+                    <td class="p-3">
+                      <span class="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
+                        x-text="lead.position || 'General Candidate'"></span>
+                    </td>
+                    <td class="p-3">
+                      <div class="flex items-center gap-1.5 font-mono text-cyan-300 font-medium">
+                        <i data-lucide="mail" class="w-3 h-3 text-slate-500"></i>
+                        <span x-text="lead.email"></span>
+                      </div>
+                      <div x-show="lead.phone" class="flex items-center gap-1.5 font-mono text-slate-400 text-[11px] mt-0.5">
+                        <i data-lucide="phone" class="w-3 h-3 text-slate-500"></i>
+                        <span x-text="lead.phone"></span>
+                      </div>
+                    </td>
+                    <td class="p-3">
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700"
+                        x-text="lead.campaign_tag || lead.source || 'db_saved'"></span>
+                    </td>
+                    <td class="p-3">
+                      <template x-if="lead.send_count > 0">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-max">
+                          <i data-lucide="check-check" class="w-3 h-3"></i>
+                          <span x-text="'Sent (' + lead.send_count + 'x)'"></span>
+                        </span>
+                      </template>
+                      <template x-if="!lead.send_count && lead.status !== 'failed'">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 w-max">
+                          <i data-lucide="clock" class="w-3 h-3"></i>
+                          <span>Pending / Never Sent</span>
+                        </span>
+                      </template>
+                      <template x-if="lead.status === 'failed'">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1 w-max"
+                          :title="lead.last_error || 'Dispatch failure'">
+                          <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                          <span>Failed</span>
+                        </span>
+                      </template>
+                    </td>
+                    <td class="p-3 text-[11px] text-slate-400 font-mono" x-text="lead.last_sent_at || 'Never'"></td>
+                    <td class="p-3 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button type="button" @click="sendSingleLeadTestEmail(lead)" title="Send instant promote email to this candidate"
+                          class="p-1.5 rounded-lg bg-slate-800 hover:bg-pink-600 text-slate-400 hover:text-white transition">
+                          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button type="button" @click="deleteAdminLead(lead.id); loadMarketingCampaignsData()" title="Delete lead"
+                          class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="filteredCampaignLeads.length === 0">
+                  <td colspan="8" class="p-8 text-center text-slate-500 text-xs">
+                    No leads found matching your search or filters. Click "Upload CSV File" or "Paste CSV Text" above to import your candidates into the database.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span>Showing <strong class="text-white" x-text="filteredCampaignLeads.length"></strong> leads</span>
+            <span class="text-[11px] text-slate-500">All data securely stored in MySQL / Cloud Database</span>
+          </div>
+        </div>
+
+        <!-- Recent Campaigns Audit Log -->
+        <div class="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-purple-400"></i>
+              <h3 class="text-sm font-bold text-white">Recent Email Campaigns Dispatched</h3>
+            </div>
+            <span class="text-xs text-slate-400 font-mono" x-text="(marketingStats.recent_campaigns || []).length + ' campaigns recorded'"></span>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 text-[11px] uppercase tracking-wider">
+                <tr>
+                  <th class="p-2.5">Date (UTC)</th>
+                  <th class="p-2.5">Email Subject</th>
+                  <th class="p-2.5">Audience Filter</th>
+                  <th class="p-2.5">Targeted</th>
+                  <th class="p-2.5">Sent</th>
+                  <th class="p-2.5">Failed</th>
+                  <th class="p-2.5">Sender</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                <template x-for="c in (marketingStats.recent_campaigns || [])" :key="c.id">
+                  <tr class="hover:bg-slate-800/30">
+                    <td class="p-2.5 font-mono text-slate-400 text-[11px]" x-text="c.created_at"></td>
+                    <td class="p-2.5 font-semibold text-white" x-text="c.subject"></td>
+                    <td class="p-2.5 font-mono text-indigo-300" x-text="c.target_filter"></td>
+                    <td class="p-2.5 font-bold text-slate-200" x-text="c.total_targeted"></td>
+                    <td class="p-2.5 font-bold text-emerald-400" x-text="c.total_sent"></td>
+                    <td class="p-2.5 font-bold text-rose-400" x-text="c.total_failed"></td>
+                    <td class="p-2.5 text-slate-400 text-[11px]" x-text="c.admin_user || 'Admin'"></td>
+                  </tr>
+                </template>
+                <tr x-show="!marketingStats.recent_campaigns || marketingStats.recent_campaigns.length === 0">
+                  <td colspan="7" class="p-4 text-center text-slate-500 text-xs">No email campaigns launched yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600 mt-auto">
       <p>DreemFolio.com Enterprise Admin Console • Strict RBAC Security Guard Active</p>
     </footer>
@@ -3094,6 +3365,70 @@
         adminLeadsList: [],
         isLoadingLeads: false,
         leadSearchQuery: '',
+
+        marketingStats: {
+          total_leads: 0,
+          total_sent: 0,
+          total_never_sent: 0,
+          total_failed: 0,
+          positions: [],
+          recent_campaigns: []
+        },
+        campaignLeadsList: [],
+        isLoadingCampaignData: false,
+        campaignSearchQuery: '',
+        campaignPositionFilter: 'all',
+        campaignStatusFilter: 'all',
+        selectedLeadIds: [],
+        showCsvUploadModal: false,
+        showCsvPasteModal: false,
+        showSendCampaignModal: false,
+        isUploadingCsv: false,
+        isSendingCampaign: false,
+        csvUploadFile: null,
+        csvUploadTag: 'csv_import',
+        pastedCsvText: '',
+        pastedCsvTag: 'csv_import',
+        campaignForm: {
+          target_type: 'never_sent',
+          position_filter: '',
+          test_email: '',
+          subject: 'Land More Interviews with DreemFolio AI - ATS Resume & Live Portfolio',
+          template_type: 'promotional_offer',
+          headline: 'Accelerate Your Career with a Recruiter-Approved ATS Resume & Live Portfolio',
+          message_body: '',
+          cta_text: 'Check Your ATS Score Free →',
+          cta_url: 'https://www.dreemfolio.com/ats-resume-checker'
+        },
+        campaignPreviewHtml: '',
+        showCampaignPreview: false,
+
+        get filteredCampaignLeads() {
+          let list = this.campaignLeadsList || [];
+          if (this.campaignPositionFilter && this.campaignPositionFilter !== 'all') {
+            list = list.filter(l => (l.position || '').trim() === this.campaignPositionFilter.trim());
+          }
+          if (this.campaignStatusFilter && this.campaignStatusFilter !== 'all') {
+            if (this.campaignStatusFilter === 'never_sent') {
+              list = list.filter(l => !l.send_count || l.send_count === 0);
+            } else if (this.campaignStatusFilter === 'sent') {
+              list = list.filter(l => l.send_count > 0);
+            } else if (this.campaignStatusFilter === 'failed') {
+              list = list.filter(l => l.status === 'failed');
+            }
+          }
+          if (this.campaignSearchQuery && this.campaignSearchQuery.trim()) {
+            const q = this.campaignSearchQuery.trim().toLowerCase();
+            list = list.filter(l =>
+              (l.name && l.name.toLowerCase().includes(q)) ||
+              (l.email && l.email.toLowerCase().includes(q)) ||
+              (l.position && l.position.toLowerCase().includes(q)) ||
+              (l.phone && l.phone.toLowerCase().includes(q)) ||
+              (l.campaign_tag && l.campaign_tag.toLowerCase().includes(q))
+            );
+          }
+          return list;
+        },
 
         get filteredAdminLeads() {
           if (!this.leadSearchQuery || !this.leadSearchQuery.trim()) return this.adminLeadsList || [];
@@ -3218,7 +3553,8 @@
               this.loadAdminAffiliate(),
               this.loadAdminReviews(),
               this.loadAdminAnalytics(),
-              this.loadAdminLeads()
+              this.loadAdminLeads(),
+              this.loadMarketingCampaignsData()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -4489,7 +4825,283 @@
             a.click();
             window.URL.revokeObjectURL(url);
           })
-          .catch(err => alert('Failed to download CSV: ' + err.message));
+        },
+
+        async loadMarketingCampaignsData() {
+          const token = localStorage.getItem('saas_token');
+          this.isLoadingCampaignData = true;
+          try {
+            const [statsRes, leadsRes] = await Promise.all([
+              fetch('/api/admin/marketing/stats', { headers: { 'Authorization': `Bearer ${token}` } }),
+              fetch('/api/admin/marketing/leads', { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+            if (statsRes.ok) {
+              this.marketingStats = await statsRes.json();
+            }
+            if (leadsRes.ok) {
+              this.campaignLeadsList = await leadsRes.json();
+            }
+          } catch (err) {
+            console.error('Failed to load marketing campaign data:', err);
+          } finally {
+            this.isLoadingCampaignData = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        toggleSelectAllLeads() {
+          const visibleIds = this.filteredCampaignLeads.map(l => l.id);
+          if (this.selectedLeadIds.length === visibleIds.length && visibleIds.length > 0) {
+            this.selectedLeadIds = [];
+          } else {
+            this.selectedLeadIds = [...visibleIds];
+          }
+        },
+
+        toggleLeadSelection(leadId) {
+          if (this.selectedLeadIds.includes(leadId)) {
+            this.selectedLeadIds = this.selectedLeadIds.filter(id => id !== leadId);
+          } else {
+            this.selectedLeadIds.push(leadId);
+          }
+        },
+
+        async uploadCsvFile() {
+          if (!this.csvUploadFile) return alert('Please select a .csv file first.');
+          const token = localStorage.getItem('saas_token');
+          this.isUploadingCsv = true;
+          const formData = new FormData();
+          formData.append('file', this.csvUploadFile);
+          formData.append('campaign_tag', this.csvUploadTag || 'csv_import');
+
+          try {
+            const res = await fetch('/api/admin/marketing/leads/import-csv', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ Success: ${data.message}`);
+              this.showCsvUploadModal = false;
+              this.csvUploadFile = null;
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert(`❌ Error: ${data.detail || 'Upload failed'}`);
+            }
+          } catch (err) {
+            alert('Upload request failed: ' + err.message);
+          } finally {
+            this.isUploadingCsv = false;
+          }
+        },
+
+        async importPastedCsv() {
+          if (!this.pastedCsvText.trim()) return alert('Please paste CSV text.');
+          const token = localStorage.getItem('saas_token');
+          this.isUploadingCsv = true;
+          try {
+            const res = await fetch('/api/admin/marketing/leads/import-text', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                raw_csv: this.pastedCsvText,
+                campaign_tag: this.pastedCsvTag || 'pasted_csv'
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ Success: ${data.message}`);
+              this.showCsvPasteModal = false;
+              this.pastedCsvText = '';
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert(`❌ Error: ${data.detail || 'Import failed'}`);
+            }
+          } catch (err) {
+            alert('Import request failed: ' + err.message);
+          } finally {
+            this.isUploadingCsv = false;
+          }
+        },
+
+        openSendCampaignModal(mode, specificLeadId = null) {
+          this.campaignForm.target_type = mode || 'never_sent';
+          if (mode === 'selected' && specificLeadId) {
+            this.selectedLeadIds = [specificLeadId];
+          }
+          if (this.campaignPositionFilter && this.campaignPositionFilter !== 'all') {
+            this.campaignForm.position_filter = this.campaignPositionFilter;
+          }
+          this.showSendCampaignModal = true;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        applyCampaignPreset(preset) {
+          if (preset === 'general_launch') {
+            this.campaignForm.subject = 'Land More Interviews with DreemFolio AI - ATS Resume & Free Live Portfolio';
+            this.campaignForm.headline = 'Accelerate Your Career with a Recruiter-Approved ATS Resume & Live Portfolio';
+            this.campaignForm.message_body = '<p>Did you know that over 75% of resumes are silently rejected by automated ATS scanners like Workday, Taleo, and Greenhouse before a hiring manager reads them?</p><p>DreemFolio AI generates a 100% single-column ATS resume and a mobile-friendly portfolio link (dreemfolio.com/u/yourname) in under 60 seconds.</p>';
+            this.campaignForm.cta_text = 'Check Your ATS Score Free →';
+            this.campaignForm.cta_url = 'https://www.dreemfolio.com/ats-resume-checker';
+          } else if (preset === 'role_targeted') {
+            this.campaignForm.subject = 'Specialized ATS Resume & Portfolio for {position} Careers';
+            this.campaignForm.headline = 'Boost Your {position} Shortlist Rate with AI-Optimized Keywords';
+            this.campaignForm.message_body = '<p>Hi {name},</p><p>As a <strong>{position}</strong>, technical keyword alignment and ATS formatting are critical to reaching senior recruiter desks.</p><p>Test your resume against real recruitment algorithms and get an instant score + tailored suggestions free on DreemFolio AI.</p>';
+            this.campaignForm.cta_text = 'Optimize Your Resume Now →';
+            this.campaignForm.cta_url = 'https://www.dreemfolio.com/ats-resume-checker';
+          } else if (preset === 'special_offer') {
+            this.campaignForm.subject = 'Exclusive Career Launch: Free ATS Resume & Online Portfolio Access';
+            this.campaignForm.headline = 'Upgrade Your Professional Brand Today — 100% Free';
+            this.campaignForm.message_body = '<p>We are offering early career candidates and experienced professionals free access to our AI ATS Resume Architect and Portfolio Studio.</p><p>Build, tailor to any job description, and publish your live web link in seconds.</p>';
+            this.campaignForm.cta_text = 'Get Free Access Now →';
+            this.campaignForm.cta_url = 'https://www.dreemfolio.com/app';
+          }
+        },
+
+        async previewCampaignEmail() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/marketing/preview-email', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                subject: this.campaignForm.subject,
+                headline: this.campaignForm.headline,
+                message_body: this.campaignForm.message_body,
+                cta_text: this.campaignForm.cta_text,
+                cta_url: this.campaignForm.cta_url,
+                sample_name: 'Dimmithra Perera',
+                sample_position: this.campaignForm.position_filter || 'Mobile Application Developer'
+              })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.campaignPreviewHtml = data.html;
+              this.showCampaignPreview = true;
+            }
+          } catch (err) {
+            console.error('Preview error:', err);
+          }
+        },
+
+        async launchCampaign() {
+          let targetDesc = '';
+          if (this.campaignForm.target_type === 'never_sent') {
+            targetDesc = `${this.marketingStats.total_never_sent} never-sent leads`;
+          } else if (this.campaignForm.target_type === 'selected') {
+            targetDesc = `${this.selectedLeadIds.length} selected leads`;
+          } else if (this.campaignForm.target_type === 'position') {
+            targetDesc = `all candidates in position '${this.campaignForm.position_filter}'`;
+          } else if (this.campaignForm.target_type === 'all') {
+            targetDesc = `ALL ${this.marketingStats.total_leads} leads in database`;
+          } else if (this.campaignForm.target_type === 'test') {
+            targetDesc = `TEST recipient (${this.campaignForm.test_email || 'admin'})`;
+          }
+
+          if (!confirm(`Are you sure you want to launch this promotional email campaign to ${targetDesc}? Emails will be dispatched in the background.`)) {
+            return;
+          }
+
+          const token = localStorage.getItem('saas_token');
+          this.isSendingCampaign = true;
+          try {
+            const res = await fetch('/api/admin/marketing/send-campaign', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                target_type: this.campaignForm.target_type,
+                selected_ids: this.selectedLeadIds,
+                position_filter: this.campaignForm.position_filter,
+                test_email: this.campaignForm.test_email,
+                subject: this.campaignForm.subject,
+                template_type: this.campaignForm.template_type,
+                headline: this.campaignForm.headline,
+                message_body: this.campaignForm.message_body,
+                cta_text: this.campaignForm.cta_text,
+                cta_url: this.campaignForm.cta_url
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`🚀 ${data.message}`);
+              this.showSendCampaignModal = false;
+              this.selectedLeadIds = [];
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert(`❌ Error: ${data.detail || 'Campaign launch failed'}`);
+            }
+          } catch (err) {
+            alert('Failed to launch campaign: ' + err.message);
+          } finally {
+            this.isSendingCampaign = false;
+          }
+        },
+
+        async batchDeleteSelectedLeads() {
+          if (!this.selectedLeadIds.length) return;
+          if (!confirm(`Are you sure you want to permanently delete ${this.selectedLeadIds.length} selected lead(s)?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/marketing/leads/batch-delete', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ lead_ids: this.selectedLeadIds })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ ${data.message}`);
+              this.selectedLeadIds = [];
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert('Delete failed.');
+            }
+          } catch (err) {
+            alert('Delete request failed: ' + err.message);
+          }
+        },
+
+        async sendSingleLeadTestEmail(lead) {
+          if (!confirm(`Send promotional email directly to ${lead.name || lead.email} (${lead.position || 'Candidate'})?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/marketing/send-campaign', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                target_type: 'selected',
+                selected_ids: [lead.id],
+                subject: `Land More Interviews with DreemFolio AI - ATS Resume & Live Portfolio`,
+                headline: `Accelerate Your Career as ${lead.position || 'a Candidate'}`,
+                cta_text: 'Check ATS Score Free →',
+                cta_url: 'https://www.dreemfolio.com/ats-resume-checker'
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✉️ Email dispatched to ${lead.email}!`);
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert('Send failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
         }
       };
     }
@@ -4613,6 +5225,247 @@
            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-white border border-slate-700">
           <span>Open Full Resolution in New Tab</span>
         </a>
+      </div>
+    </div>
+  </div>
+  <!-- ================= CSV FILE UPLOAD MODAL ================= -->
+  <div x-show="showCsvUploadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="if (!isUploadingCsv) showCsvUploadModal = false" class="w-full max-w-lg rounded-2xl border border-indigo-500/30 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-indigo-400 font-bold">
+          <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+          <span class="text-base text-white">Import Candidates CSV File</span>
+        </div>
+        <button @click="showCsvUploadModal = false" :disabled="isUploadingCsv" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Upload a CSV file containing columns like <code class="text-cyan-400 font-mono">Position, Name, Email, Phone</code>. Contacts are saved permanently in the database so you can send campaigns anytime.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Select CSV File (.csv)</label>
+          <input type="file" accept=".csv" @change="csvUploadFile = $event.target.files[0]"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-slate-200 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
+          <input type="text" x-model="csvUploadTag" placeholder="e.g. SLIIT_Campus_Fair_2026 or Dev_Candidates"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+        </div>
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button type="button" @click="showCsvUploadModal = false" :disabled="isUploadingCsv"
+          class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+          Cancel
+        </button>
+        <button type="button" @click="uploadCsvFile()" :disabled="isUploadingCsv || !csvUploadFile"
+          class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition disabled:opacity-50 flex items-center justify-center gap-1.5">
+          <i data-lucide="upload" class="w-3.5 h-3.5" :class="{ 'animate-spin': isUploadingCsv }"></i>
+          <span x-text="isUploadingCsv ? 'Importing Leads...' : 'Import & Save to DB'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PASTE CSV TEXT MODAL ================= -->
+  <div x-show="showCsvPasteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div @click.away="if (!isUploadingCsv) showCsvPasteModal = false" class="w-full max-w-xl rounded-2xl border border-cyan-500/30 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-cyan-400 font-bold">
+          <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+          <span class="text-base text-white">Paste Raw CSV Contact Text</span>
+        </div>
+        <button @click="showCsvPasteModal = false" :disabled="isUploadingCsv" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Paste CSV rows directly below. Header format supported: <code class="text-cyan-400 font-mono">Position,Name,Email,Phone</code>.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Raw CSV Data</label>
+          <textarea x-model="pastedCsvText" rows="7"
+            placeholder="Position,Name,Email,Phone&#10;Mobile Application Developer (iOS/Android),Dimmithra Perera,Millend49@gmail.com,0755231979&#10;Associate Functional Consultant,Ravishan Perera,ravishanperera674@gmail.com,0718306162"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
+          <input type="text" x-model="pastedCsvTag" placeholder="e.g. pasted_csv_2026_10"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+        </div>
+      </div>
+
+      <div class="flex gap-2.5 pt-2">
+        <button type="button" @click="showCsvPasteModal = false" :disabled="isUploadingCsv"
+          class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+          Cancel
+        </button>
+        <button type="button" @click="importPastedCsv()" :disabled="isUploadingCsv || !pastedCsvText.trim()"
+          class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 transition disabled:opacity-50 flex items-center justify-center gap-1.5">
+          <i data-lucide="check" class="w-3.5 h-3.5" :class="{ 'animate-spin': isUploadingCsv }"></i>
+          <span x-text="isUploadingCsv ? 'Saving to Database...' : 'Save All Contacts to DB'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SEND PROMOTIONAL CAMPAIGN MODAL ================= -->
+  <div x-show="showSendCampaignModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
+    <div @click.away="if (!isSendingCampaign) showSendCampaignModal = false" class="w-full max-w-3xl my-6 rounded-2xl border border-pink-500/30 bg-slate-900 p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2 text-pink-400 font-bold">
+          <i data-lucide="send" class="w-5 h-5"></i>
+          <span class="text-base text-white">Compose & Launch Promotional Email Campaign</span>
+        </div>
+        <button @click="showSendCampaignModal = false" :disabled="isSendingCampaign" class="text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Target Audience Selector -->
+      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-4 space-y-3">
+        <label class="block text-xs font-bold text-slate-200">1. Select Target Audience</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button type="button" @click="campaignForm.target_type = 'never_sent'"
+            :class="campaignForm.target_type === 'never_sent' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+            class="p-2.5 rounded-xl border text-left text-xs transition">
+            <div class="font-bold">Never Sent (<span x-text="marketingStats.total_never_sent"></span>)</div>
+            <div class="text-[10px] opacity-75">New leads only</div>
+          </button>
+          <button type="button" @click="campaignForm.target_type = 'selected'"
+            :class="campaignForm.target_type === 'selected' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+            class="p-2.5 rounded-xl border text-left text-xs transition">
+            <div class="font-bold">Selected (<span x-text="selectedLeadIds.length"></span>)</div>
+            <div class="text-[10px] opacity-75">Table checkboxes</div>
+          </button>
+          <button type="button" @click="campaignForm.target_type = 'position'"
+            :class="campaignForm.target_type === 'position' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+            class="p-2.5 rounded-xl border text-left text-xs transition">
+            <div class="font-bold">By Role / Position</div>
+            <div class="text-[10px] opacity-75">Segment by career</div>
+          </button>
+          <button type="button" @click="campaignForm.target_type = 'test'"
+            :class="campaignForm.target_type === 'test' ? 'bg-amber-600 text-white font-bold border-amber-500 shadow-md shadow-amber-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+            class="p-2.5 rounded-xl border text-left text-xs transition">
+            <div class="font-bold">Test Send</div>
+            <div class="text-[10px] opacity-75">Preview to myself</div>
+          </button>
+        </div>
+
+        <!-- Conditional options for Position / Test -->
+        <div x-show="campaignForm.target_type === 'position'" class="pt-2">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Target Position</label>
+          <select x-model="campaignForm.position_filter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+            <option value="">-- Choose Target Position --</option>
+            <template x-for="p in (marketingStats.positions || [])" :key="p.position">
+              <option :value="p.position" x-text="p.position + ' (' + p.count + ' candidates)'"></option>
+            </template>
+          </select>
+        </div>
+        <div x-show="campaignForm.target_type === 'test'" class="pt-2">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Test Recipient Email Address</label>
+          <input type="email" x-model="campaignForm.test_email" placeholder="you@example.com"
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      <!-- Preset Template Buttons -->
+      <div class="space-y-2">
+        <label class="block text-xs font-bold text-slate-200">2. Template Presets & Auto-Fill</label>
+        <div class="flex gap-2 flex-wrap">
+          <button type="button" @click="applyCampaignPreset('general_launch')"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+            <span>🚀 ATS Resume & Portfolio Launch</span>
+          </button>
+          <button type="button" @click="applyCampaignPreset('role_targeted')"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+            <span>🎯 Role-Targeted Booster ({position})</span>
+          </button>
+          <button type="button" @click="applyCampaignPreset('special_offer')"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+            <span>✨ Special Community Offer</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Email Content Form -->
+      <div class="space-y-3">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-semibold text-slate-300">Email Subject Line <span class="text-rose-400">*</span></label>
+            <span class="text-[10px] text-slate-500 font-mono">Supports {name} and {position}</span>
+          </div>
+          <input type="text" x-model="campaignForm.subject"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Main Headline</label>
+          <input type="text" x-model="campaignForm.headline"
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-semibold text-slate-300">Custom Message Body (HTML / Paragraphs)</label>
+            <span class="text-[10px] text-slate-500 font-mono">Leave blank to use default high-converting copy</span>
+          </div>
+          <textarea x-model="campaignForm.message_body" rows="4" placeholder="Optional custom paragraph text..."
+            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500 font-sans"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Button Text</label>
+            <input type="text" x-model="campaignForm.cta_text"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Destination URL</label>
+            <input type="text" x-model="campaignForm.cta_url"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Email Preview Box (Collapsible) -->
+      <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="eye" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span>Live HTML Email Preview</span>
+          </span>
+          <button type="button" @click="previewCampaignEmail()"
+            class="text-xs font-semibold text-cyan-400 hover:underline">
+            <span x-text="showCampaignPreview ? 'Refresh Preview' : 'Show Preview'"></span>
+          </button>
+        </div>
+        <div x-show="showCampaignPreview" class="pt-2">
+          <iframe :srcdoc="campaignPreviewHtml" class="w-full h-72 rounded-lg bg-white border border-slate-700"></iframe>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2.5 pt-2 border-t border-slate-800">
+        <button type="button" @click="showSendCampaignModal = false" :disabled="isSendingCampaign"
+          class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+          Close
+        </button>
+        <button type="button" @click="launchCampaign()" :disabled="isSendingCampaign"
+          class="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:brightness-110 text-white text-xs font-extrabold shadow-xl shadow-pink-600/30 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          <i data-lucide="rocket" class="w-4 h-4" :class="{ 'animate-spin': isSendingCampaign }"></i>
+          <span x-text="isSendingCampaign ? 'Launching Campaign in Background...' : 'Launch Promotional Email Campaign 🚀'"></span>
+        </button>
       </div>
     </div>
   </div>

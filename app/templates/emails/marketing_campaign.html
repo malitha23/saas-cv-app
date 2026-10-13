@@ -1,0 +1,86 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  {% if position %}
+  <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #a5b4fc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    🎯 Specialized for {{ position }}
+  </div>
+  {% else %}
+  <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); color: #c084fc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    ✨ Exclusive Career Accelerator
+  </div>
+  {% endif %}
+
+  <h1 style="font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.35; margin-bottom: 14px;">
+    {{ headline | default("Land More Interviews with a Recruiter-Approved ATS Resume & Live Portfolio") }}
+  </h1>
+  <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 18px;">
+    Hi {{ name | default("there") }},
+  </p>
+</div>
+
+<div style="color: #cbd5e1; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+  {% if message_body %}
+    {{ message_body | safe }}
+  {% else %}
+    <p style="margin-bottom: 14px;">
+      Did you know that over 75% of resumes are silently rejected by automated Applicant Tracking Systems (ATS) like Workday, Taleo, and Greenhouse before a hiring manager ever sees them?
+    </p>
+    <p style="margin-bottom: 14px;">
+      {% if position %}
+      As a <strong>{{ position }}</strong>, having a clean, single-column resume optimized with the right industry keywords is what separates shortlisted candidates from rejected applications.
+      {% else %}
+      Having a clean, single-column resume packed with the right industry keywords is what separates shortlisted candidates from rejected applications.
+      {% endif %}
+    </p>
+  {% endif %}
+</div>
+
+<!-- KEY HIGHLIGHTS BOX -->
+<div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 20px; margin: 24px 0;">
+  <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+    Why 1,500+ Sri Lankan & Global Professionals Choose DreemFolio AI:
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">📄</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Single-Column ATS PDFs:</strong> Zero tables or text boxes that confuse scanners. 100% vector selectable text designed to achieve 85%+ ATS match benchmark.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">🌐</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Instant Live Portfolio Website:</strong> Generate a modern, mobile-friendly portfolio link (dreemfolio.com/u/yourname) ready to share on LinkedIn in 15 seconds.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">⚡</td>
+      <td style="padding-left: 10px; padding-bottom: 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Real-Time ATS Checker:</strong> Upload your existing resume and get instant feedback on missing keywords, typography, and recruiter read-rate.
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- CTA BUTTON -->
+<div style="text-align: center; margin: 32px 0 24px 0;">
+  <a href="{{ cta_url | default('https://www.dreemfolio.com/ats-resume-checker') }}" class="cta-btn" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 34px; border-radius: 12px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); text-align: center;">
+    {{ cta_text | default("Try Free ATS Resume Checker →") }}
+  </a>
+  <div style="font-size: 11px; color: #64748b; margin-top: 10px;">
+    ✓ No credit card required • Instant free ATS analysis • 100% In-browser preview
+  </div>
+</div>
+
+<!-- PROMO CALLOUT -->
+<div class="alert-box alert-info" style="margin-top: 24px; text-align: center;">
+  <strong style="color: #818cf8;">Special Community Offer:</strong> Try DreemFolio free today. Create your ATS resume and publish your personal portfolio in under 2 minutes.
+</div>
+
+<p style="font-size: 12px; color: #64748b; margin-top: 24px; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 16px;">
+  You received this email because your contact was registered for career development opportunities or industry networking. If you prefer not to receive career tips and updates, you can safely ignore this message.
+</p>
+{% endblock %}
