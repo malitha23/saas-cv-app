@@ -339,8 +339,8 @@ class PayHereGateway:
             "action_url": config["checkout_url"],
             "params": {
                 "merchant_id": config["merchant_id"],
-                "return_url": f"{final_base_url}/api/payments/payhere/return",
-                "cancel_url": f"{final_base_url}/api/payments/payhere/cancel",
+                "return_url": f"{final_base_url}/api/payments/payhere/return?order_id={order_id}",
+                "cancel_url": f"{final_base_url}/api/payments/payhere/cancel?order_id={order_id}",
                 "notify_url": f"{final_base_url}/api/payments/payhere/notify",
                 "order_id": order_id,
                 "items": item_name,
