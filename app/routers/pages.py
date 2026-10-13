@@ -146,15 +146,31 @@ async def get_guide_api_data(
 
 
 @router.get("/pricing")
+@router.get("/pricing/")
 async def serve_pricing_page():
     """Canonical 301 redirect to pricing section on authoritative homepage."""
     return RedirectResponse(url="/#pricing", status_code=301)
 
 
 @router.get("/features")
+@router.get("/features/")
 async def serve_features_page():
     """Canonical 301 redirect to features section on authoritative homepage."""
     return RedirectResponse(url="/#features", status_code=301)
+
+
+@router.get("/faq")
+@router.get("/faq/")
+async def serve_faq_page():
+    """Canonical 301 redirect to FAQ section on authoritative homepage."""
+    return RedirectResponse(url="/#faq", status_code=301)
+
+
+@router.get("/how-it-works")
+@router.get("/how-it-works/")
+async def serve_how_it_works_page():
+    """Canonical 301 redirect to How It Works section on authoritative homepage."""
+    return RedirectResponse(url="/#how-it-works", status_code=301)
 
 
 @router.get("/robots.txt", response_class=Response)
@@ -162,6 +178,7 @@ async def serve_robots_txt():
     """Serve dynamic, crawler-friendly robots.txt for Google, Bing, and major AI search engines."""
     content = """User-agent: *
 Allow: /
+Allow: /ats-resume-checker
 Allow: /ai-resume-builder
 Allow: /blog
 Allow: /blog/
@@ -242,6 +259,7 @@ async def serve_sitemap_xml():
     today = datetime.date.today().isoformat()
     static_urls = [
         ("https://www.dreemfolio.com/", today, "daily", "1.0"),
+        ("https://www.dreemfolio.com/ats-resume-checker", today, "daily", "0.95"),
         ("https://www.dreemfolio.com/ai-resume-builder", today, "daily", "0.95"),
         ("https://www.dreemfolio.com/app", today, "daily", "0.95"),
         ("https://www.dreemfolio.com/blog", today, "daily", "0.90"),
@@ -498,6 +516,32 @@ async def serve_landing(request: Request, db: Session = Depends(get_db)):
             "pricing": get_dynamic_pricing_context(db),
             "demo_video_url": "https://youtu.be/z1SQa7D1YPs",
             "active_page": "home"
+        }
+    )
+    ref_param = request.query_params.get("ref")
+    if ref_param and ref_param.strip():
+        response.set_cookie(
+            key="dreemfolio_ref",
+            value=ref_param.strip(),
+            max_age=30 * 24 * 3600,  # 30-day affiliate attribution window
+            httponly=False,
+            samesite="lax",
+            path="/"
+        )
+    return response
+
+
+@router.get("/ats-resume-checker", response_class=HTMLResponse)
+@router.get("/ats-resume-checker/", response_class=HTMLResponse)
+async def serve_ats_resume_checker(request: Request, db: Session = Depends(get_db)):
+    """Serve the dedicated standalone Free ATS Resume Checker & Scanner page."""
+    response = templates.TemplateResponse(
+        request=request,
+        name="ats_resume_checker.html",
+        context={
+            "pricing": get_dynamic_pricing_context(db),
+            "canonical_url": "https://www.dreemfolio.com/ats-resume-checker",
+            "active_page": "ats-resume-checker"
         }
     )
     ref_param = request.query_params.get("ref")
