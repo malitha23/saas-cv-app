@@ -103,6 +103,10 @@ async def canonical_redirect_middleware(request: Request, call_next):
     raw_host = request.headers.get("host", "").split(":")[0].strip().lower()
     proto = request.headers.get("x-forwarded-proto", request.url.scheme).lower()
 
+    # Never redirect API payment callbacks (e.g. PayHere notify_url) to avoid dropping POST payload
+    if request.url.path.startswith("/api/payments/"):
+        return await call_next(request)
+
     if raw_host == "dreemfolio.com" or (raw_host == "www.dreemfolio.com" and proto == "http"):
         path = request.url.path
         query = f"?{request.url.query}" if request.url.query else ""

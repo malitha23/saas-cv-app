@@ -587,6 +587,153 @@ async def initiate_payhere_payment(
     )
 
 
+def activate_order_and_upgrade_candidate(
+    order: OnlinePaymentOrder,
+    db: Session,
+    payment_id: Optional[str] = None,
+    payment_method: Optional[str] = None,
+    card_holder_name: Optional[str] = None,
+    card_no_masked: Optional[str] = None,
+    status_note: Optional[str] = None,
+    background_tasks: Optional[BackgroundTasks] = None
+) -> bool:
+    """
+    Unified, hardened activation function.
+    1. Sets order to 'success' with status_code 2.
+    2. Upgrades user plan_tier, resets quota counts, sets subscription_expires_at based on billing cycle.
+    3. Records promo code usage.
+    4. Auto-supersedes pending bank transfer slips.
+    5. Records affiliate commission.
+    6. Dispatches confirmation & alert emails.
+    """
+    order.status = "success"
+    order.status_code = 2
+    if payment_id:
+        order.payhere_payment_id = payment_id
+    if payment_method:
+        order.payment_method = payment_method
+    if card_holder_name:
+        order.card_holder_name = card_holder_name
+    if card_no_masked:
+        order.card_no_masked = card_no_masked
+    if status_note:
+        order.status_message = status_note
+    order.updated_at = datetime.utcnow()
+
+    candidate = db.get(User, order.user_id)
+    if candidate:
+        now = datetime.utcnow()
+        cycle = (getattr(order, "billing_cycle", "1m") or "1m").lower().strip()
+        if order.target_plan == "sprint":
+            duration_days = 7
+            plan_title = "7-Day Sprint Pass"
+            candidate.plan_tier = "sprint"
+            candidate.sprint_ats_downloads_count = 0
+            candidate.sprint_visual_downloads_count = 0
+            candidate.sprint_ai_generations_count = 0
+            candidate.subscription_expires_at = now + timedelta(days=7)
+        else:
+            candidate.plan_tier = order.target_plan
+            if cycle == "3m":
+                duration_days = 90
+                plan_title = f"{order.target_plan.capitalize()} Plan (3 Months Pass)"
+            elif cycle == "6m":
+                duration_days = 180
+                plan_title = f"{order.target_plan.capitalize()} Plan (6 Months Pass)"
+            elif cycle == "12m":
+                duration_days = 365
+                plan_title = f"{order.target_plan.capitalize()} Plan (1 Year Access)"
+            elif cycle == "lifetime":
+                duration_days = 36500
+                plan_title = f"{order.target_plan.capitalize()} Plan (Lifetime Access)"
+            else:
+                duration_days = 30
+                plan_title = f"{order.target_plan.capitalize()} Plan (30 Days)"
+
+            candidate.subscription_expires_at = now + timedelta(days=duration_days)
+
+        candidate.subscription_status = "active"
+        candidate.subscription_started_at = now
+        logger.info(
+            "Candidate %s upgraded to %s (Order %s, Payment ID %s, Cycle %s)",
+            candidate.email, candidate.plan_tier.upper(), order.order_id, order.payhere_payment_id, cycle
+        )
+
+        # Record promo code usage
+        if getattr(order, "promo_code", None):
+            p_code = order.promo_code.strip().upper()
+            promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
+            if promo_obj:
+                existing_usage = db.scalars(
+                    select(PromoCodeUsage).where(
+                        PromoCodeUsage.promo_code_id == promo_obj.id,
+                        PromoCodeUsage.user_id == candidate.id
+                    )
+                ).first()
+                if not existing_usage:
+                    new_usage = PromoCodeUsage(
+                        promo_code_id=promo_obj.id,
+                        user_id=candidate.id,
+                        order_id=order.order_id
+                    )
+                    db.add(new_usage)
+                    promo_obj.times_used = (promo_obj.times_used or 0) + 1
+
+        # Auto-supersede pending bank slips
+        pending_slips = db.scalars(
+            select(BankPaymentSlip).where(
+                BankPaymentSlip.user_id == candidate.id,
+                BankPaymentSlip.status == "pending"
+            )
+        ).all()
+        for ps in pending_slips:
+            ps.admin_notes = f"Superseded: User activated {order.target_plan.upper()} via PayHere (Order: {order.order_id})"
+
+        # Affiliate commission
+        try:
+            from app.services.affiliate_service import record_commission_on_payment
+            record_commission_on_payment(
+                buyer=candidate,
+                order_amount=order.amount,
+                order_id=order.order_id,
+                db=db
+            )
+        except Exception as aff_err:
+            logger.warning("Affiliate hook warning (order %s): %s", order.order_id, aff_err)
+
+        base_url = PayHereGateway.get_base_url()
+
+        # Send emails
+        send_user_subscription_confirmed(
+            to_email=candidate.email,
+            full_name=candidate.full_name or "Customer",
+            plan_title=plan_title,
+            amount=order.amount,
+            currency=order.currency,
+            order_id=order.order_id,
+            payment_id=order.payhere_payment_id or "Direct",
+            duration_days=duration_days,
+            base_url=base_url,
+            background_tasks=background_tasks
+        )
+        send_admin_subscription_alert(
+            user_email=candidate.email,
+            full_name=candidate.full_name or "Customer",
+            plan_title=plan_title,
+            amount=order.amount,
+            currency=order.currency,
+            order_id=order.order_id,
+            payment_id=order.payhere_payment_id or "Direct",
+            method=order.payment_method or "PayHere",
+            base_url=base_url,
+            db=db,
+            background_tasks=background_tasks
+        )
+
+    db.commit()
+    return True
+
+
 @router.post("/api/payments/payhere/notify")
 async def payhere_ipn_notify(
     request: Request,
@@ -707,113 +854,16 @@ async def payhere_ipn_notify(
     # 4. Status Code Processing
     if is_success_notification:
         # STATUS: SUCCESS / AUTHORIZED (2 or 1)
-        order.status = "success"
-        candidate = db.get(User, order.user_id)
-        if candidate:
-            now = datetime.utcnow()
-            cycle = (getattr(order, "billing_cycle", "1m") or "1m").lower().strip()
-            if order.target_plan == "sprint":
-                duration_days = 7
-                plan_title = "7-Day Sprint Pass"
-                candidate.plan_tier = "sprint"
-                candidate.sprint_ats_downloads_count = 0
-                candidate.sprint_visual_downloads_count = 0
-                candidate.sprint_ai_generations_count = 0
-                candidate.subscription_expires_at = now + timedelta(days=7)
-            else:
-                candidate.plan_tier = order.target_plan
-                if cycle == "3m":
-                    duration_days = 90
-                    plan_title = f"{order.target_plan.capitalize()} Plan (3 Months Pass)"
-                elif cycle == "6m":
-                    duration_days = 180
-                    plan_title = f"{order.target_plan.capitalize()} Plan (6 Months Pass)"
-                elif cycle == "12m":
-                    duration_days = 365
-                    plan_title = f"{order.target_plan.capitalize()} Plan (1 Year Access)"
-                elif cycle == "lifetime":
-                    duration_days = 36500
-                    plan_title = f"{order.target_plan.capitalize()} Plan (Lifetime Access)"
-                else:
-                    duration_days = 30
-                    plan_title = f"{order.target_plan.capitalize()} Plan (30 Days)"
-
-                candidate.subscription_expires_at = now + timedelta(days=duration_days)
-
-            candidate.subscription_status = "active"
-            candidate.subscription_started_at = now
-            logger.info("Candidate %s successfully upgraded to %s via PayHere (Order %s, Payment ID %s, Cycle %s)", candidate.email, candidate.plan_tier.upper(), order_id, payment_id, cycle)
-
-            # Record Promo Code usage if order used a promo code
-            if getattr(order, "promo_code", None):
-                p_code = order.promo_code.strip().upper()
-                promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
-                if promo_obj:
-                    existing_usage = db.scalars(
-                        select(PromoCodeUsage).where(
-                            PromoCodeUsage.promo_code_id == promo_obj.id,
-                            PromoCodeUsage.user_id == candidate.id
-                        )
-                    ).first()
-                    if not existing_usage:
-                        new_usage = PromoCodeUsage(
-                            promo_code_id=promo_obj.id,
-                            user_id=candidate.id,
-                            order_id=order.order_id
-                        )
-                        db.add(new_usage)
-                        promo_obj.times_used = (promo_obj.times_used or 0) + 1
-                        db.commit()
-                        logger.info("Recorded promo code usage %s for candidate %s on order %s", p_code, candidate.email, order.order_id)
-
-            # Auto-supersede any pending bank transfer slips for this candidate
-            pending_slips = db.scalars(
-                select(BankPaymentSlip)
-                .where(BankPaymentSlip.user_id == candidate.id, BankPaymentSlip.status == "pending")
-            ).all()
-            for ps in pending_slips:
-                ps.admin_notes = f"Superseded: User activated {order.target_plan.upper()} ({cycle}) via PayHere card payment (Order: {order.order_id})"
-
-            # Affiliate Revenue-Share Engine: Record commission if user was referred
-            try:
-                from app.services.affiliate_service import record_commission_on_payment
-                record_commission_on_payment(
-                    buyer=candidate,
-                    order_amount=order.amount,
-                    order_id=order.order_id,
-                    db=db
-                )
-            except Exception as aff_err:
-                logger.warning("Affiliate commission hook warning (order %s): %s", order.order_id, aff_err)
-
-            base_url = PayHereGateway.get_base_url()
-
-            # Dispatch non-blocking background emails to customer & admin
-            send_user_subscription_confirmed(
-                to_email=candidate.email,
-                full_name=candidate.full_name or "Customer",
-                plan_title=plan_title,
-                amount=order.amount,
-                currency=order.currency,
-                order_id=order.order_id,
-                payment_id=payment_id,
-                duration_days=duration_days,
-                base_url=base_url,
-                background_tasks=background_tasks
-            )
-            send_admin_subscription_alert(
-                user_email=candidate.email,
-                full_name=candidate.full_name or "Customer",
-                plan_title=plan_title,
-                amount=order.amount,
-                currency=order.currency,
-                order_id=order.order_id,
-                payment_id=payment_id,
-                method=method,
-                base_url=base_url,
-                db=db,
-                background_tasks=background_tasks
-            )
+        activate_order_and_upgrade_candidate(
+            order=order,
+            db=db,
+            payment_id=payment_id,
+            payment_method=method,
+            card_holder_name=card_holder_name,
+            card_no_masked=card_no_masked,
+            status_note=status_message or "Verified via PayHere IPN",
+            background_tasks=background_tasks
+        )
 
     elif status_code_int == 0:
         # STATUS: PENDING (0)
@@ -908,110 +958,16 @@ def sync_order_status_from_payhere(
     )
 
     if is_success:
-        order.status = "success"
-        order.status_code = 2
-        order.status_message = f"Payment verified via PayHere Retrieval API ({payhere_status or 'Success'})"
-        order.payhere_payment_id = payment_id
-        order.payment_method = method
-        order.card_no_masked = card_no
-        order.card_holder_name = card_name
-        order.updated_at = datetime.utcnow()
-
-        candidate = db.get(User, order.user_id)
-        if candidate:
-            now = datetime.utcnow()
-            cycle = (getattr(order, "billing_cycle", "1m") or "1m").lower().strip()
-            if order.target_plan == "sprint":
-                duration_days = 7
-                plan_title = "7-Day Sprint Pass"
-                candidate.plan_tier = "sprint"
-                candidate.sprint_ats_downloads_count = 0
-                candidate.sprint_visual_downloads_count = 0
-                candidate.sprint_ai_generations_count = 0
-                candidate.subscription_expires_at = now + timedelta(days=7)
-            else:
-                candidate.plan_tier = order.target_plan
-                if cycle == "3m":
-                    duration_days = 90
-                    plan_title = f"{order.target_plan.capitalize()} Plan (3 Months Pass)"
-                elif cycle == "6m":
-                    duration_days = 180
-                    plan_title = f"{order.target_plan.capitalize()} Plan (6 Months Pass)"
-                elif cycle == "12m":
-                    duration_days = 365
-                    plan_title = f"{order.target_plan.capitalize()} Plan (1 Year Access)"
-                elif cycle == "lifetime":
-                    duration_days = 36500
-                    plan_title = f"{order.target_plan.capitalize()} Plan (Lifetime Access)"
-                else:
-                    duration_days = 30
-                    plan_title = f"{order.target_plan.capitalize()} Plan (30 Days)"
-                candidate.subscription_expires_at = now + timedelta(days=duration_days)
-
-            candidate.subscription_status = "active"
-            candidate.subscription_started_at = now
-            logger.info("Candidate %s successfully upgraded to %s via PayHere Retrieval Sync (Order %s, Payment ID %s)", candidate.email, candidate.plan_tier.upper(), order.order_id, payment_id)
-
-            # Record promo code usage if applied
-            if getattr(order, "promo_code", None):
-                p_code = order.promo_code.strip().upper()
-                promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
-                if promo_obj:
-                    existing_usage = db.scalars(
-                        select(PromoCodeUsage).where(
-                            PromoCodeUsage.promo_code_id == promo_obj.id,
-                            PromoCodeUsage.user_id == candidate.id
-                        )
-                    ).first()
-                    if not existing_usage:
-                        new_usage = PromoCodeUsage(
-                            promo_code_id=promo_obj.id,
-                            user_id=candidate.id,
-                            order_id=order.order_id
-                        )
-                        db.add(new_usage)
-
-            base_url = PayHereGateway.get_base_url()
-
-            send_user_subscription_confirmed(
-                to_email=candidate.email,
-                full_name=candidate.full_name or "Customer",
-                plan_title=plan_title,
-                amount=order.amount,
-                currency=order.currency,
-                order_id=order.order_id,
-                payment_id=payment_id,
-                duration_days=duration_days,
-                base_url=base_url,
-                background_tasks=background_tasks
-            )
-            send_admin_subscription_alert(
-                user_email=candidate.email,
-                full_name=candidate.full_name or "Customer",
-                plan_title=plan_title,
-                amount=order.amount,
-                currency=order.currency,
-                order_id=order.order_id,
-                payment_id=payment_id,
-                method=method,
-                base_url=base_url,
-                db=db,
-                background_tasks=background_tasks
-            )
-
-            # Affiliate Revenue-Share Engine: Record commission if user was referred
-            try:
-                from app.services.affiliate_service import record_commission_on_payment
-                record_commission_on_payment(
-                    buyer=candidate,
-                    order_amount=order.amount,
-                    order_id=order.order_id,
-                    db=db
-                )
-            except Exception as aff_err:
-                logger.warning("Affiliate commission hook warning (order %s): %s", order.order_id, aff_err)
-
-        db.commit()
+        activate_order_and_upgrade_candidate(
+            order=order,
+            db=db,
+            payment_id=payment_id,
+            payment_method=method,
+            card_holder_name=card_name,
+            card_no_masked=card_no,
+            status_note=f"Payment verified via PayHere Retrieval API ({payhere_status or 'Success'})",
+            background_tasks=background_tasks
+        )
         return "success"
     elif payhere_status in ["FAILED", "CHARGEBACK"]:
         order.status = "failed"

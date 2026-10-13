@@ -1089,12 +1089,20 @@
                         </span>
                       </template>
                       <template x-if="ord.status !== 'success' && ord.status !== 'refunded' && ord.status !== 'refund_processing'">
-                        <button @click="syncPayHereOrder(ord.order_id)"
-                                class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition inline-flex items-center gap-1"
-                                title="Actively query PayHere Gateway Retrieval API to verify and update order status">
-                          <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-                          <span>Sync Status</span>
-                        </button>
+                        <div class="inline-flex items-center gap-1.5">
+                          <button @click="syncPayHereOrder(ord.order_id)"
+                                  class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition inline-flex items-center gap-1"
+                                  title="Actively query PayHere Gateway Retrieval API to verify and update order status">
+                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                            <span>Sync</span>
+                          </button>
+                          <button @click="activatePayHereOrder(ord.order_id)"
+                                  class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition inline-flex items-center gap-1"
+                                  title="Manually verify and activate candidate subscription">
+                            <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                            <span>Activate</span>
+                          </button>
+                        </div>
                       </template>
                     </td>
                   </tr>
@@ -4072,6 +4080,31 @@
             }
           } catch (e) {
             alert('Error during PayHere sync: ' + e.message);
+          }
+        },
+
+        async activatePayHereOrder(orderId) {
+          const paymentId = prompt(`Enter PayHere Payment ID for Order #${orderId} (e.g. from PayHere Portal 320048918001):`, '');
+          if (paymentId === null) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/payhere/orders/${orderId}/activate`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ payment_id: paymentId.trim() || undefined })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`🎉 Success: ${data.message}`);
+              await this.loadPayHereOrders();
+            } else {
+              alert(`❌ Activation failed: ${data.detail || 'Could not activate order'}`);
+            }
+          } catch (e) {
+            alert('Error during order activation: ' + e.message);
           }
         },
 

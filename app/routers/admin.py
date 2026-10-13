@@ -518,6 +518,49 @@ async def admin_sync_payhere_order(
     }
 
 
+class AdminManualOrderActivationRequest(BaseModel):
+    payment_id: Optional[str] = None
+    admin_notes: Optional[str] = None
+
+
+@router.post("/api/admin/payhere/orders/{order_id}/activate")
+async def admin_manual_activate_payhere_order(
+    order_id: str,
+    background_tasks: BackgroundTasks,
+    payload: Optional[AdminManualOrderActivationRequest] = None,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Super Admin Override: Manually activates a candidate's subscription order
+    when verified in PayHere Merchant Portal (e.g. status Authorized/Completed).
+    """
+    from app.routers.payments import activate_order_and_upgrade_candidate
+    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order reference not found.")
+
+    pay_id = (payload.payment_id if payload else None) or order.payhere_payment_id or f"ADMIN-{int(time.time())}"
+    notes = (payload.admin_notes if payload else None) or f"Manually verified & activated by Admin ({current_user.email})"
+
+    activate_order_and_upgrade_candidate(
+        order=order,
+        db=db,
+        payment_id=pay_id,
+        payment_method="PayHere Verified",
+        status_note=notes,
+        background_tasks=background_tasks
+    )
+    db.refresh(order)
+    return {
+        "success": True,
+        "message": f"Order #{order.order_id} has been activated successfully! Candidate upgraded.",
+        "order_id": order.order_id,
+        "status": order.status,
+        "payhere_payment_id": order.payhere_payment_id
+    }
+
+
 @router.post("/api/admin/payhere/refund", response_model=AdminRefundResponse)
 async def admin_process_payhere_refund(
     req: AdminRefundRequest,
