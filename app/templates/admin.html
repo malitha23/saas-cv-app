@@ -3100,7 +3100,7 @@
           </div>
 
           <!-- Batch Action Controls -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <span x-show="selectedLeadIds.length > 0" class="text-xs font-semibold text-pink-400"
               x-text="selectedLeadIds.length + ' selected'"></span>
             <button x-show="selectedLeadIds.length > 0" type="button" @click="openSendCampaignModal('selected')"
@@ -3116,6 +3116,12 @@
             <button type="button" @click="toggleSelectAllLeads()"
               class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg border border-slate-700 transition">
               <span x-text="selectedLeadIds.length === filteredCampaignLeads.length && filteredCampaignLeads.length > 0 ? 'Deselect All' : 'Select All'"></span>
+            </button>
+            <button type="button" @click="clearMarketingLeads()"
+              class="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-rose-100 font-semibold text-xs rounded-lg border border-rose-800/40 transition flex items-center gap-1.5"
+              title="Delete all leads or leads matching the selected position/status filter">
+              <i data-lucide="trash" class="w-3 h-3 text-rose-400"></i>
+              <span>Purge / Delete All</span>
             </button>
           </div>
         </div>
@@ -3239,6 +3245,7 @@
                   <th class="p-2.5">Sent</th>
                   <th class="p-2.5">Failed</th>
                   <th class="p-2.5">Sender</th>
+                  <th class="p-2.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -3251,10 +3258,16 @@
                     <td class="p-2.5 font-bold text-emerald-400" x-text="c.total_sent"></td>
                     <td class="p-2.5 font-bold text-rose-400" x-text="c.total_failed"></td>
                     <td class="p-2.5 text-slate-400 text-[11px]" x-text="c.admin_user || 'Admin'"></td>
+                    <td class="p-2.5 text-right">
+                      <button type="button" @click="deleteCampaignLog(c.id)" title="Delete campaign log record"
+                        class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </td>
                   </tr>
                 </template>
                 <tr x-show="!marketingStats.recent_campaigns || marketingStats.recent_campaigns.length === 0">
-                  <td colspan="7" class="p-4 text-center text-slate-500 text-xs">No email campaigns launched yet.</td>
+                  <td colspan="8" class="p-4 text-center text-slate-500 text-xs">No email campaigns launched yet.</td>
                 </tr>
               </tbody>
             </table>
@@ -5102,6 +5115,81 @@
           } catch (err) {
             alert('Error: ' + err.message);
           }
+        },
+
+        resetCampaignForm() {
+          if (!confirm('Are you sure you want to reset all email campaign fields back to default?')) return;
+          this.campaignForm = {
+            target_type: 'never_sent',
+            position_filter: '',
+            test_email: '',
+            subject: 'Land More Interviews with DreemFolio AI - ATS Resume & Free Live Portfolio',
+            template_type: 'promotional_offer',
+            headline: 'Accelerate Your Career with a Recruiter-Approved ATS Resume & Live Portfolio',
+            message_body: '',
+            cta_text: 'Check ATS Score Free →',
+            cta_url: 'https://www.dreemfolio.com/ats-resume-checker'
+          };
+          this.showCampaignPreview = false;
+          this.campaignPreviewHtml = '';
+        },
+
+        async deleteCampaignLog(campaignId) {
+          if (!confirm(`Are you sure you want to delete campaign audit record #${campaignId}?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/marketing/campaigns/${campaignId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ ${data.message}`);
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert('Failed to delete campaign log.');
+            }
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
+        },
+
+        async clearMarketingLeads() {
+          const pos = this.campaignPositionFilter !== 'all' ? this.campaignPositionFilter : null;
+          const stat = this.campaignStatusFilter !== 'all' ? this.campaignStatusFilter : null;
+          let filterDesc = 'ALL leads in the database';
+          if (pos && stat) filterDesc = `all '${stat}' leads in position '${pos}'`;
+          else if (pos) filterDesc = `all leads in position '${pos}'`;
+          else if (stat) filterDesc = `all '${stat}' leads`;
+
+          if (!confirm(`⚠️ PERMANENT DELETION: Are you sure you want to permanently delete ${filterDesc}? This cannot be undone!`)) return;
+          if (!confirm(`⚠️ FINAL CONFIRMATION: Type YES by clicking OK to confirm deletion of ${filterDesc}.`)) return;
+
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch('/api/admin/marketing/leads/clear-all', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                position: pos,
+                status: stat,
+                confirm: true
+              })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ ${data.message}`);
+              this.selectedLeadIds = [];
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert('Delete failed: ' + (data.detail || 'Unknown error'));
+            }
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
         }
       };
     }
@@ -5229,37 +5317,40 @@
     </div>
   </div>
   <!-- ================= CSV FILE UPLOAD MODAL ================= -->
-  <div x-show="showCsvUploadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-    <div @click.away="if (!isUploadingCsv) showCsvUploadModal = false" class="w-full max-w-lg rounded-2xl border border-indigo-500/30 bg-slate-900 p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div x-show="showCsvUploadModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-sm overflow-hidden">
+    <div @click.away="if (!isUploadingCsv) showCsvUploadModal = false"
+         class="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-indigo-500/30 bg-slate-900 shadow-2xl overflow-hidden">
+      <div class="shrink-0 px-5 py-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between z-10">
         <div class="flex items-center gap-2 text-indigo-400 font-bold">
           <i data-lucide="upload-cloud" class="w-5 h-5"></i>
           <span class="text-base text-white">Import Candidates CSV File</span>
         </div>
-        <button @click="showCsvUploadModal = false" :disabled="isUploadingCsv" class="text-slate-400 hover:text-white transition">
+        <button @click="showCsvUploadModal = false" :disabled="isUploadingCsv" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-300 leading-relaxed">
-        Upload a CSV file containing columns like <code class="text-cyan-400 font-mono">Position, Name, Email, Phone</code>. Contacts are saved permanently in the database so you can send campaigns anytime.
-      </p>
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Upload a CSV file containing columns like <code class="text-cyan-400 font-mono">Position, Name, Email, Phone</code>. Contacts are saved permanently in the database so you can send campaigns anytime.
+        </p>
 
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Select CSV File (.csv)</label>
-          <input type="file" accept=".csv" @change="csvUploadFile = $event.target.files[0]"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-slate-200 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
-        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Select CSV File (.csv)</label>
+            <input type="file" accept=".csv" @change="csvUploadFile = $event.target.files[0]"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2.5 text-xs text-slate-200 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+          </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
-          <input type="text" x-model="csvUploadTag" placeholder="e.g. SLIIT_Campus_Fair_2026 or Dev_Candidates"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
+            <input type="text" x-model="csvUploadTag" placeholder="e.g. SLIIT_Campus_Fair_2026 or Dev_Candidates"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+          </div>
         </div>
       </div>
 
-      <div class="flex gap-2.5 pt-2">
+      <div class="shrink-0 px-5 py-3.5 border-t border-slate-800 bg-slate-950/90 flex gap-2.5 z-10">
         <button type="button" @click="showCsvUploadModal = false" :disabled="isUploadingCsv"
           class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
           Cancel
@@ -5274,38 +5365,41 @@
   </div>
 
   <!-- ================= PASTE CSV TEXT MODAL ================= -->
-  <div x-show="showCsvPasteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-    <div @click.away="if (!isUploadingCsv) showCsvPasteModal = false" class="w-full max-w-xl rounded-2xl border border-cyan-500/30 bg-slate-900 p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+  <div x-show="showCsvPasteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-sm overflow-hidden">
+    <div @click.away="if (!isUploadingCsv) showCsvPasteModal = false"
+         class="w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl border border-cyan-500/30 bg-slate-900 shadow-2xl overflow-hidden">
+      <div class="shrink-0 px-5 py-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between z-10">
         <div class="flex items-center gap-2 text-cyan-400 font-bold">
           <i data-lucide="clipboard-list" class="w-5 h-5"></i>
           <span class="text-base text-white">Paste Raw CSV Contact Text</span>
         </div>
-        <button @click="showCsvPasteModal = false" :disabled="isUploadingCsv" class="text-slate-400 hover:text-white transition">
+        <button @click="showCsvPasteModal = false" :disabled="isUploadingCsv" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-300 leading-relaxed">
-        Paste CSV rows directly below. Header format supported: <code class="text-cyan-400 font-mono">Position,Name,Email,Phone</code>.
-      </p>
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Paste CSV rows directly below. Header format supported: <code class="text-cyan-400 font-mono">Position,Name,Email,Phone</code>.
+        </p>
 
-      <div class="space-y-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Raw CSV Data</label>
-          <textarea x-model="pastedCsvText" rows="7"
-            placeholder="Position,Name,Email,Phone&#10;Mobile Application Developer (iOS/Android),Dimmithra Perera,Millend49@gmail.com,0755231979&#10;Associate Functional Consultant,Ravishan Perera,ravishanperera674@gmail.com,0718306162"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"></textarea>
-        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Raw CSV Data</label>
+            <textarea x-model="pastedCsvText" rows="6"
+              placeholder="Position,Name,Email,Phone&#10;Mobile Application Developer (iOS/Android),Dimmithra Perera,Millend49@gmail.com,0755231979&#10;Associate Functional Consultant,Ravishan Perera,ravishanperera674@gmail.com,0718306162"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"></textarea>
+          </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
-          <input type="text" x-model="pastedCsvTag" placeholder="e.g. pasted_csv_2026_10"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Campaign / List Tag</label>
+            <input type="text" x-model="pastedCsvTag" placeholder="e.g. pasted_csv_2026_10"
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          </div>
         </div>
       </div>
 
-      <div class="flex gap-2.5 pt-2">
+      <div class="shrink-0 px-5 py-3.5 border-t border-slate-800 bg-slate-950/90 flex gap-2.5 z-10">
         <button type="button" @click="showCsvPasteModal = false" :disabled="isUploadingCsv"
           class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
           Cancel
@@ -5320,151 +5414,170 @@
   </div>
 
   <!-- ================= SEND PROMOTIONAL CAMPAIGN MODAL ================= -->
-  <div x-show="showSendCampaignModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-    <div @click.away="if (!isSendingCampaign) showSendCampaignModal = false" class="w-full max-w-3xl my-6 rounded-2xl border border-pink-500/30 bg-slate-900 p-6 shadow-2xl space-y-5">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <div class="flex items-center gap-2 text-pink-400 font-bold">
-          <i data-lucide="send" class="w-5 h-5"></i>
-          <span class="text-base text-white">Compose & Launch Promotional Email Campaign</span>
+  <div x-show="showSendCampaignModal" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-md overflow-hidden">
+    <div @click.away="if (!isSendingCampaign) showSendCampaignModal = false"
+         class="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-pink-500/30 bg-slate-900 shadow-2xl overflow-hidden">
+      <!-- Fixed Sticky Header -->
+      <div class="shrink-0 px-4 sm:px-6 py-3.5 border-b border-slate-800 bg-slate-900 flex items-center justify-between z-10">
+        <div class="flex items-center gap-2.5 text-pink-400 font-bold">
+          <div class="p-2 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-extrabold text-white">Compose & Launch Email Campaign</h3>
+            <p class="text-[11px] text-slate-400 hidden sm:block">Automated candidate outreach with real-time personalization</p>
+          </div>
         </div>
-        <button @click="showSendCampaignModal = false" :disabled="isSendingCampaign" class="text-slate-400 hover:text-white transition">
+        <button @click="showSendCampaignModal = false" :disabled="isSendingCampaign"
+          class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <!-- Target Audience Selector -->
-      <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-4 space-y-3">
-        <label class="block text-xs font-bold text-slate-200">1. Select Target Audience</label>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <button type="button" @click="campaignForm.target_type = 'never_sent'"
-            :class="campaignForm.target_type === 'never_sent' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border text-left text-xs transition">
-            <div class="font-bold">Never Sent (<span x-text="marketingStats.total_never_sent"></span>)</div>
-            <div class="text-[10px] opacity-75">New leads only</div>
-          </button>
-          <button type="button" @click="campaignForm.target_type = 'selected'"
-            :class="campaignForm.target_type === 'selected' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border text-left text-xs transition">
-            <div class="font-bold">Selected (<span x-text="selectedLeadIds.length"></span>)</div>
-            <div class="text-[10px] opacity-75">Table checkboxes</div>
-          </button>
-          <button type="button" @click="campaignForm.target_type = 'position'"
-            :class="campaignForm.target_type === 'position' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border text-left text-xs transition">
-            <div class="font-bold">By Role / Position</div>
-            <div class="text-[10px] opacity-75">Segment by career</div>
-          </button>
-          <button type="button" @click="campaignForm.target_type = 'test'"
-            :class="campaignForm.target_type === 'test' ? 'bg-amber-600 text-white font-bold border-amber-500 shadow-md shadow-amber-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
-            class="p-2.5 rounded-xl border text-left text-xs transition">
-            <div class="font-bold">Test Send</div>
-            <div class="text-[10px] opacity-75">Preview to myself</div>
-          </button>
-        </div>
-
-        <!-- Conditional options for Position / Test -->
-        <div x-show="campaignForm.target_type === 'position'" class="pt-2">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Target Position</label>
-          <select x-model="campaignForm.position_filter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
-            <option value="">-- Choose Target Position --</option>
-            <template x-for="p in (marketingStats.positions || [])" :key="p.position">
-              <option :value="p.position" x-text="p.position + ' (' + p.count + ' candidates)'"></option>
-            </template>
-          </select>
-        </div>
-        <div x-show="campaignForm.target_type === 'test'" class="pt-2">
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Test Recipient Email Address</label>
-          <input type="email" x-model="campaignForm.test_email" placeholder="you@example.com"
-            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-        </div>
-      </div>
-
-      <!-- Preset Template Buttons -->
-      <div class="space-y-2">
-        <label class="block text-xs font-bold text-slate-200">2. Template Presets & Auto-Fill</label>
-        <div class="flex gap-2 flex-wrap">
-          <button type="button" @click="applyCampaignPreset('general_launch')"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-            <span>🚀 ATS Resume & Portfolio Launch</span>
-          </button>
-          <button type="button" @click="applyCampaignPreset('role_targeted')"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-            <span>🎯 Role-Targeted Booster ({position})</span>
-          </button>
-          <button type="button" @click="applyCampaignPreset('special_offer')"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
-            <span>✨ Special Community Offer</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Email Content Form -->
-      <div class="space-y-3">
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="text-xs font-semibold text-slate-300">Email Subject Line <span class="text-rose-400">*</span></label>
-            <span class="text-[10px] text-slate-500 font-mono">Supports {name} and {position}</span>
+      <!-- Scrollable Modal Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        <!-- Target Audience Selector -->
+        <div class="rounded-xl bg-slate-950/70 border border-slate-800 p-4 space-y-3">
+          <label class="block text-xs font-bold text-slate-200">1. Select Target Audience</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" @click="campaignForm.target_type = 'never_sent'"
+              :class="campaignForm.target_type === 'never_sent' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="p-2.5 rounded-xl border text-left text-xs transition">
+              <div class="font-bold">Never Sent (<span x-text="marketingStats.total_never_sent"></span>)</div>
+              <div class="text-[10px] opacity-75">New leads only</div>
+            </button>
+            <button type="button" @click="campaignForm.target_type = 'selected'"
+              :class="campaignForm.target_type === 'selected' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="p-2.5 rounded-xl border text-left text-xs transition">
+              <div class="font-bold">Selected (<span x-text="selectedLeadIds.length"></span>)</div>
+              <div class="text-[10px] opacity-75">Table checkboxes</div>
+            </button>
+            <button type="button" @click="campaignForm.target_type = 'position'"
+              :class="campaignForm.target_type === 'position' ? 'bg-pink-600 text-white font-bold border-pink-500 shadow-md shadow-pink-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="p-2.5 rounded-xl border text-left text-xs transition">
+              <div class="font-bold">By Role / Position</div>
+              <div class="text-[10px] opacity-75">Segment by career</div>
+            </button>
+            <button type="button" @click="campaignForm.target_type = 'test'"
+              :class="campaignForm.target_type === 'test' ? 'bg-amber-600 text-white font-bold border-amber-500 shadow-md shadow-amber-600/25' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="p-2.5 rounded-xl border text-left text-xs transition">
+              <div class="font-bold">Test Send</div>
+              <div class="text-[10px] opacity-75">Preview to myself</div>
+            </button>
           </div>
-          <input type="text" x-model="campaignForm.subject"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
-        </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Main Headline</label>
-          <input type="text" x-model="campaignForm.headline"
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
-        </div>
-
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="text-xs font-semibold text-slate-300">Custom Message Body (HTML / Paragraphs)</label>
-            <span class="text-[10px] text-slate-500 font-mono">Leave blank to use default high-converting copy</span>
+          <!-- Conditional options for Position / Test -->
+          <div x-show="campaignForm.target_type === 'position'" class="pt-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Target Position</label>
+            <select x-model="campaignForm.position_filter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+              <option value="">-- Choose Target Position --</option>
+              <template x-for="p in (marketingStats.positions || [])" :key="p.position">
+                <option :value="p.position" x-text="p.position + ' (' + p.count + ' candidates)'"></option>
+              </template>
+            </select>
           </div>
-          <textarea x-model="campaignForm.message_body" rows="4" placeholder="Optional custom paragraph text..."
-            class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500 font-sans"></textarea>
+          <div x-show="campaignForm.target_type === 'test'" class="pt-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Test Recipient Email Address</label>
+            <input type="email" x-model="campaignForm.test_email" placeholder="you@example.com"
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Preset Template Buttons -->
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-200">2. Template Presets & Auto-Fill</label>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" @click="applyCampaignPreset('general_launch')"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+              <span>🚀 ATS Resume & Portfolio Launch</span>
+            </button>
+            <button type="button" @click="applyCampaignPreset('role_targeted')"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+              <span>🎯 Role-Targeted Booster ({position})</span>
+            </button>
+            <button type="button" @click="applyCampaignPreset('special_offer')"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+              <span>✨ Special Community Offer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Email Content Form -->
+        <div class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Button Text</label>
-            <input type="text" x-model="campaignForm.cta_text"
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-300">Email Subject Line <span class="text-rose-400">*</span></label>
+              <span class="text-[10px] text-slate-500 font-mono">Supports {name} and {position}</span>
+            </div>
+            <input type="text" x-model="campaignForm.subject"
               class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
           </div>
+
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Destination URL</label>
-            <input type="text" x-model="campaignForm.cta_url"
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Email Main Headline</label>
+            <input type="text" x-model="campaignForm.headline"
               class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-semibold text-slate-300">Custom Message Body (HTML / Paragraphs)</label>
+              <span class="text-[10px] text-slate-500 font-mono">Leave blank to use default high-converting copy</span>
+            </div>
+            <textarea x-model="campaignForm.message_body" rows="4" placeholder="Optional custom paragraph text..."
+              class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500 font-sans"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Button Text</label>
+              <input type="text" x-model="campaignForm.cta_text"
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">CTA Destination URL</label>
+              <input type="text" x-model="campaignForm.cta_url"
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Email Preview Box (Collapsible) -->
+        <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="eye" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Live HTML Email Preview</span>
+            </span>
+            <button type="button" @click="previewCampaignEmail()"
+              class="text-xs font-semibold text-cyan-400 hover:underline">
+              <span x-text="showCampaignPreview ? 'Refresh Preview' : 'Show Preview'"></span>
+            </button>
+          </div>
+          <div x-show="showCampaignPreview" class="pt-2">
+            <iframe :srcdoc="campaignPreviewHtml" class="w-full h-56 sm:h-72 rounded-lg bg-white border border-slate-700"></iframe>
           </div>
         </div>
       </div>
 
-      <!-- Live Email Preview Box (Collapsible) -->
-      <div class="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-            <i data-lucide="eye" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Live HTML Email Preview</span>
-          </span>
-          <button type="button" @click="previewCampaignEmail()"
-            class="text-xs font-semibold text-cyan-400 hover:underline">
-            <span x-text="showCampaignPreview ? 'Refresh Preview' : 'Show Preview'"></span>
+      <!-- Fixed Sticky Footer -->
+      <div class="shrink-0 px-4 sm:px-6 py-3.5 border-t border-slate-800 bg-slate-950/95 backdrop-blur flex flex-wrap items-center justify-between gap-2.5 z-10">
+        <div class="flex items-center gap-2">
+          <button type="button" @click="showSendCampaignModal = false" :disabled="isSendingCampaign"
+            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+            Close
+          </button>
+          <button type="button" @click="resetCampaignForm()" :disabled="isSendingCampaign" title="Reset all campaign fields to default"
+            class="px-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-xs font-semibold transition flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Reset / Clear Form</span>
           </button>
         </div>
-        <div x-show="showCampaignPreview" class="pt-2">
-          <iframe :srcdoc="campaignPreviewHtml" class="w-full h-72 rounded-lg bg-white border border-slate-700"></iframe>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex gap-2.5 pt-2 border-t border-slate-800">
-        <button type="button" @click="showSendCampaignModal = false" :disabled="isSendingCampaign"
-          class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
-          Close
-        </button>
         <button type="button" @click="launchCampaign()" :disabled="isSendingCampaign"
-          class="flex-2 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:brightness-110 text-white text-xs font-extrabold shadow-xl shadow-pink-600/30 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          class="py-2.5 px-6 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:brightness-110 text-white text-xs font-extrabold shadow-lg shadow-pink-600/30 transition disabled:opacity-50 flex items-center justify-center gap-2">
           <i data-lucide="rocket" class="w-4 h-4" :class="{ 'animate-spin': isSendingCampaign }"></i>
-          <span x-text="isSendingCampaign ? 'Launching Campaign in Background...' : 'Launch Promotional Email Campaign 🚀'"></span>
+          <span x-text="isSendingCampaign ? 'Launching in Background...' : 'Launch Promotional Campaign 🚀'"></span>
         </button>
       </div>
     </div>

@@ -1325,6 +1325,12 @@ class BatchDeleteLeadsRequest(BaseModel):
     lead_ids: List[int]
 
 
+class ClearAllLeadsRequest(BaseModel):
+    position: Optional[str] = None
+    status: Optional[str] = None
+    confirm: bool = False
+
+
 class ManualLeadImportItem(BaseModel):
     email: str
     name: Optional[str] = None
@@ -1922,6 +1928,52 @@ async def delete_marketing_lead(
     db.delete(lead)
     db.commit()
     return {"success": True, "message": f"Lead #{lead_id} removed successfully."}
+
+
+@router.delete("/api/admin/marketing/campaigns/{campaign_id}")
+async def delete_marketing_campaign_log(
+    campaign_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete a campaign audit log record."""
+    log = db.scalar(select(MarketingCampaignLog).where(MarketingCampaignLog.id == campaign_id))
+    if not log:
+        raise HTTPException(status_code=404, detail="Campaign log not found.")
+    db.delete(log)
+    db.commit()
+    return {"success": True, "message": f"Campaign log #{campaign_id} deleted."}
+
+
+@router.post("/api/admin/marketing/leads/clear-all")
+async def clear_all_marketing_leads(
+    payload: ClearAllLeadsRequest,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Delete all leads or filtered leads matching position/status with confirmation."""
+    if not payload.confirm:
+        raise HTTPException(status_code=400, detail="Confirmation required to delete leads.")
+
+    query = select(MarketingLead)
+    if payload.position and payload.position != "all":
+        query = query.where(MarketingLead.position == payload.position)
+    if payload.status and payload.status != "all":
+        if payload.status == "never_sent":
+            query = query.where(or_(MarketingLead.send_count == 0, MarketingLead.send_count.is_(None)))
+        elif payload.status == "sent":
+            query = query.where(MarketingLead.send_count > 0)
+        else:
+            query = query.where(MarketingLead.status == payload.status)
+
+    leads_to_delete = db.scalars(query).all()
+    count = len(leads_to_delete)
+    for lead in leads_to_delete:
+        db.delete(lead)
+    db.commit()
+
+    return {"success": True, "message": f"Successfully deleted {count} lead(s).", "deleted_count": count}
+
 
 
 
