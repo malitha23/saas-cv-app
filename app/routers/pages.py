@@ -351,6 +351,8 @@ async def serve_payment_status(
 
     # Determine effective status
     effective_status = (order.status if order else None) or status or "failed"
+    if effective_status in ["initiated", "processing"]:
+        effective_status = "pending"
     if request.url.path.endswith("/success"):
         effective_status = "success"
     elif request.url.path.endswith("/failed") and effective_status == "success":
@@ -389,9 +391,9 @@ async def serve_payment_status(
     elif effective_status == "amount_tampered":
         failure_reason_en = "Security integrity verification failed: The transaction amount or currency did not match the official order price."
         failure_reason_si = "ආරක්ෂණ පරීක්ෂාව අසාර්ථක විය: ගෙවීමට උත්සාහ කළ මුදල සහ ඇණවුමේ නිල මුදල අතර නොගැලපීමක් පවතී."
-    elif effective_status == "pending":
-        failure_reason_en = "Your payment was submitted and is awaiting final clearance from your issuing bank or PayHere."
-        failure_reason_si = "ඔබගේ ගෙවීම ඉදිරිපත් කර ඇති අතර ඔබගේ බැංකුවේ හෝ PayHere හි අවසන් අනුමැතිය බලාපොරොත්තුවෙන් පවතී."
+    elif effective_status in ["pending", "initiated", "processing"]:
+        failure_reason_en = "Your payment was submitted and is awaiting final clearance from your issuing bank or PayHere. Please wait while we verify..."
+        failure_reason_si = "ඔබගේ ගෙවීම ඉදිරිපත් කර ඇති අතර ඔබගේ බැංකුවේ හෝ PayHere හි අවසන් අනුමැතිය බලාපොරොත්තුවෙන් පවතී. කරුණාකර සුළු මොහොතක් රැඳී සිටින්න..."
     else:
         msg = (order.status_message if order and order.status_message else "").strip()
         if msg:
@@ -402,7 +404,7 @@ async def serve_payment_status(
 
     if effective_status == "success":
         page_title = "Payment Successful"
-    elif effective_status == "pending":
+    elif effective_status in ["pending", "initiated", "processing"]:
         page_title = "Payment Processing"
     elif effective_status in ["canceled", "incomplete"]:
         page_title = "Checkout Incomplete"

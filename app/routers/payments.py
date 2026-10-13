@@ -678,7 +678,11 @@ async def payhere_ipn_notify(
         status_code_int = -99
 
     # Idempotency check: If order is already success, don't duplicate upgrades or emails
-    if status_code_int == 2 and order.status == "success":
+    is_success_notification = (
+        status_code_int in [2, 1]
+        or status_message.upper() in ["AUTHORIZED", "AUTHORIZATION", "SUCCESS", "COMPLETED", "CAPTURED", "CAPTURE", "SETTLED"]
+    )
+    if is_success_notification and order.status == "success":
         logger.info(
             "Duplicate PayHere success IPN ignored (idempotent): order_id=%s payment_id=%s",
             order_id,
@@ -701,8 +705,8 @@ async def payhere_ipn_notify(
     order.updated_at = datetime.utcnow()
 
     # 4. Status Code Processing
-    if status_code_int == 2:
-        # STATUS: SUCCESS (2)
+    if is_success_notification:
+        # STATUS: SUCCESS / AUTHORIZED (2 or 1)
         order.status = "success"
         candidate = db.get(User, order.user_id)
         if candidate:
@@ -1046,14 +1050,25 @@ async def payhere_return_redirect(
         except Exception:
             pass
 
-    status = "success"
+    status = "pending"
     if effective_order_id:
         order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
         if order:
             if order.status != "success":
-                status = sync_order_status_from_payhere(order, db, background_tasks)
+                resolved = sync_order_status_from_payhere(order, db, background_tasks)
+                if resolved == "success":
+                    status = "success"
+                elif resolved in ["failed", "canceled"]:
+                    status = resolved
+                else:
+                    if order.status == "initiated":
+                        order.status = "pending"
+                        order.status_message = "Payment submitted on PayHere; awaiting gateway clearance."
+                        db.commit()
+                        db.refresh(order)
+                    status = "pending"
             else:
-                status = order.status
+                status = "success"
 
     return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status={status}", status_code=303)
 

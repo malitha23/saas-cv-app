@@ -198,7 +198,7 @@
         </div>
       </div>
 
-      {% elif status == 'pending' %}
+      {% elif status in ['pending', 'initiated', 'processing'] %}
       <!-- ================= PENDING CARD ================= -->
       <div class="print-card rounded-2xl border border-amber-500/30 bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-amber-500/10 text-center relative overflow-hidden">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 mb-4 shadow-lg shadow-amber-500/20">
@@ -404,17 +404,20 @@
       });
     }
 
-    // Auto-polling for pending status
-    {% if status == 'pending' and order %}
+    // Auto-polling for pending/processing status
+    {% if (status == 'pending' or status == 'initiated' or status == 'processing') and order %}
     let pollCount = 0;
-    const maxPolls = 15;
+    const maxPolls = 30; // Check for up to 60 seconds
     const interval = setInterval(async () => {
       pollCount++;
       try {
         const res = await fetch('/api/payments/orders/{{ order.order_id }}/status');
         if (res.ok) {
           const data = await res.json();
-          if (data.status === 'success' || data.status === 'failed' || data.status === 'canceled') {
+          if (data.status === 'success') {
+            clearInterval(interval);
+            window.location.href = `/payment/status?order_id={{ order.order_id }}&status=success`;
+          } else if (data.status === 'failed' || data.status === 'canceled') {
             clearInterval(interval);
             window.location.href = `/payment/status?order_id={{ order.order_id }}&status=${data.status}`;
           }

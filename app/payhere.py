@@ -516,12 +516,16 @@ class PayHereGateway:
                     resp = client.get(f"{search_url}?order_id={order_id.strip()}", headers=headers)
 
             if resp.status_code != 200:
+                logger.warning("PayHere Retrieval API HTTP %s for order %s: %s", resp.status_code, order_id, resp.text)
                 return None
 
             data = resp.json()
+            logger.info("PayHere Retrieval API response for order %s: %s", order_id, data)
             if data.get("status") == 1 and data.get("data") and len(data["data"]) > 0:
                 # Return the latest payment entry for this order_id
                 return data["data"][0]
+            if isinstance(data.get("data"), dict):
+                return data["data"]
             return None
         except Exception as e:
             logger.warning("Error querying PayHere Retrieval API for order %s: %s", order_id, str(e))
