@@ -494,6 +494,30 @@ async def admin_get_payhere_orders(
     return results
 
 
+@router.post("/api/admin/payhere/orders/{order_id}/sync")
+async def admin_sync_payhere_order(
+    order_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Admin endpoint to actively query PayHere Retrieval API and sync payment status."""
+    from app.routers.payments import sync_order_status_from_payhere
+    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order reference not found.")
+
+    new_status = sync_order_status_from_payhere(order, db, background_tasks)
+    db.refresh(order)
+    return {
+        "success": True,
+        "order_id": order.order_id,
+        "status": order.status,
+        "payhere_payment_id": order.payhere_payment_id,
+        "status_message": order.status_message
+    }
+
+
 @router.post("/api/admin/payhere/refund", response_model=AdminRefundResponse)
 async def admin_process_payhere_refund(
     req: AdminRefundRequest,

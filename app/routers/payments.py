@@ -886,17 +886,27 @@ def sync_order_status_from_payhere(
     if not payment_data:
         return order.status
 
-    payhere_status = str(payment_data.get("status", "")).upper()
+    payhere_status = str(payment_data.get("status", "")).upper().strip()
+    status_code_val = str(payment_data.get("status_code", "")).strip()
     payment_id = str(payment_data.get("payment_id", "")).strip()
     method_data = payment_data.get("payment_method") or {}
     method = method_data.get("method") or "PayHere Gateway"
     card_no = method_data.get("card_no") or ""
     card_name = method_data.get("card_customer_name") or ""
 
-    if payhere_status in ["RECEIVED", "SUCCESS", "COMPLETED"]:
+    # PayHere statuses for approved payments: RECEIVED, SUCCESS, COMPLETED, AUTHORIZED, AUTHORIZATION, CAPTURED, SETTLED
+    is_success = (
+        payhere_status in [
+            "RECEIVED", "SUCCESS", "COMPLETED", "AUTHORIZED", "AUTHORIZATION",
+            "CAPTURED", "CAPTURE", "SETTLED"
+        ]
+        or status_code_val in ["2", "1"]
+    )
+
+    if is_success:
         order.status = "success"
         order.status_code = 2
-        order.status_message = "Payment verified via PayHere Retrieval API"
+        order.status_message = f"Payment verified via PayHere Retrieval API ({payhere_status or 'Success'})"
         order.payhere_payment_id = payment_id
         order.payment_method = method
         order.card_no_masked = card_no
@@ -906,8 +916,10 @@ def sync_order_status_from_payhere(
         candidate = db.get(User, order.user_id)
         if candidate:
             now = datetime.utcnow()
-            duration_days = 7 if order.target_plan == "sprint" else 30
+            cycle = (getattr(order, "billing_cycle", "1m") or "1m").lower().strip()
             if order.target_plan == "sprint":
+                duration_days = 7
+                plan_title = "7-Day Sprint Pass"
                 candidate.plan_tier = "sprint"
                 candidate.sprint_ats_downloads_count = 0
                 candidate.sprint_visual_downloads_count = 0
@@ -915,17 +927,46 @@ def sync_order_status_from_payhere(
                 candidate.subscription_expires_at = now + timedelta(days=7)
             else:
                 candidate.plan_tier = order.target_plan
-                candidate.subscription_expires_at = now + timedelta(days=30)
+                if cycle == "3m":
+                    duration_days = 90
+                    plan_title = f"{order.target_plan.capitalize()} Plan (3 Months Pass)"
+                elif cycle == "6m":
+                    duration_days = 180
+                    plan_title = f"{order.target_plan.capitalize()} Plan (6 Months Pass)"
+                elif cycle == "12m":
+                    duration_days = 365
+                    plan_title = f"{order.target_plan.capitalize()} Plan (1 Year Access)"
+                elif cycle == "lifetime":
+                    duration_days = 36500
+                    plan_title = f"{order.target_plan.capitalize()} Plan (Lifetime Access)"
+                else:
+                    duration_days = 30
+                    plan_title = f"{order.target_plan.capitalize()} Plan (30 Days)"
+                candidate.subscription_expires_at = now + timedelta(days=duration_days)
+
             candidate.subscription_status = "active"
             candidate.subscription_started_at = now
             logger.info("Candidate %s successfully upgraded to %s via PayHere Retrieval Sync (Order %s, Payment ID %s)", candidate.email, candidate.plan_tier.upper(), order.order_id, payment_id)
 
-            plan_names = {
-                "sprint": "7-Day Sprint Pass",
-                "pro": "Pro Career Plan (30 Days)",
-                "elite": "Executive Elite (30 Days)"
-            }
-            plan_title = plan_names.get((order.target_plan or "pro").lower(), f"{order.target_plan.title()} Plan")
+            # Record promo code usage if applied
+            if getattr(order, "promo_code", None):
+                p_code = order.promo_code.strip().upper()
+                promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
+                if promo_obj:
+                    existing_usage = db.scalars(
+                        select(PromoCodeUsage).where(
+                            PromoCodeUsage.promo_code_id == promo_obj.id,
+                            PromoCodeUsage.user_id == candidate.id
+                        )
+                    ).first()
+                    if not existing_usage:
+                        new_usage = PromoCodeUsage(
+                            promo_code_id=promo_obj.id,
+                            user_id=candidate.id,
+                            order_id=order.order_id
+                        )
+                        db.add(new_usage)
+
             base_url = PayHereGateway.get_base_url()
 
             send_user_subscription_confirmed(
@@ -1009,7 +1050,7 @@ async def payhere_return_redirect(
     if effective_order_id:
         order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
         if order:
-            if order.status in ["initiated", "pending"]:
+            if order.status != "success":
                 status = sync_order_status_from_payhere(order, db, background_tasks)
             else:
                 status = order.status
@@ -1020,12 +1061,13 @@ async def payhere_return_redirect(
 @router.api_route("/api/payments/payhere/cancel", methods=["GET", "POST"])
 async def payhere_cancel_redirect(
     request: Request,
+    background_tasks: BackgroundTasks,
     order_id: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """
     PayHere cancel redirect URL. Handles both GET and POST requests.
-    Marks initiated order as canceled and redirects candidate to /payment/status with reason.
+    Verifies with PayHere API first in case of browser/gateway race conditions before marking canceled.
     """
     effective_order_id = order_id
     if not effective_order_id and request.method == "POST":
@@ -1035,14 +1077,20 @@ async def payhere_cancel_redirect(
         except Exception:
             pass
 
+    status = "canceled"
     if effective_order_id:
         order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
-        if order and order.status in ["initiated", "pending"]:
-            order.status = "canceled"
-            order.status_message = "Payment canceled by user during PayHere checkout."
-            db.commit()
+        if order:
+            # Active check with PayHere Retrieval API first
+            resolved_status = sync_order_status_from_payhere(order, db, background_tasks)
+            if resolved_status == "success":
+                status = "success"
+            elif order.status in ["initiated", "pending"]:
+                order.status = "canceled"
+                order.status_message = "Payment canceled by user during PayHere checkout."
+                db.commit()
 
-    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status=canceled", status_code=303)
+    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status={status}", status_code=303)
 
 
 @router.post("/api/payments/orders/{order_id}/cancel")

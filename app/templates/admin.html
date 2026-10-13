@@ -1089,7 +1089,12 @@
                         </span>
                       </template>
                       <template x-if="ord.status !== 'success' && ord.status !== 'refunded' && ord.status !== 'refund_processing'">
-                        <span class="text-slate-600">-</span>
+                        <button @click="syncPayHereOrder(ord.order_id)"
+                                class="px-2 py-1 rounded-lg text-[10px] font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 transition inline-flex items-center gap-1"
+                                title="Actively query PayHere Gateway Retrieval API to verify and update order status">
+                          <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                          <span>Sync Status</span>
+                        </button>
                       </template>
                     </td>
                   </tr>
@@ -4048,6 +4053,25 @@
             }
           } catch (e) {
             console.error('Failed to load PayHere orders:', e);
+          }
+        },
+
+        async syncPayHereOrder(orderId) {
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/admin/payhere/orders/${orderId}/sync`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ PayHere Sync Status for Order #${orderId}:\n\nStatus: ${data.status.toUpperCase()}\nPayment ID: ${data.payhere_payment_id || 'None'}\nMessage: ${data.status_message || 'Verified'}`);
+              await this.loadPayHereOrders();
+            } else {
+              alert(`❌ Sync failed: ${data.detail || 'Could not verify with PayHere'}`);
+            }
+          } catch (e) {
+            alert('Error during PayHere sync: ' + e.message);
           }
         },
 
