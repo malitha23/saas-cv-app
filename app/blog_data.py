@@ -77,12 +77,12 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
     },
     "top-10-resume-errors-that-cause-rejection": {
         "slug": "top-10-resume-errors-that-cause-rejection",
-        "title": "Top 10 Resume Errors That Cause Rejection (2026 Fix)",
+        "title": "Top 10 Resume Errors That Cause Rejection (2026 Guide)",
         "subtitle": "The critical formatting, typography, and keyword mistakes that trigger instant rejection in 2026 recruiting funnels.",
-        "description": "Is your resume getting silently rejected? Fix the top 10 resume errors ATS scanners hate in 2026. Audit formatting traps, skill bars, and optimize your score now.",
+        "description": "Is your resume getting silently rejected? Fix the top 10 resume errors ATS scanners hate in 2026. Detect formatting traps and boost your score now.",
         "template": "blogs/resume_errors_guide.html",
         "published_date": "2026-10-05",
-        "modified_date": "2026-10-12",
+        "modified_date": "2026-10-13",
         "author": {
             "name": "DreemFolio AI Career Team",
             "role": "Recruitment Operations & Career Mentors",
@@ -106,9 +106,9 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
         "translations": {
             "si": {
-                "title": "CV එකක් Reject වන ATS වැරදි 10ක්",
+                "title": "CV එකක් Reject වන ATS වැරදි 10ක් (2026)",
                 "subtitle": "බොහෝ දෙනෙකුගේ CV පළමු තත්පර 6 තුළ Reject වීමට හේතුවන Formatting, Typography සහ Keyword දෝෂ 10ක්.",
-                "description": "ඔබේ CV එක පළමු තත්පර 6 තුළ Reject වෙනවද? ATS format, keyword සහ typography වැරදි 10 සහ ඒවා නිවැරදි කරගන්නා හැටි මෙතැනින් සම්පූර්ණයෙන්ම කියවන්න.",
+                "description": "ඔබේ CV එක Reject වෙනවද? ATS scanners වලට කියවිය නොහැකි format, keyword සහ layout වැරදි 10 හඳුනාගෙන නිවැරදි කරගන්නා ආකාරය මෙතැනින් කියවන්න.",
                 "category": "CV නිවැරදි කිරීම",
                 "badge": "අත්‍යවශ්‍ය කියවීමක්",
                 "reading_time": "විනාඩි 8ක කියවීමක්",
