@@ -107,7 +107,7 @@
           }
         ],
         "featureList": [
-          "100% ATS Compatibility Keyword Matching",
+          "Single-Column ATS Compatibility Keyword Matching",
           "Classic Clean ATS Resume PDF Generation",
           "Modern Visual Photo CV Designer",
           "AI Cover Letter Generator with Watermark Control",
@@ -122,12 +122,7 @@
         "name": "DreemFolio AI Technology Solutions",
         "url": "https://www.dreemfolio.com/",
         "logo": "https://www.dreemfolio.com/static/images/logo.png",
-        "email": "support@dreemfolio.com",
-        "sameAs": [
-          "https://twitter.com/DreemFolio",
-          "https://linkedin.com/company/dreemfolio",
-          "https://github.com/dreemfolio"
-        ]
+        "email": "support@dreemfolio.com"
       },
       {
         "@type": "WebSite",
@@ -353,7 +348,7 @@
 
       <!-- Subtitle -->
       <p class="max-w-2xl mx-auto text-base sm:text-xl text-slate-300 mb-10 leading-relaxed font-normal">
-        Free online CV maker & ATS checker. Tailor your resume to any job description in under 10 seconds. Generate recruiter-approved single-column ATS PDFs, executive cover letters, and live developer web portfolios.
+        Free online CV maker & ATS checker. Tailor your resume to any job description in under 10 seconds. Generate ATS-friendly single-column PDFs, executive cover letters, and live developer web portfolios.
       </p>
 
       <!-- CTA Buttons Group -->
@@ -505,7 +500,7 @@
                 <span class="text-4xl font-extrabold text-emerald-400">85%+</span>
                 <span class="text-xs text-slate-400 font-semibold">Target Score</span>
               </div>
-              <p class="text-xs text-slate-300 mt-2">Engineered for modern Taleo, Workday & Lever parsing specifications.</p>
+              <p class="text-xs text-slate-300 mt-2">Engineered for modern ATS parsing specifications.</p>
             </div>
             <div class="mt-4 space-y-2">
               <div class="flex justify-between text-[11px] text-slate-400 font-medium">
@@ -529,11 +524,9 @@
             </div>
             <div class="mt-4 flex items-center gap-2">
               <span
-                class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">Workday
-                Ready</span>
+                class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">Single-Column</span>
               <span
-                class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">Greenhouse
-                Ready</span>
+                class="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">Standard Headings</span>
             </div>
           </div>
 
@@ -734,7 +727,7 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
-              <span class="truncate">dreemfolio.com/demo <span class="hidden sm:inline text-slate-600">• 60-Sec Walkthrough</span></span>
+              <span class="truncate">www.dreemfolio.com/app <span class="hidden sm:inline text-slate-600">• Live Builder</span></span>
             </div>
 
             <!-- Top Right Badges -->
@@ -801,7 +794,7 @@
                   Watch 60-Second Product Walkthrough
                 </h3>
                 <p class="text-slate-300 text-xs sm:text-sm mt-1 max-w-md drop-shadow">
-                  Click to watch AI keyword tailoring, real-time ATS 96%+ scoring & PDF download
+                  Click to watch AI keyword tailoring, real-time ATS scoring & PDF download
                 </p>
 
                 <!-- Value Highlights Pills -->
@@ -886,7 +879,7 @@
           <div class="px-4 py-2.5 bg-slate-950 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
             <div class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>Engineered for Workday, Taleo, Greenhouse & Lever ATS Specifications</span>
+              <span>Engineered for Modern ATS Specifications</span>
             </div>
             <div class="flex items-center gap-3">
               <span class="text-slate-500">Fast 4-Step Builder:</span>
@@ -1004,9 +997,9 @@
             <div class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4">
               <i data-lucide="shield-check" class="w-5 h-5"></i>
             </div>
-            <h3 class="text-base font-bold text-white mb-2">Enterprise Zero-Trust Security</h3>
+            <h3 class="text-base font-bold text-white mb-2">Modern Web Security</h3>
             <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Full defense against XSS, SSRF, LFI, and credential abuse with automatic session protection and
+              Built with protections against common web attacks (XSS, SSRF, LFI) with automatic session protection and
               encryption.
             </p>
           </div>
@@ -1279,7 +1272,7 @@
       <div class="text-center max-w-3xl mx-auto mb-14">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider mb-4 shadow-sm">
           <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
-          <span>Rated {{ average_rating | default('4.9') }}/5 by 140+ Verified Job Seekers</span>
+          <span>Rated {{ average_rating | default('4.9') }}/5 by {{ total_reviews | default('140+') }} Verified Job Seekers</span>
         </div>
         <h2 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
           Real Candidates. <br class="hidden sm:inline">
@@ -1359,7 +1352,7 @@
       <!-- Bottom Trust CTA Banner -->
       <div class="mt-14 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-500/30 text-center flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
         <div class="text-left">
-          <h3 class="text-lg sm:text-xl font-black text-white">Join 140+ candidates landing interviews today</h3>
+          <h3 class="text-lg sm:text-xl font-black text-white">Join {{ total_reviews | default('140+') }} candidates landing interviews today</h3>
           <p class="text-slate-400 text-xs sm:text-sm mt-1">Start 100% free with instant ATS scoring, clean PDF export, and custom portfolio preview.</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
@@ -1391,7 +1384,7 @@
         <div class="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
           <button @click="toggleFaq(1)"
             class="w-full px-5 py-4 text-left font-bold text-sm sm:text-base text-white flex justify-between items-center hover:bg-slate-900 transition">
-            <span>What makes DreemFolio resumes 100% ATS compliant?</span>
+            <span>What makes DreemFolio resumes ATS-friendly?</span>
             <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform"
               :class="{'rotate-180': openFaq === 1}"></i>
           </button>
