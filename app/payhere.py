@@ -364,6 +364,7 @@ class PayHereGateway:
     # In-memory OAuth2 Token Cache with Expiry Buffer
     _cached_token: Optional[str] = None
     _token_expires_at: float = 0.0
+    _token_blocked_until: float = 0.0
 
     @classmethod
     def get_oauth_config(cls) -> Dict[str, str]:
@@ -404,6 +405,13 @@ class PayHereGateway:
         if not force_refresh and cls._cached_token and now < (cls._token_expires_at - 60):
             return cls._cached_token
 
+        # Back off if PayHere WAF blocked recently to prevent log spam and request slowdown
+        if not force_refresh and now < cls._token_blocked_until:
+            raise RuntimeError(
+                "PayHere Live OAuth temporarily skipped (Cloudflare 403 backoff active). "
+                "Payment will be verified via PayHere notify_url Webhook."
+            )
+
         cfg = cls.get_oauth_config()
         app_id = cfg["app_id"]
         app_secret = cfg["app_secret"]
@@ -414,7 +422,8 @@ class PayHereGateway:
 
         headers = {
             "Authorization": f"Basic {encoded_cred}",
-            "Content-Type": "application/x-www-form-urlencoded"
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         }
         data = {"grant_type": "client_credentials"}
 
@@ -422,7 +431,8 @@ class PayHereGateway:
             resp = client.post(cfg["token_url"], headers=headers, data=data)
 
         if resp.status_code != 200:
-            if resp.status_code == 403 and "Cloudflare" in resp.text:
+            if resp.status_code == 403:
+                cls._token_blocked_until = now + 180.0  # 3-minute backoff
                 raise RuntimeError(
                     "PayHere Live OAuth blocked by PayHere Cloudflare WAF (HTTP 403). "
                     "Server IP needs whitelisting on PayHere, or payment will be verified via PayHere notify_url Webhook."
@@ -511,7 +521,8 @@ class PayHereGateway:
             search_url = PAYHERE_SEARCH_LIVE_URL if cfg["mode"] == "live" else PAYHERE_SEARCH_SANDBOX_URL
             headers = {
                 "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             }
             with httpx.Client(timeout=15.0) as client:
                 resp = client.get(f"{search_url}?order_id={order_id.strip()}", headers=headers)
@@ -533,7 +544,9 @@ class PayHereGateway:
                 return data["data"]
             return None
         except Exception as e:
-            logger.warning("Error querying PayHere Retrieval API for order %s: %s", order_id, str(e))
+            err_msg = str(e)
+            if "temporarily skipped" not in err_msg:
+                logger.warning("Error querying PayHere Retrieval API for order %s: %s", order_id, err_msg)
             return None
 
     # ═══════════════════════════════════════════════════════════════════
