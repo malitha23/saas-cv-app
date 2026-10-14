@@ -1369,8 +1369,16 @@ async def get_payment_order_status(
         raise HTTPException(status_code=404, detail="Order reference not found")
 
     if order.status in ["initiated", "pending"]:
-        sync_order_status_from_payhere(order, db, background_tasks)
-        db.refresh(order)
+        # PayHere primary verification is via IPN webhook callback (/api/payments/payhere/notify).
+        # Only query external Retrieval API as a secondary fallback if order has been pending for over 60 seconds.
+        order_age = (
+            (datetime.utcnow() - order.created_at).total_seconds()
+            if order.created_at
+            else 0
+        )
+        if order_age > 60:
+            sync_order_status_from_payhere(order, db, background_tasks)
+            db.refresh(order)
 
     return {
         "order_id": order.order_id,
