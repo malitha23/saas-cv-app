@@ -4,29 +4,65 @@ import time
 import json
 import logging
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, Form, File, UploadFile, Response, BackgroundTasks, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    Form,
+    File,
+    UploadFile,
+    Response,
+    BackgroundTasks,
+    Query,
+)
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.database import get_db
-from app.models import User, BankPaymentSlip, OnlinePaymentOrder, PromoCode, PromoCodeUsage
+from app.models import (
+    User,
+    BankPaymentSlip,
+    OnlinePaymentOrder,
+    PromoCode,
+    PromoCodeUsage,
+)
 from app.schemas import (
-    SubscriptionUpgradeRequest, SubscriptionStatusResponse, UserResponse,
-    PayHereInitiateRequest, PayHereInitiateResponse, CheckoutRequest,
-    PlansConfigResponse, CountryPricingResponse, PlanItemConfig,
-    UserRefundRequest, ValidatePromoRequest, ValidatePromoResponse, RedeemFreePromoRequest
+    SubscriptionUpgradeRequest,
+    SubscriptionStatusResponse,
+    UserResponse,
+    PayHereInitiateRequest,
+    PayHereInitiateResponse,
+    CheckoutRequest,
+    PlansConfigResponse,
+    CountryPricingResponse,
+    PlanItemConfig,
+    UserRefundRequest,
+    ValidatePromoRequest,
+    ValidatePromoResponse,
+    RedeemFreePromoRequest,
 )
 from app.auth import (
-    get_current_user, get_optional_user, check_and_update_subscription, get_saas_setting,
-    DEFAULT_FREE_DAILY_AI_LIMIT, DEFAULT_FREE_DAILY_PDF_LIMIT
+    get_current_user,
+    get_optional_user,
+    check_and_update_subscription,
+    get_saas_setting,
+    DEFAULT_FREE_DAILY_AI_LIMIT,
+    DEFAULT_FREE_DAILY_PDF_LIMIT,
 )
 from app.state import build_user_response
-from app.pricing import DEFAULT_COUNTRY_PRICING_DATA, DEFAULT_PLANS_CONFIG_DATA, _get_country_pricing_dict
+from app.pricing import (
+    DEFAULT_COUNTRY_PRICING_DATA,
+    DEFAULT_PLANS_CONFIG_DATA,
+    _get_country_pricing_dict,
+)
 from app.payhere import PayHereGateway
 from app.email_service import (
-    send_user_subscription_confirmed, send_admin_subscription_alert,
-    send_admin_chargeback_alert, send_admin_user_refund_request
+    send_user_subscription_confirmed,
+    send_admin_subscription_alert,
+    send_admin_chargeback_alert,
+    send_admin_user_refund_request,
 )
 
 logger = logging.getLogger("dreemfolio.payments")
@@ -38,7 +74,7 @@ router = APIRouter(tags=["Payments & Subscriptions"])
 async def upgrade_subscription(
     req: SubscriptionUpgradeRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Cryptographically secure subscription upgrade endpoint.
@@ -46,7 +82,10 @@ async def upgrade_subscription(
     """
     tier = req.plan_tier.lower()
     if tier not in ["pro", "elite", "sprint"]:
-        raise HTTPException(status_code=400, detail="Invalid plan tier. Allowed options: 'pro', 'elite', 'sprint'.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid plan tier. Allowed options: 'pro', 'elite', 'sprint'.",
+        )
 
     now = datetime.utcnow()
 
@@ -73,40 +112,85 @@ async def upgrade_subscription(
 
 @router.get("/api/subscription/status", response_model=SubscriptionStatusResponse)
 async def get_subscription_status(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Return detailed subscription quota, validity days remaining, and expiration status."""
     check_and_update_subscription(current_user, db)
     u_resp = build_user_response(current_user, db)
 
     tier = current_user.plan_tier or "free"
-    ai_limit_str = get_saas_setting(db, "free_daily_ai_limit", str(DEFAULT_FREE_DAILY_AI_LIMIT))
+    ai_limit_str = get_saas_setting(
+        db, "free_daily_ai_limit", str(DEFAULT_FREE_DAILY_AI_LIMIT)
+    )
     try:
         ai_limit = int(ai_limit_str)
     except ValueError:
         ai_limit = DEFAULT_FREE_DAILY_AI_LIMIT
 
-    pdf_limit_str = get_saas_setting(db, "free_daily_pdf_limit", str(DEFAULT_FREE_DAILY_PDF_LIMIT))
+    pdf_limit_str = get_saas_setting(
+        db, "free_daily_pdf_limit", str(DEFAULT_FREE_DAILY_PDF_LIMIT)
+    )
     try:
         pdf_limit = int(pdf_limit_str)
     except ValueError:
         pdf_limit = DEFAULT_FREE_DAILY_PDF_LIMIT
 
     features = {
-        "ai_tailoring": "7 Runs (Sprint Pass)" if tier == "sprint" else ("Unlimited" if tier in ["pro", "elite"] else f"{ai_limit} runs/day"),
-        "ats_pdf_download": "2 Downloads (Sprint Pass)" if tier == "sprint" else ("Unlimited" if tier in ["pro", "elite"] else f"{pdf_limit} ATS PDF/day"),
-        "visual_cv_formats": ["classic", "indigo_banner", "emerald_prestige", "tech_noir"] if tier in ["pro", "elite", "sprint"] else ["classic"],
+        "ai_tailoring": (
+            "7 Runs (Sprint Pass)"
+            if tier == "sprint"
+            else ("Unlimited" if tier in ["pro", "elite"] else f"{ai_limit} runs/day")
+        ),
+        "ats_pdf_download": (
+            "2 Downloads (Sprint Pass)"
+            if tier == "sprint"
+            else (
+                "Unlimited" if tier in ["pro", "elite"] else f"{pdf_limit} ATS PDF/day"
+            )
+        ),
+        "visual_cv_formats": (
+            ["classic", "indigo_banner", "emerald_prestige", "tech_noir"]
+            if tier in ["pro", "elite", "sprint"]
+            else ["classic"]
+        ),
         "cloud_autosave": tier in ["pro", "elite", "sprint"],
         "ai_cover_letter": tier in ["pro", "elite", "sprint"],
-        "portfolio_themes": 8 if tier == "elite" else (1 if tier in ["pro", "sprint"] else 0),
+        "portfolio_themes": (
+            8 if tier == "elite" else (1 if tier in ["pro", "sprint"] else 0)
+        ),
         "custom_domain_support": tier == "elite",
         "code_export": tier == "elite",
-        "job_hunter": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Basic (4 vacancies)",
-        "application_copilot": "Unlimited" if tier in ["pro", "elite", "sprint"] else "1 Free Kit / day",
-        "job_tracker": "Unlimited" if tier in ["pro", "elite", "sprint"] else "Up to 3 Jobs",
-        "voice_mock_interview": "Unlimited Full Studio" if tier == "elite" else ("12 Sessions / mo" if tier == "pro" else ("5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions")),
-        "video_conference": "Unlimited Priority" if tier == "elite" else ("12 Sessions / mo" if tier == "pro" else ("5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions"))
+        "job_hunter": (
+            "Unlimited" if tier in ["pro", "elite", "sprint"] else "Basic (4 vacancies)"
+        ),
+        "application_copilot": (
+            "Unlimited" if tier in ["pro", "elite", "sprint"] else "1 Free Kit / day"
+        ),
+        "job_tracker": (
+            "Unlimited" if tier in ["pro", "elite", "sprint"] else "Up to 3 Jobs"
+        ),
+        "voice_mock_interview": (
+            "Unlimited Full Studio"
+            if tier == "elite"
+            else (
+                "12 Sessions / mo"
+                if tier == "pro"
+                else (
+                    "5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions"
+                )
+            )
+        ),
+        "video_conference": (
+            "Unlimited Priority"
+            if tier == "elite"
+            else (
+                "12 Sessions / mo"
+                if tier == "pro"
+                else (
+                    "5 Sessions (Sprint)" if tier == "sprint" else "3 Lifetime Sessions"
+                )
+            )
+        ),
     }
 
     return SubscriptionStatusResponse(
@@ -118,24 +202,32 @@ async def get_subscription_status(
         subscription_days_remaining=u_resp.subscription_days_remaining,
         subscription_validity_label=u_resp.subscription_validity_label,
         daily_ai_generations_count=u_resp.daily_ai_generations_count,
-        daily_generations_limit=7 if tier == "sprint" else (None if tier in ["pro", "elite"] else ai_limit),
+        daily_generations_limit=(
+            7 if tier == "sprint" else (None if tier in ["pro", "elite"] else ai_limit)
+        ),
         daily_generations_remaining=u_resp.daily_generations_remaining,
         daily_pdf_downloads_count=u_resp.daily_pdf_downloads_count,
         daily_pdf_downloads_limit=None if tier in ["pro", "elite"] else pdf_limit,
         daily_pdf_downloads_remaining=u_resp.daily_pdf_downloads_remaining,
         lifetime_ats_downloads_count=u_resp.lifetime_ats_downloads_count,
-        lifetime_ats_downloads_limit=2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 2),
+        lifetime_ats_downloads_limit=(
+            2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 2)
+        ),
         lifetime_ats_downloads_remaining=u_resp.lifetime_ats_downloads_remaining,
         lifetime_visual_downloads_count=u_resp.lifetime_visual_downloads_count,
-        lifetime_visual_downloads_limit=2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 1),
+        lifetime_visual_downloads_limit=(
+            2 if tier == "sprint" else (None if tier in ["pro", "elite"] else 1)
+        ),
         lifetime_visual_downloads_remaining=u_resp.lifetime_visual_downloads_remaining,
         lifetime_cover_letter_downloads_count=u_resp.lifetime_cover_letter_downloads_count,
-        lifetime_cover_letter_downloads_limit=None if tier in ["pro", "elite", "sprint"] else 3,
+        lifetime_cover_letter_downloads_limit=(
+            None if tier in ["pro", "elite", "sprint"] else 3
+        ),
         lifetime_cover_letter_downloads_remaining=u_resp.lifetime_cover_letter_downloads_remaining,
         has_pending_order=u_resp.has_pending_order,
         pending_order=u_resp.pending_order,
         has_pending_slip=u_resp.has_pending_slip,
-        features=features
+        features=features,
     )
 
 
@@ -149,7 +241,11 @@ async def get_bank_transfer_config(db: Session = Depends(get_db)):
         "account_name": get_saas_setting(db, "bank_account_name", "Malitha Sayuranga"),
         "account_number": get_saas_setting(db, "bank_account_number", "800123456789"),
         "branch": get_saas_setting(db, "bank_branch", "Hambanthota Branch"),
-        "instructions": get_saas_setting(db, "bank_transfer_instructions", "Please deposit or transfer the exact amount and enter your registered email or phone number as the payment reference or remark. Upload a clear screenshot or photo of the payment slip below.")
+        "instructions": get_saas_setting(
+            db,
+            "bank_transfer_instructions",
+            "Please deposit or transfer the exact amount and enter your registered email or phone number as the payment reference or remark. Upload a clear screenshot or photo of the payment slip below.",
+        ),
     }
 
 
@@ -162,7 +258,7 @@ async def upload_bank_payment_slip(
     billing_cycle: str = Form("1m"),
     bank_reference: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Candidate uploads bank deposit / online mobile transfer receipt (JPG, PNG, WEBP, PDF).
@@ -170,7 +266,10 @@ async def upload_bank_payment_slip(
     """
     plan = target_plan.lower().strip()
     if plan not in ["pro", "elite", "sprint"]:
-        raise HTTPException(status_code=400, detail="Invalid plan tier. Allowed options: 'pro', 'elite', 'sprint'.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid plan tier. Allowed options: 'pro', 'elite', 'sprint'.",
+        )
 
     valid_cycles = ["1m", "3m", "6m", "12m", "lifetime"]
     cycle = (billing_cycle or "1m").lower().strip()
@@ -181,20 +280,30 @@ async def upload_bank_payment_slip(
     max_slip_size = 5 * 1024 * 1024
     content = await file.read(max_slip_size + 1)
     if len(content) > max_slip_size:
-        raise HTTPException(status_code=413, detail="Receipt file size exceeds the 5MB limit. Please upload a smaller image.")
+        raise HTTPException(
+            status_code=413,
+            detail="Receipt file size exceeds the 5MB limit. Please upload a smaller image.",
+        )
     if not content:
         raise HTTPException(status_code=400, detail="Uploaded slip file is empty.")
 
     filename = (file.filename or "slip.png").strip()
     ext = os.path.splitext(filename)[1].lower()
     if ext not in [".png", ".jpg", ".jpeg", ".webp", ".pdf"]:
-        raise HTTPException(status_code=400, detail="Invalid receipt format. Please upload PNG, JPG, WEBP, or PDF.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid receipt format. Please upload PNG, JPG, WEBP, or PDF.",
+        )
 
     # Ensure uploads/slips directory exists
-    slips_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "uploads", "slips")
+    slips_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "static", "uploads", "slips"
+    )
     os.makedirs(slips_dir, exist_ok=True)
 
-    safe_filename = f"slip_u{current_user.id}_{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
+    safe_filename = (
+        f"slip_u{current_user.id}_{int(time.time())}_{uuid.uuid4().hex[:8]}{ext}"
+    )
     dest_path = os.path.join(slips_dir, safe_filename)
     with open(dest_path, "wb") as f:
         f.write(content)
@@ -209,7 +318,7 @@ async def upload_bank_payment_slip(
         currency=currency.upper().strip(),
         slip_image_url=slip_url,
         bank_reference=bank_reference.strip() if bank_reference else None,
-        status="pending"
+        status="pending",
     )
     db.add(slip)
     db.commit()
@@ -220,14 +329,13 @@ async def upload_bank_payment_slip(
         "message": "Payment slip submitted successfully! Our team will verify and activate your subscription within 1-2 hours.",
         "slip_id": slip.id,
         "status": "pending",
-        "slip_url": slip_url
+        "slip_url": slip_url,
     }
 
 
 @router.get("/api/payments/bank-transfer/my-slips")
 async def get_my_bank_payment_slips(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Retrieve all submitted bank payment slips for the authenticated candidate."""
     slips = db.scalars(
@@ -246,8 +354,12 @@ async def get_my_bank_payment_slips(
             "bank_reference": s.bank_reference,
             "status": s.status,
             "admin_notes": s.admin_notes,
-            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
-            "reviewed_at": s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
+            "created_at": (
+                s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None
+            ),
+            "reviewed_at": (
+                s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
+            ),
         }
         for s in slips
     ]
@@ -255,8 +367,7 @@ async def get_my_bank_payment_slips(
 
 @router.get("/api/payments/my-history")
 async def get_my_payment_history(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """
     Returns complete unified payment & subscription history for the authenticated candidate:
@@ -277,50 +388,70 @@ async def get_my_payment_history(
 
     orders_list = []
     for o in online_orders:
-        orders_list.append({
-            "id": o.id,
-            "order_id": o.order_id,
-            "target_plan": o.target_plan,
-            "amount": o.amount,
-            "currency": o.currency,
-            "gateway": o.gateway or "payhere",
-            "status": o.status,
-            "status_code": o.status_code,
-            "status_message": o.status_message,
-            "payhere_payment_id": o.payhere_payment_id,
-            "payment_method": o.payment_method,
-            "card_no_masked": o.card_no_masked,
-            "refund_requested": bool(getattr(o, "refund_requested", False)),
-            "refund_requested_at": o.refund_requested_at.strftime("%Y-%m-%d %H:%M") if getattr(o, "refund_requested_at", None) else None,
-            "refund_request_reason": getattr(o, "refund_request_reason", None),
-            "payhere_refund_id": o.payhere_refund_id,
-            "refunded_at": o.refunded_at.strftime("%Y-%m-%d %H:%M") if o.refunded_at else None,
-            "billing_cycle": getattr(o, "billing_cycle", "1m") or "1m",
-            "created_at": o.created_at.strftime("%Y-%m-%d %H:%M") if o.created_at else None,
-            "status_url": f"/payment/status?order_id={o.order_id}&status={o.status}",
-            "can_request_refund": (o.status == "success" and not o.payhere_refund_id and not getattr(o, "refund_requested", False))
-        })
+        orders_list.append(
+            {
+                "id": o.id,
+                "order_id": o.order_id,
+                "target_plan": o.target_plan,
+                "amount": o.amount,
+                "currency": o.currency,
+                "gateway": o.gateway or "payhere",
+                "status": o.status,
+                "status_code": o.status_code,
+                "status_message": o.status_message,
+                "payhere_payment_id": o.payhere_payment_id,
+                "payment_method": o.payment_method,
+                "card_no_masked": o.card_no_masked,
+                "refund_requested": bool(getattr(o, "refund_requested", False)),
+                "refund_requested_at": (
+                    o.refund_requested_at.strftime("%Y-%m-%d %H:%M")
+                    if getattr(o, "refund_requested_at", None)
+                    else None
+                ),
+                "refund_request_reason": getattr(o, "refund_request_reason", None),
+                "payhere_refund_id": o.payhere_refund_id,
+                "refunded_at": (
+                    o.refunded_at.strftime("%Y-%m-%d %H:%M") if o.refunded_at else None
+                ),
+                "billing_cycle": getattr(o, "billing_cycle", "1m") or "1m",
+                "created_at": (
+                    o.created_at.strftime("%Y-%m-%d %H:%M") if o.created_at else None
+                ),
+                "status_url": f"/payment/status?order_id={o.order_id}&status={o.status}",
+                "can_request_refund": (
+                    o.status == "success"
+                    and not o.payhere_refund_id
+                    and not getattr(o, "refund_requested", False)
+                ),
+            }
+        )
 
     slips_list = []
     for s in bank_slips:
-        slips_list.append({
-            "id": s.id,
-            "target_plan": s.target_plan,
-            "billing_cycle": getattr(s, "billing_cycle", "1m") or "1m",
-            "amount_paid": s.amount_paid,
-            "currency": s.currency,
-            "slip_image_url": s.slip_image_url,
-            "bank_reference": s.bank_reference,
-            "status": s.status,
-            "admin_notes": s.admin_notes,
-            "created_at": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None,
-            "reviewed_at": s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
-        })
+        slips_list.append(
+            {
+                "id": s.id,
+                "target_plan": s.target_plan,
+                "billing_cycle": getattr(s, "billing_cycle", "1m") or "1m",
+                "amount_paid": s.amount_paid,
+                "currency": s.currency,
+                "slip_image_url": s.slip_image_url,
+                "bank_reference": s.bank_reference,
+                "status": s.status,
+                "admin_notes": s.admin_notes,
+                "created_at": (
+                    s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else None
+                ),
+                "reviewed_at": (
+                    s.reviewed_at.strftime("%Y-%m-%d %H:%M") if s.reviewed_at else None
+                ),
+            }
+        )
 
     return {
         "online_orders": orders_list,
         "bank_slips": slips_list,
-        "total_transactions": len(orders_list) + len(slips_list)
+        "total_transactions": len(orders_list) + len(slips_list),
     }
 
 
@@ -330,43 +461,46 @@ async def get_public_billing_discounts(db: Session = Depends(get_db)):
     return PayHereGateway.get_billing_discounts(db=db)
 
 
-
 @router.post("/api/payments/orders/{order_id}/request-refund")
 async def request_order_refund(
     order_id: str,
     req: UserRefundRequest,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Enables authenticated candidates to request a refund for an eligible paid order.
     Logs request reason, updates order state, and notifies administration immediately.
     """
     order = db.scalars(
-        select(OnlinePaymentOrder)
-        .where(
+        select(OnlinePaymentOrder).where(
             OnlinePaymentOrder.order_id == order_id.strip(),
-            OnlinePaymentOrder.user_id == current_user.id
+            OnlinePaymentOrder.user_id == current_user.id,
         )
     ).first()
 
     if not order:
-        raise HTTPException(status_code=404, detail="Order not found or you do not have permission to view it.")
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found or you do not have permission to view it.",
+        )
 
     if order.status != "success":
         raise HTTPException(
             status_code=400,
-            detail=f"Only successfully completed payments can be refunded. Current status is '{order.status}'."
+            detail=f"Only successfully completed payments can be refunded. Current status is '{order.status}'.",
         )
 
     if order.payhere_refund_id or order.status == "refunded":
-        raise HTTPException(status_code=400, detail="This order has already been refunded.")
+        raise HTTPException(
+            status_code=400, detail="This order has already been refunded."
+        )
 
     if getattr(order, "refund_requested", False):
         raise HTTPException(
             status_code=409,
-            detail="A refund request has already been submitted for this order and is under review."
+            detail="A refund request has already been submitted for this order and is under review.",
         )
 
     reason = req.reason.strip()
@@ -388,17 +522,22 @@ async def request_order_refund(
         reason=reason,
         base_url=PayHereGateway.get_base_url(),
         db=db,
-        background_tasks=background_tasks
+        background_tasks=background_tasks,
     )
 
-    logger.info("Candidate %s submitted refund request for order %s (Reason: %s)", current_user.email, order.order_id, reason)
+    logger.info(
+        "Candidate %s submitted refund request for order %s (Reason: %s)",
+        current_user.email,
+        order.order_id,
+        reason,
+    )
 
     return {
         "success": True,
         "message": "Refund request submitted successfully. Our finance team will review and process your refund shortly.",
         "order_id": order.order_id,
         "refund_requested": True,
-        "refund_requested_at": order.refund_requested_at.strftime("%Y-%m-%d %H:%M")
+        "refund_requested_at": order.refund_requested_at.strftime("%Y-%m-%d %H:%M"),
     }
 
 
@@ -407,7 +546,7 @@ async def initiate_payhere_payment(
     req: PayHereInitiateRequest,
     request: Request,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Generates a secure, cryptographically signed PayHere checkout session.
@@ -423,13 +562,13 @@ async def initiate_payhere_payment(
     db.query(OnlinePaymentOrder).filter(
         OnlinePaymentOrder.gateway == "payhere",
         OnlinePaymentOrder.status == "initiated",
-        OnlinePaymentOrder.created_at < cutoff_time
+        OnlinePaymentOrder.created_at < cutoff_time,
     ).update(
         {
             OnlinePaymentOrder.status: "expired",
-            OnlinePaymentOrder.status_message: "Payment initiation expired after 15 minutes."
+            OnlinePaymentOrder.status_message: "Payment initiation expired after 15 minutes.",
         },
-        synchronize_session=False
+        synchronize_session=False,
     )
     db.commit()
 
@@ -442,7 +581,7 @@ async def initiate_payhere_payment(
         .where(
             OnlinePaymentOrder.user_id == current_user.id,
             OnlinePaymentOrder.status.in_(["initiated", "pending"]),
-            OnlinePaymentOrder.created_at >= active_cutoff
+            OnlinePaymentOrder.created_at >= active_cutoff,
         )
         .order_by(OnlinePaymentOrder.id.desc())
     ).first()
@@ -465,27 +604,30 @@ async def initiate_payhere_payment(
                     "status": existing_active.status,
                     "target_plan": existing_active.target_plan,
                     "status_url": f"/payment/status?order_id={existing_active.order_id}&status={existing_active.status}",
-                    "can_force": True
-                }
+                    "can_force": True,
+                },
             )
 
     if req.force:
         # User explicitly requested a fresh checkout; supersede previous in-flight initiated orders
         db.query(OnlinePaymentOrder).filter(
             OnlinePaymentOrder.user_id == current_user.id,
-            OnlinePaymentOrder.status == "initiated"
+            OnlinePaymentOrder.status == "initiated",
         ).update(
             {
                 OnlinePaymentOrder.status: "superseded",
-                OnlinePaymentOrder.status_message: "Candidate explicitly requested a fresh checkout session."
+                OnlinePaymentOrder.status_message: "Candidate explicitly requested a fresh checkout session.",
             },
-            synchronize_session=False
+            synchronize_session=False,
         )
         db.commit()
-    
+
     plan = req.plan.lower().strip()
     if plan not in ["pro", "elite", "sprint"]:
-        raise HTTPException(status_code=400, detail="Invalid subscription plan. Only 'pro', 'elite', and 'sprint' are supported.")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid subscription plan. Only 'pro', 'elite', and 'sprint' are supported.",
+        )
 
     billing_cycle = (req.billing_cycle or "1m").lower().strip()
     if billing_cycle not in ["1m", "3m", "6m", "12m", "lifetime"]:
@@ -495,7 +637,9 @@ async def initiate_payhere_payment(
     if currency not in ["LKR", "USD"]:
         currency = "LKR"
 
-    verified_amount = PayHereGateway.get_plan_price(plan, currency, billing_cycle=billing_cycle, db=db)
+    verified_amount = PayHereGateway.get_plan_price(
+        plan, currency, billing_cycle=billing_cycle, db=db
+    )
 
     # -----------------------------------------
     # Server-Side Promo Code Discount Security
@@ -506,7 +650,9 @@ async def initiate_payhere_payment(
 
     if req.promo_code and req.promo_code.strip():
         code_clean = req.promo_code.strip().upper()
-        promo = db.scalars(select(PromoCode).where(PromoCode.code == code_clean)).first()
+        promo = db.scalars(
+            select(PromoCode).where(PromoCode.code == code_clean)
+        ).first()
         if promo and promo.is_active:
             is_valid_promo = True
             if promo.expires_at and promo.expires_at < datetime.utcnow():
@@ -517,17 +663,23 @@ async def initiate_payhere_payment(
                 existing_use = db.scalars(
                     select(PromoCodeUsage).where(
                         PromoCodeUsage.promo_code_id == promo.id,
-                        PromoCodeUsage.user_id == current_user.id
+                        PromoCodeUsage.user_id == current_user.id,
                     )
                 ).first()
                 if existing_use:
                     is_valid_promo = False
 
-            if is_valid_promo and (promo.target_plan == "any" or promo.target_plan == plan):
+            if is_valid_promo and (
+                promo.target_plan == "any" or promo.target_plan == plan
+            ):
                 if promo.code_type == "discount_percent" and promo.discount_percent > 0:
-                    discount_amount = round(verified_amount * (promo.discount_percent / 100.0), 2)
+                    discount_amount = round(
+                        verified_amount * (promo.discount_percent / 100.0), 2
+                    )
                     # Safe minimum charge of at least 10 units
-                    final_checkout_amount = max(10.0, round(verified_amount - discount_amount, 2))
+                    final_checkout_amount = max(
+                        10.0, round(verified_amount - discount_amount, 2)
+                    )
                     applied_promo_code = promo.code
 
     # Unique Order Reference
@@ -554,7 +706,7 @@ async def initiate_payhere_payment(
         address=req.address,
         city=req.city,
         amount_override=final_checkout_amount if applied_promo_code else None,
-        db=db
+        db=db,
     )
 
     # Record order in database
@@ -568,7 +720,7 @@ async def initiate_payhere_payment(
         gateway="payhere",
         status="initiated",
         promo_code=applied_promo_code,
-        discount_amount=discount_amount
+        discount_amount=discount_amount,
     )
     db.add(order)
     db.commit()
@@ -583,7 +735,7 @@ async def initiate_payhere_payment(
         amount=final_checkout_amount,
         currency=currency,
         plan=plan,
-        billing_cycle=billing_cycle
+        billing_cycle=billing_cycle,
     )
 
 
@@ -595,7 +747,7 @@ def activate_order_and_upgrade_candidate(
     card_holder_name: Optional[str] = None,
     card_no_masked: Optional[str] = None,
     status_note: Optional[str] = None,
-    background_tasks: Optional[BackgroundTasks] = None
+    background_tasks: Optional[BackgroundTasks] = None,
 ) -> bool:
     """
     Unified, hardened activation function.
@@ -656,25 +808,31 @@ def activate_order_and_upgrade_candidate(
         candidate.subscription_started_at = now
         logger.info(
             "Candidate %s upgraded to %s (Order %s, Payment ID %s, Cycle %s)",
-            candidate.email, candidate.plan_tier.upper(), order.order_id, order.payhere_payment_id, cycle
+            candidate.email,
+            candidate.plan_tier.upper(),
+            order.order_id,
+            order.payhere_payment_id,
+            cycle,
         )
 
         # Record promo code usage
         if getattr(order, "promo_code", None):
             p_code = order.promo_code.strip().upper()
-            promo_obj = db.scalars(select(PromoCode).where(PromoCode.code == p_code)).first()
+            promo_obj = db.scalars(
+                select(PromoCode).where(PromoCode.code == p_code)
+            ).first()
             if promo_obj:
                 existing_usage = db.scalars(
                     select(PromoCodeUsage).where(
                         PromoCodeUsage.promo_code_id == promo_obj.id,
-                        PromoCodeUsage.user_id == candidate.id
+                        PromoCodeUsage.user_id == candidate.id,
                     )
                 ).first()
                 if not existing_usage:
                     new_usage = PromoCodeUsage(
                         promo_code_id=promo_obj.id,
                         user_id=candidate.id,
-                        order_id=order.order_id
+                        order_id=order.order_id,
                     )
                     db.add(new_usage)
                     promo_obj.times_used = (promo_obj.times_used or 0) + 1
@@ -683,7 +841,7 @@ def activate_order_and_upgrade_candidate(
         pending_slips = db.scalars(
             select(BankPaymentSlip).where(
                 BankPaymentSlip.user_id == candidate.id,
-                BankPaymentSlip.status == "pending"
+                BankPaymentSlip.status == "pending",
             )
         ).all()
         for ps in pending_slips:
@@ -692,14 +850,17 @@ def activate_order_and_upgrade_candidate(
         # Affiliate commission
         try:
             from app.services.affiliate_service import record_commission_on_payment
+
             record_commission_on_payment(
                 buyer=candidate,
                 order_amount=order.amount,
                 order_id=order.order_id,
-                db=db
+                db=db,
             )
         except Exception as aff_err:
-            logger.warning("Affiliate hook warning (order %s): %s", order.order_id, aff_err)
+            logger.warning(
+                "Affiliate hook warning (order %s): %s", order.order_id, aff_err
+            )
 
         base_url = PayHereGateway.get_base_url()
 
@@ -714,7 +875,7 @@ def activate_order_and_upgrade_candidate(
             payment_id=order.payhere_payment_id or "Direct",
             duration_days=duration_days,
             base_url=base_url,
-            background_tasks=background_tasks
+            background_tasks=background_tasks,
         )
         send_admin_subscription_alert(
             user_email=candidate.email,
@@ -727,7 +888,7 @@ def activate_order_and_upgrade_candidate(
             method=order.payment_method or "PayHere",
             base_url=base_url,
             db=db,
-            background_tasks=background_tasks
+            background_tasks=background_tasks,
         )
 
     db.commit()
@@ -736,9 +897,7 @@ def activate_order_and_upgrade_candidate(
 
 @router.post("/api/payments/payhere/notify")
 async def payhere_ipn_notify(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
     PayHere Instant Payment Notification (IPN) Webhook Callback.
@@ -749,7 +908,22 @@ async def payhere_ipn_notify(
     """
     form_data = await request.form()
     data = dict(form_data)
-    logger.info("PayHere IPN Webhook Received: %s", {k: v for k, v in data.items() if k != "md5sig"})
+    print("\n========== PAYHERE IPN RECEIVED ==========", flush=True)
+
+    print("MERCHANT ID:", data.get("merchant_id"), flush=True)
+    print("ORDER ID:", data.get("order_id"), flush=True)
+    print("PAYMENT ID:", data.get("payment_id"), flush=True)
+    print("AMOUNT:", data.get("payhere_amount"), flush=True)
+    print("CURRENCY:", data.get("payhere_currency"), flush=True)
+    print("STATUS CODE:", data.get("status_code"), flush=True)
+    print("METHOD:", data.get("method"), flush=True)
+    print("STATUS MESSAGE:", data.get("status_message"), flush=True)
+
+    print("========== END PAYHERE IPN ==========\n", flush=True)
+    logger.info(
+        "PayHere IPN Webhook Received: %s",
+        {k: v for k, v in data.items() if k != "md5sig"},
+    )
 
     merchant_id = str(data.get("merchant_id", "")).strip()
     order_id = str(data.get("order_id", "")).strip()
@@ -764,15 +938,19 @@ async def payhere_ipn_notify(
     card_no = str(data.get("card_no", "")).strip()
 
     if card_no:
-      if len(card_no) > 4:
-        card_no_masked = "*" * (len(card_no) - 4) + card_no[-4:]
-      else:
-        card_no_masked = "****"
+        if len(card_no) > 4:
+            card_no_masked = "*" * (len(card_no) - 4) + card_no[-4:]
+        else:
+            card_no_masked = "****"
     else:
         card_no_masked = None
 
     if not order_id or not status_code_str or not md5sig:
-        logger.error("PayHere IPN missing mandatory fields: order_id=%s, status_code=%s", order_id, status_code_str)
+        logger.error(
+            "PayHere IPN missing mandatory fields: order_id=%s, status_code=%s",
+            order_id,
+            status_code_str,
+        )
         raise HTTPException(status_code=400, detail="Missing required IPN fields.")
 
     config = PayHereGateway.get_config()
@@ -786,15 +964,23 @@ async def payhere_ipn_notify(
         payhere_currency=payhere_currency,
         status_code=status_code_str,
         md5sig=md5sig,
-        merchant_secret=merchant_secret
+        merchant_secret=merchant_secret,
     )
 
     if not is_valid_sig:
-        logger.critical("Security Alert: PayHere IPN signature verification failed! order_id=%s, received_sig=%s", order_id, md5sig)
-        raise HTTPException(status_code=400, detail="Invalid cryptographic IPN signature.")
+        logger.critical(
+            "Security Alert: PayHere IPN signature verification failed! order_id=%s, received_sig=%s",
+            order_id,
+            md5sig,
+        )
+        raise HTTPException(
+            status_code=400, detail="Invalid cryptographic IPN signature."
+        )
 
     # 2. Lookup existing order
-    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    order = db.scalars(
+        select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)
+    ).first()
     if not order:
         logger.error("PayHere IPN received for non-existent order: %s", order_id)
         raise HTTPException(status_code=404, detail="Order reference not found.")
@@ -805,40 +991,50 @@ async def payhere_ipn_notify(
     except (ValueError, TypeError):
         paid_amount_float = 0.0
 
-    if abs(paid_amount_float - order.amount) > 0.01 or payhere_currency != order.currency:
+    if (
+        abs(paid_amount_float - order.amount) > 0.01
+        or payhere_currency != order.currency
+    ):
         logger.critical(
             "Price Tampering Detected! Order %s expected %s %s, received %s %s",
-            order_id, order.currency, order.amount, payhere_currency, paid_amount_float
+            order_id,
+            order.currency,
+            order.amount,
+            payhere_currency,
+            paid_amount_float,
         )
         order.status = "amount_tampered"
         order.status_message = f"Tampered: Paid {payhere_currency} {payhere_amount} vs Expected {order.currency} {order.amount}"
-        sanitized_tamper = {k: v for k, v in data.items() if k not in ["merchant_secret", "md5sig"]}
+        sanitized_tamper = {
+            k: v for k, v in data.items() if k not in ["merchant_secret", "md5sig"]
+        }
         if "card_no" in sanitized_tamper:
             sanitized_tamper["card_no"] = card_no_masked
         order.raw_ipn_data = json.dumps(sanitized_tamper)
         db.commit()
-        raise HTTPException(status_code=400, detail="Payment amount or currency mismatch.")
+        raise HTTPException(
+            status_code=400, detail="Payment amount or currency mismatch."
+        )
 
     try:
         status_code_int = int(status_code_str)
     except ValueError:
         status_code_int = -99
 
-    # Idempotency check: If order is already success, don't duplicate upgrades or emails
-    is_success_notification = (
-        status_code_int in [2, 1]
-        or status_message.upper() in ["AUTHORIZED", "AUTHORIZATION", "SUCCESS", "COMPLETED", "CAPTURED", "CAPTURE", "SETTLED"]
-    )
+    # PayHere Checkout API documentation strictly defines status_code == 2 as success for IPN callbacks
+    is_success_notification = status_code_int == 2
     if is_success_notification and order.status == "success":
         logger.info(
             "Duplicate PayHere success IPN ignored (idempotent): order_id=%s payment_id=%s",
             order_id,
-            payment_id
+            payment_id,
         )
         return Response(content="OK", status_code=200, media_type="text/plain")
 
     # Sanitize raw IPN data (never store raw secrets or unmasked cards in audit logs)
-    sanitized_ipn = {k: v for k, v in data.items() if k not in ["merchant_secret", "md5sig"]}
+    sanitized_ipn = {
+        k: v for k, v in data.items() if k not in ["merchant_secret", "md5sig"]
+    }
     if "card_no" in sanitized_ipn:
         sanitized_ipn["card_no"] = card_no_masked
 
@@ -862,42 +1058,58 @@ async def payhere_ipn_notify(
             card_holder_name=card_holder_name,
             card_no_masked=card_no_masked,
             status_note=status_message or "Verified via PayHere IPN",
-            background_tasks=background_tasks
+            background_tasks=background_tasks,
         )
 
     elif status_code_int == 0:
         # STATUS: PENDING (0)
         order.status = "pending"
-        order.status_message = status_message or "Payment is pending clearance from issuing bank or PayHere."
+        order.status_message = (
+            status_message
+            or "Payment is pending clearance from issuing bank or PayHere."
+        )
         logger.info("PayHere Payment Pending (0): Order %s", order_id)
 
     elif status_code_int == -1:
         # STATUS: CANCELED (-1)
         order.status = "canceled"
-        order.status_message = status_message or "Payment was canceled by candidate on PayHere portal."
+        order.status_message = (
+            status_message or "Payment was canceled by candidate on PayHere portal."
+        )
         logger.info("PayHere Payment Canceled (-1): Order %s", order_id)
 
     elif status_code_int == -2:
         # STATUS: FAILED (-2)
         order.status = "failed"
-        order.status_message = status_message or "Payment failed or declined by card network."
-        logger.warning("PayHere Payment Failed (-2): Order %s, Reason: %s", order_id, order.status_message)
+        order.status_message = (
+            status_message or "Error completing the payment. Insufficient Funds."
+        )
+        logger.warning(
+            "PayHere Payment Failed (-2): Order %s, Reason: %s",
+            order_id,
+            order.status_message,
+        )
 
     elif status_code_int == -3:
         # STATUS: CHARGEDBACK (-3)
         order.status = "chargedback"
-        order.status_message = status_message or "Chargeback or dispute filed by cardholder."
+        order.status_message = (
+            status_message or "Chargeback or dispute filed by cardholder."
+        )
         candidate = db.get(User, order.user_id)
         if candidate:
             now = datetime.utcnow()
-            expected_plan = "pro" if order.target_plan == "sprint" else order.target_plan
+            expected_plan = (
+                "pro" if order.target_plan == "sprint" else order.target_plan
+            )
             if candidate.plan_tier == expected_plan:
                 candidate.plan_tier = "free"
                 candidate.subscription_status = "expired"
                 candidate.subscription_expires_at = now
                 logger.warning(
                     "User %s subscription immediately revoked to FREE following chargeback on order %s",
-                    candidate.email, order.order_id
+                    candidate.email,
+                    order.order_id,
                 )
 
             # Dispatch urgent security alert to administrators
@@ -911,9 +1123,13 @@ async def payhere_ipn_notify(
                 target_plan=order.target_plan,
                 base_url=PayHereGateway.get_base_url(),
                 db=db,
-                background_tasks=background_tasks
+                background_tasks=background_tasks,
             )
-        logger.critical("SECURITY AUDIT: PayHere Payment Charged Back (-3): Order %s, Payment ID %s", order_id, payment_id)
+        logger.critical(
+            "SECURITY AUDIT: PayHere Payment Charged Back (-3): Order %s, Payment ID %s",
+            order_id,
+            payment_id,
+        )
 
     db.commit()
     return Response(content="OK", status_code=200, media_type="text/plain")
@@ -922,7 +1138,7 @@ async def payhere_ipn_notify(
 def sync_order_status_from_payhere(
     order: OnlinePaymentOrder,
     db: Session,
-    background_tasks: Optional[BackgroundTasks] = None
+    background_tasks: Optional[BackgroundTasks] = None,
 ) -> str:
     """
     Directly queries PayHere Retrieval API to check if an initiated/pending order has succeeded.
@@ -948,14 +1164,31 @@ def sync_order_status_from_payhere(
     card_no = method_data.get("card_no") or ""
     card_name = method_data.get("card_customer_name") or ""
 
-    # PayHere statuses for approved payments: RECEIVED, SUCCESS, COMPLETED, AUTHORIZED, AUTHORIZATION, CAPTURED, SETTLED
-    is_success = (
-        payhere_status in [
-            "RECEIVED", "SUCCESS", "COMPLETED", "AUTHORIZED", "AUTHORIZATION",
-            "CAPTURED", "CAPTURE", "SETTLED"
-        ]
-        or status_code_val in ["2", "1"]
-    )
+    # Anti-tampering check: Validate retrieved amount and currency against database order
+    retrieved_amount = payment_data.get("amount") or payment_data.get("payhere_amount")
+    retrieved_currency = str(payment_data.get("currency") or payment_data.get("payhere_currency") or "").upper().strip()
+    if retrieved_amount is not None:
+        try:
+            if abs(float(retrieved_amount) - order.amount) > 0.01:
+                logger.critical("Retrieval API Amount Mismatch for order %s: expected %s, got %s", order.order_id, order.amount, retrieved_amount)
+                return order.status
+        except (ValueError, TypeError):
+            pass
+    if retrieved_currency and retrieved_currency != order.currency.upper().strip():
+        logger.critical("Retrieval API Currency Mismatch for order %s: expected %s, got %s", order.order_id, order.currency, retrieved_currency)
+        return order.status
+
+    # PayHere statuses for approved payments in Retrieval API: RECEIVED, SUCCESS, COMPLETED, AUTHORIZED, CAPTURED, SETTLED
+    is_success = payhere_status in [
+        "RECEIVED",
+        "SUCCESS",
+        "COMPLETED",
+        "AUTHORIZED",
+        "AUTHORIZATION",
+        "CAPTURED",
+        "CAPTURE",
+        "SETTLED",
+    ]
 
     if is_success:
         activate_order_and_upgrade_candidate(
@@ -966,7 +1199,7 @@ def sync_order_status_from_payhere(
             card_holder_name=card_name,
             card_no_masked=card_no,
             status_note=f"Payment verified via PayHere Retrieval API ({payhere_status or 'Success'})",
-            background_tasks=background_tasks
+            background_tasks=background_tasks,
         )
         return "success"
     elif payhere_status in ["FAILED", "CHARGEBACK"]:
@@ -992,7 +1225,7 @@ async def payhere_return_redirect(
     request: Request,
     background_tasks: BackgroundTasks,
     order_id: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     PayHere return redirect URL. Handles both GET and POST requests.
@@ -1008,7 +1241,11 @@ async def payhere_return_redirect(
 
     status = "pending"
     if effective_order_id:
-        order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
+        order = db.scalars(
+            select(OnlinePaymentOrder).where(
+                OnlinePaymentOrder.order_id == effective_order_id
+            )
+        ).first()
         if order:
             if order.status != "success":
                 resolved = sync_order_status_from_payhere(order, db, background_tasks)
@@ -1019,14 +1256,19 @@ async def payhere_return_redirect(
                 else:
                     if order.status == "initiated":
                         order.status = "pending"
-                        order.status_message = "Payment submitted on PayHere; awaiting gateway clearance."
+                        order.status_message = (
+                            "Payment submitted on PayHere; awaiting gateway clearance."
+                        )
                         db.commit()
                         db.refresh(order)
                     status = "pending"
             else:
                 status = "success"
 
-    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status={status}", status_code=303)
+    return RedirectResponse(
+        url=f"/payment/status?order_id={effective_order_id or ''}&status={status}",
+        status_code=303,
+    )
 
 
 @router.api_route("/api/payments/payhere/cancel", methods=["GET", "POST"])
@@ -1034,7 +1276,7 @@ async def payhere_cancel_redirect(
     request: Request,
     background_tasks: BackgroundTasks,
     order_id: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     PayHere cancel redirect URL. Handles both GET and POST requests.
@@ -1050,25 +1292,36 @@ async def payhere_cancel_redirect(
 
     status = "canceled"
     if effective_order_id:
-        order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == effective_order_id)).first()
+        order = db.scalars(
+            select(OnlinePaymentOrder).where(
+                OnlinePaymentOrder.order_id == effective_order_id
+            )
+        ).first()
         if order:
             # Active check with PayHere Retrieval API first
-            resolved_status = sync_order_status_from_payhere(order, db, background_tasks)
+            resolved_status = sync_order_status_from_payhere(
+                order, db, background_tasks
+            )
             if resolved_status == "success":
                 status = "success"
             elif order.status in ["initiated", "pending"]:
                 order.status = "canceled"
-                order.status_message = "Payment canceled by user during PayHere checkout."
+                order.status_message = (
+                    "Payment canceled by user during PayHere checkout."
+                )
                 db.commit()
 
-    return RedirectResponse(url=f"/payment/status?order_id={effective_order_id or ''}&status={status}", status_code=303)
+    return RedirectResponse(
+        url=f"/payment/status?order_id={effective_order_id or ''}&status={status}",
+        status_code=303,
+    )
 
 
 @router.post("/api/payments/orders/{order_id}/cancel")
 async def cancel_pending_order(
     order_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Candidate cancels their own in-flight initiated or pending payment order.
@@ -1076,7 +1329,7 @@ async def cancel_pending_order(
     """
     stmt = select(OnlinePaymentOrder).where(
         OnlinePaymentOrder.order_id == order_id,
-        OnlinePaymentOrder.user_id == current_user.id
+        OnlinePaymentOrder.user_id == current_user.id,
     )
     order = db.scalars(stmt).first()
     if not order:
@@ -1091,28 +1344,28 @@ async def cancel_pending_order(
             "success": True,
             "message": f"Order #{order_id} has been canceled.",
             "order_id": order_id,
-            "status": "canceled"
+            "status": "canceled",
         }
 
     return {
         "success": False,
         "message": f"Order #{order_id} is already in '{order.status}' state.",
         "order_id": order_id,
-        "status": order.status
+        "status": order.status,
     }
 
 
 @router.get("/api/payments/orders/{order_id}/status")
 async def get_payment_order_status(
-    order_id: str,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    order_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
     Returns verified status for a specific payment order.
     Actively checks PayHere Retrieval API if status is still initiated or pending.
     """
-    order = db.scalars(select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)).first()
+    order = db.scalars(
+        select(OnlinePaymentOrder).where(OnlinePaymentOrder.order_id == order_id)
+    ).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order reference not found")
 
@@ -1131,7 +1384,7 @@ async def get_payment_order_status(
         "payhere_payment_id": order.payhere_payment_id,
         "payment_method": order.payment_method,
         "created_at": order.created_at.isoformat() if order.created_at else None,
-        "updated_at": order.updated_at.isoformat() if order.updated_at else None
+        "updated_at": order.updated_at.isoformat() if order.updated_at else None,
     }
 
 
@@ -1141,7 +1394,7 @@ async def create_checkout(req: CheckoutRequest):
     tier_map = {
         "single": ("Single ATS Pass ($3)", "$3"),
         "monthly": ("Monthly Pro Unlimited + Live Portfolio ($9/mo)", "$9/mo"),
-        "lifetime": ("Lifetime Career Pass + Custom Domain ($29)", "$29")
+        "lifetime": ("Lifetime Career Pass + Custom Domain ($29)", "$29"),
     }
     tier_info = tier_map.get(req.tier, ("Monthly Pro Pass ($9/mo)", "$9/mo"))
     return {
@@ -1150,7 +1403,7 @@ async def create_checkout(req: CheckoutRequest):
         "plan_name": tier_info[0],
         "checkout_url": "https://lemonsqueezy.com/checkout/demo",
         "mock_unlocked": True,
-        "message": f"Successfully activated {tier_info[0]}. Unlimited ATS Downloads, Custom Private Domains & Live Hosted Portfolio Unlocked!"
+        "message": f"Successfully activated {tier_info[0]}. Unlimited ATS Downloads, Custom Private Domains & Live Hosted Portfolio Unlocked!",
     }
 
 
@@ -1158,7 +1411,9 @@ async def create_checkout(req: CheckoutRequest):
 async def get_subscription_plans(db: Session = Depends(get_db)):
     """Fetch default dynamically configured subscription plans."""
     country_dict = _get_country_pricing_dict(db)
-    default_plans = country_dict.get("DEFAULT", {}).get("plans", DEFAULT_PLANS_CONFIG_DATA)
+    default_plans = country_dict.get("DEFAULT", {}).get(
+        "plans", DEFAULT_PLANS_CONFIG_DATA
+    )
     return PlansConfigResponse(plans=[PlanItemConfig(**p) for p in default_plans])
 
 
@@ -1167,7 +1422,7 @@ async def get_country_subscription_plans(
     request: Request,
     country: Optional[str] = None,
     currency: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Public Endpoint: Dynamic Purchasing Power Parity (PPP) Pricing Engine.
@@ -1189,10 +1444,17 @@ async def get_country_subscription_plans(
         if (currency or "").strip().upper() == "LKR" and "LK" in all_countries:
             matched_config = all_countries["LK"]
         else:
-            matched_config = all_countries.get("DEFAULT", DEFAULT_COUNTRY_PRICING_DATA["DEFAULT"])
+            matched_config = all_countries.get(
+                "DEFAULT", DEFAULT_COUNTRY_PRICING_DATA["DEFAULT"]
+            )
 
     available_countries_list = [
-        {"code": k, "name": v.get("country_name", k), "currency": v.get("currency_code", "USD"), "symbol": v.get("currency_symbol", "$")}
+        {
+            "code": k,
+            "name": v.get("country_name", k),
+            "currency": v.get("currency_code", "USD"),
+            "symbol": v.get("currency_symbol", "$"),
+        }
         for k, v in all_countries.items()
     ]
 
@@ -1205,7 +1467,7 @@ async def get_country_subscription_plans(
         active_currency_symbol=matched_config.get("currency_symbol", "$"),
         sprint_price=matched_config.get("sprint_price", "$4.99"),
         plans=[PlanItemConfig(**p) for p in matched_config.get("plans", [])],
-        available_countries=available_countries_list
+        available_countries=available_countries_list,
     )
 
 
@@ -1213,11 +1475,12 @@ async def get_country_subscription_plans(
 # PROMO CODE VALIDATION & FREE PASS REDEMPTION
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @router.post("/api/promo/validate", response_model=ValidatePromoResponse)
 async def validate_promo_code(
     payload: ValidatePromoRequest,
     current_user: Optional[User] = Depends(get_optional_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Validates a coupon / promo code before checkout or free redemption.
@@ -1232,27 +1495,33 @@ async def validate_promo_code(
         return ValidatePromoResponse(valid=False, message="Invalid promo code.")
 
     if promo.expires_at and promo.expires_at < datetime.utcnow():
-        return ValidatePromoResponse(valid=False, message="This promo code has expired.")
+        return ValidatePromoResponse(
+            valid=False, message="This promo code has expired."
+        )
 
     if promo.max_uses > 0 and promo.times_used >= promo.max_uses:
-        return ValidatePromoResponse(valid=False, message="This promo code has reached its maximum redemptions.")
+        return ValidatePromoResponse(
+            valid=False, message="This promo code has reached its maximum redemptions."
+        )
 
     plan = (payload.target_plan or "pro").lower().strip()
     if promo.target_plan != "any" and promo.target_plan != plan:
         return ValidatePromoResponse(
             valid=False,
-            message=f"This promo code is only valid for the {promo.target_plan.upper()} plan."
+            message=f"This promo code is only valid for the {promo.target_plan.upper()} plan.",
         )
 
     if current_user:
         existing_use = db.scalars(
             select(PromoCodeUsage).where(
                 PromoCodeUsage.promo_code_id == promo.id,
-                PromoCodeUsage.user_id == current_user.id
+                PromoCodeUsage.user_id == current_user.id,
             )
         ).first()
         if existing_use:
-            return ValidatePromoResponse(valid=False, message="You have already redeemed this promo code.")
+            return ValidatePromoResponse(
+                valid=False, message="You have already redeemed this promo code."
+            )
 
     # Calculate discount / benefits
     cycle = (payload.billing_cycle or "1m").lower().strip()
@@ -1280,7 +1549,7 @@ async def validate_promo_code(
         free_days=promo.free_days,
         discount_amount=discount_amount,
         final_amount=final_amount,
-        currency="LKR"
+        currency="LKR",
     )
 
 
@@ -1288,7 +1557,7 @@ async def validate_promo_code(
 async def redeem_free_promo_code(
     payload: RedeemFreePromoRequest,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Instantly activates a Free Pass promo code directly to the authenticated candidate account.
@@ -1305,32 +1574,42 @@ async def redeem_free_promo_code(
     if promo.code_type != "free_pass":
         raise HTTPException(
             status_code=400,
-            detail="This code is a discount coupon, not a free pass. Please apply it during regular checkout."
+            detail="This code is a discount coupon, not a free pass. Please apply it during regular checkout.",
         )
 
     if promo.expires_at and promo.expires_at < datetime.utcnow():
         raise HTTPException(status_code=400, detail="This promo code has expired.")
 
     if promo.max_uses > 0 and promo.times_used >= promo.max_uses:
-        raise HTTPException(status_code=400, detail="This promo code has reached its maximum redemptions.")
+        raise HTTPException(
+            status_code=400,
+            detail="This promo code has reached its maximum redemptions.",
+        )
 
     # Single-use security check
     existing_use = db.scalars(
         select(PromoCodeUsage).where(
             PromoCodeUsage.promo_code_id == promo.id,
-            PromoCodeUsage.user_id == current_user.id
+            PromoCodeUsage.user_id == current_user.id,
         )
     ).first()
     if existing_use:
-        raise HTTPException(status_code=400, detail="You have already redeemed this promo code.")
+        raise HTTPException(
+            status_code=400, detail="You have already redeemed this promo code."
+        )
 
     # Activate free days
     now = datetime.utcnow()
     tier = promo.target_plan if promo.target_plan in ["pro", "elite"] else "pro"
     current_user.plan_tier = tier
 
-    if current_user.subscription_expires_at and current_user.subscription_expires_at > now:
-        current_user.subscription_expires_at = current_user.subscription_expires_at + timedelta(days=promo.free_days)
+    if (
+        current_user.subscription_expires_at
+        and current_user.subscription_expires_at > now
+    ):
+        current_user.subscription_expires_at = (
+            current_user.subscription_expires_at + timedelta(days=promo.free_days)
+        )
     else:
         current_user.subscription_expires_at = now + timedelta(days=promo.free_days)
 
@@ -1339,15 +1618,16 @@ async def redeem_free_promo_code(
         current_user.subscription_started_at = now
 
     # Record promo code usage
-    usage = PromoCodeUsage(
-        promo_code_id=promo.id,
-        user_id=current_user.id
-    )
+    usage = PromoCodeUsage(promo_code_id=promo.id, user_id=current_user.id)
     db.add(usage)
     promo.times_used = (promo.times_used or 0) + 1
     db.commit()
     db.refresh(current_user)
 
-    logger.info("Candidate %s successfully redeemed free pass code %s (+%d days)", current_user.email, promo.code, promo.free_days)
+    logger.info(
+        "Candidate %s successfully redeemed free pass code %s (+%d days)",
+        current_user.email,
+        promo.code,
+        promo.free_days,
+    )
     return build_user_response(current_user, db)
-
