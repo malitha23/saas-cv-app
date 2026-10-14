@@ -3,7 +3,7 @@ import json
 import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Request, Response, BackgroundTasks, Query, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -309,11 +309,13 @@ async def serve_manifest():
 
 @router.get("/favicon.ico")
 async def serve_favicon():
-    """Serve SVG favicon for root icon requests."""
-    svg_path = os.path.join(static_dir, "favicon.svg")
-    if os.path.exists(svg_path):
-        with open(svg_path, "r", encoding="utf-8") as f:
-            return Response(content=f.read(), media_type="image/svg+xml")
+    """Serve authentic DreemFolio favicon for root icon requests."""
+    ico_path = os.path.join(static_dir, "favicon.ico")
+    if os.path.exists(ico_path):
+        return FileResponse(ico_path, media_type="image/x-icon")
+    png_path = os.path.join(static_dir, "images", "logo.png")
+    if os.path.exists(png_path):
+        return FileResponse(png_path, media_type="image/png")
     return Response(content="", status_code=204)
 
 
