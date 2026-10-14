@@ -611,27 +611,48 @@ async def admin_process_payhere_refund(
     order.status = "refund_processing"
     db.commit()
 
-    # 2. Execute Refund via PayHere Gateway
-    try:
-        refund_res = PayHereGateway.process_refund(
-            payment_id=order.payhere_payment_id,
-            description=req.reason,
-            amount=req.amount
+    # 2. Execute Refund via PayHere Gateway OR Record Manual Refund
+    if getattr(req, "manual_refund", False):
+        refund_id = (
+            req.refund_id.strip()
+            if getattr(req, "refund_id", None) and req.refund_id.strip()
+            else f"MANUAL-{int(datetime.datetime.utcnow().timestamp())}"
         )
-    except Exception as e:
-        order.status = "success"
-        db.commit()
-        logger.error("PayHere Refund Gateway Exception: %s", str(e))
-        raise HTTPException(status_code=400, detail=f"Gateway communication failed: {str(e)}")
-
-    if not refund_res.get("success"):
-        order.status = "success"
-        db.commit()
-        logger.warning("PayHere Refund Rejected: %s", refund_res.get("msg"))
-        raise HTTPException(status_code=400, detail=refund_res.get("msg", "Refund was rejected by PayHere."))
-
-    # 3. Success State & Audit Trail Persistence
-    refund_id = refund_res.get("refund_id") or "CONFIRMED"
+    else:
+        try:
+            refund_res = PayHereGateway.process_refund(
+                payment_id=order.payhere_payment_id,
+                description=req.reason,
+                amount=req.amount,
+            )
+            if not refund_res.get("success"):
+                order.status = "success"
+                db.commit()
+                logger.warning("PayHere Refund Rejected: %s", refund_res.get("msg"))
+                raise HTTPException(
+                    status_code=400,
+                    detail=refund_res.get("msg", "Refund was rejected by PayHere."),
+                )
+            refund_id = refund_res.get("refund_id") or "CONFIRMED"
+        except HTTPException:
+            raise
+        except Exception as e:
+            order.status = "success"
+            db.commit()
+            err_msg = str(e)
+            if "403" in err_msg or "Cloudflare" in err_msg:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "PayHere Live Refund API is blocked by Cloudflare (HTTP 403) pending server IP whitelisting by support@payhere.lk. "
+                        "Please issue the refund directly in your PayHere Merchant Portal (https://www.payhere.lk -> Payments), "
+                        "then check 'Record Manual / Portal Refund' in this modal to revoke the Pro subscription in DreemFolio."
+                    ),
+                )
+            logger.error("PayHere Refund Gateway Exception: %s", err_msg)
+            raise HTTPException(
+                status_code=400, detail=f"Gateway communication failed: {err_msg}"
+            )
     now = datetime.datetime.utcnow()
 
     order.status = "refunded"

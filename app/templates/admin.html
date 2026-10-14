@@ -3347,6 +3347,8 @@
         showRefundModal: false,
         selectedRefundOrder: null,
         refundReason: '',
+        isManualRefund: false,
+        manualRefundId: '',
         isSubmittingRefund: false,
         adminDiscounts: {
           "3m": { "discount_percent": 15, "label": "Save 15%" },
@@ -4113,6 +4115,8 @@
         openRefundModal(ord) {
           this.selectedRefundOrder = ord;
           this.refundReason = ord.refund_request_reason ? `Customer request: ${ord.refund_request_reason}` : '';
+          this.isManualRefund = false;
+          this.manualRefundId = '';
           this.showRefundModal = true;
           this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
         },
@@ -4130,7 +4134,9 @@
               },
               body: JSON.stringify({
                 order_id: this.selectedRefundOrder.order_id,
-                reason: this.refundReason.trim()
+                reason: this.refundReason.trim(),
+                manual_refund: this.isManualRefund,
+                refund_id: this.manualRefundId.trim() || null
               })
             });
             const data = await res.json();
@@ -5328,6 +5334,26 @@
                   class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700">
             Cancellation
           </button>
+        </div>
+      </div>
+
+      <!-- Manual / Portal Refund Option -->
+      <div class="rounded-xl bg-slate-950/80 border border-slate-800 p-3 space-y-2 text-xs">
+        <label class="flex items-start gap-2.5 cursor-pointer select-none">
+          <input type="checkbox" x-model="isManualRefund" class="mt-0.5 rounded border-slate-700 bg-slate-900 text-rose-500 focus:ring-0">
+          <div>
+            <span class="font-semibold text-slate-200">Record Manual / Portal Refund</span>
+            <p class="text-[11px] text-slate-400 leading-relaxed mt-0.5">
+              Check this if you already refunded via PayHere Portal (<a href="https://www.payhere.lk" target="_blank" class="text-indigo-400 underline">payhere.lk</a>), or if the Live API is blocked pending IP whitelisting. This safely downgrades the user to Free without calling the gateway API.
+            </p>
+          </div>
+        </label>
+        <div x-show="isManualRefund" x-cloak class="pt-1.5 border-t border-slate-800/80">
+          <label class="block text-[11px] font-semibold text-slate-400 mb-1">
+            PayHere Refund Reference ID (Optional):
+          </label>
+          <input type="text" x-model="manualRefundId" placeholder="e.g. 560034010257 (Leave blank to auto-generate)"
+                 class="w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-mono">
         </div>
       </div>
 

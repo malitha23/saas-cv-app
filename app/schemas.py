@@ -1387,6 +1387,14 @@ class AdminRefundRequest(BaseModel):
         default=None,
         description="Optional partial refund amount. If omitted, full order amount is refunded",
     )
+    manual_refund: bool = Field(
+        default=False,
+        description="If true, marks order as refunded manually without calling PayHere REST API (e.g. if already refunded inside PayHere Portal)"
+    )
+    refund_id: Optional[str] = Field(
+        default=None,
+        description="Optional PayHere refund reference number from Merchant Portal"
+    )
 
 
 class AdminRefundResponse(BaseModel):

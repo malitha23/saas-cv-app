@@ -463,7 +463,7 @@ class PayHereGateway:
         Secured with OAuth Bearer Token and automatic 401 retry.
         """
         cfg = cls.get_oauth_config()
-        token = cls.get_access_token()
+        token = cls.get_access_token(force_refresh=True)
 
         payload: Dict[str, Any] = {
             "payment_id": str(payment_id).strip(),
