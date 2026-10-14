@@ -832,7 +832,6 @@ def activate_order_and_upgrade_candidate(
                     new_usage = PromoCodeUsage(
                         promo_code_id=promo_obj.id,
                         user_id=candidate.id,
-                        order_id=order.order_id,
                     )
                     db.add(new_usage)
                     promo_obj.times_used = (promo_obj.times_used or 0) + 1
