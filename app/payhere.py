@@ -422,7 +422,12 @@ class PayHereGateway:
             resp = client.post(cfg["token_url"], headers=headers, data=data)
 
         if resp.status_code != 200:
-            error_body = resp.text
+            if resp.status_code == 403 and "Cloudflare" in resp.text:
+                raise RuntimeError(
+                    "PayHere Live OAuth blocked by PayHere Cloudflare WAF (HTTP 403). "
+                    "Server IP needs whitelisting on PayHere, or payment will be verified via PayHere notify_url Webhook."
+                )
+            error_body = resp.text[:300]
             raise RuntimeError(f"PayHere OAuth Authentication failed (HTTP {resp.status_code}): {error_body}")
 
         token_data = resp.json()
