@@ -115,7 +115,7 @@ function resumeApp() {
     authMode: 'login', // 'login' or 'register'
     authPromptMessage: '',
     pendingAction: null,
-    authForm: { email: '', password: '', full_name: '' },
+    authForm: { email: '', password: '', full_name: '', account_type: 'candidate', company_name: '' },
     authError: '',
     isSubmittingAuth: false,
     otpCode: '',
@@ -270,6 +270,21 @@ function resumeApp() {
 
     // Interactive Quota Dropdown Popover in Header
     showQuotaDropdown: false,
+
+    // B2B Business Studio & Magic Candidate Onboarding State
+    showBusinessModal: false,
+    businessActiveTab: 'onboard', // 'onboard', 'candidates', 'wallet'
+    bizOnboardingFile: null,
+    bizOnboardingEmail: '',
+    bizOnboardingRole: '',
+    isBizOnboardingLoading: false,
+    bizOnboardingStatusText: '',
+    bizOnboardingResult: null,
+    bizCopyTip: '',
+    businessCandidatesList: [],
+    isBizLoadingCandidates: false,
+    businessWalletTransactions: [],
+    isBuyingCreditPack: false,
 
     // Unified In-App Dialog Modal State (Replacing browser alert and confirm)
     showAppDialog: false,
@@ -3053,6 +3068,8 @@ function resumeApp() {
           email: this.authForm.email ? this.authForm.email.trim() : '',
           password: this.authForm.password,
           full_name: this.authForm.full_name ? this.authForm.full_name.trim() : 'Candidate',
+          account_type: this.authForm.account_type || 'candidate',
+          company_name: this.authForm.company_name ? this.authForm.company_name.trim() : null
         };
         const refStored = this.getActiveReferralCode();
         if (refStored) {
@@ -3960,6 +3977,202 @@ function resumeApp() {
         console.warn('Could not fetch saved resumes:', err);
       }
       return [];
+    },
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // B2B BUSINESS STUDIO & MAGIC CANDIDATE ONBOARDING METHODS
+    // ═════════════════════════════════════════════════════════════════════════
+    async openBusinessModal() {
+      if (!this.currentUser) {
+        this.openAuthModal('login');
+        return;
+      }
+      this.showBusinessModal = true;
+      this.businessActiveTab = 'onboard';
+      this.bizOnboardingResult = null;
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      await Promise.all([
+        this.loadBusinessCandidates(),
+        this.loadBusinessWallet()
+      ]);
+    },
+
+    async loadBusinessCandidates() {
+      const token = localStorage.getItem('saas_token');
+      if (!token) return;
+      this.isBizLoadingCandidates = true;
+      try {
+        const res = await fetch('/api/business/candidates', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          this.businessCandidatesList = await res.json();
+        }
+      } catch (err) {
+        console.warn('Could not fetch business candidates:', err);
+      } finally {
+        this.isBizLoadingCandidates = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    async loadBusinessWallet() {
+      const token = localStorage.getItem('saas_token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/business/wallet', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          this.businessWalletTransactions = data.recent_transactions || [];
+          if (this.currentUser) {
+            this.currentUser.business_credits = data.business_credits;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch business wallet:', err);
+      } finally {
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    async submitBusinessOnboarding() {
+      if (!this.bizOnboardingFile) {
+        this.notify('Please select a candidate resume file (PDF or Word).', 'error');
+        return;
+      }
+      if (!this.bizOnboardingEmail || !this.bizOnboardingEmail.includes('@')) {
+        this.notify('Please provide a valid candidate email.', 'error');
+        return;
+      }
+
+      const isAdm = Boolean(this.currentUser?.is_admin);
+      const credits = Number(this.currentUser?.business_credits || 0);
+      if (!isAdm && credits < 1) {
+        this.businessActiveTab = 'wallet';
+        this.notify('You need at least 1 credit to onboard a candidate. Please select a credit pack below.', 'warning');
+        return;
+      }
+
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        return;
+      }
+
+      this.isBizOnboardingLoading = true;
+      this.bizOnboardingStatusText = 'Parsing resume and extracting skills...';
+      this.bizOnboardingResult = null;
+
+      const formData = new FormData();
+      formData.append('file', this.bizOnboardingFile);
+      formData.append('candidate_email', this.bizOnboardingEmail.trim());
+      if (this.bizOnboardingRole) {
+        formData.append('target_role', this.bizOnboardingRole.trim());
+      }
+
+      try {
+        setTimeout(() => {
+          if (this.isBizOnboardingLoading) this.bizOnboardingStatusText = 'AI generating ATS resume & deploying live portfolio...';
+        }, 2500);
+
+        const res = await fetch('/api/business/prebuild', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          this.bizOnboardingResult = data;
+          this.bizOnboardingFile = null;
+          this.bizOnboardingEmail = '';
+          this.bizOnboardingRole = '';
+          const fileInput = document.getElementById('bizOnboardFileInput');
+          if (fileInput) fileInput.value = '';
+
+          if (this.currentUser && typeof data.credits_remaining === 'number' && !isAdm) {
+            this.currentUser.business_credits = data.credits_remaining;
+          }
+          await this.loadBusinessCandidates();
+          this.notify('Candidate pre-built profile generated successfully!', 'success');
+        } else {
+          const err = await res.json();
+          this.notify(err.detail || 'Failed to onboard candidate.', 'error');
+        }
+      } catch (err) {
+        this.notify('Network error while processing candidate resume.', 'error');
+      } finally {
+        this.isBizOnboardingLoading = false;
+        this.bizOnboardingStatusText = '';
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    copyBusinessText(text, label = 'Copied!') {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          this.bizCopyTip = label;
+          setTimeout(() => { this.bizCopyTip = ''; }, 2500);
+        }).catch(() => {
+          prompt('Copy link:', text);
+        });
+      } else {
+        prompt('Copy link:', text);
+      }
+    },
+
+    async buyCreditPack(packId) {
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        return;
+      }
+
+      this.isBuyingCreditPack = true;
+      try {
+        const res = await fetch('/api/business/credits/buy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ pack_id: packId })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Could not initiate credit pack purchase.');
+        }
+
+        const data = await res.json();
+        if (!data.success || !data.action_url || !data.params) {
+          throw new Error('Invalid payment parameters received.');
+        }
+
+        // Dynamically submit hidden HTML form directly to PayHere
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.action_url;
+        form.style.display = 'none';
+
+        for (const [key, value] of Object.entries(data.params)) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+      } catch (err) {
+        this.notify(err.message, 'error');
+      } finally {
+        this.isBuyingCreditPack = false;
+      }
     },
 
     async openSavedResumesModal() {

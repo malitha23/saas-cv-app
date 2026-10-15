@@ -318,7 +318,11 @@ class PayHereGateway:
             "lifetime": "Lifetime Pass"
         }
         cycle_name = cycle_labels.get(cycle, "1 Month")
-        item_name = f"Resume Builder - {plan_tier.capitalize()} ({cycle_name})"
+        if plan_tier.startswith("credits_"):
+            credits_num = plan_tier.replace("credits_", "")
+            item_name = f"DreemFolio B2B - {credits_num} Candidate Onboarding Credits"
+        else:
+            item_name = f"Resume Builder - {plan_tier.capitalize()} ({cycle_name})"
 
         payment_hash = cls.calculate_hash(
             merchant_id=config["merchant_id"],

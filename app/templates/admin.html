@@ -201,6 +201,17 @@
                 class="px-2 py-0.5 rounded-full bg-pink-500 text-[10px] font-black text-white"
                 x-text="marketingStats.total_leads"></span>
         </button>
+
+        <button @click="activeTab = 'onboarding'; loadOnboardingCandidates()"
+          :class="activeTab === 'onboarding' ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+          <span>Magic Candidate Onboarding (Auto CV & Portfolio)</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">NEW</span>
+          <span x-show="onboardingCandidatesList.length > 0"
+                class="px-2 py-0.5 rounded-full bg-indigo-500 text-[10px] font-black text-white"
+                x-text="onboardingCandidatesList.length"></span>
+        </button>
       </div>
 
       <!-- ═════════════════════════════════════════════════════════════════════ -->
@@ -3287,9 +3298,298 @@
               </tbody>
             </table>
           </div>
+      </div>
+
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 15: MAGIC CANDIDATE ONBOARDING (CV PARSER & LIVE PORTFOLIO)      -->
+      <!-- ═════════════════════════════════════════════════════════════════════ -->
+      <div x-show="activeTab === 'onboarding'" class="space-y-6">
+
+        <!-- Header Banner -->
+        <div class="bg-gradient-to-r from-indigo-950/70 via-purple-950/50 to-slate-900 border border-indigo-800/40 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl shadow-indigo-950/20 relative overflow-hidden">
+          <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+            <div class="space-y-1.5">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                B2B Candidate Lead Engine & Magic Claim Link
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Magic Candidate Onboarding
+              </h2>
+              <p class="text-slate-400 text-sm max-w-2xl leading-relaxed">
+                Upload a candidate's PDF/Word CV. AI automatically parses their skills, projects, and work experience, creates a recruiter-approved ATS resume, auto-deploys their live web portfolio, and creates a secure 1-click claim link.
+              </p>
+            </div>
+            <div class="shrink-0 flex items-center gap-3">
+              <div class="bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-center">
+                <div class="text-2xl font-black text-white" x-text="onboardingCandidatesList.length">0</div>
+                <div class="text-[11px] font-semibold text-slate-400">Total Pre-Built</div>
+              </div>
+              <div class="bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 text-center">
+                <div class="text-2xl font-black text-emerald-400" x-text="onboardingCandidatesList.filter(c => c.status === 'claimed').length">0</div>
+                <div class="text-[11px] font-semibold text-slate-400">Claimed & Active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onboarding Generator Box -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl">
+          <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/80">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+              <i data-lucide="file-plus" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white">Generate Pre-built Profile for New Candidate</h3>
+              <p class="text-xs text-slate-400">Takes ~5 seconds with Gemini Flash AI engine.</p>
+            </div>
+          </div>
+
+          <form @submit.prevent="submitMagicOnboarding()" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <!-- Left: File Upload Dropzone -->
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Candidate CV / Resume Document *</label>
+                <div class="border-2 border-dashed border-slate-700 hover:border-indigo-500/60 rounded-2xl p-6 text-center transition bg-slate-950/50 cursor-pointer relative"
+                     @click="document.getElementById('adminOnboardFileInput').click()">
+                  <input type="file" id="adminOnboardFileInput" accept=".pdf,.docx,.txt" class="hidden"
+                         @change="onboardingFile = $event.target.files[0]">
+                  
+                  <template x-if="!onboardingFile">
+                    <div class="space-y-2">
+                      <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto border border-indigo-500/20">
+                        <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                      </div>
+                      <p class="text-sm font-semibold text-slate-200">Click to choose or drag CV file</p>
+                      <p class="text-xs text-slate-500">PDF, DOCX, or TXT up to 10MB</p>
+                    </div>
+                  </template>
+
+                  <template x-if="onboardingFile">
+                    <div class="flex items-center justify-center gap-3 py-2">
+                      <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                        <i data-lucide="file-check" class="w-5 h-5"></i>
+                      </div>
+                      <div class="text-left">
+                        <div class="text-sm font-bold text-white truncate max-w-[220px]" x-text="onboardingFile.name"></div>
+                        <div class="text-xs text-slate-400" x-text="(onboardingFile.size / 1024).toFixed(1) + ' KB'"></div>
+                      </div>
+                      <button type="button" @click.stop="onboardingFile = null; document.getElementById('adminOnboardFileInput').value=''" class="ml-2 text-slate-400 hover:text-rose-400 p-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Right: Email & Target Role -->
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Candidate Email Address *</label>
+                  <div class="relative">
+                    <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5"></i>
+                    <input type="email" x-model="onboardingEmail" required placeholder="candidate@gmail.com"
+                           class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition">
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1">When the candidate logs in or registers with this email, their profile syncs instantly.</p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Target Role / Designation (Optional)</label>
+                  <div class="relative">
+                    <i data-lucide="briefcase" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5"></i>
+                    <input type="text" x-model="onboardingRole" placeholder="e.g. Intern Software Engineer / Full Stack Developer"
+                           class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition">
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1">If blank, AI will automatically detect the best matching profession from the CV.</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Loading State Progress -->
+            <div x-show="isOnboardingLoading" class="bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 flex items-center gap-3">
+              <i data-lucide="loader" class="w-5 h-5 text-indigo-400 animate-spin shrink-0"></i>
+              <div class="flex-1">
+                <div class="text-xs font-bold text-indigo-300" x-text="onboardingStatusText || 'Processing candidate document with AI...'"></div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                  <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-2/3 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button type="submit" :disabled="isOnboardingLoading || !onboardingFile || !onboardingEmail"
+                      class="px-8 py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-600 hover:from-indigo-600 hover:to-pink-700 text-white shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                <span>Generate Pre-built Profile & Live Portfolio</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Generated Result Showcase -->
+          <template x-if="onboardingResult">
+            <div class="mt-8 pt-8 border-t border-slate-800/80 space-y-5 bg-gradient-to-br from-indigo-950/30 to-purple-950/20 border border-indigo-500/30 rounded-2xl p-6">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Profile Successfully Pre-Built!</span>
+                    <h4 class="text-lg font-extrabold text-white" x-text="onboardingResult.candidate_name + ' • ' + (onboardingResult.target_role || 'Professional')"></h4>
+                  </div>
+                </div>
+
+                <a :href="onboardingResult.portfolio_url" target="_blank"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/40 border border-indigo-500/40 transition">
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i> View Live Portfolio (/p/<span x-text="onboardingResult.portfolio_slug"></span>)
+                </a>
+              </div>
+
+              <!-- Claim Link Box -->
+              <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-300">1-Click Candidate Claim Link</label>
+                <div class="flex items-center gap-2">
+                  <input type="text" readonly :value="onboardingResult.claim_url"
+                         class="flex-1 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-indigo-300 text-xs font-mono select-all focus:outline-none">
+                  <button @click="copyTextToClipboard(onboardingResult.claim_url, 'Claim Link Copied!')"
+                          class="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy Claim Link</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Invitation Message Box -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="block text-xs font-bold text-slate-300">Copy Invitation Message (Ready for WhatsApp / LinkedIn / Email)</label>
+                  <span x-show="copySuccessTip" class="text-xs font-bold text-emerald-400 animate-pulse" x-text="copySuccessTip"></span>
+                </div>
+                <div class="relative">
+                  <textarea readonly rows="4" :value="onboardingResult.invitation_message"
+                            class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs font-sans select-all focus:outline-none leading-relaxed"></textarea>
+                  <div class="absolute right-3 bottom-3 flex items-center gap-2">
+                    <button @click="copyTextToClipboard(onboardingResult.invitation_message, 'Invitation Message Copied!')"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center gap-1">
+                      <i data-lucide="copy" class="w-3 h-3"></i> Copy Message
+                    </button>
+                    <a :href="'https://api.whatsapp.com/send?text=' + encodeURIComponent(onboardingResult.invitation_message)" target="_blank"
+                       class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1">
+                      <i data-lucide="message-circle" class="w-3 h-3"></i> Share on WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </template>
+        </div>
+
+        <!-- Onboarded Candidates Directory Table -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-xl space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+            <div>
+              <h3 class="text-lg font-bold text-white">Pre-Built Candidate Profiles Directory</h3>
+              <p class="text-xs text-slate-400">Track candidates, link status, and active portfolios.</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex items-center gap-3 flex-wrap">
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                <input type="text" x-model="onboardingSearchQuery" placeholder="Search candidate or email..."
+                       class="pl-9 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-indigo-500 w-52">
+              </div>
+
+              <select x-model="onboardingStatusFilter" class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs focus:outline-none">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending Claim</option>
+                <option value="claimed">Claimed</option>
+              </select>
+
+              <button @click="loadOnboardingCandidates()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Refresh">
+                <i data-lucide="refresh-cw" :class="isLoadingOnboardingCandidates ? 'animate-spin' : ''" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Candidate</th>
+                  <th class="p-3">Email Address</th>
+                  <th class="p-3">Target Role</th>
+                  <th class="p-3">Created</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Claimed By</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <template x-for="cand in filteredOnboardedCandidates" :key="cand.id">
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3 font-bold text-white">
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs flex items-center justify-center border border-indigo-500/30"
+                             x-text="cand.candidate_name ? cand.candidate_name.charAt(0).toUpperCase() : 'C'"></div>
+                        <span x-text="cand.candidate_name"></span>
+                      </div>
+                    </td>
+                    <td class="p-3 text-slate-400 font-mono text-[11px]" x-text="cand.candidate_email"></td>
+                    <td class="p-3 text-slate-300" x-text="cand.target_role || 'Professional'"></td>
+                    <td class="p-3 text-slate-500" x-text="cand.created_at"></td>
+                    <td class="p-3">
+                      <span x-show="cand.status === 'claimed'"
+                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <i data-lucide="check" class="w-3 h-3"></i> Claimed
+                      </span>
+                      <span x-show="cand.status === 'pending'"
+                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                        <i data-lucide="clock" class="w-3 h-3"></i> Pending
+                      </span>
+                    </td>
+                    <td class="p-3 text-slate-400">
+                      <div x-show="cand.claimed_by_name">
+                        <span class="text-white font-medium" x-text="cand.claimed_by_name"></span>
+                        <div class="text-[10px] text-slate-500" x-text="cand.claimed_at"></div>
+                      </div>
+                      <span x-show="!cand.claimed_by_name" class="text-slate-600">-</span>
+                    </td>
+                    <td class="p-3 text-right">
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button @click="copyTextToClipboard(cand.claim_url, 'Claim link copied!')" title="Copy Claim Link"
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition">
+                          <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <template x-if="cand.portfolio_url">
+                          <a :href="cand.portfolio_url" target="_blank" title="View Live Portfolio"
+                             class="p-1.5 rounded-lg bg-slate-800 hover:bg-purple-600 text-slate-300 hover:text-white transition">
+                            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+                          </a>
+                        </template>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr x-show="filteredOnboardedCandidates.length === 0">
+                  <td colspan="7" class="p-6 text-center text-slate-500 text-xs">
+                    No candidate profiles found. Use the form above to onboard candidates!
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
+
     <footer class="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-600 mt-auto">
       <p>DreemFolio.com Enterprise Admin Console • Strict RBAC Security Guard Active</p>
     </footer>
@@ -3432,6 +3732,35 @@
         },
         campaignPreviewHtml: '',
         showCampaignPreview: false,
+
+        // Magic Candidate Onboarding State
+        onboardingFile: null,
+        onboardingEmail: '',
+        onboardingRole: '',
+        isOnboardingLoading: false,
+        onboardingStatusText: '',
+        onboardingResult: null,
+        onboardingCandidatesList: [],
+        isLoadingOnboardingCandidates: false,
+        onboardingSearchQuery: '',
+        onboardingStatusFilter: 'all',
+        copySuccessTip: '',
+
+        get filteredOnboardedCandidates() {
+          let list = this.onboardingCandidatesList || [];
+          if (this.onboardingStatusFilter !== 'all') {
+            list = list.filter(c => c.status === this.onboardingStatusFilter);
+          }
+          if (this.onboardingSearchQuery && this.onboardingSearchQuery.trim()) {
+            const q = this.onboardingSearchQuery.trim().toLowerCase();
+            list = list.filter(c =>
+              (c.candidate_name && c.candidate_name.toLowerCase().includes(q)) ||
+              (c.candidate_email && c.candidate_email.toLowerCase().includes(q)) ||
+              (c.target_role && c.target_role.toLowerCase().includes(q))
+            );
+          }
+          return list;
+        },
 
         get filteredCampaignLeads() {
           let list = this.campaignLeadsList || [];
@@ -3584,12 +3913,102 @@
               this.loadAdminReviews(),
               this.loadAdminAnalytics(),
               this.loadAdminLeads(),
-              this.loadMarketingCampaignsData()
+              this.loadMarketingCampaignsData(),
+              this.loadOnboardingCandidates()
             ]);
           } catch (e) {
             this.accessDenied = true;
             this.isReady = true;
             this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async loadOnboardingCandidates() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          this.isLoadingOnboardingCandidates = true;
+          try {
+            const res = await fetch('/api/business/candidates?all_users=true', {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+              this.onboardingCandidatesList = await res.json();
+            }
+          } catch (e) {
+            console.error('Failed to load candidate profiles:', e);
+          } finally {
+            this.isLoadingOnboardingCandidates = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async submitMagicOnboarding() {
+          if (!this.onboardingFile) {
+            alert('Please select a candidate resume PDF or Word file.');
+            return;
+          }
+          if (!this.onboardingEmail || !this.onboardingEmail.includes('@')) {
+            alert('Please provide a valid candidate email.');
+            return;
+          }
+
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+
+          this.isOnboardingLoading = true;
+          this.onboardingStatusText = 'Parsing resume and extracting candidate skills...';
+          this.onboardingResult = null;
+
+          const formData = new FormData();
+          formData.append('file', this.onboardingFile);
+          formData.append('candidate_email', this.onboardingEmail.trim());
+          if (this.onboardingRole) {
+            formData.append('target_role', this.onboardingRole.trim());
+          }
+
+          try {
+            setTimeout(() => {
+              if (this.isOnboardingLoading) this.onboardingStatusText = 'AI restructuring ATS sections & generating live portfolio...';
+            }, 2500);
+
+            const res = await fetch('/api/business/prebuild', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token },
+              body: formData
+            });
+
+            if (res.ok) {
+              this.onboardingResult = await res.json();
+              this.onboardingFile = null;
+              this.onboardingEmail = '';
+              this.onboardingRole = '';
+              const fileInput = document.getElementById('adminOnboardFileInput');
+              if (fileInput) fileInput.value = '';
+              await this.loadOnboardingCandidates();
+            } else {
+              const err = await res.json();
+              alert(err.detail || 'Failed to onboard candidate.');
+            }
+          } catch (e) {
+            alert('Network error while processing candidate resume.');
+          } finally {
+            this.isOnboardingLoading = false;
+            this.onboardingStatusText = '';
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        copyTextToClipboard(text, label = 'Copied!') {
+          if (!text) return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+              this.copySuccessTip = label;
+              setTimeout(() => { this.copySuccessTip = ''; }, 2500);
+            }).catch(() => {
+              prompt('Copy link:', text);
+            });
+          } else {
+            prompt('Copy link:', text);
           }
         },
 

@@ -170,6 +170,14 @@ async def auth_with_google(
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your account has been deactivated.")
 
+    # Auto-claim any pre-built candidate profile (ATS resume + live portfolio)
+    try:
+        from app.services.business_service import sync_prebuilt_candidate_profile
+        claim_token = request.cookies.get("dreemfolio_claim_token")
+        sync_prebuilt_candidate_profile(user, db, claim_token=claim_token)
+    except Exception as sync_err:
+        logger.warning("Prebuilt profile auto-sync warning during Google auth: %s", sync_err)
+
     check_and_update_subscription(user, db)
     token = create_access_token(user)
     return TokenResponse(
@@ -297,6 +305,8 @@ async def send_registration_otp(
         full_name=clean_name,
         password_hash=pw_hash,
         referral_code=incoming_ref,
+        account_type=getattr(req, "account_type", "candidate") or "candidate",
+        company_name=getattr(req, "company_name", None),
         expires_at=expires_at,
         is_used=False
     )
@@ -383,18 +393,44 @@ async def verify_registration_otp(
         )
 
     my_ref_code = generate_unique_referral_code(db)
+    acc_type = getattr(otp_record, "account_type", "candidate") or "candidate"
+    comp_name = getattr(otp_record, "company_name", None)
+    initial_credits = 3 if acc_type == "business" else 0
+
     user = User(
         email=email_clean,
         hashed_password=otp_record.password_hash,
         full_name=otp_record.full_name,
         plan_tier="free",
         subscription_status="active",
-        referral_code=my_ref_code
+        referral_code=my_ref_code,
+        account_type=acc_type,
+        company_name=comp_name,
+        business_credits=initial_credits
     )
     try:
         db.add(user)
         db.commit()
         db.refresh(user)
+
+        if initial_credits > 0:
+            from app.models import BusinessCreditTransaction
+            db.add(BusinessCreditTransaction(
+                user_id=user.id,
+                amount=initial_credits,
+                balance_after=initial_credits,
+                description="Business Welcome Bonus (3 Free Onboardings)"
+            ))
+            db.commit()
+
+        # Auto-claim pre-built profile if exists
+        try:
+            from app.services.business_service import sync_prebuilt_candidate_profile
+            claim_token = request.cookies.get("dreemfolio_claim_token")
+            sync_prebuilt_candidate_profile(user, db, claim_token=claim_token)
+        except Exception as sync_err:
+            logger.warning("Prebuilt profile auto-sync error in verify_otp: %s", sync_err)
+
     except IntegrityError:
         db.rollback()
         raise HTTPException(
@@ -434,13 +470,15 @@ async def register_user_redirect_to_otp(
         email=req.email,
         password=req.password,
         full_name=req.full_name,
-        referral_code=req.referral_code
+        referral_code=req.referral_code,
+        account_type=getattr(req, "account_type", "candidate") or "candidate",
+        company_name=getattr(req, "company_name", None)
     )
     return await send_registration_otp(otp_req, request, background_tasks, db)
 
 
 @router.post("/api/auth/login", response_model=TokenResponse)
-async def login_user(req: UserLoginRequest, db: Session = Depends(get_db)):
+async def login_user(req: UserLoginRequest, request: Request, db: Session = Depends(get_db)):
     """Authenticate SaaS user credentials and issue cryptographic JWT."""
     email_clean = req.email.strip().lower()
     stmt = select(User).where(User.email == email_clean)
@@ -454,6 +492,14 @@ async def login_user(req: UserLoginRequest, db: Session = Depends(get_db)):
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your account has been deactivated.")
+
+    # Auto-claim any pre-built candidate profile matching this user
+    try:
+        from app.services.business_service import sync_prebuilt_candidate_profile
+        claim_token = request.cookies.get("dreemfolio_claim_token")
+        sync_prebuilt_candidate_profile(user, db, claim_token=claim_token)
+    except Exception as sync_err:
+        logger.warning("Prebuilt profile auto-sync warning during login: %s", sync_err)
 
     check_and_update_subscription(user, db)
     token = create_access_token(user)

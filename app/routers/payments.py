@@ -776,7 +776,23 @@ def activate_order_and_upgrade_candidate(
     if candidate:
         now = datetime.utcnow()
         cycle = (getattr(order, "billing_cycle", "1m") or "1m").lower().strip()
-        if order.target_plan == "sprint":
+        if order.target_plan.startswith("credits_"):
+            try:
+                credits_to_add = int(order.target_plan.replace("credits_", "").strip())
+            except (ValueError, TypeError):
+                credits_to_add = 10
+            candidate.account_type = "business"
+            candidate.business_credits = (getattr(candidate, "business_credits", 0) or 0) + credits_to_add
+            from app.models import BusinessCreditTransaction
+            db.add(BusinessCreditTransaction(
+                user_id=candidate.id,
+                amount=credits_to_add,
+                balance_after=candidate.business_credits,
+                description=f"Purchased Business Credit Pack ({credits_to_add} Credits)",
+                reference_id=order.order_id
+            ))
+            logger.info("Candidate %s credited with %d B2B credits (Order %s). New balance: %d", candidate.email, credits_to_add, order.order_id, candidate.business_credits)
+        elif order.target_plan == "sprint":
             duration_days = 7
             plan_title = "7-Day Sprint Pass"
             candidate.plan_tier = "sprint"

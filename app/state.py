@@ -428,5 +428,8 @@ def build_user_response(user: User, db: Optional[Session] = None) -> UserRespons
         google_id=getattr(user, "google_id", None),
         referral_code=getattr(user, "referral_code", None),
         referral_bonus_downloads=getattr(user, "referral_bonus_downloads", 0) or 0,
-        referrals_count=referrals_count
+        referrals_count=referrals_count,
+        account_type=getattr(user, "account_type", "candidate") or "candidate",
+        company_name=getattr(user, "company_name", None),
+        business_credits=getattr(user, "business_credits", 0) or 0
     )

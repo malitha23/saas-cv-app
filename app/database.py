@@ -111,7 +111,10 @@ def init_engine():
                 ("daily_conference_count", "INT NOT NULL DEFAULT 0"),
                 ("sprint_conference_count", "INT NOT NULL DEFAULT 0"),
                 ("pro_conference_count", "INT NOT NULL DEFAULT 0"),
-                ("lifetime_conference_count", "INT NOT NULL DEFAULT 0")
+                ("lifetime_conference_count", "INT NOT NULL DEFAULT 0"),
+                ("account_type", "VARCHAR(50) NOT NULL DEFAULT 'candidate'"),
+                ("company_name", "VARCHAR(255) NULL"),
+                ("business_credits", "INT NOT NULL DEFAULT 0")
             ]
             with engine.connect() as mig_conn:
                 for col_name, col_def in needed_cols:
@@ -148,6 +151,13 @@ def init_engine():
                     for col_name, col_def in needed_lead_cols:
                         if col_name not in lead_cols:
                             mig_conn.execute(text(f"ALTER TABLE marketing_leads ADD COLUMN {col_name} {col_def}"))
+
+                if insp.has_table("email_verification_otps"):
+                    otp_cols = {c["name"] for c in insp.get_columns("email_verification_otps")}
+                    if "account_type" not in otp_cols:
+                        mig_conn.execute(text("ALTER TABLE email_verification_otps ADD COLUMN account_type VARCHAR(50) NULL DEFAULT 'candidate'"))
+                    if "company_name" not in otp_cols:
+                        mig_conn.execute(text("ALTER TABLE email_verification_otps ADD COLUMN company_name VARCHAR(255) NULL"))
 
                 mig_conn.commit()
     except Exception as mig_err:

@@ -534,6 +534,29 @@ class UserRegisterRequest(BaseModel):
     referral_code: Optional[str] = Field(
         default=None, max_length=50, description="Optional referral code of inviter"
     )
+    account_type: Optional[str] = Field(
+        default="candidate", description="User role: 'candidate' or 'business'"
+    )
+    company_name: Optional[str] = Field(
+        default=None, max_length=255, description="Company or Agency name for business accounts"
+    )
+
+    @field_validator("account_type")
+    @classmethod
+    def validate_account_type(cls, v: Optional[str]) -> str:
+        if not v or not v.strip():
+            return "candidate"
+        clean = v.strip().lower()
+        return "business" if clean == "business" else "candidate"
+
+    @field_validator("company_name")
+    @classmethod
+    def sanitize_company_name(cls, v: Optional[str]) -> Optional[str]:
+        if not v or not v.strip():
+            return None
+        v = re.sub(r"<[^>]*>", "", v).strip()
+        v = re.sub(r"[<>\"'`{};]", "", v)
+        return re.sub(r"\s+", " ", v)[:255] or None
 
     @field_validator("full_name")
     @classmethod
@@ -586,6 +609,29 @@ class SendRegistrationOtpRequest(BaseModel):
     referral_code: Optional[str] = Field(
         default=None, max_length=50, description="Optional referral code of inviter"
     )
+    account_type: Optional[str] = Field(
+        default="candidate", description="User role: 'candidate' or 'business'"
+    )
+    company_name: Optional[str] = Field(
+        default=None, max_length=255, description="Company or Agency name for business accounts"
+    )
+
+    @field_validator("account_type")
+    @classmethod
+    def validate_otp_account_type(cls, v: Optional[str]) -> str:
+        if not v or not v.strip():
+            return "candidate"
+        clean = v.strip().lower()
+        return "business" if clean == "business" else "candidate"
+
+    @field_validator("company_name")
+    @classmethod
+    def sanitize_otp_company_name(cls, v: Optional[str]) -> Optional[str]:
+        if not v or not v.strip():
+            return None
+        v = re.sub(r"<[^>]*>", "", v).strip()
+        v = re.sub(r"[<>\"'`{};]", "", v)
+        return re.sub(r"\s+", " ", v)[:255] or None
 
     @field_validator("full_name")
     @classmethod
@@ -733,6 +779,10 @@ class UserResponse(BaseModel):
     referral_code: Optional[str] = None
     referral_bonus_downloads: int = 0
     referrals_count: int = 0
+    # B2B & Recruiter Profile Fields
+    account_type: str = "candidate"
+    company_name: Optional[str] = None
+    business_credits: int = 0
 
     class Config:
         from_attributes = True
@@ -1518,4 +1568,69 @@ class PublicReviewsResponse(BaseModel):
     average_rating: float
     total_reviews: int
     reviews: List[UserReviewItem]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# B2B CANDIDATE MAGIC ONBOARDING & PREBUILT PROFILES SCHEMA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PrebuildProfileResponse(BaseModel):
+    success: bool = True
+    claim_token: str
+    claim_url: str
+    portfolio_url: str
+    portfolio_slug: str
+    candidate_name: str
+    candidate_email: str
+    target_role: Optional[str] = None
+    credits_remaining: int
+    invitation_message: str
+
+
+class CandidatePrebuiltSummary(BaseModel):
+    id: int
+    claim_token: str
+    candidate_name: str
+    candidate_email: str
+    target_role: Optional[str] = None
+    portfolio_slug: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    claim_url: str
+    status: str  # 'pending', 'claimed'
+    created_at: str
+    claimed_at: Optional[str] = None
+    claimed_by_name: Optional[str] = None
+    creator_name: Optional[str] = None
+
+
+class ClaimProfileResponse(BaseModel):
+    success: bool
+    candidate_name: str
+    target_role: Optional[str] = None
+    portfolio_slug: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    status: str
+    already_claimed: bool = False
+    message: str
+
+
+class BusinessCreditPackOrderRequest(BaseModel):
+    pack_id: str = Field(..., description="'pack_10', 'pack_50', or 'pack_150'")
+
+
+class BusinessTransactionItem(BaseModel):
+    id: int
+    amount: int
+    balance_after: int
+    description: str
+    reference_id: Optional[str] = None
+    created_at: str
+
+
+class BusinessWalletResponse(BaseModel):
+    business_credits: int
+    account_type: str
+    company_name: Optional[str] = None
+    packs: List[Dict[str, Any]]
+    recent_transactions: List[BusinessTransactionItem]
 

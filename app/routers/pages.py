@@ -625,3 +625,74 @@ async def serve_profile_page(request: Request):
     """Serve the user profile, billing history & subscription management page."""
     return templates.TemplateResponse(request=request, name="profile.html")
 
+
+@router.get("/claim/{token}", response_class=HTMLResponse)
+async def serve_claim_profile_page(token: str, request: Request, db: Session = Depends(get_db)):
+    """
+    Public candidate onboarding claim page.
+    Candidate receives a personalized link, sees their pre-built profile & portfolio,
+    and claims it into their account with 1-click Google OAuth or Email registration.
+    """
+    from app.models import PrebuiltCandidateProfile
+    token_clean = token.strip()
+    profile = db.scalars(
+        select(PrebuiltCandidateProfile).where(PrebuiltCandidateProfile.claim_token == token_clean)
+    ).first()
+
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate onboarding link is invalid or has expired.")
+
+    # Parse resume preview data
+    cand_name = profile.candidate_name or "Candidate"
+    target_role = profile.target_role or "Software Professional"
+    portfolio_url = f"/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
+    # Extract highlights from resume json if available
+    skills_count = 0
+    experiences_count = 0
+    education_item = ""
+    try:
+        data = json.loads(profile.resume_data_json)
+        skills_cats = data.get("skill_categories", [])
+        skills_count = sum(len(c.get("skills", [])) for c in skills_cats)
+        experiences_count = len(data.get("work_experience", []))
+        edu_list = data.get("education", [])
+        if edu_list:
+            education_item = edu_list[0].get("degree", "")
+    except Exception:
+        pass
+
+    already_claimed = (profile.status == "claimed")
+
+    response = templates.TemplateResponse(
+        request=request,
+        name="claim_profile.html",
+        context={
+            "token": token_clean,
+            "candidate_name": cand_name,
+            "candidate_email": profile.candidate_email,
+            "target_role": target_role,
+            "portfolio_slug": profile.portfolio_slug,
+            "portfolio_url": portfolio_url,
+            "already_claimed": already_claimed,
+            "skills_count": skills_count,
+            "experiences_count": experiences_count,
+            "education_item": education_item,
+            "creator_company": (profile.creator.company_name or profile.creator.full_name) if profile.creator else None
+        }
+    )
+
+    # Set claim token cookie so auth flow will auto-claim seamlessly upon login or signup
+    if not already_claimed:
+        response.set_cookie(
+            key="dreemfolio_claim_token",
+            value=token_clean,
+            max_age=7 * 24 * 3600,
+            httponly=False,
+            samesite="lax",
+            path="/"
+        )
+
+    return response
+
+
