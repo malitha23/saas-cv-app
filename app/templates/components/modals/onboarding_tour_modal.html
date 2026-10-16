@@ -1,422 +1,271 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- INTERACTIVE MAIN WIDGETS TOUR GUIDE MODAL ("Puluwan nam withrak balanna") -->
+<!-- INTERACTIVE MAIN WIDGETS SPOTLIGHT TOUR GUIDE (FLOATING / DOCKED)        -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
+<style>
+  .tour-spotlight-active {
+    position: relative !important;
+    z-index: 40 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 4px #6366f1, 0 0 35px rgba(99, 102, 241, 0.5) !important;
+    border-color: #818cf8 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    animation: tourGlowPulse 2.2s infinite ease-in-out !important;
+  }
+  @keyframes tourGlowPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 4px #6366f1, 0 0 25px rgba(99, 102, 241, 0.45);
+    }
+    50% {
+      box-shadow: 0 0 0 6px #a855f7, 0 0 45px rgba(168, 85, 247, 0.65);
+    }
+  }
+</style>
+
+<!-- Subtle dimming overlay so dashboard remains clearly visible -->
 <div x-show="showOnboardingTour" x-cloak
-  class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
+  class="fixed inset-0 z-35 bg-slate-950/40 pointer-events-none transition-opacity duration-300 backdrop-blur-[1px]"
   x-transition:enter="transition ease-out duration-250"
   x-transition:enter-start="opacity-0"
   x-transition:enter-end="opacity-100"
   x-transition:leave="transition ease-in duration-200"
   x-transition:leave-start="opacity-100"
-  x-transition:leave-end="opacity-0"
+  x-transition:leave-end="opacity-0"></div>
+
+<!-- FLOATING / DOCKED TOUR GUIDE CARD -->
+<div x-show="showOnboardingTour" x-cloak
+  class="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[calc(100%-1.5rem)] sm:w-full mx-auto p-4 sm:p-5 bg-slate-900/95 border-2 border-indigo-500/80 rounded-2xl shadow-2xl shadow-indigo-950/90 backdrop-blur-xl text-slate-200 overflow-hidden transition-all duration-300"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+  x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+  x-transition:leave-end="opacity-0 translate-y-8 scale-95"
   @keydown.escape.window="closeOnboardingTour(false)">
 
-  <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8 relative overflow-hidden text-slate-200"
-    @click.outside="closeOnboardingTour(false)"
-    x-transition:enter="transition ease-out duration-250"
-    x-transition:enter-start="scale-95 opacity-0"
-    x-transition:enter-end="scale-100 opacity-100"
-    x-transition:leave="transition ease-in duration-200"
-    x-transition:leave-start="scale-100 opacity-100"
-    x-transition:leave-end="scale-95 opacity-0">
+  <!-- Dynamic ambient corner glow -->
+  <div class="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-2xl pointer-events-none transition-all duration-500"
+    :class="{
+      'bg-indigo-500/30': currentTourStep === 1,
+      'bg-cyan-500/30': currentTourStep === 2,
+      'bg-emerald-500/30': currentTourStep === 3,
+      'bg-amber-500/30': currentTourStep === 4,
+      'bg-pink-500/30': currentTourStep === 5,
+      'bg-teal-500/30': currentTourStep === 6
+    }"></div>
 
-    <!-- Ambient Glow Effect dynamically shifting with active step -->
-    <div class="absolute -top-24 -right-24 w-60 h-60 rounded-full blur-3xl pointer-events-none transition-all duration-500"
-      :class="{
-        'bg-indigo-500/20': currentTourStep === 1,
-        'bg-cyan-500/20': currentTourStep === 2,
-        'bg-emerald-500/20': currentTourStep === 3,
-        'bg-amber-500/25': currentTourStep === 4,
-        'bg-pink-500/25': currentTourStep === 5,
-        'bg-teal-500/20': currentTourStep === 6
-      }"></div>
-    <div class="absolute -bottom-24 -left-24 w-60 h-60 rounded-full blur-3xl pointer-events-none transition-all duration-500"
-      :class="{
-        'bg-pink-500/15': currentTourStep === 1,
-        'bg-indigo-500/15': currentTourStep === 2,
-        'bg-cyan-500/15': currentTourStep === 3,
-        'bg-violet-500/20': currentTourStep === 4,
-        'bg-indigo-500/20': currentTourStep === 5,
-        'bg-emerald-500/20': currentTourStep === 6
-      }"></div>
-
-    <!-- Header: Tour Title & Step Indicator -->
-    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 relative z-10">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-lg transition-all duration-300"
-          :class="{
-            'bg-gradient-to-tr from-indigo-500 to-cyan-400 shadow-indigo-500/30': currentTourStep === 1,
-            'bg-gradient-to-tr from-cyan-500 to-blue-600 shadow-cyan-500/30': currentTourStep === 2,
-            'bg-gradient-to-tr from-emerald-500 to-teal-600 shadow-emerald-500/30': currentTourStep === 3,
-            'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/30': currentTourStep === 4,
-            'bg-gradient-to-tr from-pink-500 to-purple-600 shadow-pink-500/30': currentTourStep === 5,
-            'bg-gradient-to-tr from-teal-500 to-emerald-600 shadow-teal-500/30': currentTourStep === 6
-          }">
-          <i data-lucide="compass" class="w-4 h-4"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="font-extrabold text-slate-100 text-sm sm:text-base">Workspace Widgets Guide</h3>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-800 text-indigo-300 border border-slate-700 font-mono"
-              x-text="'Widget ' + currentTourStep + ' of ' + totalTourSteps">Widget 1 of 6</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Master the core tools to create your winning ATS resume & portfolio</p>
+  <!-- Header: Title, Step Counter & Close -->
+  <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 relative z-10">
+    <div class="flex items-center space-x-2.5">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-md transition-all duration-300"
+        :class="{
+          'bg-gradient-to-tr from-indigo-500 to-cyan-400': currentTourStep === 1,
+          'bg-gradient-to-tr from-cyan-500 to-blue-600': currentTourStep === 2,
+          'bg-gradient-to-tr from-emerald-500 to-teal-600': currentTourStep === 3,
+          'bg-gradient-to-tr from-amber-500 to-orange-500': currentTourStep === 4,
+          'bg-gradient-to-tr from-pink-500 to-purple-600': currentTourStep === 5,
+          'bg-gradient-to-tr from-teal-500 to-emerald-600': currentTourStep === 6
+        }">
+        <i data-lucide="compass" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-slate-100 text-xs sm:text-sm">Main Widgets Tour</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-800 text-indigo-300 border border-slate-700 font-mono"
+            x-text="'Widget ' + currentTourStep + ' of ' + totalTourSteps"></span>
         </div>
       </div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <!-- 6 Interactive Step Dots -->
+      <div class="hidden sm:flex items-center gap-1.5 mr-2">
+        <template x-for="step in [1, 2, 3, 4, 5, 6]" :key="step">
+          <button type="button" @click="goToTourStep(step)"
+            class="h-1.5 rounded-full transition-all duration-200"
+            :class="currentTourStep === step ? 'w-6 bg-gradient-to-r from-indigo-500 to-pink-500' : (currentTourStep > step ? 'w-2 bg-indigo-400/60' : 'w-2 bg-slate-700 hover:bg-slate-600')"
+            :title="'Go to Widget ' + step"></button>
+        </template>
+      </div>
       <button type="button" @click="closeOnboardingTour(false)"
-        class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
+        class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
         title="Exit Guide">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
+  </div>
 
-    <!-- 6 Step Dots / Progress Indicator -->
-    <div class="flex items-center justify-center gap-2 pt-1 pb-1 relative z-10">
-      <template x-for="step in [1, 2, 3, 4, 5, 6]" :key="step">
-        <button type="button" @click="goToTourStep(step)"
-          class="h-1.5 rounded-full transition-all duration-300"
-          :class="currentTourStep === step ? 'w-8 bg-gradient-to-r from-indigo-500 to-pink-500' : (currentTourStep > step ? 'w-3 bg-indigo-400/60' : 'w-3 bg-slate-700 hover:bg-slate-600')"
-          :title="'Go to Widget ' + step"></button>
-      </template>
+  <!-- STEP CONTENT -->
+  <div class="py-3 relative z-10 space-y-2.5">
+
+    <!-- WIDGET 1: RESUME UPLOAD & AUTO-PARSE -->
+    <div x-show="currentTourStep === 1" class="space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📄</span>
+          <h4 class="text-sm font-bold text-white">1. Resume Upload & Auto-Parse (Left Panel)</h4>
+        </div>
+        <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">Step 1</span>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Upload your existing resume in <strong>PDF, DOCX, or TXT</strong>. DreemFolio AI instantly extracts your work history, skills, and education into ATS structure with zero manual typing.
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-indigo-300">💡 <strong>Quick Action:</strong> Click below to load demo candidate data right now!</span>
+        <button type="button" @click="launchTourFeature(1)"
+          class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>Load Demo CV ⚡</span>
+        </button>
+      </div>
     </div>
 
-    <!-- STEP CONTENT AREA -->
-    <div class="min-h-[270px] flex flex-col justify-between relative z-10 py-1">
-
-      <!-- STEP 1: RESUME UPLOAD & AUTO-PARSE WIDGET -->
-      <div x-show="currentTourStep === 1" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
+    <!-- WIDGET 2: TARGET JOB DESCRIPTION & AI TAILOR -->
+    <div x-show="currentTourStep === 2" class="space-y-2">
+      <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="text-2xl">📄</span>
-          <div>
-            <h4 class="text-base font-bold text-white">1. Resume Upload & Auto-Parse</h4>
-            <span class="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">Left Panel • Smart Ingestion</span>
-          </div>
+          <span class="text-xl">🎯</span>
+          <h4 class="text-sm font-bold text-white">2. Target Job Description & AI Matcher (Left Panel)</h4>
         </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Upload your existing CV or resume in <strong>PDF, DOCX, or TXT</strong> format. The AI automatically parses your contact details, career history, education, and technical competencies into structured ATS data.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="file-up" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Drag & Drop</span>
-              <span class="text-[10px] text-slate-400">PDF, Word DOCX or plain text files supported.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Instant Auto-Fill</span>
-              <span class="text-[10px] text-slate-400">Zero typing needed — extracts everything automatically.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="shield-check" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">100% Private</span>
-              <span class="text-[10px] text-slate-400">Strict zero AI-training retention guarantee.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-300 flex items-center justify-between gap-2">
-          <span>💡 <strong>Quick Test:</strong> Don't have a CV file right now? Load a demo resume to test!</span>
-          <button type="button" @click="launchTourFeature(1)"
-            class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shrink-0 transition text-[10px] shadow">
-            Load Demo CV ⚡
-          </button>
-        </div>
+        <span class="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Step 2</span>
       </div>
-
-      <!-- STEP 2: TARGET JOB DESCRIPTION & AI TAILOR WIDGET -->
-      <div x-show="currentTourStep === 2" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">🎯</span>
-          <div>
-            <h4 class="text-base font-bold text-white">2. Target Job Description & AI Matcher</h4>
-            <span class="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full">Left Panel • Keyword Optimization</span>
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Paste the target vacancy or job posting here. The AI scans recruiter requirements, identifies missing keywords, and automatically re-writes your bullet points into quantifiable <strong>Google XYZ framework</strong> achievements.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="zap" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Google XYZ Format</span>
-              <span class="text-[10px] text-slate-400">Accomplished [X] as measured by [Y] by doing [Z].</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="target" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Role Keyword Match</span>
-              <span class="text-[10px] text-slate-400">Embeds exact tech stack terms sought by recruiters.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="mail" class="w-4 h-4 text-pink-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Auto Cover Letter</span>
-              <span class="text-[10px] text-slate-400">Drafts matching cover letter in chosen tone.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-[11px] text-cyan-300 flex items-center justify-between gap-2">
-          <span>💡 <strong>Quick Action:</strong> Click below to auto-paste a realistic job posting!</span>
-          <button type="button" @click="launchTourFeature(2)"
-            class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shrink-0 transition text-[10px] shadow">
-            Paste Sample JD 📋
-          </button>
-        </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Paste the target job vacancy here. The AI scans recruiter requirements and rewrites your bullet points using the <strong>Google XYZ framework</strong> to beat screening bots.
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-cyan-300">💡 <strong>Quick Action:</strong> Paste a realistic job posting with 1 click!</span>
+        <button type="button" @click="launchTourFeature(2)"
+          class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+          <span>Paste Sample JD 📋</span>
+        </button>
       </div>
-
-      <!-- STEP 3: REAL-TIME ATS SCORE & AUDIT WIDGET -->
-      <div x-show="currentTourStep === 3" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">📊</span>
-          <div>
-            <h4 class="text-base font-bold text-white">3. Live ATS Compatibility Score</h4>
-            <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">Right Panel • Recruiter Screening Audit</span>
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Over 75% of CVs are rejected by ATS bots before a human recruiter reads them. This live audit meter calculates your <strong>real-time ATS readiness score</strong> (aim for 90%+), highlights matched skills, and points out any missing keywords.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">ATS Score Gauge</span>
-              <span class="text-[10px] text-slate-400">Real-time percentage readiness meter.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="tags" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Keyword Checklist</span>
-              <span class="text-[10px] text-slate-400">Green tags for matched competencies.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="share-2" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">ATS Scorecard</span>
-              <span class="text-[10px] text-slate-400">Shareable recruiter readiness card.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-center justify-between gap-2">
-          <span>💡 <strong>Pro-Tip:</strong> The closer to 100% you get, the higher your interview callback rate!</span>
-          <button type="button" @click="launchTourFeature(3)"
-            class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shrink-0 transition text-[10px] shadow">
-            Scroll to Score 🎯
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 4: 8 LUXURY RESUME TEMPLATES WIDGET -->
-      <div x-show="currentTourStep === 4" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">🎨</span>
-          <div>
-            <h4 class="text-base font-bold text-white">4. 8 Luxury Designer Resume Templates</h4>
-            <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">Workspace Bar • Instant Multi-Format Switcher</span>
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Switch effortlessly between <strong>8 designer resume templates</strong> with 1 click! Choose standard single-column ATS layouts for corporate portals, or executive visual photo layouts for modern startups.
-        </p>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
-          <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-center">
-            <span class="font-bold text-slate-200 text-[11px] block">Classic ATS</span>
-            <span class="text-[9.5px] text-slate-400">Strict standard</span>
-          </div>
-          <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-center">
-            <span class="font-bold text-slate-200 text-[11px] block">Navy Executive</span>
-            <span class="text-[9.5px] text-slate-400">Corporate blue</span>
-          </div>
-          <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-center">
-            <span class="font-bold text-slate-200 text-[11px] block">Visual Sidebar</span>
-            <span class="text-[9.5px] text-slate-400">Photo & icons</span>
-          </div>
-          <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800 text-center">
-            <span class="font-bold text-slate-200 text-[11px] block">Tech Noir</span>
-            <span class="text-[9.5px] text-slate-400">Modern dark dev</span>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center justify-between gap-2">
-          <span>💡 <strong>Quick Action:</strong> Test cycling through the templates right now!</span>
-          <button type="button" @click="launchTourFeature(4)"
-            class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg shrink-0 transition text-[10px] shadow">
-            Cycle Template 🎨
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 5: LIVE WEB PORTFOLIO STUDIO WIDGET -->
-      <div x-show="currentTourStep === 5" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">🌐</span>
-          <div>
-            <h4 class="text-base font-bold text-white">5. Live Web Portfolio Studio (/p/your-slug)</h4>
-            <span class="text-[10px] font-bold text-pink-400 bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 rounded-full">Right Panel • Personal Website Generator</span>
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Never send just a boring PDF! Click the <strong>Portfolio</strong> tab to turn your resume into a stunning, responsive web portfolio. Includes themes (Bento Grid, Terminal, Split Sidebar), project showcases, and permanent hosting at <code class="text-pink-300">/p/your-name</code>.
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="globe" class="w-4 h-4 text-pink-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Live Custom URL</span>
-              <span class="text-[10px] text-slate-400">Shareable on LinkedIn, WhatsApp, & email.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="layout" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Bento & Dev Themes</span>
-              <span class="text-[10px] text-slate-400">Modern interactive cards and animations.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="link" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Custom Domain</span>
-              <span class="text-[10px] text-slate-400">Map your own .com or .dev domain anytime.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-pink-500/10 border border-pink-500/20 text-[11px] text-pink-300 flex items-center justify-between gap-2">
-          <span>💡 <strong>Quick Action:</strong> Click below to switch to the Live Portfolio tab!</span>
-          <button type="button" @click="launchTourFeature(5)"
-            class="px-3 py-1 bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white font-bold rounded-lg shrink-0 transition text-[10px] shadow">
-            Open Portfolio Tab 🌐
-          </button>
-        </div>
-      </div>
-
-      <!-- STEP 6: PDF DOWNLOAD & APPLICATION TRACKING WIDGET -->
-      <div x-show="currentTourStep === 6" class="space-y-3.5"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-x-4"
-        x-transition:enter-end="opacity-100 translate-x-0">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">⚡</span>
-          <div>
-            <h4 class="text-base font-bold text-white">6. Instant PDF Download & Application Tracker</h4>
-            <span class="text-[10px] font-bold text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-full">Top Right • Vector PDF Engine</span>
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300 leading-relaxed">
-          Whenever you're ready, click <strong>"Download PDF"</strong> to export clean, selectable vector PDF documents that pass all ATS scanners. You can also explore <strong>🎯 Matched Jobs</strong> to find openings that align directly with your resume!
-        </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="download" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">1-Click PDF</span>
-              <span class="text-[10px] text-slate-400">Crystal-clear vector typography for printing.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="crosshair" class="w-4 h-4 text-teal-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Matched Jobs</span>
-              <span class="text-[10px] text-slate-400">Discover live vacancies matched to your skills.</span>
-            </div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-start gap-2">
-            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-            <div>
-              <span class="font-bold text-slate-200 text-[11px] block">Career Copilot</span>
-              <span class="text-[10px] text-slate-400">24/7 AI chatbot assistant in bottom corner.</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-[11px] text-teal-300 flex items-center justify-between gap-2">
-          <span>🎉 <strong>You're All Set!</strong> Ready to accelerate your career and land more interviews?</span>
-          <button type="button" @click="closeOnboardingTour(true)"
-            class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg shrink-0 transition text-[11px] shadow">
-            Get Started 🚀
-          </button>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Modal Footer: Navigation Controls -->
-    <div class="border-t border-slate-800/80 pt-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs relative z-10">
-      <div class="flex items-center gap-2">
+    <!-- WIDGET 3: LIVE ATS SCORE & AUDIT -->
+    <div x-show="currentTourStep === 3" class="space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📊</span>
+          <h4 class="text-sm font-bold text-white">3. Live ATS Compatibility Score (Right Panel)</h4>
+        </div>
+        <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">Step 3</span>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Over 75% of CVs are rejected by ATS bots. This live meter validates your keyword match percentage (aim for 90%+), verified skills, and fixes formatting errors.
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-emerald-300">💡 <strong>Pro-Tip:</strong> High ATS score guarantees your CV reaches actual hiring managers.</span>
+        <button type="button" @click="launchTourFeature(3)"
+          class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          <span>Scroll to Score 🎯</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- WIDGET 4: 8 LUXURY DESIGNER TEMPLATES -->
+    <div x-show="currentTourStep === 4" class="space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎨</span>
+          <h4 class="text-sm font-bold text-white">4. 8 Luxury Resume Templates (Workspace Bar)</h4>
+        </div>
+        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">Step 4</span>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Switch between <strong>8 designer templates</strong> in real time: Classic ATS, Modern Navy, Visual Sidebar with Photo, Tech Noir, Emerald Prestige, and Creative Gradient.
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-amber-300">💡 <strong>Quick Action:</strong> Click below to cycle and preview different templates!</span>
+        <button type="button" @click="launchTourFeature(4)"
+          class="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+          <span>Cycle Template 🎨</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- WIDGET 5: LIVE WEB PORTFOLIO STUDIO -->
+    <div x-show="currentTourStep === 5" class="space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🌐</span>
+          <h4 class="text-sm font-bold text-white">5. Live Web Portfolio Studio (/p/your-slug)</h4>
+        </div>
+        <span class="text-[10px] font-bold text-pink-400 bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 rounded-full">Step 5</span>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Turn your CV into a live personal website hosted permanently at <code class="text-pink-300">dreemfolio.com/p/your-name</code>. Share on LinkedIn, WhatsApp, and email signatures!
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-pink-300">💡 <strong>Quick Action:</strong> Click below to switch to the Live Portfolio tab!</span>
+        <button type="button" @click="launchTourFeature(5)"
+          class="px-3 py-1 bg-gradient-to-r from-pink-600 to-indigo-600 hover:from-pink-500 hover:to-indigo-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>Open Portfolio Tab 🌐</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- WIDGET 6: INSTANT PDF DOWNLOAD & JOBS -->
+    <div x-show="currentTourStep === 6" class="space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚡</span>
+          <h4 class="text-sm font-bold text-white">6. Instant PDF Download & Matched Jobs (Top Right)</h4>
+        </div>
+        <span class="text-[10px] font-bold text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-full">Step 6</span>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Export crystal-clear, selectable vector PDFs with 1 click. You can also explore <strong>🎯 Matched Jobs</strong> to discover live vacancies that match your tailored skills!
+      </p>
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <span class="text-[11px] text-teal-300">🎉 <strong>You're All Set!</strong> Ready to build your winning resume?</span>
         <button type="button" @click="closeOnboardingTour(true)"
-          class="text-[11px] text-slate-400 hover:text-slate-200 transition underline underline-offset-2">
-          Don't show again
-        </button>
-        <span class="text-slate-600">•</span>
-        <button type="button" @click="closeOnboardingTour(false)"
-          class="text-[11px] text-slate-400 hover:text-slate-200 transition">
-          Close Guide
-        </button>
-      </div>
-
-      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-        <!-- Back Button -->
-        <button type="button" @click="prevTourStep()"
-          :disabled="currentTourStep === 1"
-          class="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1">
-          <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-          <span>Previous</span>
-        </button>
-
-        <!-- Next / Finish Button -->
-        <button type="button" x-show="currentTourStep < totalTourSteps" @click="nextTourStep()"
-          class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold transition shadow-sm flex items-center gap-1 active:scale-95">
-          <span>Next Widget</span>
-          <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-        </button>
-
-        <button type="button" x-show="currentTourStep === totalTourSteps" @click="closeOnboardingTour(true)"
-          class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold transition shadow-sm flex items-center gap-1 active:scale-95">
-          <span>Finish Tour 🚀</span>
+          class="px-3.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 shadow">
+          <span>Get Started 🚀</span>
         </button>
       </div>
     </div>
 
   </div>
+
+  <!-- Footer Navigation Controls -->
+  <div class="border-t border-slate-800 pt-2.5 flex items-center justify-between gap-2 text-xs relative z-10">
+    <div class="flex items-center gap-2">
+      <button type="button" @click="closeOnboardingTour(true)"
+        class="text-[11px] text-slate-400 hover:text-slate-200 transition underline underline-offset-2">
+        Don't show banner again
+      </button>
+      <span class="text-slate-600">•</span>
+      <button type="button" @click="closeOnboardingTour(false)"
+        class="text-[11px] text-slate-400 hover:text-slate-200 transition">
+        Exit Tour
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Back Button -->
+      <button type="button" @click="prevTourStep()"
+        :disabled="currentTourStep === 1"
+        class="px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1">
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+        <span>Previous</span>
+      </button>
+
+      <!-- Next / Finish Button -->
+      <button type="button" x-show="currentTourStep < totalTourSteps" @click="nextTourStep()"
+        class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold transition shadow-sm flex items-center gap-1 active:scale-95">
+        <span>Next Widget</span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>
+
+      <button type="button" x-show="currentTourStep === totalTourSteps" @click="closeOnboardingTour(true)"
+        class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold transition shadow-sm flex items-center gap-1 active:scale-95">
+        <span>Finish Tour 🚀</span>
+      </button>
+    </div>
+  </div>
+
 </div>

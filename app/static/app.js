@@ -689,8 +689,13 @@ function resumeApp() {
       await this.restoreActiveResumeSnapshot();
 
       // Check first-time visitor tour banner ("puluwan nam withrak balanna")
-      const tourDismissed = localStorage.getItem('df_tour_banner_dismissed') || localStorage.getItem('df_tour_seen');
-      if (!tourDismissed) {
+      const tourDismissed = localStorage.getItem('df_tour_guide_v2_dismissed');
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tour') === '1' || urlParams.get('tour') === 'true') {
+        setTimeout(() => {
+          this.startSpotlightTour(1);
+        }, 500);
+      } else if (!tourDismissed) {
         this.showTourBanner = true;
       }
     },
@@ -6680,6 +6685,9 @@ function resumeApp() {
       this.showTourBanner = false;
       this.currentTourStep = step;
       this.showOnboardingTour = true;
+      if (!this.resumeText && this.sampleData && this.sampleData.software_engineer) {
+        this.loadSample('software_engineer');
+      }
       this.highlightActiveTourWidget(step);
     },
 
@@ -6690,7 +6698,7 @@ function resumeApp() {
     dismissTourBanner(dontShowAgain = true) {
       this.showTourBanner = false;
       if (dontShowAgain) {
-        localStorage.setItem('df_tour_banner_dismissed', 'true');
+        localStorage.setItem('df_tour_guide_v2_dismissed', 'true');
       }
     },
 
@@ -6771,11 +6779,10 @@ function resumeApp() {
     closeOnboardingTour(dontShowAgain = false) {
       this.showOnboardingTour = false;
       document.querySelectorAll('.tour-spotlight-active').forEach(el => {
-        el.classList.remove('tour-spotlight-active', 'ring-4', 'ring-indigo-500/80', 'ring-offset-4', 'ring-offset-slate-950', 'shadow-2xl', 'shadow-indigo-500/30');
+        el.classList.remove('tour-spotlight-active');
       });
       if (dontShowAgain) {
-        localStorage.setItem('df_tour_seen', 'true');
-        localStorage.setItem('df_tour_banner_dismissed', 'true');
+        localStorage.setItem('df_tour_guide_v2_dismissed', 'true');
       }
     },
 
