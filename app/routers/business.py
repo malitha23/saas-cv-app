@@ -23,6 +23,7 @@ from app.services.business_service import (
     CREDIT_PACKS
 )
 from app.payhere import PayHereGateway
+from app.email_service import send_candidate_onboarding_invitation_email
 
 logger = logging.getLogger("dreemfolio.business_router")
 
@@ -92,9 +93,14 @@ async def list_onboarded_candidates(
     base_url = env_base if env_base else "https://www.dreemfolio.com"
 
     for p in profiles:
-        claimed_user_name = None
-        if p.claimed_by:
-            claimed_user_name = p.claimed_by.full_name or p.claimed_by.email
+        linked_user = p.claimed_by
+        if not linked_user and p.candidate_email:
+            clean_email = p.candidate_email.strip().lower()
+            linked_user = db.scalar(select(User).where(func.lower(User.email) == clean_email))
+
+        has_account = bool(linked_user)
+        is_user_active = bool(linked_user.is_active) if linked_user else (p.status != "blocked")
+        claimed_user_name = (linked_user.full_name or linked_user.email) if linked_user else None
 
         creator_user_name = None
         if p.creator:
@@ -110,6 +116,8 @@ async def list_onboarded_candidates(
             portfolio_url=f"{base_url}/p/{p.portfolio_slug}" if p.portfolio_slug else None,
             claim_url=f"{base_url}/claim/{p.claim_token}",
             status=p.status,
+            has_account=has_account,
+            is_user_active=is_user_active,
             created_at=p.created_at.strftime("%b %d, %Y %I:%M %p"),
             claimed_at=p.claimed_at.strftime("%b %d, %Y %I:%M %p") if p.claimed_at else None,
             claimed_by_name=claimed_user_name,
@@ -117,6 +125,157 @@ async def list_onboarded_candidates(
         ))
 
     return results
+
+
+@router.post("/candidates/{candidate_id}/send-email")
+async def api_send_candidate_onboarding_email(
+    candidate_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    1-Click Candidate Outreach:
+    Dispatches a branded, high-converting invitation email with prebuilt portfolio and claim link.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    if not is_admin and acc_type != "business":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted: Candidate management is available only for Business accounts and Admins."
+        )
+
+    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate prebuilt profile not found.")
+
+    if not is_admin and profile.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to email this candidate.")
+
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+    claim_url = f"{base_url}/claim/{profile.claim_token}"
+    portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
+    creator_name = (profile.creator.company_name or profile.creator.full_name) if profile.creator else "DreemFolio AI Talent Team"
+
+    success = send_candidate_onboarding_invitation_email(
+        to_email=profile.candidate_email,
+        candidate_name=profile.candidate_name,
+        target_role=profile.target_role,
+        portfolio_url=portfolio_url,
+        claim_url=claim_url,
+        creator_name=creator_name,
+        base_url=base_url
+    )
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to dispatch invitation email via SMTP. Please check email configuration.")
+
+    return {
+        "success": True,
+        "message": f"Invitation email successfully dispatched to {profile.candidate_email}!"
+    }
+
+
+@router.post("/candidates/{candidate_id}/toggle-block")
+async def api_toggle_block_candidate(
+    candidate_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Block or Re-activate a candidate profile and their linked user login account.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    if not is_admin and acc_type != "business":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted: Candidate management is available only for Business accounts and Admins."
+        )
+
+    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+
+    if not is_admin and profile.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to modify this candidate.")
+
+    # Find linked user account if exists
+    linked_user = profile.claimed_by
+    if not linked_user and profile.candidate_email:
+        clean_email = profile.candidate_email.strip().lower()
+        linked_user = db.scalar(select(User).where(func.lower(User.email) == clean_email))
+
+    if linked_user and linked_user.is_admin:
+        raise HTTPException(status_code=403, detail="Cannot block an administrator account.")
+
+    # If currently blocked -> Reactivate
+    if profile.status == "blocked" or (linked_user and not linked_user.is_active):
+        profile.status = "claimed" if linked_user else "pending"
+        if linked_user:
+            linked_user.is_active = True
+        action = "reactivated"
+        msg = f"Candidate {profile.candidate_name} ({profile.candidate_email}) has been re-activated successfully. Logins restored."
+    else:
+        # Currently active -> Block
+        profile.status = "blocked"
+        if linked_user:
+            linked_user.is_active = False
+        action = "blocked"
+        msg = f"Candidate {profile.candidate_name} ({profile.candidate_email}) has been blocked. Account logins and claim link are now suspended."
+
+    db.commit()
+    db.refresh(profile)
+    if linked_user:
+        db.refresh(linked_user)
+
+    return {
+        "success": True,
+        "action": action,
+        "status": profile.status,
+        "is_user_active": linked_user.is_active if linked_user else (profile.status != "blocked"),
+        "message": msg
+    }
+
+
+@router.delete("/candidates/{candidate_id}")
+async def api_delete_candidate_profile(
+    candidate_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Permanently delete a candidate prebuilt profile record.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    if not is_admin and acc_type != "business":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted: Candidate management is available only for Business accounts and Admins."
+        )
+
+    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+
+    if not is_admin and profile.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to delete this candidate profile.")
+
+    cand_name = profile.candidate_name
+    db.delete(profile)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Candidate profile #{candidate_id} ({cand_name}) has been permanently deleted."
+    }
 
 
 @router.get("/wallet", response_model=BusinessWalletResponse)

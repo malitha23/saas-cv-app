@@ -701,3 +701,48 @@ def send_promotional_campaign_email(
     )
 
 
+def send_candidate_onboarding_invitation_email(
+    to_email: str,
+    candidate_name: str,
+    target_role: Optional[str],
+    portfolio_url: Optional[str],
+    claim_url: str,
+    creator_name: Optional[str] = None,
+    base_url: str = "https://www.dreemfolio.com",
+    enqueue_on_fail: bool = False
+) -> bool:
+    """Dispatches a personalized 1-click VIP onboarding invitation to a candidate."""
+    clean_to = to_email.strip()
+    name_clean = (candidate_name or "Candidate").strip()
+    role_clean = (target_role or "Software Professional").strip()
+    subject = f"🚀 Your ATS Resume & Live Portfolio Website are Ready! ({name_clean})"
+
+    template = jinja_env.get_template("emails/candidate_onboarding_invitation.html")
+    html_content = template.render(
+        subject=subject,
+        candidate_name=name_clean,
+        target_role=role_clean,
+        portfolio_url=portfolio_url,
+        claim_url=claim_url,
+        creator_name=creator_name or "DreemFolio AI Talent Team",
+        base_url=base_url.rstrip("/"),
+        current_year=datetime.utcnow().year
+    )
+
+    plain_content = (
+        f"Hi {name_clean},\n\n"
+        f"We have pre-built your ATS-Optimized Resume & Live Web Portfolio with DreemFolio AI!\n\n"
+        f"Preview your live website: {portfolio_url or 'https://www.dreemfolio.com'}\n"
+        f"1-Click Claim your profile & editable CV: {claim_url}\n\n"
+        f"Best regards,\nDreemFolio AI Team"
+    )
+
+    return send_raw_email(
+        to_email=clean_to,
+        subject=subject,
+        html_body=html_content,
+        plain_body=plain_content,
+        enqueue_on_fail=enqueue_on_fail
+    )
+
+

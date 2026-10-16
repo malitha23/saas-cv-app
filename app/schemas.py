@@ -1576,6 +1576,7 @@ class PublicReviewsResponse(BaseModel):
 
 class PrebuildProfileResponse(BaseModel):
     success: bool = True
+    id: Optional[int] = None
     claim_token: str
     claim_url: str
     portfolio_url: str
@@ -1596,7 +1597,9 @@ class CandidatePrebuiltSummary(BaseModel):
     portfolio_slug: Optional[str] = None
     portfolio_url: Optional[str] = None
     claim_url: str
-    status: str  # 'pending', 'claimed'
+    status: str  # 'pending', 'claimed', 'blocked'
+    has_account: bool = False
+    is_user_active: bool = True
     created_at: str
     claimed_at: Optional[str] = None
     claimed_by_name: Optional[str] = None

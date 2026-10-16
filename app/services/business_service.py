@@ -273,6 +273,7 @@ def prebuild_candidate_profile(
 
     return PrebuildProfileResponse(
         success=True,
+        id=prebuilt_profile.id,
         claim_token=claim_token,
         claim_url=claim_url,
         portfolio_url=portfolio_url,

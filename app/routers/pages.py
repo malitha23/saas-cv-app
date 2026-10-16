@@ -642,6 +642,12 @@ async def serve_claim_profile_page(token: str, request: Request, db: Session = D
     if not profile:
         raise HTTPException(status_code=404, detail="Candidate onboarding link is invalid or has expired.")
 
+    if profile.status == "blocked":
+        raise HTTPException(
+            status_code=403,
+            detail="This candidate onboarding profile has been suspended or deactivated by the administrator."
+        )
+
     # Parse resume preview data
     cand_name = profile.candidate_name or "Candidate"
     target_role = profile.target_role or "Software Professional"

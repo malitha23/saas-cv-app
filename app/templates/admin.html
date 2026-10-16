@@ -3457,6 +3457,27 @@
                 </a>
               </div>
 
+              <!-- 1-Click Email Dispatch Callout -->
+              <div class="p-4 rounded-xl bg-pink-950/30 border border-pink-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-400 border border-pink-500/30 flex items-center justify-center shrink-0">
+                    <i data-lucide="mail-check" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>1-Click Email Dispatch</span>
+                      <span class="text-[10px] px-2 py-0.2 rounded-full bg-pink-500/20 text-pink-300 font-mono">Automated VIP Invite</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400">Send prebuilt ATS profile and claim link directly to <span class="text-pink-300 font-mono font-bold" x-text="onboardingResult.candidate_email"></span></div>
+                  </div>
+                </div>
+                <button type="button" @click="sendOnboardingInvitationEmail(onboardingResult.id, onboardingResult.candidate_email)" :disabled="isSendingOnboardEmail"
+                        class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:brightness-110 text-white shadow-lg shadow-pink-600/30 transition flex items-center justify-center gap-2 shrink-0 disabled:opacity-50">
+                  <i data-lucide="send" class="w-3.5 h-3.5" :class="{'animate-spin': isSendingOnboardEmail}"></i>
+                  <span x-text="isSendingOnboardEmail ? 'Sending Email...' : 'Send Invitation Email Now ✉️'"></span>
+                </button>
+              </div>
+
               <!-- Claim Link Box -->
               <div class="space-y-1.5">
                 <label class="block text-xs font-bold text-slate-300">1-Click Candidate Claim Link</label>
@@ -3481,6 +3502,11 @@
                   <textarea readonly rows="4" :value="onboardingResult.invitation_message"
                             class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-slate-200 text-xs font-sans select-all focus:outline-none leading-relaxed"></textarea>
                   <div class="absolute right-3 bottom-3 flex items-center gap-2">
+                    <button type="button" @click="sendOnboardingInvitationEmail(onboardingResult.id, onboardingResult.candidate_email)" :disabled="isSendingOnboardEmail"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 text-white transition flex items-center gap-1"
+                            title="Send 1-click email invitation">
+                      <i data-lucide="send" class="w-3 h-3"></i> Send Email
+                    </button>
                     <button @click="copyTextToClipboard(onboardingResult.invitation_message, 'Invitation Message Copied!')"
                             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center gap-1">
                       <i data-lucide="copy" class="w-3 h-3"></i> Copy Message
@@ -3517,6 +3543,7 @@
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending Claim</option>
                 <option value="claimed">Claimed</option>
+                <option value="blocked">Blocked / Suspended</option>
               </select>
 
               <button @click="loadOnboardingCandidates()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Refresh">
@@ -3553,14 +3580,26 @@
                     <td class="p-3 text-slate-300" x-text="cand.target_role || 'Professional'"></td>
                     <td class="p-3 text-slate-500" x-text="cand.created_at"></td>
                     <td class="p-3">
-                      <span x-show="cand.status === 'claimed'"
-                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        <i data-lucide="check" class="w-3 h-3"></i> Claimed
-                      </span>
-                      <span x-show="cand.status === 'pending'"
-                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                        <i data-lucide="clock" class="w-3 h-3"></i> Pending
-                      </span>
+                      <div class="space-y-1">
+                        <span x-show="cand.status === 'claimed' && cand.is_user_active"
+                              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          <i data-lucide="check-check" class="w-3 h-3"></i> Claimed & Active
+                        </span>
+                        <span x-show="cand.status === 'pending' && cand.is_user_active"
+                              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                          <i data-lucide="clock" class="w-3 h-3"></i> Pending Claim
+                        </span>
+                        <span x-show="cand.status === 'blocked' || !cand.is_user_active"
+                              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                          <i data-lucide="shield-alert" class="w-3 h-3"></i> Blocked / Suspended
+                        </span>
+                        <template x-if="cand.has_account">
+                          <div class="text-[10px] text-cyan-400 font-mono flex items-center gap-1">
+                            <i data-lucide="user" class="w-2.5 h-2.5"></i>
+                            <span>User Login Account</span>
+                          </div>
+                        </template>
+                      </div>
                     </td>
                     <td class="p-3 text-slate-400">
                       <div x-show="cand.claimed_by_name">
@@ -3571,16 +3610,35 @@
                     </td>
                     <td class="p-3 text-right">
                       <div class="flex items-center justify-end gap-1.5">
-                        <button @click="copyTextToClipboard(cand.claim_url, 'Claim link copied!')" title="Copy Claim Link"
+                        <!-- 1-Click Send Email -->
+                        <button type="button" @click="sendCandidateEmail(cand)" title="Send VIP invitation email to candidate"
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-pink-600 text-slate-300 hover:text-white transition">
+                          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <!-- Copy Claim Link -->
+                        <button type="button" @click="copyTextToClipboard(cand.claim_url, 'Claim link copied!')" title="Copy Claim Link"
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition">
                           <i data-lucide="link" class="w-3.5 h-3.5"></i>
                         </button>
+                        <!-- View Live Portfolio -->
                         <template x-if="cand.portfolio_url">
                           <a :href="cand.portfolio_url" target="_blank" title="View Live Portfolio"
                              class="p-1.5 rounded-lg bg-slate-800 hover:bg-purple-600 text-slate-300 hover:text-white transition">
                             <i data-lucide="globe" class="w-3.5 h-3.5"></i>
                           </a>
                         </template>
+                        <!-- Block / Re-activate Toggle Button -->
+                        <button type="button" @click="toggleBlockCandidate(cand)"
+                                :title="(cand.status === 'blocked' || !cand.is_user_active) ? 'Re-activate Candidate & Restore Login Access' : 'Block Candidate & Suspend Login Access'"
+                                class="p-1.5 rounded-lg transition"
+                                :class="(cand.status === 'blocked' || !cand.is_user_active) ? 'bg-emerald-950/70 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30' : 'bg-slate-800 hover:bg-amber-600 text-amber-400 hover:text-white'">
+                          <i :data-lucide="(cand.status === 'blocked' || !cand.is_user_active) ? 'user-check' : 'user-x'" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <!-- Permanently Delete Profile Button -->
+                        <button type="button" @click="deleteCandidateProfile(cand)" title="Permanently delete candidate prebuilt profile"
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white transition">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -3753,11 +3811,16 @@
         onboardingSearchQuery: '',
         onboardingStatusFilter: 'all',
         copySuccessTip: '',
+        isSendingOnboardEmail: false,
 
         get filteredOnboardedCandidates() {
           let list = this.onboardingCandidatesList || [];
           if (this.onboardingStatusFilter !== 'all') {
-            list = list.filter(c => c.status === this.onboardingStatusFilter);
+            if (this.onboardingStatusFilter === 'blocked') {
+              list = list.filter(c => c.status === 'blocked' || c.is_user_active === false);
+            } else {
+              list = list.filter(c => c.status === this.onboardingStatusFilter && c.is_user_active !== false);
+            }
           }
           if (this.onboardingSearchQuery && this.onboardingSearchQuery.trim()) {
             const q = this.onboardingSearchQuery.trim().toLowerCase();
@@ -4017,6 +4080,101 @@
             });
           } else {
             prompt('Copy link:', text);
+          }
+        },
+
+        async sendOnboardingInvitationEmail(candidateId, email) {
+          if (!candidateId && this.onboardingResult) {
+            candidateId = this.onboardingResult.id;
+          }
+          if (!candidateId) {
+            alert('Candidate profile ID is required to dispatch email.');
+            return;
+          }
+          this.isSendingOnboardEmail = true;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/business/candidates/${candidateId}/send-email`, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✉️ Success: ${data.message || 'VIP Invitation email dispatched to ' + (email || 'candidate')}`);
+            } else {
+              alert(`❌ Error sending email: ${data.detail || 'Email dispatch failed'}`);
+            }
+          } catch (e) {
+            alert('Error sending email: ' + e.message);
+          } finally {
+            this.isSendingOnboardEmail = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async sendCandidateEmail(cand) {
+          if (!cand || !cand.id) return;
+          if (!confirm(`Send 1-Click invitation and claim link directly to ${cand.candidate_name || 'Candidate'} (${cand.candidate_email})?`)) return;
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/business/candidates/${cand.id}/send-email`, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✉️ Success: ${data.message || 'Invitation sent!'}`);
+            } else {
+              alert(`❌ Send failed: ${data.detail || 'Unknown error'}`);
+            }
+          } catch (e) {
+            alert('Error sending email: ' + e.message);
+          }
+        },
+
+        async toggleBlockCandidate(cand) {
+          if (!cand || !cand.id) return;
+          const isCurrentlyBlocked = (cand.status === 'blocked' || cand.is_user_active === false);
+          const actionText = isCurrentlyBlocked ? 're-activate' : 'block / suspend';
+          if (!confirm(`Are you sure you want to ${actionText} candidate '${cand.candidate_name}' (${cand.candidate_email})? This controls both profile claim access and their user login account.`)) return;
+
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/business/candidates/${cand.id}/toggle-block`, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ ${data.message}`);
+              await this.loadOnboardingCandidates();
+            } else {
+              alert(`❌ Error: ${data.detail || 'Failed to update candidate state'}`);
+            }
+          } catch (e) {
+            alert('Error updating candidate state: ' + e.message);
+          }
+        },
+
+        async deleteCandidateProfile(cand) {
+          if (!cand || !cand.id) return;
+          if (!confirm(`⚠️ PERMANENT DELETION: Are you sure you want to permanently delete candidate profile #${cand.id} ('${cand.candidate_name}')? This cannot be undone.`)) return;
+
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/business/candidates/${cand.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`✅ ${data.message}`);
+              await this.loadOnboardingCandidates();
+            } else {
+              alert(`❌ Delete failed: ${data.detail || 'Error'}`);
+            }
+          } catch (e) {
+            alert('Delete error: ' + e.message);
           }
         },
 
