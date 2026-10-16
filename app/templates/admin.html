@@ -3060,6 +3060,12 @@
               <i data-lucide="clipboard" class="w-3.5 h-3.5 text-cyan-400"></i>
               <span>Paste CSV Text</span>
             </button>
+            <button type="button" @click="syncRegisteredUsersToLeads()" :disabled="isSyncingUsers"
+              class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold text-xs rounded-xl border border-purple-500/30 flex items-center gap-1.5 transition"
+              title="Automatically import all signed-up users into marketing leads without duplicates">
+              <i data-lucide="user-plus" class="w-3.5 h-3.5 text-purple-400" :class="{'animate-spin': isSyncingUsers}"></i>
+              <span x-text="isSyncingUsers ? 'Syncing...' : 'Sync Registered Users'">Sync Registered Users</span>
+            </button>
             <button type="button" @click="openSendCampaignModal('never_sent')"
               class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:brightness-110 text-white font-bold text-xs rounded-xl shadow-lg shadow-pink-600/30 flex items-center gap-1.5 transition">
               <i data-lucide="send" class="w-3.5 h-3.5"></i>
@@ -3715,6 +3721,7 @@
         showSendCampaignModal: false,
         isUploadingCsv: false,
         isSendingCampaign: false,
+        isSyncingUsers: false,
         csvUploadFile: null,
         csvUploadTag: 'csv_import',
         pastedCsvText: '',
@@ -5422,6 +5429,31 @@
             alert('Import request failed: ' + err.message);
           } finally {
             this.isUploadingCsv = false;
+          }
+        },
+
+        async syncRegisteredUsersToLeads() {
+          const token = localStorage.getItem('saas_token');
+          this.isSyncingUsers = true;
+          try {
+            const res = await fetch('/api/admin/marketing/sync-users', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              alert(`✅ ${data.message}`);
+              await this.loadMarketingCampaignsData();
+            } else {
+              alert(`❌ ${data.detail || 'Failed to sync registered users.'}`);
+            }
+          } catch (err) {
+            alert('Error syncing registered users: ' + err.message);
+          } finally {
+            this.isSyncingUsers = false;
           }
         },
 

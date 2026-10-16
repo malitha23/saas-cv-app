@@ -276,7 +276,7 @@ async def on_startup():
         from app.pricing import DEFAULT_COUNTRY_PRICING_DATA
 
         with SessionLocal() as db:
-            # 1. Seed or ensure LAUNCH20 promo code exists
+            # 1. Seed or ensure default promo codes exist
             promo = db.scalars(select(PromoCode).where(PromoCode.code == "LAUNCH20")).first()
             if not promo:
                 db.add(PromoCode(
@@ -290,7 +290,21 @@ async def on_startup():
                     is_active=True,
                     created_by_admin="System Launch Seed"
                 ))
-                db.commit()
+
+            free_promo = db.scalars(select(PromoCode).where(PromoCode.code == "FREE100")).first()
+            if not free_promo:
+                db.add(PromoCode(
+                    code="FREE100",
+                    code_type="free_pass",
+                    discount_percent=100.0,
+                    free_days=14,
+                    target_plan="pro",
+                    max_uses=0,
+                    times_used=0,
+                    is_active=True,
+                    created_by_admin="System Campaign Seed"
+                ))
+            db.commit()
 
             # 2. Seed or sync billing discounts
             disc_setting = db.scalars(select(SaasSetting).where(SaasSetting.key == "billing_discounts_json")).first()

@@ -2063,6 +2063,50 @@ async def clear_all_marketing_leads(
     return {"success": True, "message": f"Successfully deleted {count} lead(s).", "deleted_count": count}
 
 
+@router.post("/api/admin/marketing/sync-users")
+async def sync_registered_users_to_marketing_leads(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Syncs all active registered users into the marketing leads database,
+    automatically deduplicating so existing emails are never added twice.
+    """
+    users = db.scalars(select(User).where(User.is_active == True)).all()
+    added_count = 0
+    skipped_count = 0
+
+    for u in users:
+        clean_email = (u.email or "").strip().lower()
+        if not clean_email or "@" not in clean_email:
+            continue
+
+        existing = db.scalar(select(MarketingLead).where(MarketingLead.email == clean_email))
+        if existing:
+            skipped_count += 1
+            continue
+
+        lead = MarketingLead(
+            name=u.full_name or "Registered User",
+            email=clean_email,
+            position="Registered Candidate",
+            campaign_tag="registered_users",
+            source="user_registration",
+            created_at=datetime.utcnow()
+        )
+        db.add(lead)
+        added_count += 1
+
+    db.commit()
+    return {
+        "success": True,
+        "message": f"Successfully synced {added_count} registered user(s) into campaign leads ({skipped_count} existing/duplicates skipped).",
+        "added_count": added_count,
+        "skipped_count": skipped_count
+    }
+
+
+
 
 
 
