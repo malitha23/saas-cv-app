@@ -2092,7 +2092,7 @@ async def sync_registered_users_to_marketing_leads(
             position="Registered Candidate",
             campaign_tag="registered_users",
             source="user_registration",
-            created_at=datetime.utcnow()
+            created_at=datetime.datetime.utcnow()
         )
         db.add(lead)
         added_count += 1
