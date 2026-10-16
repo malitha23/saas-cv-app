@@ -4,7 +4,7 @@
 
       <!-- ATS Score Banner (Shows when tailored data exists) -->
       <template x-if="tailoredData">
-        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div id="tour-step-ats" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4 transition-all duration-300">
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
 
@@ -77,8 +77,8 @@
       </template>
 
       <!-- Main Preview Container Card -->
-      <div
-        class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden min-h-[640px]">
+      <div id="tour-step-workspace-container"
+        class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl flex-1 flex flex-col overflow-hidden min-h-[640px] transition-all duration-300">
 
         <!-- Tab Switcher, Template Selector & Actions Bar -->
         <div class="workspace-header-bar p-2 sm:p-3 border-b border-slate-800 flex flex-col gap-2.5 bg-slate-900/95">
@@ -118,7 +118,7 @@
               </button>
 
               <!-- Tab 3: Portfolio Web (Pro) -->
-              <button @click="activeTab = 'portfolio'; renderPortfolioPreview()"
+              <button id="tour-step-portfolio" @click="activeTab = 'portfolio'; renderPortfolioPreview()"
                 :class="{'bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-bold shadow': activeTab === 'portfolio', 'text-slate-400 hover:text-slate-200': activeTab !== 'portfolio'}"
                 class="workspace-tab-btn px-2 sm:px-2.5 xl:px-3 py-1.5 rounded-lg transition flex items-center gap-1 sm:gap-1.5 whitespace-nowrap text-xs shrink-0"
                 title="Live Hosted Web Portfolio (Pro)">
@@ -160,7 +160,7 @@
             </div>
 
             <!-- Download & CTAs (Desktop / Tablet top right alignment) -->
-            <div class="hidden sm:flex items-center space-x-1.5 xl:space-x-2 shrink-0 ml-auto">
+            <div id="tour-step-download" class="hidden sm:flex items-center space-x-1.5 xl:space-x-2 shrink-0 ml-auto transition-all duration-300">
               <!-- Re-upload / New CV Button (Shows when tailoredData exists) -->
               <template x-if="tailoredData">
                 <button @click="resetAndReupload()"
@@ -235,7 +235,7 @@
 
           <!-- Row 2: Format & Template Switcher (Fully Responsive Multi-Row & Wrapping Layout) -->
           <template x-if="tailoredData && activeTab === 'resume'">
-            <div class="format-switcher-container flex flex-wrap items-center gap-1.5 text-xs bg-slate-950/90 p-1.5 rounded-xl border border-slate-800 w-full">
+            <div id="tour-step-templates" class="format-switcher-container flex flex-wrap items-center gap-1.5 text-xs bg-slate-950/90 p-1.5 rounded-xl border border-slate-800 w-full transition-all duration-300">
               <!-- Subgroup 1: ATS Formats -->
               <div class="format-switcher-subgroup flex items-center gap-1 bg-slate-900/90 px-2 py-1 rounded-lg border border-slate-800/80 shrink-0">
                 <span class="text-[10px] text-slate-400 font-bold uppercase pr-1 flex items-center gap-1 shrink-0">

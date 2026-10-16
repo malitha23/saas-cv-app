@@ -229,10 +229,11 @@ function resumeApp() {
     isPinProtected: false,
     watermarkEnabled: true,
 
-    // Interactive First-Time Onboarding Tour State
+    // Interactive First-Time Onboarding Tour State ("puluwan nam withrak balanna")
     showOnboardingTour: false,
+    showTourBanner: false,
     currentTourStep: 1,
-    totalTourSteps: 5,
+    totalTourSteps: 6,
     newProof: {
       title: '',
       category: 'Automotive & Trade',
@@ -687,12 +688,10 @@ function resumeApp() {
       // Automatically restore active resume draft if user was editing and refreshed the page
       await this.restoreActiveResumeSnapshot();
 
-      // Check first-time visitor tour
-      const tourSeen = localStorage.getItem('df_tour_seen');
-      if (!tourSeen) {
-        setTimeout(() => {
-          this.startOnboardingTour();
-        }, 800);
+      // Check first-time visitor tour banner ("puluwan nam withrak balanna")
+      const tourDismissed = localStorage.getItem('df_tour_banner_dismissed') || localStorage.getItem('df_tour_seen');
+      if (!tourDismissed) {
+        this.showTourBanner = true;
       }
     },
 
@@ -6674,81 +6673,145 @@ function resumeApp() {
     },
 
     // ═══════════════════════════════════════════════════════════════════
-    // INTERACTIVE ONBOARDING TOUR & FEATURE DISCOVERY METHODS
+    // INTERACTIVE ONBOARDING TOUR & MAIN WIDGETS DISCOVERY METHODS
     // ═══════════════════════════════════════════════════════════════════
 
-    startOnboardingTour() {
-      this.currentTourStep = 1;
+    startSpotlightTour(step = 1) {
+      this.showTourBanner = false;
+      this.currentTourStep = step;
       this.showOnboardingTour = true;
-      this.$nextTick(() => {
-        if (window.lucide && typeof window.lucide.createIcons === 'function') {
-          window.lucide.createIcons();
-        }
-      });
+      this.highlightActiveTourWidget(step);
+    },
+
+    startOnboardingTour() {
+      this.startSpotlightTour(1);
+    },
+
+    dismissTourBanner(dontShowAgain = true) {
+      this.showTourBanner = false;
+      if (dontShowAgain) {
+        localStorage.setItem('df_tour_banner_dismissed', 'true');
+      }
     },
 
     nextTourStep() {
       if (this.currentTourStep < this.totalTourSteps) {
         this.currentTourStep++;
-        this.$nextTick(() => {
-          if (window.lucide && typeof window.lucide.createIcons === 'function') {
-            window.lucide.createIcons();
-          }
-        });
+        this.highlightActiveTourWidget(this.currentTourStep);
       }
     },
 
     prevTourStep() {
       if (this.currentTourStep > 1) {
         this.currentTourStep--;
-        this.$nextTick(() => {
-          if (window.lucide && typeof window.lucide.createIcons === 'function') {
-            window.lucide.createIcons();
-          }
-        });
+        this.highlightActiveTourWidget(this.currentTourStep);
       }
     },
 
     goToTourStep(step) {
       if (step >= 1 && step <= this.totalTourSteps) {
         this.currentTourStep = step;
-        this.$nextTick(() => {
+        this.highlightActiveTourWidget(step);
+      }
+    },
+
+    highlightActiveTourWidget(step) {
+      // Clear previous spotlight classes
+      document.querySelectorAll('.tour-spotlight-active').forEach(el => {
+        el.classList.remove('tour-spotlight-active', 'ring-4', 'ring-indigo-500/80', 'ring-offset-4', 'ring-offset-slate-950', 'shadow-2xl', 'shadow-indigo-500/30');
+      });
+
+      let targetId = '';
+      if (step === 1) targetId = 'tour-step-upload';
+      else if (step === 2) targetId = 'tour-step-jd';
+      else if (step === 3) targetId = 'tour-step-ats';
+      else if (step === 4) targetId = 'tour-step-templates';
+      else if (step === 5) targetId = 'tour-step-portfolio';
+      else if (step === 6) targetId = 'tour-step-download';
+
+      this.$nextTick(() => {
+        // Mobile view tab synchronization
+        if (window.innerWidth < 1024) {
+          if (step <= 2) {
+            this.mobileWorkspaceTab = 'editor';
+          } else {
+            this.mobileWorkspaceTab = 'preview';
+          }
+        }
+
+        // Active workspace tab synchronization
+        if (step === 5) {
+          this.activeTab = 'portfolio';
+          if (typeof this.renderPortfolioPreview === 'function') {
+            this.renderPortfolioPreview();
+          }
+        } else if (step === 4 || step === 3 || step === 6) {
+          if (this.activeTab === 'portfolio') {
+            this.activeTab = 'resume';
+          }
+        }
+
+        setTimeout(() => {
+          let el = document.getElementById(targetId);
+          // Fallback if right panel is not yet tailored
+          if (!el && (step === 3 || step === 4)) {
+            el = document.getElementById('tour-step-workspace-container');
+          }
+          if (el) {
+            el.classList.add('tour-spotlight-active', 'ring-4', 'ring-indigo-500/80', 'ring-offset-4', 'ring-offset-slate-950', 'shadow-2xl', 'shadow-indigo-500/30');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
           if (window.lucide && typeof window.lucide.createIcons === 'function') {
             window.lucide.createIcons();
           }
-        });
-      }
+        }, 120);
+      });
     },
 
     closeOnboardingTour(dontShowAgain = false) {
       this.showOnboardingTour = false;
+      document.querySelectorAll('.tour-spotlight-active').forEach(el => {
+        el.classList.remove('tour-spotlight-active', 'ring-4', 'ring-indigo-500/80', 'ring-offset-4', 'ring-offset-slate-950', 'shadow-2xl', 'shadow-indigo-500/30');
+      });
       if (dontShowAgain) {
         localStorage.setItem('df_tour_seen', 'true');
+        localStorage.setItem('df_tour_banner_dismissed', 'true');
       }
     },
 
     launchTourFeature(step) {
-      this.closeOnboardingTour(false);
-
       if (step === 1) {
-        // Step 1: Load sample resume and scroll to input section
+        // Step 1: Load sample demo resume
         this.loadSample('software_engineer');
-        this.$nextTick(() => {
-          const el = document.getElementById('input-section') || document.querySelector('textarea');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+        this.highlightActiveTourWidget(1);
       } else if (step === 2) {
-        // Step 2: Open workspace preview
-        this.activeTab = 'resume';
+        // Step 2: Paste sample job description
+        if (this.sampleJD) {
+          this.jobDescription = this.sampleJD;
+        } else if (this.sampleData && this.sampleData.software_engineer) {
+          this.jobDescription = this.sampleData.software_engineer.job_description;
+        }
+        this.highlightActiveTourWidget(2);
       } else if (step === 3) {
-        // Step 3: Launch Voice Mock Interview Studio
-        this.openVoiceInterviewModal();
+        // Step 3: Scroll to ATS score
+        this.highlightActiveTourWidget(3);
       } else if (step === 4) {
-        // Step 4: Launch Real-Time Video Conference Studio
-        this.startRealtimeConference('Technical & Behavioral Interview', 'Target Company');
+        // Step 4: Cycle through luxury templates
+        const tList = ['classic', 'modern', 'visual_sidebar', 'tech_noir', 'emerald_prestige', 'creative_gradient'];
+        const currentIdx = tList.indexOf(this.currentTemplate);
+        const nextIdx = (currentIdx + 1) % tList.length;
+        this.setTemplate(tList[nextIdx]);
+        this.highlightActiveTourWidget(4);
       } else if (step === 5) {
-        // Step 5: Open QR Smart Card & Proof-of-Work modal
-        this.openQrCardModal();
+        // Step 5: Switch to Portfolio tab
+        this.activeTab = 'portfolio';
+        if (typeof this.renderPortfolioPreview === 'function') {
+          this.renderPortfolioPreview();
+        }
+        this.highlightActiveTourWidget(5);
+      } else if (step === 6) {
+        // Step 6: Finish tour
+        this.closeOnboardingTour(true);
       }
     }
   };
