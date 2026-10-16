@@ -84,7 +84,7 @@ def save_published_portfolio(slug: str, html_content: str, domain: Optional[str]
 
 
 def get_published_portfolio(slug: str) -> Optional[str]:
-    """Retrieve published portfolio HTML from memory cache or shared disk storage."""
+    """Retrieve published portfolio HTML from memory cache, shared disk storage, or database fallback."""
     if slug in PUBLISHED_PORTFOLIOS:
         return PUBLISHED_PORTFOLIOS[slug]
     file_path = os.path.join(PORTFOLIO_STORAGE_DIR, f"{slug}.html")
@@ -96,6 +96,27 @@ def get_published_portfolio(slug: str) -> Optional[str]:
                 return content
         except Exception:
             pass
+
+    # Database fallback for pre-built candidate portfolios across server restarts & deployments
+    try:
+        from app.database import SessionLocal
+        from app.models import PrebuiltCandidateProfile
+        from sqlalchemy import select
+        with SessionLocal() as db_session:
+            profile = db_session.scalar(
+                select(PrebuiltCandidateProfile).where(PrebuiltCandidateProfile.portfolio_slug == slug)
+            )
+            if profile and profile.portfolio_html and profile.status != "blocked":
+                PUBLISHED_PORTFOLIOS[slug] = profile.portfolio_html
+                try:
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(profile.portfolio_html)
+                except Exception:
+                    pass
+                return profile.portfolio_html
+    except Exception as db_err:
+        print("[Portfolio DB Fallback Note]", db_err)
+
     return None
 
 
