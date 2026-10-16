@@ -570,6 +570,32 @@ class BusinessCreditTransaction(Base):
         return f"<BusinessCreditTransaction(id={self.id}, user_id={self.user_id}, amount={self.amount}, balance={self.balance_after})>"
 
 
+class AiUsageLog(Base):
+    """
+    SQLAlchemy 2.0 Typed Model for tracking granular Gemini AI token consumption,
+    estimated costs, operation types, and user attribution.
+    """
+    __tablename__ = "ai_usage_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    model_name: Mapped[str] = mapped_column(String(100), default="gemini-flash", nullable=False)
+    operation: Mapped[str] = mapped_column(String(100), default="resume_tailor", nullable=False)
+    prompt_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    completion_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    estimated_cost_lkr: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[user_id])
+
+    def __repr__(self) -> str:
+        return f"<AiUsageLog(id={self.id}, user='{self.user_email}', op='{self.operation}', tokens={self.total_tokens}, cost_usd=${self.estimated_cost_usd:.4f})>"
+
+
+
 
 
 

@@ -2106,6 +2106,20 @@ async def sync_registered_users_to_marketing_leads(
     }
 
 
+@router.get("/api/admin/ai/usage-stats")
+async def get_admin_ai_usage_stats(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns granular Gemini AI token telemetry, daily/weekly/monthly metrics,
+    estimated cost breakdown ($ and LKR), and top 10 AI consuming users.
+    """
+    from app.services.ai_tracking_service import get_ai_metrics_overview
+    return get_ai_metrics_overview(db)
+
+
+
 
 
 

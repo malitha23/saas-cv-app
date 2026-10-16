@@ -189,7 +189,8 @@ async def quick_scan_ats(
 @router.post("/api/tailor", response_model=TailoredResume)
 async def tailor_resume(
     payload: TailorRequest,
-    current_user: User = Depends(check_daily_ai_quota)
+    current_user: User = Depends(check_daily_ai_quota),
+    db: Session = Depends(get_db)
 ):
     """
     Optimize candidate resume against target Job Description using Gemini Flash.
@@ -217,6 +218,24 @@ async def tailor_resume(
             template_style=payload.template_style or "classic",
             cover_letter_tone=payload.cover_letter_tone or "professional"
         )
+
+        # Record AI token and cost metrics
+        try:
+            from app.services.ai_tracking_service import record_ai_usage
+            prompt_est = len(payload.resume_text + payload.job_description) // 3 + 750
+            comp_est = 2500
+            record_ai_usage(
+                db=db,
+                user_id=current_user.id if current_user else None,
+                user_email=current_user.email if current_user else None,
+                model_name="gemini-3.5-flash-lite",
+                operation="resume_tailor",
+                prompt_tokens=prompt_est,
+                completion_tokens=comp_est
+            )
+        except Exception:
+            pass
+
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Optimization error: {str(e)}")

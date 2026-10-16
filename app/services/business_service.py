@@ -195,6 +195,19 @@ def prebuild_candidate_profile(
             role_archetype="auto",
             template_style="classic"
         )
+        try:
+            from app.services.ai_tracking_service import record_ai_usage
+            record_ai_usage(
+                db=db,
+                user_id=creator.id if creator else None,
+                user_email=creator.email if creator else None,
+                model_name="gemini-3.8-flash",
+                operation="magic_onboarding",
+                prompt_tokens=len(raw_text) // 3 + 1100,
+                completion_tokens=3100
+            )
+        except Exception:
+            pass
     except Exception as e:
         logger.warning("Gemini AI structuring warning, falling back to universal parser: %s", e)
         # generate_with_gemini already has internal fallback to _parse_and_tailor_user_data
