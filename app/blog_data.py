@@ -10,12 +10,12 @@ from typing import Dict, Any, List, Optional
 BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
     "how-to-write-an-ats-friendly-cv": {
         "slug": "how-to-write-an-ats-friendly-cv",
-        "title": "The Ultimate ATS Resume Optimization Guide for 2026",
-        "subtitle": "Step-by-step blueprint to pass modern Applicant Tracking Systems (Workday, Greenhouse, Lever) with 95%+ match scores.",
-        "description": "Master ATS resume optimization in 2026. Download recruiter-approved single-column formats, discover font checklists, and test your ATS score free.",
+        "title": "What is ATS & How to Write an ATS-Friendly CV (2026 Free Guide)",
+        "subtitle": "What does ATS mean? Step-by-step blueprint to pass modern Applicant Tracking Systems (Workday, Greenhouse, Lever) with 95%+ match scores.",
+        "description": "What does ATS mean in a resume? Learn how to format your CV for ATS screening, pass Workday & Greenhouse scanners, and test your ATS match score for free.",
         "template": "blogs/ats_cv_guide.html",
         "published_date": "2026-10-05",
-        "modified_date": "2026-10-12",
+        "modified_date": "2026-10-16",
         "author": {
             "name": "DreemFolio AI Career Team",
             "role": "Senior Talent Acquisition & Resume Strategists",
@@ -26,12 +26,14 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "badge": "Pillar Guide",
         "priority": "0.95",
         "target_keywords": [
+            "ats means",
+            "what does ats mean",
+            "ats resume full form",
             "ats format resume",
             "what is ats format",
-            "ats means",
             "ats score meaning",
+            "what is a good ats score",
             "ats free resume",
-            "The Ultimate ATS Resume Optimization Guide",
             "ATS friendly CV",
             "pass ATS scanner",
             "free ATS checker",
@@ -42,13 +44,14 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
         "translations": {
             "si": {
-                "title": "2026 දී ATS-Friendly CV එකක් හදන හැටි",
-                "subtitle": "Workday, Greenhouse සහ Lever වැනි ATS පද්ධති වලින් 95%+ ලකුණු ලබාගනිමින් Pass වන CV එකක් හදන නිවැරදි ක්‍රමය.",
-                "description": "Applicant Tracking Systems (ATS) හරහා 95%+ Match Score එකක් ගන්නා ATS-friendly CV එකක් සාදන නිවැරදි ක්‍රමය සහ නොමිලේ ATS score පරීක්ෂාව.",
+                "title": "ATS කියන්නේ මොකක්ද? 2026 දී ATS-Friendly CV එකක් හදන හැටි",
+                "subtitle": "ATS යනු කුමක්ද? Workday, Greenhouse සහ Lever වැනි ATS පද්ධති වලින් 95%+ ලකුණු ලබාගනිමින් Pass වන CV එකක් හදන නිවැරදි ක්‍රමය.",
+                "description": "ATS යනු කුමක්ද? Applicant Tracking Systems හරහා 95%+ Match Score එකක් ගන්නා ATS-friendly CV එකක් සාදන නිවැරදි ක්‍රමය සහ නොමිලේ ATS score පරීක්ෂාව.",
                 "category": "ATS CV මඟපෙන්වීම",
                 "badge": "ප්‍රමුඛ මාර්ගෝපදේශය",
                 "reading_time": "විනාඩි 7ක කියවීමක්",
                 "target_keywords": [
+                    "ATS කියන්නේ මොකක්ද",
                     "ATS friendly CV සිංහලෙන්",
                     "CV එකක් හදන හැටි",
                     "රැකියා CV format",
@@ -59,13 +62,14 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
                 ]
             },
             "ta": {
-                "title": "2026 இல் ATS-நட்பு CV எழுதுவது எப்படி? | முழு வழிகாட்டி",
+                "title": "ATS என்றால் என்ன? 2026 இல் ATS-நட்பு CV எழுதுவது எப்படி? (இலவச வழிகாட்டி)",
                 "subtitle": "Workday, Greenhouse மற்றும் Lever போன்ற ATS அமைப்புகளில் 95%+ மதிப்பெண்களுடன் தேர்ச்சி பெறுவதற்கான வழிகாட்டி.",
-                "description": "உங்கள் CV ஏன் நிராகரிக்கப்படுகிறது? 2026 இல் ATS தேர்ச்சி பெறும் எளிய முறைகள், வடிவமைப்பு விதிகள் மற்றும் இலவச ATS Score சோதனை வழிகாட்டி.",
+                "description": "ATS என்றால் என்ன? 2026 இல் ATS தேர்ச்சி பெறும் எளிய முறைகள், வடிவமைப்பு விதிகள் மற்றும் இலவச ATS Score சோதனை வழிகாட்டி.",
                 "category": "ATS CV வழிகாட்டி",
                 "badge": "சிறந்த வழிகாட்டி",
                 "reading_time": "7 நிமிட வாசிப்பு",
                 "target_keywords": [
+                    "ATS என்றால் என்ன",
                     "ATS friendly CV tamil",
                     "CV தயார் செய்வது எப்படி",
                     "ATS resume format tamil",
@@ -77,12 +81,12 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
     },
     "top-10-resume-errors-that-cause-rejection": {
         "slug": "top-10-resume-errors-that-cause-rejection",
-        "title": "Top 10 Resume Errors That Cause Rejection (2026 Guide)",
+        "title": "10 Fatal Resume Errors Causing Instant Rejection (2026 ATS Checklist)",
         "subtitle": "The critical formatting, typography, and keyword mistakes that trigger instant rejection in 2026 recruiting funnels.",
-        "description": "Is your resume getting silently rejected? Fix the top 10 resume errors ATS scanners hate in 2026. Detect formatting traps and boost your score now.",
+        "description": "Is your resume getting silently rejected? Fix the top 10 ATS formatting, font, and keyword mistakes job seekers make in 2026. Test your ATS score free.",
         "template": "blogs/resume_errors_guide.html",
         "published_date": "2026-10-05",
-        "modified_date": "2026-10-13",
+        "modified_date": "2026-10-16",
         "author": {
             "name": "DreemFolio AI Career Team",
             "role": "Recruitment Operations & Career Mentors",
@@ -91,8 +95,10 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "reading_time": "8 min read",
         "category": "Resume Optimization",
         "badge": "Essential Reading",
-        "priority": "0.85",
+        "priority": "0.90",
         "target_keywords": [
+            "resume errors",
+            "ats resume errors",
             "top 10 resume mistakes",
             "resume formatting mistakes",
             "CV rejection reasons",
@@ -100,33 +106,33 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
             "why resumes get rejected",
             "resume red flags",
             "fix resume errors",
-            "job application resume mistakes",
-            "common CV errors"
+            "common CV errors",
+            "ats score checker"
         ],
         "og_image": "https://www.dreemfolio.com/static/images/hero_showcase.jpg",
         "translations": {
             "si": {
-                "title": "CV එකක් Reject වන ATS වැරදි 10ක් (2026)",
+                "title": "CV එකක් Reject වන ප්‍රධාන ATS වැරදි 10ක් (2026 Checklist)",
                 "subtitle": "බොහෝ දෙනෙකුගේ CV පළමු තත්පර 6 තුළ Reject වීමට හේතුවන Formatting, Typography සහ Keyword දෝෂ 10ක්.",
-                "description": "ඔබේ CV එක Reject වෙනවද? ATS scanners වලට කියවිය නොහැකි format, keyword සහ layout වැරදි 10 හඳුනාගෙන නිවැරදි කරගන්නා ආකාරය මෙතැනින් කියවන්න.",
+                "description": "ඔබේ CV එක Reject වෙනවද? ATS scanners වලට කියවිය නොහැකි format, keyword සහ layout වැරදි 10 හඳුනාගෙන නොමිලේ ලකුණු පරීක්ෂා කරගන්න.",
                 "category": "CV නිවැරදි කිරීම",
                 "badge": "අත්‍යවශ්‍ය කියවීමක්",
                 "reading_time": "විනාඩි 8ක කියවීමක්",
                 "target_keywords": [
+                    "CV eke waradi",
                     "CV එකක් හදන හැටි",
                     "CV rejection reasons sinhala",
                     "ATS friendly CV format",
                     "රැකියා CV එකක්",
                     "CV format sinhala",
                     "resume mistakes sinhala",
-                    "ATS CV checker",
-                    "CV eke waradi"
+                    "ATS CV checker"
                 ]
             },
             "ta": {
-                "title": "CV நிராகரிப்பைத் தவிர்க்கும் 10 வழிகள்",
+                "title": "CV நிராகரிக்கப்படும் 10 முக்கிய தவறுகள் (2026 ATS Checklist)",
                 "subtitle": "2026 ஆட்சேர்ப்பு சுழற்சியில் உடனடி நிராகரிப்பைத் தூண்டும் வடிவமைப்பு மற்றும் முக்கிய வார்த்தை தவறுகள்.",
-                "description": "ATS மற்றும் ஆட்சேர்ப்பாளர்களால் CV நிராகரிக்கப்படுவதற்கான முதல் 10 காரணங்கள் மற்றும் அவற்றை AI மூலம் எவ்வாறு சரிசெய்வது.",
+                "description": "உங்கள் CV ஏன் நிராகரிக்கப்படுகிறது? 2026 இல் வேலை தேடுபவர்கள் செய்யும் 10 முக்கிய வடிவமைப்பு மற்றும் ATS தவறுகளை சரிசெய்து இலவசமாக மதிப்பெண் பெறுங்கள்.",
                 "category": "CV தேர்வுமுறை",
                 "badge": "முக்கிய வாசிப்பு",
                 "reading_time": "8 நிமிட வாசிப்பு",
@@ -200,12 +206,12 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
     },
     "best-resume-format-for-freshers-interns-sri-lanka": {
         "slug": "best-resume-format-for-freshers-interns-sri-lanka",
-        "title": "Best Resume Format for Freshers & Interns (2026 Guide)",
+        "title": "Best Resume Format for Freshers & Interns (Free 2026 ATS Guide)",
         "subtitle": "How to build an ATS-friendly resume with zero work experience. Highlight academic projects, technical skills, and land your first job.",
-        "description": "Complete resume blueprint for students, fresh graduates, and interns. Learn how to highlight projects, pass ATS scanners, and land top job offers.",
+        "description": "Looking for the best resume format for freshers? Build ATS-friendly 1-page CVs with zero experience, highlight academic projects, and pass scanner checks free.",
         "template": "blogs/fresher_intern_guide.html",
         "published_date": "2026-10-08",
-        "modified_date": "2026-10-08",
+        "modified_date": "2026-10-16",
         "author": {
             "name": "DreemFolio AI Career Team",
             "role": "Campus Recruitment & Hiring Mentors",
@@ -216,9 +222,14 @@ BLOG_DATABASE: Dict[str, Dict[str, Any]] = {
         "badge": "Career Launch",
         "priority": "0.90",
         "target_keywords": [
+            "resume format for freshers",
+            "i want resume format for freshers",
+            "best resume format for freshers",
             "fresher resume format",
+            "one page resume format",
             "internship CV template",
             "no experience resume",
+            "ats score checker for freshers",
             "software engineer intern CV",
             "student resume format 2026",
             "Sri Lanka fresher CV",
