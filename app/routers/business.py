@@ -23,7 +23,11 @@ from app.services.business_service import (
     CREDIT_PACKS
 )
 from app.payhere import PayHereGateway
-from app.email_service import send_candidate_onboarding_invitation_email
+from app.email_service import (
+    send_candidate_onboarding_invitation_email,
+    send_candidate_suspension_email,
+    send_candidate_reactivation_email
+)
 
 logger = logging.getLogger("dreemfolio.business_router")
 
@@ -183,11 +187,14 @@ async def api_send_candidate_onboarding_email(
 @router.post("/candidates/{candidate_id}/toggle-block")
 async def api_toggle_block_candidate(
     candidate_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Block or Re-activate a candidate profile and their linked user login account.
+    Automatically sends an informative notification email to the candidate detailing
+    disabled or restored services.
     """
     is_admin = bool(getattr(current_user, "is_admin", False))
     acc_type = getattr(current_user, "account_type", "candidate")
@@ -214,6 +221,9 @@ async def api_toggle_block_candidate(
     if linked_user and linked_user.is_admin:
         raise HTTPException(status_code=403, detail="Cannot block an administrator account.")
 
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+
     # If currently blocked -> Reactivate
     if profile.status == "blocked" or (linked_user and not linked_user.is_active):
         profile.status = "claimed" if linked_user else "pending"
@@ -221,6 +231,22 @@ async def api_toggle_block_candidate(
             linked_user.is_active = True
         action = "reactivated"
         msg = f"Candidate {profile.candidate_name} ({profile.candidate_email}) has been re-activated successfully. Logins restored."
+
+        # Dispatch automated reactivation notification email
+        if profile.candidate_email:
+            try:
+                action_url = f"{base_url}/claim/{profile.claim_token}" if (profile.status == "pending" and profile.claim_token) else f"{base_url}/app"
+                sent = send_candidate_reactivation_email(
+                    to_email=profile.candidate_email,
+                    candidate_name=profile.candidate_name,
+                    portfolio_slug=profile.portfolio_slug,
+                    action_url=action_url,
+                    base_url=base_url
+                )
+                if sent:
+                    msg += " Automated reactivation notification email sent."
+            except Exception as e:
+                logger.error(f"Failed to dispatch reactivation email to {profile.candidate_email}: {e}")
     else:
         # Currently active -> Block
         profile.status = "blocked"
@@ -232,6 +258,20 @@ async def api_toggle_block_candidate(
         from app.state import PUBLISHED_PORTFOLIOS
         if profile.portfolio_slug:
             PUBLISHED_PORTFOLIOS.pop(profile.portfolio_slug, None)
+
+        # Dispatch automated suspension notification email
+        if profile.candidate_email:
+            try:
+                sent = send_candidate_suspension_email(
+                    to_email=profile.candidate_email,
+                    candidate_name=profile.candidate_name,
+                    portfolio_slug=profile.portfolio_slug,
+                    base_url=base_url
+                )
+                if sent:
+                    msg += " Automated suspension notification email sent."
+            except Exception as e:
+                logger.error(f"Failed to dispatch suspension email to {profile.candidate_email}: {e}")
 
     db.commit()
     db.refresh(profile)

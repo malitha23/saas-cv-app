@@ -753,3 +753,90 @@ def send_candidate_onboarding_invitation_email(
     )
 
 
+def send_candidate_suspension_email(
+    to_email: str,
+    candidate_name: str,
+    portfolio_slug: Optional[str] = None,
+    base_url: str = "https://www.dreemfolio.com",
+    enqueue_on_fail: bool = False
+) -> bool:
+    """Dispatches transactional notice to candidate when their account/portfolio is suspended."""
+    clean_to = to_email.strip()
+    name_clean = (candidate_name or "Candidate").strip()
+    subject = f"{name_clean}, important notice regarding your DreemFolio account"
+    portfolio_url = f"{base_url.rstrip('/')}/p/{portfolio_slug}" if portfolio_slug else None
+
+    template = jinja_env.get_template("emails/candidate_suspension.html")
+    html_content = template.render(
+        subject=subject,
+        candidate_name=name_clean,
+        portfolio_url=portfolio_url,
+        base_url=base_url.rstrip("/"),
+        current_year=datetime.utcnow().year
+    )
+
+    plain_content = (
+        f"Hi {name_clean},\n\n"
+        f"This is an automated notice to inform you that your DreemFolio candidate account and live portfolio "
+        f"have been temporarily suspended by the administrator.\n\n"
+        f"Disabled services:\n"
+        f"- Account login & dashboard access\n"
+        f"- Live public portfolio website\n"
+        f"- 1-Click profile claim links\n\n"
+        f"If you believe this was in error, please contact support at support@dreemfolio.com.\n\n"
+        f"DreemFolio AI Administration"
+    )
+
+    return send_raw_email(
+        to_email=clean_to,
+        subject=subject,
+        html_body=html_content,
+        plain_body=plain_content,
+        enqueue_on_fail=enqueue_on_fail
+    )
+
+
+def send_candidate_reactivation_email(
+    to_email: str,
+    candidate_name: str,
+    portfolio_slug: Optional[str] = None,
+    action_url: Optional[str] = None,
+    base_url: str = "https://www.dreemfolio.com",
+    enqueue_on_fail: bool = False
+) -> bool:
+    """Dispatches notification to candidate when their account and portfolio are re-activated."""
+    clean_to = to_email.strip()
+    name_clean = (candidate_name or "Candidate").strip()
+    subject = f"{name_clean}, your DreemFolio account and portfolio are now active"
+    portfolio_url = f"{base_url.rstrip('/')}/p/{portfolio_slug}" if portfolio_slug else None
+
+    template = jinja_env.get_template("emails/candidate_reactivation.html")
+    html_content = template.render(
+        subject=subject,
+        candidate_name=name_clean,
+        portfolio_url=portfolio_url,
+        action_url=action_url or f"{base_url.rstrip('/')}/app",
+        base_url=base_url.rstrip("/"),
+        current_year=datetime.utcnow().year
+    )
+
+    plain_content = (
+        f"Hi {name_clean},\n\n"
+        f"Great news! Your DreemFolio candidate account and live web portfolio have been re-activated by the administrator.\n\n"
+        f"Your services are fully operational:\n"
+        f"- Account login restored\n"
+        f"- Live portfolio is back online: {portfolio_url or base_url}\n"
+        f"- ATS resume editing enabled\n\n"
+        f"Log in at: {base_url.rstrip('/')}/app\n\n"
+        f"Best regards,\nDreemFolio AI Team"
+    )
+
+    return send_raw_email(
+        to_email=clean_to,
+        subject=subject,
+        html_body=html_content,
+        plain_body=plain_content,
+        enqueue_on_fail=enqueue_on_fail
+    )
+
+

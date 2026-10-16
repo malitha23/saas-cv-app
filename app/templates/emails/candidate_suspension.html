@@ -1,0 +1,64 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fda4af; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    Account Notice • Temporary Suspension
+  </div>
+
+  <h1 style="font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.35; margin-bottom: 14px;">
+    Your DreemFolio Account & Portfolio Have Been Suspended
+  </h1>
+  <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 18px;">
+    Hi <strong style="color: #ffffff;">{{ candidate_name | default("Candidate") }}</strong>,
+  </p>
+</div>
+
+<div style="color: #cbd5e1; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+  <p style="margin-bottom: 14px;">
+    This is an automated notification to inform you that your DreemFolio candidate profile and associated live portfolio website have been temporarily deactivated and suspended by the platform administrator.
+  </p>
+</div>
+
+<!-- DISABLED SERVICES CARD -->
+<div style="background-color: #0f172a; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 14px; padding: 20px; margin: 24px 0;">
+  <div style="font-size: 12px; font-weight: 700; color: #fda4af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+    Disabled Services During Suspension:
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">🚫</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">User Login & Dashboard Access:</strong> Account login sessions have been terminated. You will not be able to log in to access saved resumes or job applications.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">🚫</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Live Portfolio Webpage Offline:</strong> Your public web portfolio link is currently unavailable and will display a suspension notice to external visitors and recruiters.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">🚫</td>
+      <td style="padding-left: 10px; padding-bottom: 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">1-Click Claim Link:</strong> Direct profile claim links associated with this email address are temporarily disabled.
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- SUPPORT CTA -->
+<div style="text-align: center; margin: 32px 0 20px 0;">
+  <a href="{{ base_url }}/contact" class="cta-btn" target="_blank" style="display: inline-block; background: #334155; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 32px; border-radius: 12px; border: 1px solid #475569; text-align: center;">
+    Contact Support for Account Review →
+  </a>
+  <div style="font-size: 11px; color: #94a3b8; margin-top: 10px;">
+    If you believe this suspension was made in error, reach us at <a href="mailto:support@dreemfolio.com" style="color: #a5b4fc; text-decoration: underline;">support@dreemfolio.com</a>
+  </div>
+</div>
+
+<p style="font-size: 12px; color: #64748b; margin-top: 24px; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 16px;">
+  This is a transactional security notification sent by the DreemFolio Administration System regarding your account status.
+</p>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #6ee7b7; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    Account Restored • Active
+  </div>
+
+  <h1 style="font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.35; margin-bottom: 14px;">
+    Your DreemFolio Account & Live Portfolio Have Been Re-Activated
+  </h1>
+  <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 18px;">
+    Hi <strong style="color: #ffffff;">{{ candidate_name | default("Candidate") }}</strong>,
+  </p>
+</div>
+
+<div style="color: #cbd5e1; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+  <p style="margin-bottom: 14px;">
+    We are pleased to inform you that your DreemFolio candidate account and live portfolio website have been reviewed and successfully re-activated by the platform administrator. All services are fully operational.
+  </p>
+</div>
+
+<!-- RESTORED SERVICES CARD -->
+<div style="background-color: #0f172a; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 20px; margin: 24px 0;">
+  <div style="font-size: 12px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+    Restored Services & Features:
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">✅</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Account Login Restored:</strong> You can now log in normally to DreemFolio with your email and password or Google Sign-In.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">🌐</td>
+      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">Live Portfolio is Back Online:</strong> Your personal web portfolio is 100% active and accessible to recruiters and hiring managers.
+      </td>
+    </tr>
+    <tr>
+      <td width="28" valign="top" style="font-size: 16px;">⚡</td>
+      <td style="padding-left: 10px; padding-bottom: 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        <strong style="color: #ffffff;">ATS Resume & AI Tools:</strong> All profile customization, ATS downloads, and job tracking tools are enabled.
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- PRIMARY CTA -->
+<div style="text-align: center; margin: 32px 0 20px 0;">
+  <a href="{{ action_url | default(base_url + '/app') }}" class="cta-btn" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 36px; border-radius: 12px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); text-align: center;">
+    Access Your Account & Portfolio Now →
+  </a>
+  <div style="font-size: 11px; color: #64748b; margin-top: 10px;">
+    {% if portfolio_url %}
+    Your portfolio is live at: <a href="{{ portfolio_url }}" target="_blank" style="color: #6ee7b7; text-decoration: underline;">{{ portfolio_url }}</a>
+    {% else %}
+    Log in anytime at <a href="{{ base_url }}/app" style="color: #6ee7b7; text-decoration: underline;">{{ base_url }}/app</a>
+    {% endif %}
+  </div>
+</div>
+
+<p style="font-size: 12px; color: #64748b; margin-top: 24px; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 16px;">
+  Thank you for using DreemFolio AI. If you have any questions, our support team is always here to assist at <a href="mailto:support@dreemfolio.com" style="color: #a5b4fc; text-decoration: underline;">support@dreemfolio.com</a>.
+</p>
+{% endblock %}
