@@ -2,6 +2,7 @@ import os
 import smtplib
 import logging
 import asyncio
+import email.utils
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
@@ -157,11 +158,17 @@ def send_raw_email(
         )
         return True
 
-    # Build MIME Message
+    # Build MIME Message with full RFC-compliant transactional headers
+    domain_part = cfg["from_email"].split("@")[-1] if "@" in cfg["from_email"] else "dreemfolio.com"
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"{cfg['from_name']} <{cfg['from_email']}>"
     msg["To"] = to_clean
+    msg["Reply-To"] = f"{cfg['from_name']} <{cfg['from_email']}>"
+    msg["Date"] = email.utils.formatdate(localtime=True)
+    msg["Message-ID"] = email.utils.make_msgid(domain=domain_part)
+    msg["X-Auto-Response-Suppress"] = "OOF, AutoReply"
+    msg["Precedence"] = "personal"
 
     text_content = plain_body or "Please view this email in an HTML-compatible client."
     msg.attach(MIMEText(text_content, "plain", "utf-8"))
@@ -715,7 +722,7 @@ def send_candidate_onboarding_invitation_email(
     clean_to = to_email.strip()
     name_clean = (candidate_name or "Candidate").strip()
     role_clean = (target_role or "Software Professional").strip()
-    subject = f"🚀 Your ATS Resume & Live Portfolio Website are Ready! ({name_clean})"
+    subject = f"{name_clean}, your pre-built portfolio and ATS resume are ready to claim"
 
     template = jinja_env.get_template("emails/candidate_onboarding_invitation.html")
     html_content = template.render(
