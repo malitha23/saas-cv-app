@@ -358,6 +358,13 @@ async def check_domain_allowed(domain: str = Query(...)):
 @router.get("/p/{slug}", response_class=HTMLResponse)
 async def view_public_portfolio(slug: str):
     """Publicly accessible live candidate portfolio webpage."""
+    from app.state import is_candidate_portfolio_blocked, render_suspended_portfolio_html, PUBLISHED_PORTFOLIOS
+
+    is_blocked, cand_name = is_candidate_portfolio_blocked(slug)
+    if is_blocked:
+        PUBLISHED_PORTFOLIOS.pop(slug, None)
+        return HTMLResponse(content=render_suspended_portfolio_html(cand_name), status_code=403)
+
     content = get_published_portfolio(slug)
     if content:
         return HTMLResponse(content=content)

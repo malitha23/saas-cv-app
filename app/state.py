@@ -1,7 +1,7 @@
 import os
 import datetime
 from collections import defaultdict
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -83,8 +83,88 @@ def save_published_portfolio(slug: str, html_content: str, domain: Optional[str]
         save_custom_domain_mapping(domain, slug)
 
 
+def is_candidate_portfolio_blocked(slug: str) -> Tuple[bool, Optional[str]]:
+    """
+    Checks if a portfolio is associated with a blocked candidate profile or deactivated user account.
+    Returns (is_blocked, candidate_name).
+    """
+    if not slug:
+        return False, None
+    clean_slug = slug.strip().lower()
+    try:
+        from app.database import SessionLocal
+        from app.models import PrebuiltCandidateProfile, User
+        from sqlalchemy import select, func
+        with SessionLocal() as db:
+            prof = db.scalar(
+                select(PrebuiltCandidateProfile).where(
+                    func.lower(PrebuiltCandidateProfile.portfolio_slug) == clean_slug
+                )
+            )
+            if prof:
+                if prof.status == "blocked":
+                    return True, prof.candidate_name
+                if prof.candidate_email:
+                    linked = db.scalar(
+                        select(User).where(func.lower(User.email) == prof.candidate_email.strip().lower())
+                    )
+                    if linked and not linked.is_active:
+                        return True, prof.candidate_name
+    except Exception as e:
+        print("[Block Check Warning]", e)
+    return False, None
+
+
+def render_suspended_portfolio_html(candidate_name: Optional[str] = None) -> str:
+    """Renders a modern, branded 403 Suspended page when an administrator has blocked a profile."""
+    name_display = (candidate_name or "Candidate").strip()
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Suspended - DreemFolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>body {{ font-family: 'Plus Jakarta Sans', sans-serif; }}</style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen flex items-center justify-center p-4 antialiased selection:bg-rose-500 selection:text-white">
+  <div class="max-w-md w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-8 text-center space-y-5 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto text-2xl font-bold shadow-lg shadow-rose-500/10">
+      🚫
+    </div>
+    <div class="space-y-2">
+      <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-300 border border-rose-500/20">
+        Account & Profile Suspended
+      </span>
+      <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+        Portfolio Unavailable
+      </h1>
+      <p class="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto">
+        The public portfolio for <strong class="text-slate-200">{name_display}</strong> has been temporarily suspended or deactivated by the platform administrator.
+      </p>
+    </div>
+    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-center gap-3">
+      <a href="https://www.dreemfolio.com" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition">
+        DreemFolio Home
+      </a>
+      <a href="https://www.dreemfolio.com/contact" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition">
+        Contact Support
+      </a>
+    </div>
+  </div>
+</body>
+</html>"""
+
+
 def get_published_portfolio(slug: str) -> Optional[str]:
     """Retrieve published portfolio HTML from memory cache, shared disk storage, or database fallback."""
+    is_blocked, _ = is_candidate_portfolio_blocked(slug)
+    if is_blocked:
+        PUBLISHED_PORTFOLIOS.pop(slug, None)
+        return None
+
     if slug in PUBLISHED_PORTFOLIOS:
         return PUBLISHED_PORTFOLIOS[slug]
     file_path = os.path.join(PORTFOLIO_STORAGE_DIR, f"{slug}.html")

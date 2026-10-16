@@ -227,7 +227,11 @@ async def api_toggle_block_candidate(
         if linked_user:
             linked_user.is_active = False
         action = "blocked"
-        msg = f"Candidate {profile.candidate_name} ({profile.candidate_email}) has been blocked. Account logins and claim link are now suspended."
+        msg = f"Candidate {profile.candidate_name} ({profile.candidate_email}) has been blocked. Account logins, live portfolio, and claim link are now suspended."
+        # Evict live portfolio cache immediately
+        from app.state import PUBLISHED_PORTFOLIOS
+        if profile.portfolio_slug:
+            PUBLISHED_PORTFOLIOS.pop(profile.portfolio_slug, None)
 
     db.commit()
     db.refresh(profile)
@@ -269,6 +273,16 @@ async def api_delete_candidate_profile(
         raise HTTPException(status_code=403, detail="You do not have permission to delete this candidate profile.")
 
     cand_name = profile.candidate_name
+    from app.state import PUBLISHED_PORTFOLIOS, PORTFOLIO_STORAGE_DIR
+    if profile.portfolio_slug:
+        PUBLISHED_PORTFOLIOS.pop(profile.portfolio_slug, None)
+        file_path = os.path.join(PORTFOLIO_STORAGE_DIR, f"{profile.portfolio_slug}.html")
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
+
     db.delete(profile)
     db.commit()
 
