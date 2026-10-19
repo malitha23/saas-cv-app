@@ -3618,9 +3618,14 @@
                     </td>
                     <td class="p-3 text-right">
                       <div class="flex items-center justify-end gap-1.5">
-                        <!-- Edit Candidate CV & Portfolio -->
-                        <button type="button" @click="openAdminCandidateEdit(cand)" title="Edit Candidate CV & Live Portfolio"
-                                class="p-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition">
+                        <!-- Edit Candidate CV Directly in Main Dashboard Studio -->
+                        <a :href="'/?edit_candidate=' + cand.id" target="_blank" title="Open and edit candidate CV directly in Main Dashboard Studio"
+                           class="p-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition">
+                          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                        </a>
+                        <!-- Quick Modal Edit Candidate CV & Portfolio -->
+                        <button type="button" @click="openAdminCandidateEdit(cand)" title="Quick Edit in Popup Modal"
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition">
                           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                         </button>
                         <!-- 1-Click Send Email -->

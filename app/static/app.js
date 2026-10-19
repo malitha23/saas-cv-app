@@ -296,6 +296,8 @@ function resumeApp() {
     isLoadingCandidateResume: false,
     isSavingCandidateResume: false,
     candidateEditSection: 'personal',
+    activeCandidateProfile: null,
+    isSavingCandidateProfile: false,
 
     // Unified In-App Dialog Modal State (Replacing browser alert and confirm)
     showAppDialog: false,
@@ -707,6 +709,14 @@ function resumeApp() {
         }, 500);
       } else if (!tourDismissed) {
         this.showTourBanner = true;
+      }
+
+      // Check if URL has ?edit_candidate=... or sessionStorage has active_candidate_edit_id
+      const editCandidateParam = urlParams.get('edit_candidate') || sessionStorage.getItem('active_candidate_edit_id');
+      if (editCandidateParam) {
+        setTimeout(async () => {
+          await this.loadCandidateIntoDashboard(editCandidateParam);
+        }, 400);
       }
     },
 
@@ -2003,6 +2013,36 @@ function resumeApp() {
       const token = localStorage.getItem('saas_token');
       if (!token) {
         this.autoSaveStatus = 'saved';
+        return;
+      }
+
+      // If in candidate profile editing mode, sync directly to candidate record & live portfolio
+      if (this.activeCandidateProfile) {
+        try {
+          const payload = {
+            candidate_name: this.tailoredData.personal_info?.full_name || this.activeCandidateProfile.candidate_name,
+            candidate_email: this.tailoredData.personal_info?.email || this.activeCandidateProfile.candidate_email,
+            target_role: this.tailoredData.target_job_title || this.activeCandidateProfile.target_role,
+            resume_data: this.tailoredData
+          };
+          const res = await fetch(`/api/business/candidates/${this.activeCandidateProfile.id}/resume`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            this.autoSaveStatus = 'saved';
+            this.lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          } else {
+            this.autoSaveStatus = 'error';
+          }
+        } catch (err) {
+          console.warn('Candidate profile auto-save error:', err);
+          this.autoSaveStatus = 'error';
+        }
         return;
       }
 
@@ -4486,6 +4526,160 @@ function resumeApp() {
         this.isSavingCandidateResume = false;
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       }
+    },
+
+    async loadCandidateIntoDashboard(candidate) {
+      const candId = typeof candidate === 'object' ? candidate.id : candidate;
+      if (!candId) return;
+
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        return;
+      }
+
+      // Backup current user resume before switching if not already in candidate mode
+      if (!this.activeCandidateProfile && this.tailoredData) {
+        try {
+          localStorage.setItem('dreemfolio_user_backup_resume', JSON.stringify(this.tailoredData));
+          if (this.currentResumeId) {
+            localStorage.setItem('dreemfolio_user_backup_id', String(this.currentResumeId));
+          }
+        } catch (e) {}
+      }
+
+      this.isBizLoadingCandidates = true;
+      try {
+        const res = await fetch(`/api/business/candidates/${candId}/resume`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Could not load candidate profile.');
+        }
+
+        const data = await res.json();
+        const rData = data.resume_data || {};
+
+        this.activeCandidateProfile = {
+          id: data.id,
+          candidate_name: data.candidate_name,
+          candidate_email: data.candidate_email,
+          target_role: data.target_role,
+          portfolio_slug: data.portfolio_slug,
+          portfolio_url: data.portfolio_url,
+          claim_url: data.claim_url,
+          status: data.status
+        };
+        sessionStorage.setItem('active_candidate_edit_id', String(data.id));
+
+        // Close business modal and any other dialogs
+        this.showBusinessModal = false;
+        this.showAdminCandidateEditModal = false;
+
+        // Populate main dashboard workspace
+        this.tailoredData = rData;
+        if (this.tailoredData && this.tailoredData.education && Array.isArray(this.tailoredData.education)) {
+          this.tailoredData.education.forEach(edu => this.syncEduDates(edu));
+        }
+
+        this.targetJobTitle = rData.target_job_title || data.target_role || '';
+        this.targetCompany = rData.target_company || '';
+        this.currentTemplate = rData.template_style || 'classic';
+        this.portfolioTheme = rData.portfolio_theme || 'neon_dark';
+        this.portfolioAccent = rData.portfolio_accent_color || '#6366f1';
+        this.portfolioFont = rData.portfolio_font || 'Inter';
+
+        this.saveActiveResumeLocalSnapshot();
+        await this.refreshAllPreviews();
+
+        this.notify(`Candidate ${data.candidate_name}'s CV loaded into Dashboard Studio!`, 'success');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        this.notify('Failed to load candidate into dashboard: ' + err.message, 'error');
+      } finally {
+        this.isBizLoadingCandidates = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    async saveActiveCandidateProfile() {
+      if (!this.activeCandidateProfile || !this.tailoredData) return;
+      this.isSavingCandidateProfile = true;
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        this.isSavingCandidateProfile = false;
+        return;
+      }
+
+      try {
+        const payload = {
+          candidate_name: this.tailoredData.personal_info?.full_name || this.activeCandidateProfile.candidate_name,
+          candidate_email: this.tailoredData.personal_info?.email || this.activeCandidateProfile.candidate_email,
+          target_role: this.tailoredData.target_job_title || this.activeCandidateProfile.target_role,
+          resume_data: this.tailoredData
+        };
+
+        const res = await fetch(`/api/business/candidates/${this.activeCandidateProfile.id}/resume`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to save candidate CV');
+        }
+
+        this.activeCandidateProfile.candidate_name = data.candidate_name || payload.candidate_name;
+        this.activeCandidateProfile.candidate_email = data.candidate_email || payload.candidate_email;
+        this.activeCandidateProfile.target_role = data.target_role || payload.target_role;
+        if (data.portfolio_url) this.activeCandidateProfile.portfolio_url = data.portfolio_url;
+
+        this.notify(`Candidate CV and live portfolio successfully saved & updated!`, 'success');
+        this.autoSaveStatus = 'saved';
+        this.lastSavedTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        await this.loadBusinessCandidates();
+      } catch (err) {
+        this.notify('Error saving candidate CV: ' + err.message, 'error');
+      } finally {
+        this.isSavingCandidateProfile = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    async exitCandidateMode() {
+      if (!this.activeCandidateProfile) return;
+      this.activeCandidateProfile = null;
+      sessionStorage.removeItem('active_candidate_edit_id');
+
+      if (window.history && window.history.replaceState) {
+        const url = new URL(window.location);
+        url.searchParams.delete('edit_candidate');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      }
+
+      const backupRaw = localStorage.getItem('dreemfolio_user_backup_resume');
+      if (backupRaw) {
+        try {
+          this.tailoredData = JSON.parse(backupRaw);
+          const backupId = localStorage.getItem('dreemfolio_user_backup_id');
+          this.currentResumeId = backupId ? Number(backupId) : null;
+          this.targetJobTitle = this.tailoredData.target_job_title || '';
+          this.targetCompany = this.tailoredData.target_company || '';
+          this.saveActiveResumeLocalSnapshot();
+          await this.refreshAllPreviews();
+          this.notify('Exited candidate mode. Restored your personal CV.', 'info');
+          return;
+        } catch (e) {}
+      }
+
+      await this.restoreActiveResumeSnapshot();
+      this.notify('Exited candidate edit mode.', 'info');
     },
 
     async openSavedResumesModal() {
