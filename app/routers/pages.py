@@ -506,6 +506,10 @@ async def serve_landing(request: Request, db: Session = Depends(get_db)):
         order_id = request.query_params.get("order_id", "")
         return RedirectResponse(url=f"/payment/status?order_id={order_id}&status={payment_param}", status_code=303)
 
+    edit_candidate_param = request.query_params.get("edit_candidate")
+    if edit_candidate_param:
+        return RedirectResponse(url=f"/app?edit_candidate={edit_candidate_param}", status_code=303)
+
     reviews_data = get_public_reviews_data(db)
 
     response = templates.TemplateResponse(
