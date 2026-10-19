@@ -333,22 +333,30 @@ async def api_delete_candidate_profile(
 
 @router.get("/candidates/{candidate_id}/resume")
 async def get_candidate_profile_resume(
-    candidate_id: int,
+    candidate_id: str,
     request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Fetch full candidate prebuilt profile resume data for editing by Creator or Admin.
+    Supports lookup by integer ID or cryptographically secure 64-char claim_token.
     """
     is_admin = bool(getattr(current_user, "is_admin", False))
-    acc_type = getattr(current_user, "account_type", "candidate")
 
-    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    profile = None
+    if candidate_id.isdigit():
+        profile = db.get(PrebuiltCandidateProfile, int(candidate_id))
+    if not profile:
+        profile = db.scalar(
+            select(PrebuiltCandidateProfile).where(PrebuiltCandidateProfile.claim_token == candidate_id)
+        )
+
     if not profile:
         raise HTTPException(status_code=404, detail="Candidate profile not found.")
 
-    if not is_admin and profile.creator_id != current_user.id and acc_type != "business":
+    # Strict Zero-Trust Authorization: Only Admin or the exact Creator can view/edit
+    if not is_admin and profile.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="You do not have permission to view or edit this candidate's resume.")
 
     env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
@@ -365,6 +373,7 @@ async def get_candidate_profile_resume(
     return {
         "success": True,
         "id": profile.id,
+        "claim_token": profile.claim_token,
         "candidate_name": profile.candidate_name,
         "candidate_email": profile.candidate_email,
         "target_role": profile.target_role,
@@ -379,7 +388,7 @@ async def get_candidate_profile_resume(
 
 @router.put("/candidates/{candidate_id}/resume")
 async def update_candidate_profile_resume(
-    candidate_id: int,
+    candidate_id: str,
     payload: Dict[str, Any],
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -387,16 +396,24 @@ async def update_candidate_profile_resume(
 ):
     """
     Update candidate resume data and re-publish updated live portfolio.
-    Accessible to Admin and the Business creator of the profile.
+    Accessible ONLY to Admin and the exact Business creator of the profile.
+    Supports lookup by integer ID or cryptographically secure 64-char claim_token.
     """
     is_admin = bool(getattr(current_user, "is_admin", False))
-    acc_type = getattr(current_user, "account_type", "candidate")
 
-    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    profile = None
+    if candidate_id.isdigit():
+        profile = db.get(PrebuiltCandidateProfile, int(candidate_id))
+    if not profile:
+        profile = db.scalar(
+            select(PrebuiltCandidateProfile).where(PrebuiltCandidateProfile.claim_token == candidate_id)
+        )
+
     if not profile:
         raise HTTPException(status_code=404, detail="Candidate profile not found.")
 
-    if not is_admin and profile.creator_id != current_user.id and acc_type != "business":
+    # Strict Zero-Trust Authorization: Only Admin or the exact Creator can update
+    if not is_admin and profile.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="You do not have permission to edit this candidate's resume.")
 
     # Extract resume_data dictionary from payload

@@ -3619,7 +3619,7 @@
                     <td class="p-3 text-right">
                       <div class="flex items-center justify-end gap-1.5">
                         <!-- Edit Candidate CV Directly in Main Dashboard Studio -->
-                        <a :href="'/app?edit_candidate=' + cand.id" target="_blank" title="Open and edit candidate CV directly in Main Dashboard Studio"
+                        <a :href="'/app?edit_candidate=' + (cand.claim_token || cand.id)" target="_blank" title="Open and edit candidate CV directly in Main Dashboard Studio"
                            class="p-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition">
                           <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
                         </a>

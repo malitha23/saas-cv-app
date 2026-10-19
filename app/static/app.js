@@ -4529,7 +4529,7 @@ function resumeApp() {
     },
 
     async loadCandidateIntoDashboard(candidate) {
-      const candId = typeof candidate === 'object' ? candidate.id : candidate;
+      const candId = typeof candidate === 'object' ? (candidate.claim_token || candidate.id) : candidate;
       if (!candId) return;
 
       const token = localStorage.getItem('saas_token');
@@ -4563,6 +4563,7 @@ function resumeApp() {
 
         this.activeCandidateProfile = {
           id: data.id,
+          claim_token: data.claim_token,
           candidate_name: data.candidate_name,
           candidate_email: data.candidate_email,
           target_role: data.target_role,
@@ -4571,7 +4572,14 @@ function resumeApp() {
           claim_url: data.claim_url,
           status: data.status
         };
-        sessionStorage.setItem('active_candidate_edit_id', String(data.id));
+        sessionStorage.setItem('active_candidate_edit_id', String(data.claim_token || data.id));
+
+        // Rewrite browser URL with secure unguessable claim_token
+        if (window.history && window.history.replaceState) {
+          const url = new URL(window.location);
+          url.searchParams.set('edit_candidate', data.claim_token || data.id);
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        }
 
         // Close business modal and any other dialogs
         this.showBusinessModal = false;
