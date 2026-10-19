@@ -1586,6 +1586,8 @@ class PrebuildProfileResponse(BaseModel):
     target_role: Optional[str] = None
     credits_remaining: int
     invitation_message: str
+    email_sent: bool = False
+    email_status_text: Optional[str] = None
 
 
 class CandidatePrebuiltSummary(BaseModel):

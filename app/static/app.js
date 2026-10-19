@@ -278,9 +278,13 @@ function resumeApp() {
     bizOnboardingFile: null,
     bizOnboardingEmail: '',
     bizOnboardingRole: '',
+    bizAutoSendEmail: true,
     isBizOnboardingLoading: false,
     bizOnboardingStatusText: '',
     bizOnboardingResult: null,
+    isBizSendingEmail: false,
+    bizSendingEmailId: null,
+    bizEmailStatusText: '',
     bizCopyTip: '',
     businessCandidatesList: [],
     isBizLoadingCandidates: false,
@@ -3994,6 +3998,7 @@ function resumeApp() {
       this.showBusinessModal = true;
       this.businessActiveTab = 'onboard';
       this.bizOnboardingResult = null;
+      this.bizEmailStatusText = '';
       this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       await Promise.all([
         this.loadBusinessCandidates(),
@@ -4068,10 +4073,12 @@ function resumeApp() {
       this.isBizOnboardingLoading = true;
       this.bizOnboardingStatusText = 'Parsing resume and extracting skills...';
       this.bizOnboardingResult = null;
+      this.bizEmailStatusText = '';
 
       const formData = new FormData();
       formData.append('file', this.bizOnboardingFile);
       formData.append('candidate_email', this.bizOnboardingEmail.trim());
+      formData.append('auto_send_email', this.bizAutoSendEmail ? 'true' : 'false');
       if (this.bizOnboardingRole) {
         formData.append('target_role', this.bizOnboardingRole.trim());
       }
@@ -4100,7 +4107,14 @@ function resumeApp() {
             this.currentUser.business_credits = data.credits_remaining;
           }
           await this.loadBusinessCandidates();
-          this.notify('Candidate pre-built profile generated successfully!', 'success');
+
+          if (data.email_sent) {
+            this.bizEmailStatusText = data.email_status_text || (`✉️ VIP invitation email dispatched to ${data.candidate_email}!`);
+            this.notify(`Candidate profile generated & invitation email sent to ${data.candidate_email}!`, 'success');
+          } else {
+            this.bizEmailStatusText = '';
+            this.notify('Candidate pre-built profile generated successfully!', 'success');
+          }
         } else {
           const err = await res.json();
           this.notify(err.detail || 'Failed to onboard candidate.', 'error');
@@ -4110,6 +4124,46 @@ function resumeApp() {
       } finally {
         this.isBizOnboardingLoading = false;
         this.bizOnboardingStatusText = '';
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    async sendBizCandidateEmail(candidateId, candidateEmail) {
+      if (!candidateId) {
+        this.notify('Candidate profile ID is required to dispatch email.', 'error');
+        return;
+      }
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        return;
+      }
+
+      this.isBizSendingEmail = true;
+      this.bizSendingEmailId = candidateId;
+
+      try {
+        const res = await fetch(`/api/business/candidates/${candidateId}/send-email`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const successMsg = data.message || `✉️ VIP invitation email successfully dispatched to ${candidateEmail || 'candidate'}!`;
+          this.bizEmailStatusText = successMsg;
+          if (this.bizOnboardingResult && this.bizOnboardingResult.id === candidateId) {
+            this.bizOnboardingResult.email_sent = true;
+            this.bizOnboardingResult.email_status_text = successMsg;
+          }
+          this.notify(successMsg, 'success');
+        } else {
+          this.notify(data.detail || 'Failed to dispatch candidate invitation email.', 'error');
+        }
+      } catch (err) {
+        this.notify('Network error sending invitation email: ' + err.message, 'error');
+      } finally {
+        this.isBizSendingEmail = false;
+        this.bizSendingEmailId = null;
         this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       }
     },

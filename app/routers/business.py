@@ -39,6 +39,7 @@ async def api_prebuild_candidate(
     request: Request,
     candidate_email: str = Form(..., description="Candidate's email address"),
     target_role: Optional[str] = Form(None, description="Target job title or profession"),
+    auto_send_email: bool = Form(False, description="Automatically dispatch onboarding invitation email"),
     file: UploadFile = File(..., description="Candidate resume PDF or Word file"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -48,6 +49,7 @@ async def api_prebuild_candidate(
     Admin and Business users upload a candidate CV. AI extracts, formats, and structures
     the resume into an ATS profile and auto-publishes a live web portfolio.
     Issues a cryptographically secure, 1-click claim URL.
+    Optionally dispatches instant VIP onboarding email with claim link.
     """
     file_bytes = await file.read()
     filename = file.filename or "resume.pdf"
@@ -63,7 +65,8 @@ async def api_prebuild_candidate(
         file_bytes=file_bytes,
         filename=filename,
         db=db,
-        base_url=base_url
+        base_url=base_url,
+        auto_send_email=auto_send_email
     )
 
 
@@ -145,17 +148,11 @@ async def api_send_candidate_onboarding_email(
     is_admin = bool(getattr(current_user, "is_admin", False))
     acc_type = getattr(current_user, "account_type", "candidate")
 
-    if not is_admin and acc_type != "business":
-        raise HTTPException(
-            status_code=403,
-            detail="Access restricted: Candidate management is available only for Business accounts and Admins."
-        )
-
     profile = db.get(PrebuiltCandidateProfile, candidate_id)
     if not profile:
         raise HTTPException(status_code=404, detail="Candidate prebuilt profile not found.")
 
-    if not is_admin and profile.creator_id != current_user.id:
+    if not is_admin and profile.creator_id != current_user.id and acc_type != "business":
         raise HTTPException(status_code=403, detail="You do not have permission to email this candidate.")
 
     env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
@@ -172,7 +169,8 @@ async def api_send_candidate_onboarding_email(
         portfolio_url=portfolio_url,
         claim_url=claim_url,
         creator_name=creator_name,
-        base_url=base_url
+        base_url=base_url,
+        enqueue_on_fail=True
     )
 
     if not success:

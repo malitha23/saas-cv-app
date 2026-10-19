@@ -139,20 +139,23 @@ def prebuild_candidate_profile(
     file_bytes: bytes,
     filename: str,
     db: Session,
-    base_url: str
+    base_url: str,
+    auto_send_email: bool = False
 ) -> PrebuildProfileResponse:
     """
     Core B2B Onboarding Service:
-    1. Authenticates creator permissions (Admin or Business).
+    1. Authenticates creator permissions (Admin or Business or users with Business credits).
     2. Validates credit wallet (deducts 1 credit if Business, free for Admin).
     3. Parses document & feeds to AI engine for structured ATS resume data.
     4. Auto-compiles live interactive web portfolio HTML.
     5. Persists pre-built profile and generates single-use cryptographic claim link.
+    6. Optionally auto-dispatches VIP onboarding invitation email to candidate.
     """
     # 1. Permission check
     is_admin = bool(getattr(creator, "is_admin", False))
     acc_type = getattr(creator, "account_type", "candidate")
-    if not is_admin and acc_type != "business":
+    user_credits = getattr(creator, "business_credits", 0) or 0
+    if not is_admin and acc_type != "business" and user_credits < 1:
         raise HTTPException(
             status_code=403,
             detail="Access restricted: Candidate Magic Onboarding is only available for Business accounts and Administrators."
@@ -279,9 +282,31 @@ def prebuild_candidate_profile(
 
     remaining_credits = 999999 if is_admin else creator.business_credits
 
+    # 11. Optional Auto-Dispatch of VIP Invitation Email
+    email_dispatched = False
+    email_status = None
+    if auto_send_email:
+        try:
+            from app.email_service import send_candidate_onboarding_invitation_email
+            creator_name = (creator.company_name or creator.full_name) if creator else "DreemFolio AI Talent Team"
+            email_dispatched = send_candidate_onboarding_invitation_email(
+                to_email=email_clean,
+                candidate_name=cand_name,
+                target_role=role_str,
+                portfolio_url=portfolio_url,
+                claim_url=claim_url,
+                creator_name=creator_name,
+                base_url=base_clean,
+                enqueue_on_fail=True
+            )
+            if email_dispatched:
+                email_status = f"VIP invitation email automatically dispatched to {email_clean}!"
+        except Exception as mail_err:
+            logger.warning("Could not auto-dispatch candidate invitation email: %s", mail_err)
+
     logger.info(
-        "✅ Prebuilt profile created: %s (%s) by user %s. Token: %s",
-        cand_name, email_clean, creator.email, claim_token
+        "✅ Prebuilt profile created: %s (%s) by user %s. Token: %s. Auto-email: %s",
+        cand_name, email_clean, creator.email, claim_token, email_dispatched
     )
 
     return PrebuildProfileResponse(
@@ -295,7 +320,9 @@ def prebuild_candidate_profile(
         candidate_email=email_clean,
         target_role=role_str,
         credits_remaining=remaining_credits,
-        invitation_message=invitation_message
+        invitation_message=invitation_message,
+        email_sent=email_dispatched,
+        email_status_text=email_status
     )
 
 
