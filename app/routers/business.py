@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 import logging
 from datetime import datetime
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func, desc
 
 from app.database import get_db
-from app.models import User, PrebuiltCandidateProfile, BusinessCreditTransaction, OnlinePaymentOrder
+from app.models import User, PrebuiltCandidateProfile, BusinessCreditTransaction, OnlinePaymentOrder, UserResume
 from app.auth import get_current_user
 from app.schemas import (
     PrebuildProfileResponse,
@@ -327,6 +328,153 @@ async def api_delete_candidate_profile(
     return {
         "success": True,
         "message": f"Candidate profile #{candidate_id} ({cand_name}) has been permanently deleted."
+    }
+
+
+@router.get("/candidates/{candidate_id}/resume")
+async def get_candidate_profile_resume(
+    candidate_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Fetch full candidate prebuilt profile resume data for editing by Creator or Admin.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+
+    if not is_admin and profile.creator_id != current_user.id and acc_type != "business":
+        raise HTTPException(status_code=403, detail="You do not have permission to view or edit this candidate's resume.")
+
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+    portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
+    resume_data = {}
+    if profile.resume_data_json:
+        try:
+            resume_data = json.loads(profile.resume_data_json)
+        except Exception:
+            resume_data = {}
+
+    return {
+        "success": True,
+        "id": profile.id,
+        "candidate_name": profile.candidate_name,
+        "candidate_email": profile.candidate_email,
+        "target_role": profile.target_role,
+        "portfolio_slug": profile.portfolio_slug,
+        "portfolio_url": portfolio_url,
+        "claim_url": f"{base_url}/claim/{profile.claim_token}",
+        "status": profile.status,
+        "created_at": profile.created_at.strftime("%b %d, %Y %I:%M %p"),
+        "resume_data": resume_data
+    }
+
+
+@router.put("/candidates/{candidate_id}/resume")
+async def update_candidate_profile_resume(
+    candidate_id: int,
+    payload: Dict[str, Any],
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update candidate resume data and re-publish updated live portfolio.
+    Accessible to Admin and the Business creator of the profile.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    profile = db.get(PrebuiltCandidateProfile, candidate_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+
+    if not is_admin and profile.creator_id != current_user.id and acc_type != "business":
+        raise HTTPException(status_code=403, detail="You do not have permission to edit this candidate's resume.")
+
+    # Extract resume_data dictionary from payload
+    resume_data = payload.get("resume_data") if "resume_data" in payload else payload
+    if not isinstance(resume_data, dict):
+        raise HTTPException(status_code=400, detail="Invalid resume data format.")
+
+    # Ensure personal_info structure is present
+    personal_info = resume_data.get("personal_info") or {}
+    new_name = payload.get("candidate_name") or personal_info.get("full_name") or profile.candidate_name
+    new_email = payload.get("candidate_email") or personal_info.get("email") or profile.candidate_email
+    new_role = payload.get("target_role") or resume_data.get("target_job_title") or profile.target_role
+
+    if "personal_info" not in resume_data or not isinstance(resume_data["personal_info"], dict):
+        resume_data["personal_info"] = {}
+    resume_data["personal_info"]["full_name"] = new_name
+    resume_data["personal_info"]["email"] = new_email
+    resume_data["target_job_title"] = new_role
+
+    profile.candidate_name = new_name
+    profile.candidate_email = new_email.strip().lower()
+    profile.target_role = new_role
+    profile.resume_data_json = json.dumps(resume_data, ensure_ascii=False)
+
+    # Re-compile live web portfolio HTML and save to disk cache
+    try:
+        from app.portfolio_templates import generate_portfolio_html
+        from app.state import save_published_portfolio
+        from app.schemas import TailoredResume
+
+        if "role_archetype" not in resume_data or not resume_data["role_archetype"]:
+            resume_data["role_archetype"] = "auto"
+        if "template_style" not in resume_data or not resume_data["template_style"]:
+            resume_data["template_style"] = "classic"
+        if "tailored_bullets" not in resume_data or not isinstance(resume_data["tailored_bullets"], list):
+            resume_data["tailored_bullets"] = []
+
+        tailored_obj = TailoredResume(**resume_data)
+        updated_portfolio_html = generate_portfolio_html(
+            resume=tailored_obj,
+            theme="neon_dark",
+            slug=profile.portfolio_slug or ""
+        )
+        profile.portfolio_html = updated_portfolio_html
+        if profile.portfolio_slug:
+            save_published_portfolio(profile.portfolio_slug, updated_portfolio_html)
+    except Exception as render_err:
+        logger.warning("Could not re-generate portfolio HTML on candidate resume update: %s", render_err)
+
+    # If already claimed by user, sync their user_resumes entry too
+    if profile.claimed_by_user_id:
+        try:
+            claimed_user_resume = db.scalar(
+                select(UserResume).where(UserResume.user_id == profile.claimed_by_user_id)
+            )
+            if claimed_user_resume:
+                claimed_user_resume.title = f"{new_role or 'Professional'} ATS Resume"
+                claimed_user_resume.target_role = new_role
+                claimed_user_resume.resume_data_json = profile.resume_data_json
+                claimed_user_resume.updated_at = datetime.utcnow()
+        except Exception as sync_err:
+            logger.warning("Could not sync candidate UserResume: %s", sync_err)
+
+    db.commit()
+    db.refresh(profile)
+
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+    portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
+    return {
+        "success": True,
+        "message": f"Candidate CV and live portfolio successfully updated for {profile.candidate_name}!",
+        "candidate_id": profile.id,
+        "candidate_name": profile.candidate_name,
+        "candidate_email": profile.candidate_email,
+        "target_role": profile.target_role,
+        "portfolio_url": portfolio_url
     }
 
 

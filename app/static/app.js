@@ -291,6 +291,11 @@ function resumeApp() {
     businessWalletTransactions: [],
     isBuyingCreditPack: false,
     bizCustomCredits: 20,
+    editingCandidate: null,
+    candidateResumeData: null,
+    isLoadingCandidateResume: false,
+    isSavingCandidateResume: false,
+    candidateEditSection: 'personal',
 
     // Unified In-App Dialog Modal State (Replacing browser alert and confirm)
     showAppDialog: false,
@@ -4253,6 +4258,233 @@ function resumeApp() {
         this.notify(err.message, 'error');
       } finally {
         this.isBuyingCreditPack = false;
+      }
+    },
+
+    async openCandidateEdit(cand) {
+      if (!cand || !cand.id) return;
+      this.editingCandidate = cand;
+      this.candidateResumeData = null;
+      this.isLoadingCandidateResume = true;
+      this.candidateEditSection = 'personal';
+      this.businessActiveTab = 'edit_candidate';
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/business/candidates/${cand.id}/resume`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Could not load candidate resume.');
+        }
+        const data = await res.json();
+        let rData = data.resume_data || {};
+        if (!rData.personal_info || typeof rData.personal_info !== 'object') {
+          rData.personal_info = {};
+        }
+        if (!rData.personal_info.full_name) rData.personal_info.full_name = data.candidate_name || '';
+        if (!rData.personal_info.email) rData.personal_info.email = data.candidate_email || '';
+        if (!rData.personal_info.phone) rData.personal_info.phone = '';
+        if (!rData.personal_info.location) rData.personal_info.location = '';
+        if (!rData.personal_info.linkedin) rData.personal_info.linkedin = '';
+        if (!rData.personal_info.github) rData.personal_info.github = '';
+        if (!rData.personal_info.website) rData.personal_info.website = '';
+
+        if (!rData.target_job_title) rData.target_job_title = data.target_role || '';
+        if (!rData.target_company) rData.target_company = '';
+        if (!rData.professional_summary) rData.professional_summary = '';
+
+        if (!Array.isArray(rData.work_experience)) rData.work_experience = [];
+        rData.work_experience.forEach(exp => {
+          if (!Array.isArray(exp.bullet_points)) exp.bullet_points = [];
+          exp._bullets_text = exp.bullet_points.join('\n');
+        });
+
+        if (!Array.isArray(rData.education)) rData.education = [];
+        if (!Array.isArray(rData.projects)) rData.projects = [];
+        rData.projects.forEach(p => {
+          if (!Array.isArray(p.description_bullets)) p.description_bullets = [];
+          if (!Array.isArray(p.technologies)) p.technologies = [];
+          p._bullets_text = p.description_bullets.join('\n');
+          p._tech_text = p.technologies.join(', ');
+        });
+
+        if (!Array.isArray(rData.skill_categories)) rData.skill_categories = [];
+        rData.skill_categories.forEach(cat => {
+          if (!Array.isArray(cat.skills)) cat.skills = [];
+          cat._skills_text = cat.skills.join(', ');
+        });
+
+        if (!Array.isArray(rData.certifications)) rData.certifications = [];
+
+        this.candidateResumeData = rData;
+      } catch (err) {
+        this.notify('Failed to load candidate CV: ' + err.message, 'error');
+        this.businessActiveTab = 'candidates';
+      } finally {
+        this.isLoadingCandidateResume = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
+    },
+
+    addCandidateExperience() {
+      if (!this.candidateResumeData) return;
+      if (!Array.isArray(this.candidateResumeData.work_experience)) {
+        this.candidateResumeData.work_experience = [];
+      }
+      this.candidateResumeData.work_experience.unshift({
+        job_title: '',
+        company: '',
+        location: '',
+        start_date: '',
+        end_date: 'Present',
+        bullet_points: [],
+        _bullets_text: ''
+      });
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    removeCandidateExperience(idx) {
+      if (!this.candidateResumeData || !this.candidateResumeData.work_experience) return;
+      this.candidateResumeData.work_experience.splice(idx, 1);
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    addCandidateEducation() {
+      if (!this.candidateResumeData) return;
+      if (!Array.isArray(this.candidateResumeData.education)) {
+        this.candidateResumeData.education = [];
+      }
+      this.candidateResumeData.education.unshift({
+        degree: '',
+        institution: '',
+        location: '',
+        graduation_year: '',
+        details: ''
+      });
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    removeCandidateEducation(idx) {
+      if (!this.candidateResumeData || !this.candidateResumeData.education) return;
+      this.candidateResumeData.education.splice(idx, 1);
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    addCandidateProject() {
+      if (!this.candidateResumeData) return;
+      if (!Array.isArray(this.candidateResumeData.projects)) {
+        this.candidateResumeData.projects = [];
+      }
+      this.candidateResumeData.projects.unshift({
+        name: '',
+        technologies: [],
+        _tech_text: '',
+        link: '',
+        demo_url: '',
+        description_bullets: [],
+        _bullets_text: ''
+      });
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    removeCandidateProject(idx) {
+      if (!this.candidateResumeData || !this.candidateResumeData.projects) return;
+      this.candidateResumeData.projects.splice(idx, 1);
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    addCandidateSkillCategory() {
+      if (!this.candidateResumeData) return;
+      if (!Array.isArray(this.candidateResumeData.skill_categories)) {
+        this.candidateResumeData.skill_categories = [];
+      }
+      this.candidateResumeData.skill_categories.push({
+        category_name: 'Key Skills',
+        skills: [],
+        _skills_text: ''
+      });
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    removeCandidateSkillCategory(idx) {
+      if (!this.candidateResumeData || !this.candidateResumeData.skill_categories) return;
+      this.candidateResumeData.skill_categories.splice(idx, 1);
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    async saveCandidateResume() {
+      if (!this.editingCandidate || !this.candidateResumeData) return;
+      this.isSavingCandidateResume = true;
+      const token = localStorage.getItem('saas_token');
+      if (!token) {
+        this.openAuthModal('login');
+        this.isSavingCandidateResume = false;
+        return;
+      }
+
+      try {
+        if (Array.isArray(this.candidateResumeData.work_experience)) {
+          this.candidateResumeData.work_experience.forEach(exp => {
+            if (typeof exp._bullets_text === 'string') {
+              exp.bullet_points = exp._bullets_text.split('\n').map(s => s.trim()).filter(Boolean);
+            }
+          });
+        }
+        if (Array.isArray(this.candidateResumeData.projects)) {
+          this.candidateResumeData.projects.forEach(p => {
+            if (typeof p._bullets_text === 'string') {
+              p.description_bullets = p._bullets_text.split('\n').map(s => s.trim()).filter(Boolean);
+            }
+            if (typeof p._tech_text === 'string') {
+              p.technologies = p._tech_text.split(',').map(s => s.trim()).filter(Boolean);
+            }
+          });
+        }
+        if (Array.isArray(this.candidateResumeData.skill_categories)) {
+          this.candidateResumeData.skill_categories.forEach(cat => {
+            if (typeof cat._skills_text === 'string') {
+              cat.skills = cat._skills_text.split(',').map(s => s.trim()).filter(Boolean);
+            }
+          });
+        }
+
+        const payload = {
+          candidate_name: this.candidateResumeData.personal_info?.full_name || this.editingCandidate.candidate_name,
+          candidate_email: this.candidateResumeData.personal_info?.email || this.editingCandidate.candidate_email,
+          target_role: this.candidateResumeData.target_job_title || this.editingCandidate.target_role,
+          resume_data: this.candidateResumeData
+        };
+
+        const res = await fetch(`/api/business/candidates/${this.editingCandidate.id}/resume`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Failed to save candidate CV');
+        }
+
+        this.notify(data.message || 'Candidate CV & live web portfolio successfully updated!', 'success');
+        await this.loadBusinessCandidates();
+        this.businessActiveTab = 'candidates';
+      } catch (err) {
+        this.notify('Failed to save CV changes: ' + err.message, 'error');
+      } finally {
+        this.isSavingCandidateResume = false;
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
       }
     },
 

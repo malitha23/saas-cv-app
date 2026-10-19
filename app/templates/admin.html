@@ -3618,6 +3618,11 @@
                     </td>
                     <td class="p-3 text-right">
                       <div class="flex items-center justify-end gap-1.5">
+                        <!-- Edit Candidate CV & Portfolio -->
+                        <button type="button" @click="openAdminCandidateEdit(cand)" title="Edit Candidate CV & Live Portfolio"
+                                class="p-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        </button>
                         <!-- 1-Click Send Email -->
                         <button type="button" @click="sendCandidateEmail(cand)" title="Send VIP invitation email to candidate"
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-pink-600 text-slate-300 hover:text-white transition">
@@ -4160,6 +4165,12 @@
         onboardingStatusFilter: 'all',
         copySuccessTip: '',
         isSendingOnboardEmail: false,
+        showAdminCandidateEditModal: false,
+        adminEditingCandidate: null,
+        adminCandidateResumeData: null,
+        isLoadingAdminCandidateResume: false,
+        isSavingAdminCandidateResume: false,
+        adminCandidateEditSection: 'personal',
 
         get filteredOnboardedCandidates() {
           let list = this.onboardingCandidatesList || [];
@@ -4524,6 +4535,221 @@
             }
           } catch (e) {
             alert('Delete error: ' + e.message);
+          }
+        },
+
+        async openAdminCandidateEdit(cand) {
+          if (!cand || !cand.id) return;
+          this.adminEditingCandidate = cand;
+          this.adminCandidateResumeData = null;
+          this.showAdminCandidateEditModal = true;
+          this.isLoadingAdminCandidateResume = true;
+          this.adminCandidateEditSection = 'personal';
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+
+          const token = localStorage.getItem('saas_token');
+          try {
+            const res = await fetch(`/api/business/candidates/${cand.id}/resume`, {
+              headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Could not load candidate resume.');
+            }
+            const data = await res.json();
+            let rData = data.resume_data || {};
+            if (!rData.personal_info || typeof rData.personal_info !== 'object') {
+              rData.personal_info = {};
+            }
+            if (!rData.personal_info.full_name) rData.personal_info.full_name = data.candidate_name || '';
+            if (!rData.personal_info.email) rData.personal_info.email = data.candidate_email || '';
+            if (!rData.personal_info.phone) rData.personal_info.phone = '';
+            if (!rData.personal_info.location) rData.personal_info.location = '';
+            if (!rData.personal_info.linkedin) rData.personal_info.linkedin = '';
+            if (!rData.personal_info.github) rData.personal_info.github = '';
+            if (!rData.personal_info.website) rData.personal_info.website = '';
+
+            if (!rData.target_job_title) rData.target_job_title = data.target_role || '';
+            if (!rData.target_company) rData.target_company = '';
+            if (!rData.professional_summary) rData.professional_summary = '';
+
+            if (!Array.isArray(rData.work_experience)) rData.work_experience = [];
+            rData.work_experience.forEach(exp => {
+              if (!Array.isArray(exp.bullet_points)) exp.bullet_points = [];
+              exp._bullets_text = exp.bullet_points.join('\n');
+            });
+
+            if (!Array.isArray(rData.education)) rData.education = [];
+            if (!Array.isArray(rData.projects)) rData.projects = [];
+            rData.projects.forEach(p => {
+              if (!Array.isArray(p.description_bullets)) p.description_bullets = [];
+              if (!Array.isArray(p.technologies)) p.technologies = [];
+              p._bullets_text = p.description_bullets.join('\n');
+              p._tech_text = p.technologies.join(', ');
+            });
+
+            if (!Array.isArray(rData.skill_categories)) rData.skill_categories = [];
+            rData.skill_categories.forEach(cat => {
+              if (!Array.isArray(cat.skills)) cat.skills = [];
+              cat._skills_text = cat.skills.join(', ');
+            });
+
+            if (!Array.isArray(rData.certifications)) rData.certifications = [];
+
+            this.adminCandidateResumeData = rData;
+          } catch (e) {
+            alert('Error loading candidate resume: ' + e.message);
+            this.showAdminCandidateEditModal = false;
+          } finally {
+            this.isLoadingAdminCandidateResume = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        addAdminCandidateExperience() {
+          if (!this.adminCandidateResumeData) return;
+          if (!Array.isArray(this.adminCandidateResumeData.work_experience)) {
+            this.adminCandidateResumeData.work_experience = [];
+          }
+          this.adminCandidateResumeData.work_experience.unshift({
+            job_title: '',
+            company: '',
+            location: '',
+            start_date: '',
+            end_date: 'Present',
+            bullet_points: [],
+            _bullets_text: ''
+          });
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        removeAdminCandidateExperience(idx) {
+          if (!this.adminCandidateResumeData || !this.adminCandidateResumeData.work_experience) return;
+          this.adminCandidateResumeData.work_experience.splice(idx, 1);
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        addAdminCandidateEducation() {
+          if (!this.adminCandidateResumeData) return;
+          if (!Array.isArray(this.adminCandidateResumeData.education)) {
+            this.adminCandidateResumeData.education = [];
+          }
+          this.adminCandidateResumeData.education.unshift({
+            degree: '',
+            institution: '',
+            location: '',
+            graduation_year: '',
+            details: ''
+          });
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        removeAdminCandidateEducation(idx) {
+          if (!this.adminCandidateResumeData || !this.adminCandidateResumeData.education) return;
+          this.adminCandidateResumeData.education.splice(idx, 1);
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        addAdminCandidateProject() {
+          if (!this.adminCandidateResumeData) return;
+          if (!Array.isArray(this.adminCandidateResumeData.projects)) {
+            this.adminCandidateResumeData.projects = [];
+          }
+          this.adminCandidateResumeData.projects.unshift({
+            name: '',
+            technologies: [],
+            _tech_text: '',
+            link: '',
+            demo_url: '',
+            description_bullets: [],
+            _bullets_text: ''
+          });
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        removeAdminCandidateProject(idx) {
+          if (!this.adminCandidateResumeData || !this.adminCandidateResumeData.projects) return;
+          this.adminCandidateResumeData.projects.splice(idx, 1);
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        addAdminCandidateSkillCategory() {
+          if (!this.adminCandidateResumeData) return;
+          if (!Array.isArray(this.adminCandidateResumeData.skill_categories)) {
+            this.adminCandidateResumeData.skill_categories = [];
+          }
+          this.adminCandidateResumeData.skill_categories.push({
+            category_name: 'Key Skills',
+            skills: [],
+            _skills_text: ''
+          });
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        removeAdminCandidateSkillCategory(idx) {
+          if (!this.adminCandidateResumeData || !this.adminCandidateResumeData.skill_categories) return;
+          this.adminCandidateResumeData.skill_categories.splice(idx, 1);
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        async saveAdminCandidateResume() {
+          if (!this.adminEditingCandidate || !this.adminCandidateResumeData) return;
+          this.isSavingAdminCandidateResume = true;
+          const token = localStorage.getItem('saas_token');
+
+          try {
+            if (Array.isArray(this.adminCandidateResumeData.work_experience)) {
+              this.adminCandidateResumeData.work_experience.forEach(exp => {
+                if (typeof exp._bullets_text === 'string') {
+                  exp.bullet_points = exp._bullets_text.split('\n').map(s => s.trim()).filter(Boolean);
+                }
+              });
+            }
+            if (Array.isArray(this.adminCandidateResumeData.projects)) {
+              this.adminCandidateResumeData.projects.forEach(p => {
+                if (typeof p._bullets_text === 'string') {
+                  p.description_bullets = p._bullets_text.split('\n').map(s => s.trim()).filter(Boolean);
+                }
+                if (typeof p._tech_text === 'string') {
+                  p.technologies = p._tech_text.split(',').map(s => s.trim()).filter(Boolean);
+                }
+              });
+            }
+            if (Array.isArray(this.adminCandidateResumeData.skill_categories)) {
+              this.adminCandidateResumeData.skill_categories.forEach(cat => {
+                if (typeof cat._skills_text === 'string') {
+                  cat.skills = cat._skills_text.split(',').map(s => s.trim()).filter(Boolean);
+                }
+              });
+            }
+
+            const payload = {
+              candidate_name: this.adminCandidateResumeData.personal_info?.full_name || this.adminEditingCandidate.candidate_name,
+              candidate_email: this.adminCandidateResumeData.personal_info?.email || this.adminEditingCandidate.candidate_email,
+              target_role: this.adminCandidateResumeData.target_job_title || this.adminEditingCandidate.target_role,
+              resume_data: this.adminCandidateResumeData
+            };
+
+            const res = await fetch(`/api/business/candidates/${this.adminEditingCandidate.id}/resume`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Failed to update candidate resume');
+
+            alert(`✅ ${data.message || 'Candidate CV & live portfolio successfully updated!'}`);
+            this.showAdminCandidateEditModal = false;
+            await this.loadOnboardingCandidates();
+          } catch (e) {
+            alert('Error updating candidate CV: ' + e.message);
+          } finally {
+            this.isSavingAdminCandidateResume = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
         },
 
@@ -6651,6 +6877,377 @@
           <i data-lucide="rocket" class="w-4 h-4" :class="{ 'animate-spin': isSendingCampaign }"></i>
           <span x-text="isSendingCampaign ? 'Launching in Background...' : 'Launch Promotional Campaign 🚀'"></span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- ADMIN CANDIDATE CV & PORTFOLIO EDIT MODAL -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div x-show="showAdminCandidateEditModal" x-cloak
+       class="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-5 sm:p-7 shadow-2xl shadow-indigo-950/40 space-y-4 relative my-auto"
+         @click.away="showAdminCandidateEditModal = false">
+
+      <!-- Close Button -->
+      <button @click="showAdminCandidateEditModal = false" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 pb-3 border-b border-slate-800/80">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 text-white">
+            <i data-lucide="edit-3" class="w-5 h-5 text-amber-300"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base sm:text-lg font-bold text-white">Edit Candidate Profile & Live Portfolio</h3>
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                #<span x-text="adminEditingCandidate?.id"></span>
+              </span>
+            </div>
+            <p class="text-xs text-slate-400" x-text="adminEditingCandidate?.candidate_name + ' • ' + adminEditingCandidate?.candidate_email"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <template x-if="adminEditingCandidate?.portfolio_url">
+            <a :href="adminEditingCandidate.portfolio_url" target="_blank"
+               class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 transition flex items-center gap-1.5">
+              <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+              <span>Live Website</span>
+            </a>
+          </template>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div x-show="isLoadingAdminCandidateResume" class="py-12 text-center space-y-3">
+        <i data-lucide="loader" class="w-6 h-6 text-indigo-400 animate-spin mx-auto"></i>
+        <p class="text-xs text-slate-400">Loading candidate resume & portfolio structure...</p>
+      </div>
+
+      <!-- Editor Content -->
+      <div x-show="!isLoadingAdminCandidateResume && adminCandidateResumeData" class="space-y-4">
+        <!-- Sub-section Pills -->
+        <div class="flex flex-wrap gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs">
+          <button type="button" @click="adminCandidateEditSection = 'personal'"
+                  :class="adminCandidateEditSection === 'personal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="user" class="w-3 h-3"></i> Personal Info
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'summary'"
+                  :class="adminCandidateEditSection === 'summary' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-3 h-3"></i> Summary & Role
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'experience'"
+                  :class="adminCandidateEditSection === 'experience' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="briefcase" class="w-3 h-3"></i> Experience (<span x-text="adminCandidateResumeData?.work_experience?.length || 0"></span>)
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'education'"
+                  :class="adminCandidateEditSection === 'education' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="graduation-cap" class="w-3 h-3"></i> Education (<span x-text="adminCandidateResumeData?.education?.length || 0"></span>)
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'skills'"
+                  :class="adminCandidateEditSection === 'skills' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="code" class="w-3 h-3"></i> Skills (<span x-text="adminCandidateResumeData?.skill_categories?.length || 0"></span>)
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'projects'"
+                  :class="adminCandidateEditSection === 'projects' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="folder-git-2" class="w-3 h-3"></i> Projects (<span x-text="adminCandidateResumeData?.projects?.length || 0"></span>)
+          </button>
+        </div>
+
+        <!-- Section 1: Personal Info -->
+        <div x-show="adminCandidateEditSection === 'personal'" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Full Name *</label>
+              <input type="text" x-model="adminCandidateResumeData.personal_info.full_name"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Email Address *</label>
+              <input type="email" x-model="adminCandidateResumeData.personal_info.email"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Phone Number</label>
+              <input type="text" x-model="adminCandidateResumeData.personal_info.phone" placeholder="+94 77 123 4567"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Location / City</label>
+              <input type="text" x-model="adminCandidateResumeData.personal_info.location" placeholder="Colombo, Sri Lanka"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">LinkedIn URL</label>
+              <input type="url" x-model="adminCandidateResumeData.personal_info.linkedin" placeholder="https://linkedin.com/in/username"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">GitHub URL</label>
+              <input type="url" x-model="adminCandidateResumeData.personal_info.github" placeholder="https://github.com/username"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Personal Portfolio / Website</label>
+            <input type="url" x-model="adminCandidateResumeData.personal_info.website" placeholder="https://mywebsite.com"
+                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+          </div>
+        </div>
+
+        <!-- Section 2: Summary & Role -->
+        <div x-show="adminCandidateEditSection === 'summary'" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Target Job Title *</label>
+              <input type="text" x-model="adminCandidateResumeData.target_job_title" placeholder="e.g. Senior Full Stack Engineer"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Target Company (Optional)</label>
+              <input type="text" x-model="adminCandidateResumeData.target_company" placeholder="e.g. Google / Remote"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Professional Summary</label>
+            <textarea x-model="adminCandidateResumeData.professional_summary" rows="4" placeholder="Executive 3-4 sentence professional summary tailored to target role..."
+                      class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition leading-relaxed"></textarea>
+          </div>
+        </div>
+
+        <!-- Section 3: Work Experience -->
+        <div x-show="adminCandidateEditSection === 'experience'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Candidate Career History</span>
+            <button type="button" @click="addAdminCandidateExperience()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Role</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <template x-for="(exp, expIdx) in adminCandidateResumeData.work_experience" :key="expIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeAdminCandidateExperience(expIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Role">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Job Title *</label>
+                    <input type="text" x-model="exp.job_title" placeholder="Job Title"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Company *</label>
+                    <input type="text" x-model="exp.company" placeholder="Company Name"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Start Date</label>
+                    <input type="text" x-model="exp.start_date" placeholder="e.g. Jan 2022"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">End Date</label>
+                    <input type="text" x-model="exp.end_date" placeholder="e.g. Present"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Key Achievements / Bullet Points <span class="text-slate-500 font-normal">(One per line)</span>
+                  </label>
+                  <textarea x-model="exp._bullets_text" rows="3" placeholder="• Architected microservices cutting latency by 30%&#10;• Led cross-functional team of 6 engineers"
+                            class="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!adminCandidateResumeData.work_experience || adminCandidateResumeData.work_experience.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No work experience added yet. Click "+ Add Role" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Education -->
+        <div x-show="adminCandidateEditSection === 'education'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Academic Background</span>
+            <button type="button" @click="addAdminCandidateEducation()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Education</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <template x-for="(edu, eduIdx) in adminCandidateResumeData.education" :key="eduIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeAdminCandidateEducation(eduIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Education">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Degree / Certification *</label>
+                    <input type="text" x-model="edu.degree" placeholder="BSc in Software Engineering"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Institution / University *</label>
+                    <input type="text" x-model="edu.institution" placeholder="University of Colombo"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Graduation Year / Dates</label>
+                    <input type="text" x-model="edu.graduation_year" placeholder="2020 - 2024"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Location or GPA Details</label>
+                    <input type="text" x-model="edu.details" placeholder="First Class Honours / GPA 3.8"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!adminCandidateResumeData.education || adminCandidateResumeData.education.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No education items added yet. Click "+ Add Education" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Skills -->
+        <div x-show="adminCandidateEditSection === 'skills'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Skill Categories</span>
+            <button type="button" @click="addAdminCandidateSkillCategory()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Category</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <template x-for="(cat, cIdx) in adminCandidateResumeData.skill_categories" :key="cIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 relative group">
+                <button type="button" @click="removeAdminCandidateSkillCategory(cIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Category">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="pr-8">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Category Name</label>
+                  <input type="text" x-model="cat.category_name" placeholder="e.g. Languages & Frameworks"
+                         class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Skills <span class="text-slate-500 font-normal">(Comma separated)</span>
+                  </label>
+                  <input type="text" x-model="cat._skills_text" placeholder="Python, FastAPI, React, PostgreSQL, Docker, AWS"
+                         class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!adminCandidateResumeData.skill_categories || adminCandidateResumeData.skill_categories.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No skill categories added yet. Click "+ Add Category" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Projects -->
+        <div x-show="adminCandidateEditSection === 'projects'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Key Projects</span>
+            <button type="button" @click="addAdminCandidateProject()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Project</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <template x-for="(proj, pIdx) in adminCandidateResumeData.projects" :key="pIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeAdminCandidateProject(pIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Project">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Project Name *</label>
+                    <input type="text" x-model="proj.name" placeholder="Project Name"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Technologies Used (comma separated)</label>
+                    <input type="text" x-model="proj._tech_text" placeholder="React, Node.js, Tailwind, SQLite"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Project Link / Repo</label>
+                    <input type="url" x-model="proj.link" placeholder="https://github.com/..."
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Live Demo URL</label>
+                    <input type="url" x-model="proj.demo_url" placeholder="https://myapp.vercel.app"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Project Bullet Points <span class="text-slate-500 font-normal">(One per line)</span>
+                  </label>
+                  <textarea x-model="proj._bullets_text" rows="2" placeholder="• Deployed full-stack architecture handling 10k users"
+                            class="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!adminCandidateResumeData.projects || adminCandidateResumeData.projects.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No projects added yet. Click "+ Add Project" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Bottom Save Bar -->
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+          <button type="button" @click="showAdminCandidateEditModal = false" class="text-xs text-slate-400 hover:text-white transition">
+            Cancel
+          </button>
+          <button type="button" @click="saveAdminCandidateResume()" :disabled="isSavingAdminCandidateResume"
+                  class="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white shadow-lg shadow-emerald-500/25 transition flex items-center gap-2 disabled:opacity-50">
+            <i data-lucide="save" class="w-3.5 h-3.5" :class="{'animate-spin': isSavingAdminCandidateResume}"></i>
+            <span x-text="isSavingAdminCandidateResume ? 'Updating Portfolio...' : 'Save Changes & Update Live Portfolio'"></span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

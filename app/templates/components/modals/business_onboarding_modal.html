@@ -65,6 +65,15 @@
         <i data-lucide="wallet" class="w-4 h-4"></i>
         <span>Packs & Wallet</span>
       </button>
+
+      <template x-if="editingCandidate">
+        <button @click="businessActiveTab = 'edit_candidate'"
+          :class="businessActiveTab === 'edit_candidate' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow' : 'text-slate-400 hover:text-slate-200'"
+          class="flex-1 py-2 rounded-xl transition flex items-center justify-center gap-1.5">
+          <i data-lucide="edit-3" class="w-4 h-4 text-emerald-300"></i>
+          <span class="truncate" x-text="'Edit: ' + (editingCandidate.candidate_name || 'Candidate')"></span>
+        </button>
+      </template>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -169,7 +178,12 @@
                 <i data-lucide="send" class="w-3.5 h-3.5" :class="{'animate-spin': isBizSendingEmail}"></i>
                 <span x-text="isBizSendingEmail ? 'Sending Email...' : 'Send Invitation Email'"></span>
               </button>
-              <a :href="bizOnboardingResult.portfolio_url" target="_blank" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/40 transition flex items-center gap-1">
+              <button type="button" @click="openCandidateEdit(bizOnboardingResult)"
+                      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 transition flex items-center gap-1"
+                      title="Edit Candidate CV & Live Portfolio">
+                <i data-lucide="edit-3" class="w-3 h-3"></i> Edit CV
+              </button>
+              <a :href="bizOnboardingResult.portfolio_url" target="_blank" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 transition flex items-center gap-1">
                 <i data-lucide="external-link" class="w-3 h-3"></i> Preview Portfolio
               </a>
             </div>
@@ -249,6 +263,12 @@
               <span x-show="cand.status === 'pending'" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
                 Pending
               </span>
+
+              <button @click="openCandidateEdit(cand)"
+                      class="p-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition"
+                      title="Edit Candidate CV & Live Portfolio">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+              </button>
 
               <button @click="sendBizCandidateEmail(cand.id, cand.candidate_email)" :disabled="bizSendingEmailId === cand.id"
                       class="p-1.5 rounded-lg bg-slate-800 hover:bg-pink-600 text-slate-300 hover:text-white transition disabled:opacity-50"
@@ -414,6 +434,375 @@
           <div x-show="businessWalletTransactions.length === 0" class="p-3 text-center text-slate-500 text-[11px]">
             No transactions yet.
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 4: CANDIDATE CV & PORTFOLIO EDITOR -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div x-show="businessActiveTab === 'edit_candidate'" class="space-y-4">
+      <!-- Top Sub-Header & Actions -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+        <div class="flex items-center gap-3">
+          <button type="button" @click="businessActiveTab = 'candidates'"
+                  class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition flex items-center gap-1.5 text-xs font-semibold">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Back</span>
+          </button>
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-2">
+              <span x-text="editingCandidate?.candidate_name || 'Candidate Profile'"></span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                #<span x-text="editingCandidate?.id"></span>
+              </span>
+            </div>
+            <div class="text-[11px] text-slate-400" x-text="editingCandidate?.candidate_email"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <template x-if="editingCandidate?.portfolio_url">
+            <a :href="editingCandidate.portfolio_url" target="_blank"
+               class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 transition flex items-center gap-1.5">
+              <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+              <span>Live Portfolio</span>
+            </a>
+          </template>
+
+          <button type="button" @click="saveCandidateResume()" :disabled="isSavingCandidateResume || isLoadingCandidateResume"
+                  class="px-4 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white shadow-md shadow-emerald-500/25 transition flex items-center gap-1.5 disabled:opacity-50">
+            <i data-lucide="save" class="w-3.5 h-3.5" :class="{'animate-spin': isSavingCandidateResume}"></i>
+            <span x-text="isSavingCandidateResume ? 'Saving...' : 'Save & Publish'"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div x-show="isLoadingCandidateResume" class="py-12 text-center space-y-3">
+        <i data-lucide="loader" class="w-6 h-6 text-indigo-400 animate-spin mx-auto"></i>
+        <p class="text-xs text-slate-400">Loading candidate resume & portfolio structure...</p>
+      </div>
+
+      <!-- Editor Content -->
+      <div x-show="!isLoadingCandidateResume && candidateResumeData" class="space-y-4">
+        <!-- Sub-section Pills -->
+        <div class="flex flex-wrap gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs">
+          <button type="button" @click="candidateEditSection = 'personal'"
+                  :class="candidateEditSection === 'personal' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="user" class="w-3 h-3"></i> Personal Info
+          </button>
+          <button type="button" @click="candidateEditSection = 'summary'"
+                  :class="candidateEditSection === 'summary' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="file-text" class="w-3 h-3"></i> Summary & Role
+          </button>
+          <button type="button" @click="candidateEditSection = 'experience'"
+                  :class="candidateEditSection === 'experience' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="briefcase" class="w-3 h-3"></i> Experience (<span x-text="candidateResumeData?.work_experience?.length || 0"></span>)
+          </button>
+          <button type="button" @click="candidateEditSection = 'education'"
+                  :class="candidateEditSection === 'education' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="graduation-cap" class="w-3 h-3"></i> Education (<span x-text="candidateResumeData?.education?.length || 0"></span>)
+          </button>
+          <button type="button" @click="candidateEditSection = 'skills'"
+                  :class="candidateEditSection === 'skills' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="code" class="w-3 h-3"></i> Skills (<span x-text="candidateResumeData?.skill_categories?.length || 0"></span>)
+          </button>
+          <button type="button" @click="candidateEditSection = 'projects'"
+                  :class="candidateEditSection === 'projects' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="folder-git-2" class="w-3 h-3"></i> Projects (<span x-text="candidateResumeData?.projects?.length || 0"></span>)
+          </button>
+        </div>
+
+        <!-- Section 1: Personal Info -->
+        <div x-show="candidateEditSection === 'personal'" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Full Name *</label>
+              <input type="text" x-model="candidateResumeData.personal_info.full_name"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Email Address *</label>
+              <input type="email" x-model="candidateResumeData.personal_info.email"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Phone Number</label>
+              <input type="text" x-model="candidateResumeData.personal_info.phone" placeholder="+94 77 123 4567"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Location / City</label>
+              <input type="text" x-model="candidateResumeData.personal_info.location" placeholder="Colombo, Sri Lanka"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">LinkedIn URL</label>
+              <input type="url" x-model="candidateResumeData.personal_info.linkedin" placeholder="https://linkedin.com/in/username"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">GitHub URL</label>
+              <input type="url" x-model="candidateResumeData.personal_info.github" placeholder="https://github.com/username"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Personal Portfolio / Website</label>
+            <input type="url" x-model="candidateResumeData.personal_info.website" placeholder="https://mywebsite.com"
+                   class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+          </div>
+        </div>
+
+        <!-- Section 2: Summary & Role -->
+        <div x-show="candidateEditSection === 'summary'" class="bg-slate-950/70 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Target Job Title *</label>
+              <input type="text" x-model="candidateResumeData.target_job_title" placeholder="e.g. Senior Full Stack Engineer"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Target Company (Optional)</label>
+              <input type="text" x-model="candidateResumeData.target_company" placeholder="e.g. Google / Remote"
+                     class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Professional Summary</label>
+            <textarea x-model="candidateResumeData.professional_summary" rows="4" placeholder="Executive 3-4 sentence professional summary tailored to target role..."
+                      class="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 transition leading-relaxed"></textarea>
+          </div>
+        </div>
+
+        <!-- Section 3: Work Experience -->
+        <div x-show="candidateEditSection === 'experience'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Candidate Career History</span>
+            <button type="button" @click="addCandidateExperience()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Role</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <template x-for="(exp, expIdx) in candidateResumeData.work_experience" :key="expIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeCandidateExperience(expIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Role">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Job Title *</label>
+                    <input type="text" x-model="exp.job_title" placeholder="Job Title"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Company *</label>
+                    <input type="text" x-model="exp.company" placeholder="Company Name"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Start Date</label>
+                    <input type="text" x-model="exp.start_date" placeholder="e.g. Jan 2022"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">End Date</label>
+                    <input type="text" x-model="exp.end_date" placeholder="e.g. Present"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Key Achievements / Bullet Points <span class="text-slate-500 font-normal">(One achievement per line)</span>
+                  </label>
+                  <textarea x-model="exp._bullets_text" rows="3" placeholder="• Architected microservices cutting latency by 30%&#10;• Led cross-functional team of 6 engineers"
+                            class="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!candidateResumeData.work_experience || candidateResumeData.work_experience.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No work experience added yet. Click "+ Add Role" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Education -->
+        <div x-show="candidateEditSection === 'education'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Academic Background</span>
+            <button type="button" @click="addCandidateEducation()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Education</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <template x-for="(edu, eduIdx) in candidateResumeData.education" :key="eduIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeCandidateEducation(eduIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Education">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Degree / Certification *</label>
+                    <input type="text" x-model="edu.degree" placeholder="BSc in Software Engineering"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Institution / University *</label>
+                    <input type="text" x-model="edu.institution" placeholder="University of Colombo"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Graduation Year / Dates</label>
+                    <input type="text" x-model="edu.graduation_year" placeholder="2020 - 2024"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Location or GPA Details</label>
+                    <input type="text" x-model="edu.details" placeholder="First Class Honours / GPA 3.8"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!candidateResumeData.education || candidateResumeData.education.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No education items added yet. Click "+ Add Education" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Skills -->
+        <div x-show="candidateEditSection === 'skills'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Technical & Professional Skill Categories</span>
+            <button type="button" @click="addCandidateSkillCategory()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Category</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <template x-for="(cat, cIdx) in candidateResumeData.skill_categories" :key="cIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 relative group">
+                <button type="button" @click="removeCandidateSkillCategory(cIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Category">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="pr-8">
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Category Name</label>
+                  <input type="text" x-model="cat.category_name" placeholder="e.g. Languages & Frameworks"
+                         class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Skills <span class="text-slate-500 font-normal">(Separate with commas)</span>
+                  </label>
+                  <input type="text" x-model="cat._skills_text" placeholder="Python, FastAPI, React, PostgreSQL, Docker, AWS"
+                         class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!candidateResumeData.skill_categories || candidateResumeData.skill_categories.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No skill categories added yet. Click "+ Add Category" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Projects -->
+        <div x-show="candidateEditSection === 'projects'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">Key Projects & Portfolio Showcases</span>
+            <button type="button" @click="addCandidateProject()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Project</span>
+            </button>
+          </div>
+
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+            <template x-for="(proj, pIdx) in candidateResumeData.projects" :key="pIdx">
+              <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 relative group">
+                <button type="button" @click="removeCandidateProject(pIdx)"
+                        class="absolute top-3 right-3 text-slate-500 hover:text-rose-400 p-1 rounded-lg transition"
+                        title="Delete Project">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Project Name *</label>
+                    <input type="text" x-model="proj.name" placeholder="Project Name"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Technologies Used (comma separated)</label>
+                    <input type="text" x-model="proj._tech_text" placeholder="React, Node.js, Tailwind, SQLite"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Project Link / Repo</label>
+                    <input type="url" x-model="proj.link" placeholder="https://github.com/..."
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Live Demo URL</label>
+                    <input type="url" x-model="proj.demo_url" placeholder="https://myapp.vercel.app"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    Project Bullet Points <span class="text-slate-500 font-normal">(One per line)</span>
+                  </label>
+                  <textarea x-model="proj._bullets_text" rows="2" placeholder="• Deployed full-stack architecture handling 10k users"
+                            class="w-full px-2.5 py-2 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 leading-relaxed"></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div x-show="!candidateResumeData.projects || candidateResumeData.projects.length === 0" class="p-6 text-center text-slate-500 text-xs border border-dashed border-slate-800 rounded-2xl">
+              No projects added yet. Click "+ Add Project" to add.
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Bottom Save Bar -->
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+          <button type="button" @click="businessActiveTab = 'candidates'" class="text-xs text-slate-400 hover:text-white transition">
+            Cancel
+          </button>
+          <button type="button" @click="saveCandidateResume()" :disabled="isSavingCandidateResume"
+                  class="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white shadow-lg shadow-emerald-500/25 transition flex items-center gap-2 disabled:opacity-50">
+            <i data-lucide="save" class="w-3.5 h-3.5" :class="{'animate-spin': isSavingCandidateResume}"></i>
+            <span x-text="isSavingCandidateResume ? 'Updating Portfolio...' : 'Save Changes & Update Live Portfolio'"></span>
+          </button>
         </div>
       </div>
     </div>
