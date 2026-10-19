@@ -171,9 +171,27 @@ async def auth_with_google(
         raise HTTPException(status_code=403, detail="Your account has been deactivated.")
 
     # Auto-claim any pre-built candidate profile (ATS resume + live portfolio)
+    claim_token = request.cookies.get("dreemfolio_claim_token")
+    if claim_token and claim_token.strip():
+        token_clean = claim_token.strip()
+        from app.models import PrebuiltCandidateProfile
+        pending_profile = db.scalar(
+            select(PrebuiltCandidateProfile).where(
+                PrebuiltCandidateProfile.claim_token == token_clean,
+                PrebuiltCandidateProfile.status == "pending"
+            )
+        )
+        if pending_profile:
+            expected_email = (pending_profile.candidate_email or "").strip().lower()
+            auth_email = (user.email or "").strip().lower()
+            if expected_email and expected_email != auth_email:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Email Mismatch: This profile is reserved for '{pending_profile.candidate_email}'. You authenticated with Google as '{user.email}'. Please sign in with '{pending_profile.candidate_email}' to claim."
+                )
+
     try:
         from app.services.business_service import sync_prebuilt_candidate_profile
-        claim_token = request.cookies.get("dreemfolio_claim_token")
         sync_prebuilt_candidate_profile(user, db, claim_token=claim_token)
     except Exception as sync_err:
         logger.warning("Prebuilt profile auto-sync warning during Google auth: %s", sync_err)

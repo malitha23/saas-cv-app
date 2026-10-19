@@ -388,12 +388,29 @@ async def buy_business_credits(
     """
     Initiates a verified PayHere checkout session for purchasing prepaid B2B candidate onboarding credits.
     """
-    matched_pack = next((p for p in CREDIT_PACKS if p["pack_id"] == req.pack_id), None)
-    if not matched_pack:
-        raise HTTPException(status_code=400, detail="Invalid credit pack selected.")
+    credits_count = 0
+    amount_lkr = 0.0
 
-    credits_count = matched_pack["credits"]
-    amount_lkr = matched_pack["price_lkr"]
+    if req.custom_credits and req.custom_credits >= 5:
+        credits_count = int(req.custom_credits)
+        # Dynamic bulk discount tiers:
+        # 5 - 24 credits: Rs. 150/candidate
+        # 25 - 99 credits: Rs. 120/candidate (20% Agency discount)
+        # 100+ credits: Rs. 99/candidate (34% Enterprise bulk discount)
+        if credits_count >= 100:
+            rate_per_credit = 99.0
+        elif credits_count >= 25:
+            rate_per_credit = 120.0
+        else:
+            rate_per_credit = 150.0
+        amount_lkr = round(credits_count * rate_per_credit, 2)
+    else:
+        matched_pack = next((p for p in CREDIT_PACKS if p["pack_id"] == req.pack_id), None)
+        if not matched_pack:
+            raise HTTPException(status_code=400, detail="Invalid credit pack or custom credits selected (minimum 5 credits).")
+        credits_count = matched_pack["credits"]
+        amount_lkr = matched_pack["price_lkr"]
+
     plan_tier_key = f"credits_{credits_count}"
 
     order_id = f"ORD-BIZ-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"

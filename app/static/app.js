@@ -290,6 +290,7 @@ function resumeApp() {
     isBizLoadingCandidates: false,
     businessWalletTransactions: [],
     isBuyingCreditPack: false,
+    bizCustomCredits: 20,
 
     // Unified In-App Dialog Modal State (Replacing browser alert and confirm)
     showAppDialog: false,
@@ -4182,22 +4183,44 @@ function resumeApp() {
       }
     },
 
-    async buyCreditPack(packId) {
+    getBizCustomRate(credits) {
+      const c = parseInt(credits) || 0;
+      if (c >= 100) return 99;
+      if (c >= 25) return 120;
+      return 150;
+    },
+
+    getBizCustomPrice(credits) {
+      const c = parseInt(credits) || 0;
+      return c * this.getBizCustomRate(c);
+    },
+
+    async buyCreditPack(packId, customCredits = null) {
       const token = localStorage.getItem('saas_token');
       if (!token) {
         this.openAuthModal('login');
         return;
       }
 
+      const numCustom = customCredits !== null ? parseInt(customCredits) : null;
+      if (packId === 'custom' && (!numCustom || numCustom < 5)) {
+        this.notify('Please enter at least 5 custom credits to top up.', 'warning');
+        return;
+      }
+
       this.isBuyingCreditPack = true;
       try {
+        const bodyPayload = (packId === 'custom' && numCustom)
+          ? { pack_id: 'custom', custom_credits: numCustom }
+          : { pack_id: packId };
+
         const res = await fetch('/api/business/credits/buy', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ pack_id: packId })
+          body: JSON.stringify(bodyPayload)
         });
 
         if (!res.ok) {

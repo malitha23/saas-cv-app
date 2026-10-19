@@ -1620,7 +1620,8 @@ class ClaimProfileResponse(BaseModel):
 
 
 class BusinessCreditPackOrderRequest(BaseModel):
-    pack_id: str = Field(..., description="'pack_10', 'pack_50', or 'pack_150'")
+    pack_id: Optional[str] = Field("custom", description="'pack_10', 'pack_50', 'pack_150' or 'custom'")
+    custom_credits: Optional[int] = Field(None, description="Custom number of credits (min 5)")
 
 
 class BusinessTransactionItem(BaseModel):

@@ -155,6 +155,20 @@
           </div>
         </div>
 
+        <!-- Logged-in Different Account Warning -->
+        <div x-show="hasAccountMismatch" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+            <div>
+              <span class="font-bold block">Account Mismatch Warning</span>
+              <span class="text-[11px] text-amber-300/80">Your browser is logged in as <strong class="text-white" x-text="loggedEmail"></strong>. This profile belongs to <strong class="text-white">{{ candidate_email }}</strong>.</span>
+            </div>
+          </div>
+          <button @click="logoutCurrentAndStay()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs shrink-0 transition">
+            Switch Account
+          </button>
+        </div>
+
         <!-- Claim Actions -->
         <div class="space-y-4 pt-2">
 
@@ -162,8 +176,14 @@
           <div class="flex flex-col items-center justify-center">
             <div id="google-claim-btn" class="w-full flex justify-center min-h-[44px]"></div>
             <p class="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
-              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-500"></i> Official Google Sign-In • 1-Click Profile Claim
+              <i data-lucide="shield-check" class="w-3 h-3 text-emerald-500"></i> Official Google Sign-In • Restricted to {{ candidate_email }}
             </p>
+          </div>
+
+          <!-- Error Alert Banner -->
+          <div x-show="errorMessage" class="text-xs text-rose-300 bg-rose-500/15 border border-rose-500/30 rounded-xl p-3 flex items-start gap-2 shadow-lg">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+            <span class="leading-relaxed font-medium" x-text="errorMessage"></span>
           </div>
 
           <!-- Divider -->
@@ -281,10 +301,38 @@
         candidateEmail: '{{ candidate_email }}',
         candidateName: '{{ candidate_name }}',
         token: '{{ token }}',
+        hasAccountMismatch: false,
+        loggedEmail: '',
 
         async initApp() {
           lucide.createIcons();
+          this.checkCurrentLoginState();
           await this.initGoogleAuth();
+        },
+
+        checkCurrentLoginState() {
+          const userStr = localStorage.getItem('saas_user');
+          if (userStr) {
+            try {
+              const u = JSON.parse(userStr);
+              if (u && u.email) {
+                const cur = u.email.trim().toLowerCase();
+                const exp = this.candidateEmail.trim().toLowerCase();
+                if (cur !== exp) {
+                  this.hasAccountMismatch = true;
+                  this.loggedEmail = u.email;
+                }
+              }
+            } catch(e) {}
+          }
+        },
+
+        logoutCurrentAndStay() {
+          localStorage.removeItem('saas_token');
+          localStorage.removeItem('saas_user');
+          this.hasAccountMismatch = false;
+          this.loggedEmail = '';
+          window.location.reload();
         },
 
         async initGoogleAuth() {
@@ -324,8 +372,28 @@
 
         async handleGoogleCredential(response, clientId) {
           if (!response || !response.credential) return;
-          this.loading = true;
           this.errorMessage = '';
+
+          // STRICT VALIDATION: Decode Google credential and verify email matches candidateEmail
+          try {
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            const payload = JSON.parse(jsonPayload);
+            if (payload && payload.email) {
+              const googleEmail = payload.email.trim().toLowerCase();
+              const expectedEmail = this.candidateEmail.trim().toLowerCase();
+              if (googleEmail !== expectedEmail) {
+                this.errorMessage = `⚠️ Google Account Mismatch: This profile was generated specifically for ${this.candidateEmail}. You selected Google account (${payload.email}). Please click Continue with Google and choose ${this.candidateEmail}.`;
+                this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+                return;
+              }
+            }
+          } catch(jwtErr) {
+            console.warn('JWT pre-decode check warning:', jwtErr);
+          }
+
+          this.loading = true;
 
           try {
             const authRes = await fetch('/api/auth/google', {
@@ -353,6 +421,7 @@
             this.errorMessage = 'Network error during Google sign in.';
           } finally {
             this.loading = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
         },
 

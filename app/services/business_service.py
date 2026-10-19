@@ -350,6 +350,16 @@ def sync_prebuilt_candidate_profile(user: User, db: Session, claim_token: Option
                 )
             ).first()
 
+            # STRICT RESTRICTION: Ensure authenticated user email matches the candidate email
+            if profile:
+                profile_email = (profile.candidate_email or "").strip().lower()
+                if profile_email != user_email:
+                    logger.warning(
+                        "⚠️ Prebuilt profile claim denied: email mismatch! Profile candidate email is '%s', but authenticated user is '%s'",
+                        profile_email, user_email
+                    )
+                    return False
+
         # Secondary Lookup: by candidate email match
         if not profile and user_email:
             profile = db.scalars(

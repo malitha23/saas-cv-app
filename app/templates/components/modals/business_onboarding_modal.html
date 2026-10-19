@@ -324,6 +324,76 @@
         </div>
       </div>
 
+      <!-- Custom Credit Purchase Card -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-4 sm:p-5 rounded-2xl border border-indigo-500/30 space-y-3 relative overflow-hidden shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Custom Top-Up</span>
+              <h5 class="text-xs sm:text-sm font-bold text-white">Buy Custom Candidate Credits</h5>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">Need a specific number of onboardings? Enter any custom quantity (min 5).</p>
+          </div>
+          <!-- Bulk Discount Pill -->
+          <div class="shrink-0">
+            <template x-if="bizCustomCredits >= 100">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                🎉 Enterprise Rate: Rs. 99 / candidate (Save 34%)
+              </span>
+            </template>
+            <template x-if="bizCustomCredits >= 25 && bizCustomCredits < 100">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                ⚡ Agency Rate: Rs. 120 / candidate (Save 20%)
+              </span>
+            </template>
+            <template x-if="bizCustomCredits < 25">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                Standard: Rs. 150 / candidate
+              </span>
+            </template>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+          <!-- Input & Quick Selection Buttons -->
+          <div class="space-y-2 flex-1">
+            <div class="flex items-center gap-2">
+              <div class="relative w-36">
+                <input type="number" min="5" max="1000" x-model.number="bizCustomCredits"
+                       class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-indigo-500/40 text-white font-mono text-sm font-bold focus:outline-none focus:border-indigo-400 text-center">
+                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold pointer-events-none">Credits</span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" @click="bizCustomCredits = 15" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition"
+                        :class="bizCustomCredits === 15 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'">15</button>
+                <button type="button" @click="bizCustomCredits = 30" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition"
+                        :class="bizCustomCredits === 30 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'">30</button>
+                <button type="button" @click="bizCustomCredits = 75" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition"
+                        :class="bizCustomCredits === 75 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'">75</button>
+                <button type="button" @click="bizCustomCredits = 100" class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition"
+                        :class="bizCustomCredits === 100 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'">100</button>
+              </div>
+            </div>
+            <div class="text-[10px] text-slate-500">
+              Tip: Order 25+ credits for Rs. 120/candidate, or 100+ credits for Rs. 99/candidate.
+            </div>
+          </div>
+
+          <!-- Price & Buy Button -->
+          <div class="flex items-center sm:flex-col sm:items-end justify-between gap-3 shrink-0">
+            <div class="text-right">
+              <div class="text-xs text-slate-400">Total Price</div>
+              <div class="text-lg sm:text-xl font-black text-emerald-400 font-mono" x-text="'Rs. ' + getBizCustomPrice(bizCustomCredits).toLocaleString()"></div>
+            </div>
+            <button type="button" @click="buyCreditPack('custom', bizCustomCredits)" :disabled="isBuyingCreditPack || !bizCustomCredits || bizCustomCredits < 5"
+                    class="px-5 py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-bold shadow-lg shadow-emerald-500/25 disabled:opacity-50 transition flex items-center gap-1.5 shrink-0">
+              <i data-lucide="zap" class="w-3.5 h-3.5 text-slate-950" :class="{'animate-spin': isBuyingCreditPack}"></i>
+              <span x-text="isBuyingCreditPack ? 'Connecting PayHere...' : 'Buy ' + (bizCustomCredits || 0) + ' Credits'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Recent Transactions -->
       <div class="space-y-2 pt-2 border-t border-slate-800/80">
         <span class="text-xs font-bold text-slate-400">Recent Credit Transactions</span>
