@@ -19,7 +19,7 @@ from app.portfolio_templates.common import (
 def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Full Stack Software Engineer"
+    role_title = resume.target_job_title or "Professional Executive"
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
@@ -47,14 +47,24 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
           </div>
         """
 
-    # Dynamic Typewriter phrases
-    phrases = [role_title]
+    # Dynamic Typewriter phrases (Adaptive to candidate's exact profession, no hardcoded tech jargon)
+    clean_title = html.unescape(role_title)
+    phrases = [clean_title]
     if resume.skill_categories:
-        top_skills = [s for cat in resume.skill_categories for s in cat.skills[:2]]
-        if top_skills:
-            phrases.append(f"Crafting Modern {' & '.join(top_skills[:2])} Systems")
-    phrases.append("Scalable Cloud & High-Impact Architecture")
-    phrases_json = str(phrases).replace("'", '"')
+        top_skills = [html.unescape(s) for cat in resume.skill_categories for s in cat.skills[:2]]
+        if len(top_skills) >= 2:
+            phrases.append(f"Specialized in {top_skills[0]} & {top_skills[1]}")
+        elif len(top_skills) == 1:
+            phrases.append(f"Specialized in {top_skills[0]}")
+    
+    if info.availability_badge:
+        phrases.append(html.unescape(info.availability_badge))
+    elif resume.work_experience:
+        phrases.append(f"Demonstrated Excellence in {clean_title}")
+    else:
+        phrases.append("Driving Professional Excellence & Value")
+    
+    phrases_json = json.dumps(phrases)
 
     # Socials
     social_links = []
@@ -171,7 +181,17 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{joined_projects_cards}</div>
           </div>
-    ''' if resume.portfolio_show_projects else ''
+    ''' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''
+
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "grid grid-cols-1 gap-6"
+    elif num_cats == 2:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-6"
+    elif num_cats == 3:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    else:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
 
     joined_skill_bars = "".join(skill_bars_html)
     skills_showcase_html = f'''
@@ -180,7 +200,7 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
               <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
               <span>Core Technical Stack & Proficiency</span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{joined_skill_bars}</div>
+            <div class="{skills_grid_class}">{joined_skill_bars}</div>
           </div>
     ''' if resume.portfolio_show_skills else ''
 
@@ -202,6 +222,75 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
           </div>
     ''' if resume.portfolio_show_experience else ''
 
+    # --- Contact Showcase ---
+    contact_zenith_cards = []
+    if info.email:
+        contact_zenith_cards.append(f'''
+          <a href="mailto:{info.email}" class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center gap-3.5 hover:border-[var(--accent)] transition group">
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Email Directly</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-[var(--accent)] transition truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_zenith_cards.append(f'''
+          <a href="tel:{info.phone}" class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center gap-3.5 hover:border-emerald-500 transition group">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="phone" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Phone / WhatsApp</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_zenith_cards.append(f'''
+          <div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="map-pin" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Location</span>
+              <span class="text-xs font-bold text-slate-300 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_showcase_html = f'''
+          <div id="contact" class="space-y-6 scroll-mt-12">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
+              <i data-lucide="send" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Initiate Direct Communication</span>
+            </div>
+            <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                  <h4 class="text-base font-bold text-white">Let\'s Build Something Scalable</h4>
+                  <p class="text-xs text-slate-400">Available for engineering roles, technical advisory, and architecture discussions.</p>
+                </div>
+                <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition shrink-0">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  <span>{cta_text}</span>
+                </a>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {''.join(contact_zenith_cards)}
+              </div>
+              <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+                <span class="flex items-center gap-1.5 text-emerald-400">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  {info.availability_badge or "Available for appointments"}
+                </span>
+                <div class="flex items-center gap-2">{socials_html}</div>
+              </div>
+            </div>
+          </div>
+    '''
     return f"""
       <div class="relative min-h-screen overflow-hidden py-14 px-4 sm:px-8">
         
@@ -254,6 +343,9 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
 
           <!-- Experience Milestones -->
           {exp_showcase_html}
+
+          <!-- Contact Section -->
+          {contact_showcase_html}
 
         </div>
       </div>

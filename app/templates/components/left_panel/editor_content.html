@@ -1,5 +1,5 @@
           <!-- SUB-TAB 1: Full Resume Content Editor -->
-          <div x-show="editorTab === 'resume'" class="space-y-4 max-h-[680px] overflow-y-auto pr-1">
+          <div x-show="editorTab === 'resume'" class="space-y-4">
 
             <!-- 1. Header & Contact Info -->
             <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
@@ -257,7 +257,7 @@
                 </span>
                 <div class="flex items-center gap-1.5">
                   <button type="button"
-                    @click="tailoredData.show_experience = (tailoredData.show_experience === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    @click="tailoredData.show_experience = (tailoredData.show_experience === false ? true : false); tailoredData.portfolio_show_experience = tailoredData.show_experience; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                     :class="tailoredData.show_experience !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
                     class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
                     :title="tailoredData.show_experience !== false ? 'Click to hide Work Experience from CV & PDF' : 'Click to show Work Experience on CV & PDF'">
@@ -277,7 +277,7 @@
                   <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
                   Work Experience section is hidden from your ATS CV & PDF preview.
                 </span>
-                <button type="button" @click="tailoredData.show_experience = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                <button type="button" @click="tailoredData.show_experience = true; tailoredData.portfolio_show_experience = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                   class="text-indigo-400 hover:underline font-semibold text-[10px]">
                   Unhide
                 </button>
@@ -373,7 +373,7 @@
                 </span>
                 <div class="flex items-center gap-1.5">
                   <button type="button"
-                    @click="tailoredData.show_projects = (tailoredData.show_projects === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    @click="tailoredData.show_projects = (tailoredData.show_projects === false ? true : false); tailoredData.portfolio_show_projects = tailoredData.show_projects; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                     :class="tailoredData.show_projects !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
                     class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
                     :title="tailoredData.show_projects !== false ? 'Click to hide Key Projects from CV & PDF' : 'Click to show Key Projects on CV & PDF'">
@@ -393,7 +393,7 @@
                   <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
                   Key Projects section is hidden. It will NOT appear in your ATS CV or PDF.
                 </span>
-                <button type="button" @click="tailoredData.show_projects = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                <button type="button" @click="tailoredData.show_projects = true; tailoredData.portfolio_show_projects = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                   class="text-indigo-400 hover:underline font-semibold text-[10px]">
                   Unhide
                 </button>
@@ -470,7 +470,7 @@
                 </span>
                 <div class="flex items-center gap-1.5">
                   <button type="button"
-                    @click="tailoredData.show_education = (tailoredData.show_education === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    @click="tailoredData.show_education = (tailoredData.show_education === false ? true : false); tailoredData.portfolio_show_education = tailoredData.show_education; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                     :class="tailoredData.show_education !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
                     class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
                     :title="tailoredData.show_education !== false ? 'Click to hide Education from CV & PDF' : 'Click to show Education on CV & PDF'">
@@ -490,7 +490,7 @@
                   <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
                   Education section is hidden from your ATS CV & PDF preview.
                 </span>
-                <button type="button" @click="tailoredData.show_education = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                <button type="button" @click="tailoredData.show_education = true; tailoredData.portfolio_show_education = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
                   class="text-indigo-400 hover:underline font-semibold text-[10px]">
                   Unhide
                 </button>

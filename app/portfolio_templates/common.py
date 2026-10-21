@@ -21,7 +21,8 @@ def sanitize_text(val: Any) -> str:
     """Safely escape HTML special characters (&, <, >, \", ') to prevent Stored XSS."""
     if val is None:
         return ""
-    return html.escape(str(val), quote=True)
+    unescaped = html.unescape(str(val))
+    return html.escape(unescaped, quote=True)
 
 
 def sanitize_url(url: Optional[str], allow_data_image: bool = False) -> str:
@@ -143,6 +144,15 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
         cat_copy = cat.model_copy(deep=True)
         cat_copy.category_name = sanitize_text(cat_copy.category_name)
         cat_copy.skills = [sanitize_text(s) for s in cat_copy.skills]
+        if getattr(cat_copy, "skill_levels", None):
+            safe_levels = {}
+            for sk, lvl in cat_copy.skill_levels.items():
+                try:
+                    num_lvl = max(10, min(100, int(lvl)))
+                except (ValueError, TypeError):
+                    num_lvl = 85
+                safe_levels[sanitize_text(sk)] = num_lvl
+            cat_copy.skill_levels = safe_levels
         safe_skills.append(cat_copy)
     res.skill_categories = safe_skills
 
@@ -180,6 +190,48 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
     # Custom Resume URL Sanitization
     if getattr(res, "portfolio_resume_url", None):
         res.portfolio_resume_url = sanitize_url(res.portfolio_resume_url)
+
+    # ── Metric Counters Sanitization & Automatic "0+ Projects" Suppression ──
+    show_proj = (
+        getattr(res, "portfolio_show_projects", True)
+        and getattr(res, "show_projects", True)
+        and len(getattr(res, "projects", [])) > 0
+    )
+    num_skills = sum(len(c.skills) for c in getattr(res, "skill_categories", []))
+
+    raw_metrics = getattr(res, "portfolio_metrics", None) or []
+    safe_metrics = []
+    removed_proj_metric = False
+
+    for m in raw_metrics:
+        if not isinstance(m, dict):
+            continue
+        lbl = sanitize_text(m.get("label", ""))
+        val = sanitize_text(m.get("value", ""))
+        is_proj_metric = bool(re.search(r"project", lbl, re.IGNORECASE))
+
+        # If it is a project metric and projects are hidden or value is 0/0+, suppress it
+        if is_proj_metric and (not show_proj or val.strip() in ["0", "0+", "0 +", "0+ Projects", "0 Projects", ""]):
+            removed_proj_metric = True
+            continue
+
+        safe_metrics.append({"label": lbl, "value": val})
+
+    # If a project metric was suppressed and there are fewer than 3 metrics, insert a smart substitute
+    if removed_proj_metric and len(safe_metrics) < 4:
+        has_skills_metric = any("skill" in m.get("label", "").lower() or "stack" in m.get("label", "").lower() for m in safe_metrics)
+        if not has_skills_metric:
+            safe_metrics.insert(0, {
+                "label": "Technical Stack",
+                "value": f"{num_skills}+ Skills" if num_skills > 0 else "Full Stack"
+            })
+        else:
+            safe_metrics.insert(0, {
+                "label": "Code Precision",
+                "value": "99.9%"
+            })
+
+    res.portfolio_metrics = safe_metrics
 
     return res
 
@@ -668,24 +720,24 @@ def hex_to_rgba(hex_code: str, alpha: float = 1.0) -> str:
 
 
 def render_viral_portfolio_badge(slug: str) -> str:
-    """Render high-converting viral badge at bottom of published portfolio."""
+    """Render subtle, elegant viral badge at bottom of published portfolio with low-profile styling."""
     ref_param = f"portfolio_{slug}" if slug else "portfolio_viral"
     return f"""
-    <!-- DreemFolio AI Viral Growth Badge -->
-    <footer class="w-full py-10 px-4 text-center border-t border-white/10 mt-20 relative z-20">
-      <div class="max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-3">
+    <!-- DreemFolio AI Viral Growth Badge (Subtle, Low-Contrast) -->
+    <div class="w-full pt-1 pb-4 px-4 text-center relative z-20">
+      <div class="max-w-xl mx-auto flex items-center justify-center">
         <a href="/?ref={ref_param}" target="_blank" rel="noopener noreferrer"
-           class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/60 shadow-xl transition-all duration-300 text-xs text-slate-300 hover:text-white">
-          <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-          <span>⚡ Built with <strong class="text-white font-bold tracking-tight">DreemFolio AI</strong></span>
-          <span class="text-slate-600">•</span>
-          <span class="text-indigo-400 group-hover:text-indigo-300 font-bold flex items-center gap-1">
-            Create your free portfolio in 2 mins
-            <svg class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
+           class="group inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-500/10 hover:bg-slate-500/15 border border-slate-400/20 hover:border-slate-400/30 transition-all duration-200 text-[11px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400/60 group-hover:bg-indigo-400 transition-colors"></span>
+          <span>Built with <strong class="font-medium text-slate-600 dark:text-slate-300">DreemFolio AI</strong></span>
+          <span class="opacity-40">•</span>
+          <span class="group-hover:underline flex items-center gap-1 font-normal text-slate-500 dark:text-slate-400">
+            Create your free portfolio
+            <svg class="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"></path></svg>
           </span>
         </a>
       </div>
-    </footer>
+    </div>
     """
 
 

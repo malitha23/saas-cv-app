@@ -1,7 +1,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- SUB-TAB 4: PORTFOLIO DESIGN STUDIO & 100% FULL CRUD CUSTOMIZATION SUITE -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div x-show="editorTab === 'portfolio'" class="space-y-4 max-h-[700px] overflow-y-auto pr-1">
+<div x-show="editorTab === 'portfolio'" class="space-y-4">
 
   <!-- 0. Smart Card & Proof-of-Work Showcase Launcher -->
   <div class="bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-indigo-500/10 p-3.5 rounded-xl border border-amber-500/30 flex items-center justify-between gap-3 shadow-md">
@@ -340,10 +340,16 @@
         <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-400"></i>
         <span>Stat Counters & Metric Highlights</span>
       </span>
-      <button @click="addPortfolioMetric()"
-        class="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
-        <i data-lucide="plus" class="w-3 h-3"></i> Add Counter
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button type="button" @click="autoSyncPortfolioMetrics()" title="Auto-calculate metrics based on CV contents"
+          class="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i> Auto-Sync
+        </button>
+        <button type="button" @click="addPortfolioMetric()"
+          class="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+          <i data-lucide="plus" class="w-3 h-3"></i> Add Counter
+        </button>
+      </div>
     </div>
 
     <!-- Stat items list -->
@@ -357,10 +363,17 @@
             <input type="text" x-model="m.label" @input="refreshAllPreviews()"
               placeholder="e.g. Key Projects"
               class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-300 font-semibold text-[11px]">
-            <button @click="removePortfolioMetric(mIdx)" class="text-slate-500 hover:text-red-400 p-1">
+            <button type="button" @click="removePortfolioMetric(mIdx)" class="text-slate-500 hover:text-red-400 p-1" title="Delete Counter">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
+          <!-- Auto-hidden indicator if this metric references projects but projects are 0 or hidden -->
+          <template x-if="m.label && m.label.toLowerCase().includes('project') && ((!tailoredData.projects || tailoredData.projects.length === 0) || tailoredData.portfolio_show_projects === false || tailoredData.show_projects === false || (m.value && (m.value.trim() === '0+' || m.value.trim() === '0')))">
+            <div class="flex items-center gap-1.5 text-[10px] text-amber-400 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <i data-lucide="eye-off" class="w-3 h-3 shrink-0"></i>
+              <span>Auto-hidden on live portfolio</span>
+            </div>
+          </template>
         </div>
       </template>
     </div>
@@ -373,14 +386,29 @@
         <i data-lucide="folder-git-2" class="w-4 h-4 text-indigo-400"></i>
         <span>Featured Projects Studio (CRUD)</span>
       </span>
-      <button @click="addPortfolioProject()"
-        class="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
-        <i data-lucide="plus" class="w-3 h-3"></i> Add Project
-      </button>
+      <div class="flex items-center gap-1.5">
+        <button type="button"
+          @click="tailoredData.portfolio_show_projects = (tailoredData.portfolio_show_projects === false ? true : false); refreshAllPreviews(); $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+          :class="tailoredData.portfolio_show_projects !== false ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'"
+          class="px-2.5 py-1 border rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition">
+          <i :data-lucide="tailoredData.portfolio_show_projects !== false ? 'eye' : 'eye-off'" class="w-3.5 h-3.5"></i>
+          <span x-text="tailoredData.portfolio_show_projects !== false ? 'Shown' : 'Hidden'"></span>
+        </button>
+        <button type="button" @click="addPortfolioProject()"
+          class="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+          <i data-lucide="plus" class="w-3 h-3"></i> Add Project
+        </button>
+      </div>
+    </div>
+
+    <!-- Notice when hidden -->
+    <div x-show="tailoredData.portfolio_show_projects === false" class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[11px] text-rose-300 flex items-center gap-2">
+      <i data-lucide="eye-off" class="w-4 h-4 shrink-0 text-rose-400"></i>
+      <span>Featured Projects section and project metrics are <strong>hidden</strong> from your live portfolio.</span>
     </div>
 
     <!-- Projects List -->
-    <div class="space-y-3">
+    <div class="space-y-3" x-show="tailoredData.portfolio_show_projects !== false">
       <template x-for="(p, pIdx) in tailoredData.projects" :key="pIdx">
         <div class="p-3 bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-xl space-y-2.5 transition">
           <div class="flex items-center justify-between gap-2">
@@ -480,14 +508,14 @@
                   <input type="text" x-model="cat.skills[sIdx]" @input="refreshAllPreviews()"
                     class="bg-transparent border-none text-slate-200 font-medium text-xs focus:outline-none flex-1">
                   <span class="text-[10px] font-mono text-emerald-400 font-bold"
-                    x-text="(cat.skill_levels ? cat.skill_levels[s] || 85 : 85) + '%'"></span>
-                  <button @click="removePortfolioSkill(cIdx, sIdx)" class="text-slate-600 hover:text-red-400 ml-1">
+                    x-text="((cat.skill_levels && cat.skill_levels[cat.skills[sIdx]] !== undefined) ? cat.skill_levels[cat.skills[sIdx]] : (cat.skill_levels && cat.skill_levels[s] !== undefined ? cat.skill_levels[s] : 85)) + '%'"></span>
+                  <button type="button" @click="removePortfolioSkill(cIdx, sIdx)" class="text-slate-600 hover:text-red-400 ml-1" title="Remove Skill">
                     <i data-lucide="x" class="w-3 h-3"></i>
                   </button>
                 </div>
                 <input type="range" min="10" max="100" step="5"
-                  :value="cat.skill_levels ? cat.skill_levels[s] || 85 : 85"
-                  @input="updateSkillLevel(cIdx, s, $event.target.value)"
+                  :value="(cat.skill_levels && cat.skill_levels[cat.skills[sIdx]] !== undefined) ? cat.skill_levels[cat.skills[sIdx]] : (cat.skill_levels && cat.skill_levels[s] !== undefined ? cat.skill_levels[s] : 85)"
+                  @input="updateSkillLevel(cat, cat.skills[sIdx], $event.target.value)"
                   class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400">
               </div>
             </template>

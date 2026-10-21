@@ -144,11 +144,11 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
             <section id="projects" class="space-y-6">
               <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <i data-lucide="layers" class="w-5 h-5 text-[var(--accent)]"></i>
-                <h2 class="text-lg font-bold text-white">Key Systems & Architectures</h2>
+                <h2 class="text-lg font-bold text-white">Key Projects & Initiatives</h2>
               </div>
               <div class="space-y-4">{joined_project_items}</div>
             </section>
-    ''' if resume.portfolio_show_projects else ''
+    ''' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''
 
     skill_cards_list = []
     for c in resume.skill_categories:
@@ -156,18 +156,91 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
         skill_cards_list.append(f'<div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2"><h4 class="text-xs font-bold text-[var(--accent)] uppercase">{c.category_name}</h4><div class="flex flex-wrap gap-1.5">{rendered_skills}</div></div>')
     joined_skill_cards = "".join(skill_cards_list)
 
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "grid grid-cols-1 gap-4"
+    elif num_cats == 2:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4"
+    elif num_cats == 3:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-3 gap-4"
+    else:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4"
+
     skills_section_html = f'''
             <section id="skills" class="space-y-6">
               <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
                 <h2 class="text-lg font-bold text-white">Core Competencies & Stack</h2>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="{skills_grid_class}">
                 {joined_skill_cards}
               </div>
             </section>
     ''' if resume.portfolio_show_skills else ''
 
+    # --- Contact Section ---
+    contact_cards = []
+    if info.email:
+        contact_cards.append(f'''
+          <a href="mailto:{info.email}" class="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-[var(--accent)] transition group">
+            <div class="w-9 h-9 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Email Address</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-[var(--accent)] transition truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_cards.append(f'''
+          <a href="tel:{info.phone}" class="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-emerald-500 transition group">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="phone" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Phone / WhatsApp</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_cards.append(f'''
+          <div class="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Location</span>
+              <span class="text-xs font-bold text-slate-200 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_section_html = f'''
+            <section id="contact" class="space-y-4 pt-4 border-t border-slate-800/80 scroll-mt-12">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="send" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Direct Communication & Collaboration</h2>
+              </div>
+              <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
+                <p class="text-xs text-slate-300">Open for new roles, consulting projects, and technical advisory discussions.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {''.join(contact_cards)}
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
+                  <span class="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    {info.availability_badge or "Available for new inquiries"}
+                  </span>
+                  <a href="{cta_url}" class="px-4 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>{cta_text}</span>
+                  </a>
+                </div>
+              </div>
+            </section>
+    '''
     return f'''
       <div class="max-w-7xl mx-auto px-4 sm:px-8 py-12">
         <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
@@ -198,9 +271,10 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
 
             <!-- In-Page Jump Links -->
             <nav class="hidden lg:flex flex-col space-y-2 pt-6 border-t border-slate-800/80 text-xs font-semibold text-slate-400">
-              <a href="#experience" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Career Milestones</a>
-              <a href="#projects" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Key Architecture & Projects</a>
-              <a href="#skills" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Core Technical Arsenal</a>
+              {f'<a href="#experience" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Career Milestones</a>' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0) else ''}
+              {f'<a href="#projects" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Key Projects & Initiatives</a>' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''}
+              {f'<a href="#skills" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Core Technical Arsenal</a>' if (resume.portfolio_show_skills and getattr(resume, "show_skills", True) and len(resume.skill_categories) > 0) else ''}
+              <a href="#contact" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Get In Touch & Connect</a>
             </nav>
           </div>
 
@@ -215,6 +289,9 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
 
             <!-- Skills -->
             {skills_section_html}
+
+            <!-- Contact -->
+            {contact_section_html}
 
           </div>
 

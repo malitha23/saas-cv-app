@@ -21,6 +21,8 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     full_name = info.full_name or "Candidate"
     role_title = resume.target_job_title or "Software Developer"
     summary = resume.professional_summary or ""
+    cta_text = resume.portfolio_cta_text or "Connect"
+    cta_url = resume.portfolio_cta_url or (f"mailto:{info.email}" if info.email else "#contact")
     user_slug = re.sub(r"[^a-zA-Z0-9]", "", full_name.lower().split()[0]) or "dev"
 
     # Avatar handling
@@ -162,22 +164,37 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         """)
 
     # Quick metrics (support custom portfolio_metrics or fallback to defaults)
+    num_skills = sum(len(c.skills) for c in resume.skill_categories)
+    show_proj = getattr(resume, "portfolio_show_projects", True) and getattr(resume, "show_projects", True) and len(resume.projects) > 0
     if resume.portfolio_metrics:
+        filtered_metrics = [
+            m for m in resume.portfolio_metrics
+            if (show_proj or not re.search(r"project", m.get("label", ""), re.IGNORECASE))
+            and not (re.search(r"project", m.get("label", ""), re.IGNORECASE) and str(m.get("value", "")).strip() in ["0", "0+", "0 +"])
+        ]
+        if not filtered_metrics:
+            filtered_metrics = [{"label": "Core Stack", "value": f"{num_skills}+" if num_skills > 0 else "Full-Stack"}]
         colors = ["text-[var(--accent)]", "text-white", "text-emerald-400", "text-purple-400", "text-cyan-400"]
         metrics = []
-        for i, m in enumerate(resume.portfolio_metrics):
+        for i, m in enumerate(filtered_metrics):
             metrics.append({
                 "label": m.get("label", "Metric"),
                 "value": m.get("value", "0"),
                 "color": colors[i % len(colors)]
             })
     else:
-        metrics = [
-            {"label": "Projects", "value": f"{len(resume.projects)}+", "color": "text-[var(--accent)]"},
-            {"label": "Experience", "value": f"{len(resume.work_experience)}+ Yrs", "color": "text-white"},
-            {"label": "Skills", "value": f"{sum(len(c.skills) for c in resume.skill_categories)}+", "color": "text-purple-400"},
+        num_skills = sum(len(c.skills) for c in resume.skill_categories)
+        show_proj = getattr(resume, "portfolio_show_projects", True) and getattr(resume, "show_projects", True) and len(resume.projects) > 0
+        metrics = []
+        if show_proj:
+            metrics.append({"label": "Projects", "value": f"{len(resume.projects)}+", "color": "text-[var(--accent)]"})
+        else:
+            metrics.append({"label": "Core Stack", "value": f"{num_skills}+", "color": "text-[var(--accent)]"})
+        metrics.extend([
+            {"label": "Experience", "value": f"{len(resume.work_experience)}+ Yrs" if len(resume.work_experience) > 0 else "Active", "color": "text-white"},
+            {"label": "Skills", "value": f"{num_skills}+", "color": "text-purple-400"},
             {"label": "System Uptime", "value": "99.98%", "color": "text-emerald-400"}
-        ]
+        ])
     metrics_html = "".join([f"""
         <div class="text-center p-4 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-xl hover:border-[var(--accent)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[var(--accent-glow)] stagger-item">
             <div class="text-2xl font-black {m['color']}">{m['value']}</div>
@@ -231,7 +248,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                 {joined_projects_html}
             </div>
         </section>
-    ''' if resume.portfolio_show_projects else ''
+    ''' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''
 
     joined_exp_html = "".join(experience_html)
     exp_section_html = f'''
@@ -244,6 +261,16 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
             </div>
     ''' if resume.portfolio_show_experience else ''
 
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "grid grid-cols-1 gap-4"
+    elif num_cats == 2:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4"
+    elif num_cats == 3:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-3 gap-4"
+    else:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4"
+
     joined_skills_html = "".join(skills_html)
     skills_section_html = f'''
             <div class="bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 animate-fade-in-up">
@@ -251,7 +278,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                     <i data-lucide="cpu" class="w-5 h-5 text-[var(--accent)]"></i>
                     Tech Stack
                 </h2>
-                <div class="space-y-4">{joined_skills_html}</div>
+                <div class="{skills_grid_class}">{joined_skills_html}</div>
             </div>
     ''' if resume.portfolio_show_skills else ''
 
@@ -268,6 +295,58 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         </section>
     ''' if resume.portfolio_show_education else ''
 
+    # --- Contact Section ---
+    contact_term_cards = []
+    if info.email:
+        contact_term_cards.append(f'''
+          <a href="mailto:{info.email}" class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-[var(--accent)] transition group">
+            <span class="text-[var(--accent)] font-mono">$</span>
+            <div class="min-w-0">
+              <span class="text-[9px] text-slate-500 uppercase block font-mono">mail_to</span>
+              <span class="text-xs font-mono font-bold text-slate-200 group-hover:text-[var(--accent)] truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_term_cards.append(f'''
+          <a href="tel:{info.phone}" class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-emerald-400 transition group">
+            <span class="text-emerald-400 font-mono">$</span>
+            <div class="min-w-0">
+              <span class="text-[9px] text-slate-500 uppercase block font-mono">call_line</span>
+              <span class="text-xs font-mono font-bold text-slate-200 group-hover:text-emerald-400 truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_term_cards.append(f'''
+          <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3">
+            <span class="text-indigo-400 font-mono">#</span>
+            <div class="min-w-0">
+              <span class="text-[9px] text-slate-500 uppercase block font-mono">geo_node</span>
+              <span class="text-xs font-mono text-slate-300 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_section_html = f'''
+        <div id="contact" class="mb-12 bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6 font-mono animate-fade-in-up scroll-mt-12">
+            <h2 class="text-xl font-bold text-white flex items-center gap-3 border-b border-slate-800/50 pb-4 mb-5">
+                <i data-lucide="send" class="w-5 h-5 text-[var(--accent)]"></i>
+                <span>Direct Connection & Contact Channels</span>
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">// System open for technical leads, engineering roles, and consulting inquiries.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                {''.join(contact_term_cards)}
+            </div>
+            <div class="pt-4 border-t border-slate-800/50 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span class="text-emerald-400 font-mono">status: {info.availability_badge or "available"}</span>
+                <a href="{cta_url}" class="px-5 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-lg hover:brightness-110 transition flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4"></i>
+                    <span>{cta_text}</span>
+                </a>
+            </div>
+        </div>
+    '''
     return f"""
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
         
@@ -344,6 +423,9 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         
         <!-- EDUCATION -->
         {edu_section_html}
+        
+        <!-- CONTACT SECTION -->
+        {contact_section_html}
         
     </div>
     

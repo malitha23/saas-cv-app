@@ -91,18 +91,27 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     socials_html = "".join(socials)
 
     # --- Metrics ---
+    num_skills = sum(len(c.skills) for c in resume.skill_categories)
+    show_proj = getattr(resume, "portfolio_show_projects", True) and getattr(resume, "show_projects", True) and len(resume.projects) > 0
+    show_exp = getattr(resume, "portfolio_show_experience", True) and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0
+    show_skills = getattr(resume, "portfolio_show_skills", True) and getattr(resume, "show_skills", True) and len(resume.skill_categories) > 0
     if resume.portfolio_metrics:
-        metrics = resume.portfolio_metrics
-    else:
         metrics = [
-            {"label": "Key Projects", "value": f"{len(resume.projects)}+"},
-            {"label": "Experience", "value": f"{len(resume.work_experience)}+ Yrs"},
-            {"label": "System Reliability", "value": "99.98%"},
-            {
-                "label": "Core Competencies",
-                "value": f"{sum(len(c.skills) for c in resume.skill_categories)}+",
-            },
+            m for m in resume.portfolio_metrics
+            if (show_proj or not re.search(r"project", m.get("label", ""), re.IGNORECASE))
+            and not (re.search(r"project", m.get("label", ""), re.IGNORECASE) and str(m.get("value", "")).strip() in ["0", "0+", "0 +"])
         ]
+        if not metrics:
+            metrics = [{"label": "Technical Stack", "value": f"{num_skills}+ Skills" if num_skills > 0 else "Full-Stack"}]
+    else:
+        metrics = []
+        if show_proj:
+            metrics.append({"label": "Key Projects", "value": f"{len(resume.projects)}+"})
+        else:
+            metrics.append({"label": "Technical Stack", "value": f"{num_skills}+ Skills" if num_skills > 0 else "Full-Stack"})
+        metrics.append({"label": "Experience", "value": f"{len(resume.work_experience)}+ Yrs" if len(resume.work_experience) > 0 else "Active Candidate"})
+        metrics.append({"label": "System Reliability", "value": "99.98%"})
+        metrics.append({"label": "Core Competencies", "value": f"{num_skills}+" if num_skills > 0 else "Verified"})
 
     metrics_html = "".join([f"""
       <div class="reveal group relative p-6 bg-white border border-slate-200/60 rounded-2xl shadow-[0_2px_10px_-4px_rgba(15,23,42,0.08)] hover:shadow-[0_18px_44px_-14px_rgba(15,23,42,0.22)] hover:-translate-y-1.5 hover:border-[var(--accent)]/30 transition-all duration-500 text-center space-y-1.5 overflow-hidden" style="transition-delay: {i*80}ms">
@@ -253,25 +262,116 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
             <div class="space-y-6">{joined_projects_html}</div>
           </section>
     """
-        if resume.portfolio_show_projects
+        if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0)
         else ""
     )
+
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "grid grid-cols-1 gap-5"
+    elif num_cats == 2:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-5"
+    elif num_cats == 3:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    else:
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"
 
     joined_skills_html = "".join(skills_html)
     skills_section_html = (
         f"""
           <section id="skills" class="space-y-8">
             <div class="reveal border-b border-slate-200/70 pb-5 space-y-2">
-              <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--accent)] font-bold">Technical Matrix</span>
+              <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--accent)] font-bold">Competencies Matrix</span>
               <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" style="font-family:'Playfair Display',serif">Core Competencies & Stack</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{joined_skills_html}</div>
+            <div class="{skills_grid_class}">{joined_skills_html}</div>
           </section>
     """
         if resume.portfolio_show_skills
         else ""
     )
 
+    # --- Contact Section ---
+    contact_cards = []
+    if info.email:
+        contact_cards.append(f'''
+          <a href="mailto:{info.email}" class="group p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.14)] hover:-translate-y-1 hover:border-[var(--accent)]/40 transition-all duration-300 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shrink-0 group-hover:scale-110 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Direct Email</span>
+              <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[var(--accent)] transition-colors truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_cards.append(f'''
+          <a href="tel:{info.phone}" class="group p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.14)] hover:-translate-y-1 hover:border-emerald-500/40 transition-all duration-300 flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-110 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Phone / WhatsApp</span>
+              <span class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_cards.append(f'''
+          <div class="p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"></path></svg>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Location / Work Mode</span>
+              <span class="text-xs sm:text-sm font-bold text-slate-900 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    joined_contact_cards = "".join(contact_cards)
+    grid_cols_count = len(contact_cards)
+    if grid_cols_count == 1:
+        contact_grid_class = "grid grid-cols-1 max-w-md mx-auto"
+    elif grid_cols_count == 2:
+        contact_grid_class = "grid grid-cols-1 sm:grid-cols-2"
+    else:
+        contact_grid_class = "grid grid-cols-1 sm:grid-cols-3"
+
+    contact_section_html = f'''
+          <section id="contact" class="reveal space-y-8 scroll-mt-24">
+            <div class="border-b border-slate-200/70 pb-5 space-y-2">
+              <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--accent)] font-bold">Direct Channels</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" style="font-family:\'Playfair Display\',serif">Get In Touch & Connect</h2>
+            </div>
+            <div class="bg-gradient-to-br from-slate-50 via-white to-slate-50/80 border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.08)] space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+                <div class="space-y-1">
+                  <h3 class="text-lg font-bold text-slate-900">Initiate Collaboration</h3>
+                  <p class="text-xs sm:text-sm text-slate-500">Open for full-time engineering roles, freelance opportunities, and technical advisory.</p>
+                </div>
+                <a href="{cta_url}" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--accent)] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[var(--accent-glow)] transition shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path></svg>
+                  <span>{cta_text}</span>
+                </a>
+              </div>
+              <div class="{contact_grid_class} gap-4">
+                {joined_contact_cards}
+              </div>
+              <div class="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs font-semibold">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{info.availability_badge or "Available for Inquiries"}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-400 font-medium">Socials:</span>
+                  {socials_html}
+                </div>
+              </div>
+            </div>
+          </section>
+    '''
     joined_exp_html = "".join(exp_html)
     exp_section_html = (
         f"""
@@ -411,15 +511,15 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
             </div>
 
             <nav class="hidden md:flex items-center gap-7 text-xs font-semibold text-slate-500">
-              <a href="#projects" class="relative hover:text-slate-900 transition-colors duration-300 group">
+              {f'''<a href="#projects" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Projects<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
-              </a>
-              <a href="#experience" class="relative hover:text-slate-900 transition-colors duration-300 group">
+              </a>''' if show_proj else ''}
+              {f'''<a href="#experience" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Experience<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
-              </a>
-              <a href="#skills" class="relative hover:text-slate-900 transition-colors duration-300 group">
+              </a>''' if show_exp else ''}
+              {f'''<a href="#skills" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Skills<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
-              </a>
+              </a>''' if show_skills else ''}
               <a href="#contact" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Contact<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
               </a>
@@ -481,14 +581,17 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
           <!-- EXPERIENCE -->
           {exp_section_html}
 
+          <!-- CONTACT & DIRECT CONNECT -->
+          {contact_section_html}
+
         </main>
 
                <!-- Footer — tight, refined, no excessive gaps -->
-        <footer id="contact" class="relative mt-0 border-t border-slate-200/60 bg-gradient-to-b from-white/80 to-slate-50/60 backdrop-blur-sm">
+        <footer class="relative mt-0 border-t border-slate-200/60 bg-gradient-to-b from-white/80 to-slate-50/60 backdrop-blur-sm">
           <!-- Top accent line -->
           <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/25 to-transparent"></div>
 
-          <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-4 sm:pt-8 sm:pb-5">
             <div class="flex flex-wrap justify-between items-center gap-5">
               <div class="space-y-1">
                 <p class="font-bold text-slate-900 text-sm tracking-tight">© 2026 {full_name}. All rights reserved.</p>
@@ -497,9 +600,6 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
               <div class="flex items-center gap-2">{socials_html}</div>
             </div>
           </div>
-
-          <!-- Reserved space for DreemFolio floating badge (prevent overlap) -->
-          <div class="h-16 sm:h-20" aria-hidden="true"></div>
         </footer>
 
       </div>

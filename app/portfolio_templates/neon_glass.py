@@ -23,7 +23,7 @@ from app.portfolio_templates.common import (
 def render_neon_glass(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate"
-    role_title = resume.target_job_title or "Full Stack Developer"
+    role_title = resume.target_job_title or "Professional Executive"
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for Impact"
@@ -158,7 +158,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">{joined_projects}</div>
           </div>
     """
-        if resume.portfolio_show_projects
+        if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0)
         else ""
     )
 
@@ -218,6 +218,16 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         """)
     joined_skill_cards = "".join(skill_cards_list)
 
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "relative grid grid-cols-1 gap-6"
+    elif num_cats == 2:
+        skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-2 gap-6"
+    elif num_cats == 3:
+        skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-3 gap-6"
+    else:
+        skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+
     skills_showcase_html = (
         f"""
           <div class="reveal bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl p-8 space-y-5 relative overflow-hidden hover:border-white/20 transition-all duration-500">
@@ -229,7 +239,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
               </span>
               <span class="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Technical Competencies</span>
             </div>
-            <div class="relative grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="{skills_grid_class}">
               {joined_skill_cards}
             </div>
           </div>
@@ -238,6 +248,75 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         else ""
     )
 
+    # --- Contact Showcase ---
+    contact_neon_cards = []
+    if info.email:
+        contact_neon_cards.append(f'''
+          <a href="mailto:{info.email}" class="p-4 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-[var(--accent)] hover:bg-white/[0.08] transition-all flex items-center gap-3.5 group">
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Electronic Mail</span>
+              <span class="text-xs font-bold text-white group-hover:text-[var(--accent)] transition truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_neon_cards.append(f'''
+          <a href="tel:{info.phone}" class="p-4 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-emerald-400 hover:bg-white/[0.08] transition-all flex items-center gap-3.5 group">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="phone" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Direct Line</span>
+              <span class="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_neon_cards.append(f'''
+          <div class="p-4 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="map-pin" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Location / Timezone</span>
+              <span class="text-xs font-bold text-slate-300 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_showcase_html = f'''
+          <div id="contact" class="reveal bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl p-8 space-y-6 relative overflow-hidden hover:border-white/20 transition-all duration-500 scroll-mt-12">
+            <div class="absolute -top-32 -right-32 w-72 h-72 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2.5 text-xl font-bold text-white">
+                  <span class="w-8 h-8 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30 flex items-center justify-center">
+                    <i data-lucide="send" class="w-4 h-4 text-[var(--accent)]"></i>
+                  </span>
+                  <span>Direct Communication & Connect</span>
+                </div>
+                <p class="text-xs text-slate-400">Available for technical roles, freelance development, and engineering consulting.</p>
+              </div>
+              <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-[0_12px_36px_-8px_var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                <span>{cta_text}</span>
+              </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {''.join(contact_neon_cards)}
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 pt-2">
+              <span class="flex items-center gap-1.5 text-emerald-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                {info.availability_badge or "Available for appointments"}
+              </span>
+              <div class="flex items-center gap-2">{socials_bar}</div>
+            </div>
+          </div>
+    '''
     return f"""
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -450,6 +529,9 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
 
           <!-- Skills Showcase -->
           {skills_showcase_html}
+
+          <!-- Contact Showcase -->
+          {contact_showcase_html}
 
         </div>
       </div>

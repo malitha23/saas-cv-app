@@ -671,6 +671,33 @@ function resumeApp() {
       this.$watch('editorTab', (val) => {
         if (val) {
           try { localStorage.setItem('dreemfolio_active_editor_tab', val); } catch (e) {}
+          // Auto-sync right preview workspace tab with left editor tab
+          if (val === 'portfolio') {
+            if (this.activeTab !== 'portfolio') {
+              this.activeTab = 'portfolio';
+              this.renderPortfolioPreview();
+            }
+          } else if (val === 'cover_letter') {
+            if (this.activeTab !== 'cover_letter') {
+              this.activeTab = 'cover_letter';
+              this.renderPdfPreview();
+            }
+          } else if (val === 'resume' || val === 'design') {
+            if (this.activeTab !== 'resume' && this.activeTab !== 'original_cv') {
+              this.activeTab = 'resume';
+              this.renderPdfPreview();
+            }
+          }
+        }
+      });
+
+      this.$watch('activeTab', (val) => {
+        if (val === 'portfolio') {
+          if (this.editorTab !== 'portfolio') this.editorTab = 'portfolio';
+        } else if (val === 'cover_letter') {
+          if (this.editorTab !== 'cover_letter') this.editorTab = 'cover_letter';
+        } else if (val === 'resume') {
+          if (this.editorTab !== 'resume' && this.editorTab !== 'design') this.editorTab = 'resume';
         }
       });
       this.$watch('jobDescription', (val) => {
@@ -1375,10 +1402,13 @@ function resumeApp() {
         const totalSkills = (this.tailoredData.skill_categories || []).reduce((acc, c) => acc + ((c.skills && c.skills.length) || 0), 0);
         const certCount = (this.tailoredData.certifications && this.tailoredData.certifications.length) || 0;
 
+        const showProjMetrics = (this.tailoredData.portfolio_show_projects !== false) && (this.tailoredData.show_projects !== false) && projCount > 0;
         this.tailoredData.portfolio_metrics = [
-          { label: 'Key Projects', value: projCount > 0 ? `${projCount}+` : 'Verified' },
+          showProjMetrics
+            ? { label: 'Key Projects', value: `${projCount}+` }
+            : { label: 'Core Technical Stack', value: totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack' },
           { label: 'Experience', value: `${expCount}+ Roles` },
-          { label: 'Technical Stack', value: totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack' },
+          { label: showProjMetrics ? 'Technical Stack' : 'System Reliability', value: showProjMetrics ? (totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack') : '99.98%' },
           { label: certCount > 0 ? 'Certifications' : 'ATS Compatibility', value: certCount > 0 ? `${certCount}+ Certs` : '99.8%' }
         ];
 
@@ -1509,6 +1539,30 @@ function resumeApp() {
       this.refreshAllPreviews();
     },
 
+    autoSyncPortfolioMetrics() {
+      if (!this.tailoredData) return;
+      const projCount = (this.tailoredData.projects && this.tailoredData.projects.length) || 0;
+      const expCount = (this.tailoredData.work_experience && this.tailoredData.work_experience.length) || 1;
+      const totalSkills = (this.tailoredData.skill_categories || []).reduce((acc, c) => acc + ((c.skills && c.skills.length) || 0), 0);
+      const certCount = (this.tailoredData.certifications && this.tailoredData.certifications.length) || 0;
+      const showProj = (this.tailoredData.portfolio_show_projects !== false) && (this.tailoredData.show_projects !== false) && projCount > 0;
+
+      const metrics = [];
+      if (showProj) {
+        metrics.push({ label: 'Key Projects', value: `${projCount}+` });
+      } else {
+        metrics.push({ label: 'Core Technical Stack', value: totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack' });
+      }
+      metrics.push({ label: 'Experience', value: `${expCount}+ Roles` });
+      metrics.push({ label: showProj ? 'Technical Stack' : 'System Reliability', value: showProj ? (totalSkills > 0 ? `${totalSkills}+ Skills` : 'Full Stack') : '99.98%' });
+      metrics.push({ label: certCount > 0 ? 'Certifications' : 'ATS Compatibility', value: certCount > 0 ? `${certCount}+ Certs` : '99.8%' });
+
+      this.tailoredData.portfolio_metrics = metrics;
+      this.refreshAllPreviews();
+      if (typeof this.showToast === 'function') this.showToast('Metric counters synchronized with your resume!');
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
     addPortfolioProject() {
       if (!this.tailoredData) return;
       if (!this.tailoredData.projects) this.tailoredData.projects = [];
@@ -1558,24 +1612,22 @@ function resumeApp() {
       const skillName = prompt('Enter new skill name:');
       if (skillName && skillName.trim()) {
         const cat = this.tailoredData.skill_categories[catIdx];
-        cat.skills.push(skillName.trim());
-        if (!cat.skill_levels) cat.skill_levels = {};
-        cat.skill_levels[skillName.trim()] = 90;
+        const cleanName = skillName.trim();
+        cat.skills.push(cleanName);
+        if (!cat.skill_levels || typeof cat.skill_levels !== 'object') cat.skill_levels = {};
+        cat.skill_levels = { ...cat.skill_levels, [cleanName]: 85 };
         this.refreshAllPreviews();
       }
     },
 
     removePortfolioSkill(catIdx, sIdx) {
       if (!this.tailoredData || !this.tailoredData.skill_categories[catIdx]) return;
-      this.tailoredData.skill_categories[catIdx].skills.splice(sIdx, 1);
-      this.refreshAllPreviews();
-    },
-
-    updateSkillLevel(catIdx, skillName, level) {
-      if (!this.tailoredData || !this.tailoredData.skill_categories[catIdx]) return;
       const cat = this.tailoredData.skill_categories[catIdx];
-      if (!cat.skill_levels) cat.skill_levels = {};
-      cat.skill_levels[skillName] = parseInt(level, 10) || 80;
+      const removed = cat.skills.splice(sIdx, 1);
+      if (removed && removed[0] && cat.skill_levels) {
+        delete cat.skill_levels[removed[0]];
+        cat.skill_levels = { ...cat.skill_levels };
+      }
       this.refreshAllPreviews();
     },
 
@@ -1727,6 +1779,21 @@ function resumeApp() {
 
     resetPdfZoom() {
       this.pdfZoom = 1.0;
+      if (this._activePdfBlob) {
+        this.renderPdfWithPdfJs(this._activePdfBlob);
+      }
+    },
+
+    fitPagePdf() {
+      const scrollContainer = document.getElementById('pdf-preview-scroll-container');
+      const containerHeight = scrollContainer ? scrollContainer.clientHeight : (window.innerHeight - 200);
+      const targetHeight = Math.max(containerHeight - 32, 450);
+      const containerWidth = scrollContainer ? scrollContainer.clientWidth : window.innerWidth;
+      const targetWidth = Math.min(Math.max(containerWidth - 24, 260), 840);
+      const fitScale = targetWidth / 595.28;
+      const desiredEffectiveScale = targetHeight / 841.89;
+      const calculatedZoom = Math.min(Math.max(desiredEffectiveScale / fitScale, 0.45), 1.25);
+      this.pdfZoom = Math.round(calculatedZoom * 100) / 100;
       if (this._activePdfBlob) {
         this.renderPdfWithPdfJs(this._activePdfBlob);
       }
@@ -2271,28 +2338,51 @@ function resumeApp() {
       if (!this.tailoredData || !this.tailoredData.skill_categories[catIdx]) return;
       const inputVal = (this.newSkillInputs[catIdx] || '').trim();
       const skillName = inputVal || 'New Skill';
-      this.tailoredData.skill_categories[catIdx].skills.push(skillName);
-      if (!this.tailoredData.skill_categories[catIdx].skill_levels) {
-        this.tailoredData.skill_categories[catIdx].skill_levels = {};
+      const cat = this.tailoredData.skill_categories[catIdx];
+      cat.skills.push(skillName);
+      if (!cat.skill_levels || typeof cat.skill_levels !== 'object') {
+        cat.skill_levels = {};
       }
-      this.tailoredData.skill_categories[catIdx].skill_levels[skillName] = 85;
+      cat.skill_levels = { ...cat.skill_levels, [skillName]: 85 };
       this.newSkillInputs[catIdx] = '';
       this.refreshAllPreviews();
     },
 
     removeSkillTag(catIdx, sIdx) {
       if (!this.tailoredData || !this.tailoredData.skill_categories[catIdx]) return;
-      const removed = this.tailoredData.skill_categories[catIdx].skills.splice(sIdx, 1);
-      if (removed && removed[0] && this.tailoredData.skill_categories[catIdx].skill_levels) {
-        delete this.tailoredData.skill_categories[catIdx].skill_levels[removed[0]];
+      const cat = this.tailoredData.skill_categories[catIdx];
+      const removed = cat.skills.splice(sIdx, 1);
+      if (removed && removed[0] && cat.skill_levels) {
+        delete cat.skill_levels[removed[0]];
+        cat.skill_levels = { ...cat.skill_levels };
       }
       this.refreshAllPreviews();
     },
 
-    updateSkillLevel(cat, skillName, value) {
-      if (!cat.skill_levels) cat.skill_levels = {};
+    updateSkillLevel(catOrIdx, skillNameOrIdx, value) {
+      if (!this.tailoredData || !this.tailoredData.skill_categories) return;
+
+      let cat = catOrIdx;
+      if (typeof catOrIdx === 'number') {
+        cat = this.tailoredData.skill_categories[catOrIdx];
+      }
+      if (!cat || typeof cat !== 'object') return;
+
+      let skillName = skillNameOrIdx;
+      if (typeof skillNameOrIdx === 'number' && Array.isArray(cat.skills)) {
+        skillName = cat.skills[skillNameOrIdx];
+      }
+      if (!skillName || typeof skillName !== 'string') return;
+
       const num = Math.max(10, Math.min(100, parseInt(value, 10) || 85));
-      cat.skill_levels[skillName] = num;
+
+      if (!cat.skill_levels || typeof cat.skill_levels !== 'object') {
+        cat.skill_levels = {};
+      }
+
+      // Reassign fresh object so Alpine.js reactivity proxy detects changes immediately
+      cat.skill_levels = { ...cat.skill_levels, [skillName]: num };
+
       this.refreshAllPreviews();
     },
 
@@ -4823,11 +4913,14 @@ function resumeApp() {
         this.roleArchetype = loadedResume.role_archetype || 'auto';
 
         if (!loadedResume.portfolio_metrics || loadedResume.portfolio_metrics.length === 0) {
+          const pLen = (loadedResume.projects?.length || 0);
+          const sLen = (loadedResume.skill_categories || []).reduce((acc, c) => acc + ((c.skills && c.skills.length) || 0), 0);
+          const showP = (loadedResume.portfolio_show_projects !== false) && (loadedResume.show_projects !== false) && pLen > 0;
           loadedResume.portfolio_metrics = [
-            { label: 'Key Projects', value: (loadedResume.projects?.length || 10) + '+' },
-            { label: 'Experience', value: (loadedResume.work_experience?.length || 5) + '+ Yrs' },
+            showP ? { label: 'Key Projects', value: `${pLen}+` } : { label: 'Core Technical Stack', value: `${sLen || 15}+ Skills` },
+            { label: 'Experience', value: (loadedResume.work_experience?.length || 3) + '+ Yrs' },
             { label: 'System Uptime', value: '99.98%' },
-            { label: 'Stack Skills', value: '25+' }
+            { label: 'ATS Score', value: '98.5%' }
           ];
         }
 

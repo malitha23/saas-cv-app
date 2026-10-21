@@ -201,25 +201,36 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         """)
 
     # --- Bento metrics with count-up ---
+    num_skills = sum(len(c.skills) for c in resume.skill_categories)
+    show_proj = getattr(resume, "portfolio_show_projects", True) and getattr(resume, "show_projects", True) and len(resume.projects) > 0
     if resume.portfolio_metrics:
+        filtered_metrics = [
+            m for m in resume.portfolio_metrics
+            if (show_proj or not re.search(r"project", m.get("label", ""), re.IGNORECASE))
+            and not (re.search(r"project", m.get("label", ""), re.IGNORECASE) and str(m.get("value", "")).strip() in ["0", "0+", "0 +"])
+        ]
+        if not filtered_metrics:
+            filtered_metrics = [{"label": "Technical Stack", "value": f"{num_skills}+ Skills" if num_skills > 0 else "Full-Stack"}]
         bento_metric_items = "".join([f"""
           <div class="reveal group relative p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center hover:border-[var(--accent)]/50 transition-all duration-400 overflow-hidden" style="transition-delay: {i*70}ms">
             <div class="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/0 to-[var(--accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <span class="relative block text-xl sm:text-2xl font-extrabold text-[var(--accent)] counter" data-target="{m.get("value", "0")}">{m.get("value", "0")}</span>
             <p class="relative text-[9px] text-slate-400 uppercase font-semibold truncate tracking-wider">{m.get("label", "Metric")}</p>
           </div>
-        """ for i, m in enumerate(resume.portfolio_metrics[:4])])
+        """ for i, m in enumerate(filtered_metrics[:4])])
     else:
+        first_metric_val = len(resume.projects) if show_proj else (num_skills if num_skills > 0 else 100)
+        first_metric_label = "Key Projects" if show_proj else ("Stack Skills" if num_skills > 0 else "Precision")
         bento_metric_items = f"""
           <div class="reveal group relative p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center hover:border-[var(--accent)]/50 transition-all duration-400 overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/0 to-[var(--accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <span class="relative block text-2xl font-extrabold text-[var(--accent)] counter" data-target="{len(resume.projects)}">0</span>
-            <p class="relative text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Key Projects</p>
+            <span class="relative block text-2xl font-extrabold text-[var(--accent)] counter" data-target="{first_metric_val}">0</span>
+            <p class="relative text-[10px] text-slate-400 uppercase font-semibold tracking-wider">{first_metric_label}</p>
           </div>
           <div class="reveal group relative p-3 bg-slate-950 rounded-2xl border border-slate-800 text-center hover:border-[var(--accent)]/50 transition-all duration-400 overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/0 to-[var(--accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <span class="relative block text-2xl font-extrabold text-white counter" data-target="{len(resume.work_experience)}">0</span>
-            <p class="relative text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Milestones</p>
+            <span class="relative block text-2xl font-extrabold text-white counter" data-target="{len(resume.work_experience) if len(resume.work_experience) > 0 else (num_skills or 10)}">0</span>
+            <p class="relative text-[10px] text-slate-400 uppercase font-semibold tracking-wider">{'Milestones' if len(resume.work_experience) > 0 else 'Core Assets'}</p>
           </div>
         """
 
@@ -229,16 +240,30 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         else ""
     )
 
+    show_proj = (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0)
+    num_cats = len(resume.skill_categories)
+    if not show_proj:
+        skills_col_span = "lg:col-span-3"
+        if num_cats <= 1:
+            skills_badges_grid = "relative grid grid-cols-1 gap-4"
+        elif num_cats == 2:
+            skills_badges_grid = "relative grid grid-cols-1 md:grid-cols-2 gap-6"
+        else:
+            skills_badges_grid = "relative grid grid-cols-1 md:grid-cols-3 gap-6"
+    else:
+        skills_col_span = "lg:col-span-1"
+        skills_badges_grid = "relative space-y-4"
+
     joined_skills_badges = "".join(skills_badges)
     skills_card_html = (
         f"""
-          <div class="reveal relative bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500 overflow-hidden group">
+          <div class="reveal {skills_col_span} relative bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500 overflow-hidden group">
             <div class="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-[var(--accent)]/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             <div class="relative flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
               <i data-lucide="cpu" class="w-4 h-4 text-[var(--accent)]"></i>
               <span>Technical Arsenal</span>
             </div>
-            <div class="relative space-y-4">{joined_skills_badges}</div>
+            <div class="{skills_badges_grid}">{joined_skills_badges}</div>
           </div>
     """
         if resume.portfolio_show_skills
@@ -260,7 +285,7 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">{joined_project_cards}</div>
           </div>
     """
-        if resume.portfolio_show_projects
+        if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0)
         else ""
     )
 
@@ -295,6 +320,72 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         else ""
     )
 
+    # --- Contact Bento Card ---
+    contact_bento_items = []
+    if info.email:
+        contact_bento_items.append(f'''
+          <a href="mailto:{info.email}" class="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-[var(--accent)] transition group">
+            <div class="w-9 h-9 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Email Address</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-[var(--accent)] transition truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_bento_items.append(f'''
+          <a href="tel:{info.phone}" class="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3 hover:border-emerald-500 transition group">
+            <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="phone" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Telephone / WhatsApp</span>
+              <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-400 transition truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_bento_items.append(f'''
+          <div class="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="map-pin" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Location</span>
+              <span class="text-xs font-bold text-slate-300 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_card_html = f'''
+        <div id="contact" class="reveal bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] scroll-mt-12">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 text-sm font-bold text-white">
+                <i data-lucide="send" class="w-4 h-4 text-[var(--accent)]"></i>
+                <span>Direct Communication & Inquiries</span>
+              </div>
+              <p class="text-xs text-slate-400">Open for software engineering opportunities, contract projects, and technical consultations.</p>
+            </div>
+            <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition shrink-0">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>{cta_text}</span>
+            </a>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {''.join(contact_bento_items)}
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 pt-2 border-t border-slate-800">
+            <span class="flex items-center gap-1.5 text-emerald-400">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {info.availability_badge or "Available for appointments"}
+            </span>
+            <div class="flex items-center gap-2">{socials_html}</div>
+          </div>
+        </div>
+    '''
     return f"""
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -493,6 +584,9 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           {exp_card_html}
           {edu_card_html}
         </div>
+
+        <!-- BENTO ROW 4: Contact & Direct Channels -->
+        {contact_card_html}
 
       </div>
 

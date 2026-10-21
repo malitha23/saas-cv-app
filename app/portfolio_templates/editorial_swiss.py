@@ -46,12 +46,11 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
 
     # Marquee
     marquee_words = [
-        full_name.upper(),
-        role_title.upper(),
-        "DISTRIBUTED SYSTEMS",
-        "HIGH IMPACT ARCHITECTURE",
-        "PRODUCTION VERIFIED",
-        "ATS CERTIFIED",
+        html.unescape(full_name).upper(),
+        html.unescape(role_title).upper(),
+        "OPERATIONAL EXCELLENCE",
+        "PROVEN LEADERSHIP",
+        "VERIFIED CREDENTIALS",
     ]
     if resume.skill_categories:
         marquee_words.extend(
@@ -149,12 +148,12 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
     projects_section_html = f'''
         <section class="space-y-6 animate-fade-in-up">
           <div class="flex justify-between items-baseline border-b border-white pb-3">
-            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">01 / SELECTED WORKS & SYSTEMS</h3>
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">01 / KEY PROJECTS & INITIATIVES</h3>
             <span class="text-xs font-mono text-slate-500">{len(resume.projects)} EXHIBITS</span>
           </div>
           <div class="space-y-2">{joined_projects_html}</div>
         </section>
-    ''' if resume.portfolio_show_projects else ''
+    ''' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''
 
     joined_exp_html = "".join(experiences_html)
     exp_section_html = f'''
@@ -167,18 +166,72 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
         </section>
     ''' if resume.portfolio_show_experience else ''
 
+    num_cats = len(resume.skill_categories)
+    if num_cats <= 1:
+        skills_grid_class = "grid grid-cols-1 gap-8 pt-2"
+    elif num_cats == 2:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2"
+    elif num_cats == 3:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2"
+    else:
+        skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-2"
+
     skills_section_html = f'''
         <section class="space-y-6 animate-fade-in-up">
           <div class="flex justify-between items-baseline border-b border-white pb-3">
             <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">03 / CORE COMPETENCIES</h3>
-            <span class="text-xs font-mono text-slate-500">SYSTEM ARCHITECTURE</span>
+            <span class="text-xs font-mono text-slate-500">CORE COMPETENCIES</span>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2">
+          <div class="{skills_grid_class}">
             {skills_html}
           </div>
         </section>
     ''' if resume.portfolio_show_skills else ''
 
+    # --- Contact Section ---
+    contact_items = []
+    if info.email:
+        contact_items.append(f'''
+          <div class="space-y-1">
+            <span class="text-[10px] font-mono uppercase text-slate-500">ELECTRONIC MAIL</span>
+            <a href="mailto:{info.email}" class="text-sm font-bold text-white hover:text-[var(--accent)] underline block font-mono">{info.email}</a>
+          </div>
+        ''')
+    if info.phone:
+        contact_items.append(f'''
+          <div class="space-y-1">
+            <span class="text-[10px] font-mono uppercase text-slate-500">TELEPHONE / WHATSAPP</span>
+            <a href="tel:{info.phone}" class="text-sm font-bold text-white hover:text-[var(--accent)] block font-mono">{info.phone}</a>
+          </div>
+        ''')
+    if info.location:
+        contact_items.append(f'''
+          <div class="space-y-1">
+            <span class="text-[10px] font-mono uppercase text-slate-500">LOCATION & TIMEZONE</span>
+            <span class="text-sm font-bold text-slate-300 block font-mono">{info.location}</span>
+          </div>
+        ''')
+
+    contact_section_html = f'''
+        <section id="contact" class="space-y-6 animate-fade-in-up scroll-mt-8">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">04 / DIRECT COMMUNICATION & INQUIRIES</h3>
+            <span class="text-xs font-mono text-emerald-400">● {info.availability_badge or "ACTIVE CANDIDATE"}</span>
+          </div>
+          <div class="p-8 border border-white/20 space-y-6 bg-white/[0.02]">
+            <p class="text-sm text-slate-300 max-w-xl font-light">Available for high-impact technical architecture, engineering leads, and full-time career appointments.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+              {''.join(contact_items)}
+            </div>
+            <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+              <span class="text-xs font-mono text-slate-400">Direct response within 24 hours</span>
+              <a href="{cta_url}" class="px-6 py-3 border border-white text-white font-semibold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition duration-300">
+                {cta_text} →
+              </a>
+            </div>
+          </div>
+        </section>
+    '''
     return f"""
       <div class="max-w-6xl mx-auto px-6 py-16 space-y-16">
 
@@ -240,8 +293,11 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
         <!-- Skills -->
         {skills_section_html}
 
+        <!-- Contact Section -->
+        {contact_section_html}
+
         <!-- Footer -->
-        <footer class="pt-12 border-t-2 border-white flex flex-wrap justify-between items-center text-xs text-slate-400 gap-4 animate-fade-in-up">
+        <footer class="pt-8 pb-4 border-t-2 border-white flex flex-wrap justify-between items-center text-xs text-slate-400 gap-4 animate-fade-in-up">
           <div>{" ".join(socials)}</div>
           <div class="font-mono text-[11px] text-slate-500 uppercase">
             <span>© 2026 {full_name} · All Rights Reserved</span>

@@ -27,6 +27,25 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
         f"mailto:{info.email}" if info.email else "#contact"
     )
 
+    # Socials
+    socials_list = []
+    for link in info.social_links:
+        if link.enabled and link.url.strip():
+            href = (
+                link.url
+                if link.url.startswith("http") or link.url.startswith("mailto:")
+                else f"https://{link.url}"
+            )
+            icon = get_social_icon(link.name, link.icon)
+            socials_list.append(f'''
+              <a href="{href}" target="_blank"
+                class="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-[var(--accent)] transition flex items-center gap-1.5 text-xs">
+                <i data-lucide="{icon}" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
+                <span>{link.name}</span>
+              </a>
+            ''')
+    socials_html = "".join(socials_list)
+
     # Counts
     num_projects = len(resume.projects)
     num_milestones = len(resume.work_experience)
@@ -93,7 +112,7 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">{joined_projects_cards}</div>
           </div>
-    ''' if resume.portfolio_show_projects else ''
+    ''' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''
 
     exp_items_list = []
     for e in resume.work_experience:
@@ -113,6 +132,72 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
           </div>
     ''' if resume.portfolio_show_experience else ''
 
+    # --- Contact Section ---
+    contact_galaxy_cards = []
+    if info.email:
+        contact_galaxy_cards.append(f'''
+          <a href="mailto:{info.email}" class="p-4 rounded-2xl bg-slate-900/80 border border-white/10 hover:border-[var(--accent)] hover:shadow-[0_0_20px_var(--accent-glow)] transition-all flex items-center gap-3.5 group">
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0">
+              <i data-lucide="mail" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Electronic Mail</span>
+              <span class="text-xs font-bold text-white group-hover:text-[var(--accent)] transition truncate block">{info.email}</span>
+            </div>
+          </a>
+        ''')
+    if info.phone:
+        contact_galaxy_cards.append(f'''
+          <a href="tel:{info.phone}" class="p-4 rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-400 transition-all flex items-center gap-3.5 group">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="phone" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Direct Line</span>
+              <span class="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate block">{info.phone}</span>
+            </div>
+          </a>
+        ''')
+    if info.location:
+        contact_galaxy_cards.append(f'''
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-white/10 flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+              <i data-lucide="map-pin" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[10px] text-slate-400 font-bold uppercase block">Coordinates</span>
+              <span class="text-xs font-bold text-slate-300 truncate block">{info.location}</span>
+            </div>
+          </div>
+        ''')
+
+    contact_section_html = f'''
+          <div id="contact" class="p-6 sm:p-8 rounded-3xl bg-slate-950/80 backdrop-blur-2xl border border-white/10 space-y-6 scroll-mt-12">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-xl font-black text-white">
+                  <i data-lucide="send" class="w-5 h-5 text-[var(--accent)]"></i>
+                  <span>Direct Communication Channels</span>
+                </div>
+                <p class="text-xs text-slate-400">Initiate conversation for engineering appointments and architectural collaborations.</p>
+              </div>
+              <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>{cta_text}</span>
+              </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {''.join(contact_galaxy_cards)}
+            </div>
+            <div class="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <span class="text-emerald-400 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                {info.availability_badge or "Available for conversations"}
+              </span>
+              <div class="flex items-center gap-2">{socials_html}</div>
+            </div>
+          </div>
+    '''
     return f"""
       <div class="relative min-h-screen text-slate-100 py-16 px-4 sm:px-8">
         
@@ -137,16 +222,18 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
             <!-- Counting Metrics Animation Cards -->
             <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
               <div class="p-3 bg-black/40 rounded-2xl border border-white/10">
-                <span class="counter-num text-2xl sm:text-3xl font-black text-[var(--accent)]" data-target="{num_projects}">0</span>
-                <span class="text-xl font-black text-[var(--accent)]">+</span>
-                <p class="text-[10px] text-slate-400 font-semibold uppercase">Projects</p>
+                <span class="counter-num text-2xl sm:text-3xl font-black text-[var(--accent)]" data-target="{num_projects if (resume.portfolio_show_projects and getattr(resume, 'show_projects', True) and num_projects > 0) else (num_skills or 99)}">0</span>
+                <span class="text-xl font-black text-[var(--accent)]">{'%' if not (resume.portfolio_show_projects and getattr(resume, 'show_projects', True) and num_projects > 0) and num_skills == 0 else '+'}</span>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase">{'Projects' if (resume.portfolio_show_projects and getattr(resume, 'show_projects', True) and num_projects > 0) else ('Core Stack' if num_skills > 0 else 'Precision')}</p>
               </div>
               <div class="p-3 bg-black/40 rounded-2xl border border-white/10">
-                <span class="counter-num text-2xl sm:text-3xl font-black text-white" data-target="{num_milestones}">0</span>
-                <p class="text-[10px] text-slate-400 font-semibold uppercase">Milestones</p>
+                <span class="counter-num text-2xl sm:text-3xl font-black text-white" data-target="{num_milestones if num_milestones > 0 else 100}">0</span>
+                <span class="text-xl font-black text-white">{'%' if num_milestones == 0 else '+'}</span>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase">{'Milestones' if num_milestones > 0 else 'Reliability'}</p>
               </div>
               <div class="p-3 bg-black/40 rounded-2xl border border-white/10">
-                <span class="counter-num text-2xl sm:text-3xl font-black text-pink-400" data-target="{num_skills}">0</span>
+                <span class="counter-num text-2xl sm:text-3xl font-black text-pink-400" data-target="{num_skills if num_skills > 0 else 10}">0</span>
+                <span class="text-xl font-black text-pink-400">+</span>
                 <p class="text-[10px] text-slate-400 font-semibold uppercase">Stack Skills</p>
               </div>
             </div>
@@ -165,6 +252,9 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
 
           <!-- Experience Timeline -->
           {exp_timeline_html}
+
+          <!-- Contact Section -->
+          {contact_section_html}
 
         </div>
 
