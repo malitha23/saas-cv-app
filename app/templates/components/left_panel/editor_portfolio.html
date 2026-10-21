@@ -239,6 +239,24 @@
         <span class="text-slate-300 font-medium">Direct Resume Download</span>
       </label>
     </div>
+
+    <!-- Custom Resume PDF Download Link Option -->
+    <div x-show="tailoredData.portfolio_show_resume_download" class="mt-2.5 bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-xs">
+      <div class="flex items-center justify-between">
+        <label class="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1.5">
+          <i data-lucide="link" class="w-3.5 h-3.5 text-pink-400"></i>
+          <span>Custom Resume PDF Download Link (Optional)</span>
+        </label>
+        <span class="text-[9px] text-slate-500 font-mono">Auto / Custom Link</span>
+      </div>
+      <input type="url" x-model="tailoredData.portfolio_resume_url" @input="refreshAllPreviews()"
+        placeholder="https://drive.google.com/your-cv.pdf (or leave empty to auto-download DreemFolio ATS PDF)"
+        class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200 placeholder-slate-600 focus:border-pink-500 focus:outline-none">
+      <p class="text-[9.5px] text-slate-400 flex items-center gap-1">
+        <i data-lucide="sparkles" class="w-3 h-3 text-pink-400"></i>
+        <span>හිස්ව තිබුණහොත් Portfolio එකෙන් කෙලින්ම DreemFolio ATS PDF එක auto download වේ. Google Drive link එකක් දාන්නත් පුළුවන්.</span>
+      </p>
+    </div>
   </div>
 
   <!-- 4. 👤 Hero Profile, Identity & Bio (Full CRUD) -->

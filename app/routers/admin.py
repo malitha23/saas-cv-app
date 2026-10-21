@@ -1852,9 +1852,15 @@ async def send_marketing_campaign(
             raise HTTPException(status_code=400, detail="Invalid test email address.")
 
         sample_name = current_user.full_name or "Administrator"
-        sample_position = payload.position_filter or "Software Engineer"
-        test_sub = f"[TEST PREVIEW] {payload.subject}".replace("{{name}}", sample_name).replace("{{position}}", sample_position)
-        test_hd = (payload.headline or "").replace("{{name}}", sample_name).replace("{{position}}", sample_position)
+        sample_position = payload.position_filter or "Software Engineering Intern"
+        test_sub = f"[TEST PREVIEW] {payload.subject}".replace("{{name}}", sample_name).replace("{name}", sample_name)
+        test_sub = test_sub.replace("{{position}}", sample_position).replace("{position}", sample_position)
+        test_hd = (payload.headline or "").replace("{{name}}", sample_name).replace("{name}", sample_name)
+        test_hd = test_hd.replace("{{position}}", sample_position).replace("{position}", sample_position)
+        test_msg_body = payload.message_body
+        if test_msg_body:
+            test_msg_body = test_msg_body.replace("{{name}}", sample_name).replace("{name}", sample_name)
+            test_msg_body = test_msg_body.replace("{{position}}", sample_position).replace("{position}", sample_position)
 
         success = send_promotional_campaign_email(
             to_email=target_email,
@@ -1862,7 +1868,7 @@ async def send_marketing_campaign(
             name=sample_name,
             position=sample_position,
             headline=test_hd,
-            message_body=payload.message_body,
+            message_body=test_msg_body,
             cta_text=payload.cta_text,
             cta_url=payload.cta_url
         )

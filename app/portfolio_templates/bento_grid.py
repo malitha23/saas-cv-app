@@ -96,7 +96,7 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
     dl_button = ""
     if resume.portfolio_show_resume_download:
         dl_button = f"""
-          <button onclick="window.parent.postMessage('download_resume', '*')"
+          <button onclick="triggerPortfolioCvDownload()"
             class="group relative px-4 py-2.5 bg-slate-800/80 backdrop-blur border border-slate-700 text-slate-200 rounded-xl font-semibold text-xs flex items-center gap-2 transition-all duration-300 hover:border-[var(--accent)]/60 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] overflow-hidden">
             <i data-lucide="file-down" class="w-4 h-4 text-[var(--accent)] group-hover:translate-y-0.5 transition-transform duration-300"></i>
             <span>Download ATS Resume</span>

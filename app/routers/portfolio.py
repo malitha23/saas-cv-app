@@ -355,6 +355,45 @@ async def check_domain_allowed(domain: str = Query(...)):
     raise HTTPException(status_code=403, detail="Domain not registered on DreemFolio")
 
 
+@router.get("/p/{slug}/cv")
+@router.get("/p/{slug}/pdf")
+@router.get("/api/portfolio/pdf/{slug}")
+async def download_public_portfolio_cv(slug: str):
+    """Public endpoint to download the candidate's ATS resume PDF or redirect to custom URL."""
+    from fastapi.responses import RedirectResponse
+    from app.state import is_candidate_portfolio_blocked, PUBLISHED_RESUMES
+    from app.pdf_generator import generate_resume_pdf
+
+    clean_slug = re.sub(r'[^a-zA-Z0-9_-]', '', slug.lower())
+    is_blocked, _ = is_candidate_portfolio_blocked(clean_slug)
+    if is_blocked:
+        raise HTTPException(status_code=403, detail="Portfolio is currently suspended.")
+
+    resume = PUBLISHED_RESUMES.get(clean_slug)
+    if resume:
+        # If user specified custom external resume URL, redirect directly
+        custom_url = getattr(resume, "portfolio_resume_url", None)
+        if custom_url and str(custom_url).strip().startswith(("http://", "https://")):
+            return RedirectResponse(url=str(custom_url).strip(), status_code=307)
+
+        try:
+            pdf_bytes = generate_resume_pdf(resume)
+            cand_name = re.sub(r'[^a-zA-Z0-9_-]', '_', resume.personal_info.full_name) or clean_slug
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f'attachment; filename="{cand_name}_ATS_Resume.pdf"',
+                    "Cache-Control": "public, max-age=300"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error compiling public portfolio resume PDF for {clean_slug}: {e}")
+            raise HTTPException(status_code=500, detail="Failed to compile resume PDF.")
+
+    raise HTTPException(status_code=404, detail="Resume not found for this portfolio. Please re-publish from dashboard.")
+
+
 @router.get("/p/{slug}", response_class=HTMLResponse)
 async def view_public_portfolio(slug: str):
     """Publicly accessible live candidate portfolio webpage."""

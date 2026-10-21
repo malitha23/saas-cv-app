@@ -1,81 +1,78 @@
 {% extends "emails/base_email.html" %}
 
 {% block content %}
-<div style="margin-bottom: 24px;">
-  <div style="display: inline-block; padding: 4px 12px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #a5b4fc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-    Candidate Document & Profile Access
+<div style="margin-bottom: 20px;">
+  <div style="display: inline-block; padding: 4px 10px; border-radius: 6px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); color: #818cf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    Profile Review Notification
   </div>
 
-  <h1 style="font-size: 22px; font-weight: 800; color: #ffffff; line-height: 1.35; margin-bottom: 14px;">
-    Your ATS Resume & Live Web Portfolio are Ready
+  <h1 style="font-size: 21px; font-weight: 700; color: #ffffff; line-height: 1.35; margin-bottom: 14px;">
+    Your Resume & Web Portfolio are Ready
   </h1>
-  <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 18px;">
-    Hi <strong style="color: #ffffff;">{{ candidate_name | default("there") }}</strong>,
+  <p style="font-size: 15px; color: #cbd5e1; margin-bottom: 16px;">
+    Hello <strong style="color: #ffffff;">{{ candidate_name | default("there") }}</strong>,
   </p>
 </div>
 
-<div style="color: #cbd5e1; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
-  <p style="margin-bottom: 14px;">
-    We have structured your resume with <strong>DreemFolio</strong> and prepared a recruiter-ready, ATS-compliant profile tailored for <strong style="color: #c084fc;">{{ target_role | default("your career") }}</strong>.
+<div style="color: #cbd5e1; font-size: 14px; line-height: 1.7; margin-bottom: 20px;">
+  <p style="margin-bottom: 12px;">
+    <strong style="color: #e2e8f0;">{{ creator_name | default("Your recruiter") }}</strong> has prepared an ATS-compliant resume and a personalized web portfolio tailored for your <strong>{{ target_role | default("career") }}</strong> profile.
   </p>
-  <p style="margin-bottom: 14px;">
-    Your personalized online portfolio website is deployed and available to share directly with hiring teams.
+  <p style="margin-bottom: 12px;">
+    You can review the formatted documents, verify your career history, and download your ATS resume below.
   </p>
 </div>
 
 <!-- PREVIEW HIGHLIGHTS CARD -->
-<div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 20px; margin: 24px 0;">
-  <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
-    Summary of Prepared Profile:
+<div style="background-color: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 18px 20px; margin: 20px 0;">
+  <div style="font-size: 11.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+    Summary of Prepared Documents:
   </div>
 
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-      <td width="28" valign="top" style="font-size: 16px;">📄</td>
-      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
-        <strong style="color: #ffffff;">Single-Column ATS Resume:</strong> Formatted with keyword-aligned bullet points designed to pass recruitment filters.
+      <td style="padding: 6px 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        • <strong style="color: #ffffff;">ATS-Compliant Resume:</strong> Single-column layout with keyword-matched bullet points structured to pass recruiter screening filters.
       </td>
     </tr>
     <tr>
-      <td width="28" valign="top" style="font-size: 16px;">🌐</td>
-      <td style="padding-left: 10px; padding-bottom: 12px; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
-        <strong style="color: #ffffff;">Live Web Portfolio:</strong> Responsive personal site showcasing your experience, skills, and background.
+      <td style="padding: 6px 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        • <strong style="color: #ffffff;">Personal Web Portfolio:</strong> Responsive public website presenting your career projects and professional profile.
       </td>
     </tr>
     <tr>
-      <td width="28" valign="top" style="font-size: 16px;">⚡</td>
-      <td style="padding-left: 10px; padding-bottom: 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
-        <strong style="color: #ffffff;">Direct Claim:</strong> Claim and edit this profile anytime with your email or Google login.
+      <td style="padding: 6px 0; color: #e2e8f0; font-size: 13.5px; line-height: 1.5;">
+        • <strong style="color: #ffffff;">Profile Ownership:</strong> Access and update your profile anytime using your registered email or Google account.
       </td>
     </tr>
   </table>
 </div>
 
-<!-- PRIMARY CTA: 1-CLICK CLAIM -->
-<div style="text-align: center; margin: 32px 0 16px 0;">
-  <a href="{{ claim_url }}" class="cta-btn" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 36px; border-radius: 12px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); text-align: center;">
-    Claim Your Profile & ATS Resume →
+<!-- PRIMARY CTA BUTTON -->
+<div style="text-align: center; margin: 28px 0 16px 0;">
+  <a href="{{ claim_url }}" class="cta-btn" target="_blank" style="display: inline-block; background-color: #4f46e5; color: #ffffff !important; text-decoration: none; font-weight: 600; font-size: 14px; padding: 14px 34px; border-radius: 8px; text-align: center;">
+    Review Your Profile & Resume →
   </a>
   <div style="font-size: 11px; color: #64748b; margin-top: 10px;">
-    Direct link associated with your email • Download ATS PDF anytime
+    Secure direct link prepared for {{ candidate_name | default("you") }}
   </div>
 </div>
 
 {% if portfolio_url %}
-<!-- SECONDARY CTA: VIEW LIVE PORTFOLIO -->
-<div style="text-align: center; margin-bottom: 28px;">
-  <a href="{{ portfolio_url }}" target="_blank" style="display: inline-block; font-size: 13px; font-weight: 700; color: #a5b4fc; text-decoration: none; border-bottom: 1px dashed #6366f1; padding-bottom: 2px;">
-    🔗 Preview your live website: {{ portfolio_url }}
+<!-- SECONDARY LINK: VIEW LIVE PORTFOLIO -->
+<div style="text-align: center; margin-bottom: 24px;">
+  <a href="{{ portfolio_url }}" target="_blank" style="display: inline-block; font-size: 13px; font-weight: 500; color: #818cf8; text-decoration: underline;">
+    Preview Web Portfolio: {{ portfolio_url }}
   </a>
 </div>
 {% endif %}
 
 <!-- SENDER INFO CALLOUT -->
-<div class="alert-box alert-info" style="margin-top: 24px; text-align: center;">
-  <strong style="color: #818cf8;">Security Note:</strong> This personalized claim link was prepared by {{ creator_name | default("the hiring team at DreemFolio AI") }}. Only you have access to claim and manage this profile.
+<div style="background-color: #1e293b; border-left: 3px solid #6366f1; padding: 12px 16px; border-radius: 4px; margin-top: 22px; font-size: 12.5px; color: #94a3b8; line-height: 1.6;">
+  <strong style="color: #e2e8f0;">Note:</strong> This profile was prepared by <strong>{{ creator_name | default("DreemFolio AI Talent Team") }}</strong>. If you have any questions or updates, you can reply directly to this email.
 </div>
 
-<p style="font-size: 12px; color: #64748b; margin-top: 24px; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 16px;">
-  If you received this message in error or did not submit your resume for recruitment opportunities, you can safely disregard this email.
+<p style="font-size: 11.5px; color: #64748b; margin-top: 20px; line-height: 1.5; border-top: 1px solid #1e293b; padding-top: 14px;">
+  If you received this message in error or did not intend to review this profile, you can safely disregard this email.
 </p>
 {% endblock %}

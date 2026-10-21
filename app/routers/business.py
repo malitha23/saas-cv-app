@@ -162,6 +162,7 @@ async def api_send_candidate_onboarding_email(
     portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
 
     creator_name = (profile.creator.company_name or profile.creator.full_name) if profile.creator else "DreemFolio AI Talent Team"
+    creator_email = profile.creator.email if profile.creator else None
 
     success = send_candidate_onboarding_invitation_email(
         to_email=profile.candidate_email,
@@ -170,6 +171,7 @@ async def api_send_candidate_onboarding_email(
         portfolio_url=portfolio_url,
         claim_url=claim_url,
         creator_name=creator_name,
+        creator_email=creator_email,
         base_url=base_url,
         enqueue_on_fail=True
     )
@@ -370,6 +372,29 @@ async def get_candidate_profile_resume(
         except Exception:
             resume_data = {}
 
+    # If linked to a claimed user account, read their latest user_resumes entry to get candidate's own edits
+    linked_user_id = profile.claimed_by_user_id
+    if not linked_user_id and profile.candidate_email:
+        clean_email = profile.candidate_email.strip().lower()
+        matched_user = db.scalar(select(User).where(func.lower(User.email) == clean_email))
+        if matched_user:
+            linked_user_id = matched_user.id
+
+    if linked_user_id:
+        user_res = db.scalar(
+            select(UserResume)
+            .where(UserResume.user_id == linked_user_id)
+            .order_by(UserResume.updated_at.desc())
+        )
+        if user_res and user_res.resume_data_json:
+            try:
+                user_res_data = json.loads(user_res.resume_data_json)
+                if user_res.template_style and not user_res_data.get("template_style"):
+                    user_res_data["template_style"] = user_res.template_style
+                resume_data = user_res_data
+            except Exception:
+                pass
+
     return {
         "success": True,
         "id": profile.id,
@@ -454,7 +479,7 @@ async def update_candidate_profile_resume(
         tailored_obj = TailoredResume(**resume_data)
         updated_portfolio_html = generate_portfolio_html(
             resume=tailored_obj,
-            theme="neon_dark",
+            theme=resume_data.get("portfolio_theme") or "neon_dark",
             slug=profile.portfolio_slug or ""
         )
         profile.portfolio_html = updated_portfolio_html
@@ -463,17 +488,37 @@ async def update_candidate_profile_resume(
     except Exception as render_err:
         logger.warning("Could not re-generate portfolio HTML on candidate resume update: %s", render_err)
 
-    # If already claimed by user, sync their user_resumes entry too
-    if profile.claimed_by_user_id:
+    # Sync linked candidate user_resumes entry so claimed user sees the exact edits in their dashboard
+    target_user_id = profile.claimed_by_user_id
+    if not target_user_id and profile.candidate_email:
+        clean_cand_email = profile.candidate_email.strip().lower()
+        matched_user = db.scalar(select(User).where(func.lower(User.email) == clean_cand_email))
+        if matched_user:
+            target_user_id = matched_user.id
+            if profile.status == "pending":
+                profile.claimed_by_user_id = matched_user.id
+
+    if target_user_id:
         try:
             claimed_user_resume = db.scalar(
-                select(UserResume).where(UserResume.user_id == profile.claimed_by_user_id)
+                select(UserResume).where(UserResume.user_id == target_user_id)
             )
+            template_style_val = resume_data.get("template_style") or "classic"
             if claimed_user_resume:
                 claimed_user_resume.title = f"{new_role or 'Professional'} ATS Resume"
                 claimed_user_resume.target_role = new_role
+                claimed_user_resume.template_style = template_style_val
                 claimed_user_resume.resume_data_json = profile.resume_data_json
                 claimed_user_resume.updated_at = datetime.utcnow()
+            else:
+                new_user_resume = UserResume(
+                    user_id=target_user_id,
+                    title=f"{new_role or 'Professional'} ATS Resume",
+                    target_role=new_role,
+                    template_style=template_style_val,
+                    resume_data_json=profile.resume_data_json
+                )
+                db.add(new_user_resume)
         except Exception as sync_err:
             logger.warning("Could not sync candidate UserResume: %s", sync_err)
 

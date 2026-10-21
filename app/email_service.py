@@ -141,6 +141,7 @@ def send_raw_email(
     subject: str,
     html_body: str,
     plain_body: Optional[str] = None,
+    reply_to: Optional[str] = None,
     enqueue_on_fail: bool = True
 ) -> bool:
     """
@@ -164,7 +165,7 @@ def send_raw_email(
     msg["Subject"] = subject
     msg["From"] = f"{cfg['from_name']} <{cfg['from_email']}>"
     msg["To"] = to_clean
-    msg["Reply-To"] = f"{cfg['from_name']} <{cfg['from_email']}>"
+    msg["Reply-To"] = reply_to.strip() if (reply_to and "@" in reply_to) else f"{cfg['from_name']} <{cfg['from_email']}>"
     msg["Date"] = email.utils.formatdate(localtime=True)
     msg["Message-ID"] = email.utils.make_msgid(domain=domain_part)
     msg["X-Auto-Response-Suppress"] = "OOF, AutoReply"
@@ -715,14 +716,18 @@ def send_candidate_onboarding_invitation_email(
     portfolio_url: Optional[str],
     claim_url: str,
     creator_name: Optional[str] = None,
+    creator_email: Optional[str] = None,
     base_url: str = "https://www.dreemfolio.com",
     enqueue_on_fail: bool = False
 ) -> bool:
-    """Dispatches a personalized 1-click VIP onboarding invitation to a candidate."""
+    """Dispatches a personalized transactional candidate onboarding invitation."""
     clean_to = to_email.strip()
     name_clean = (candidate_name or "Candidate").strip()
     role_clean = (target_role or "Software Professional").strip()
-    subject = f"{name_clean}, your pre-built portfolio and ATS resume are ready to claim"
+    sender_name = (creator_name or "DreemFolio AI Talent Team").strip()
+    
+    # Professional transactional subject line optimized for Gmail Primary tab
+    subject = f"{name_clean}, your resume and web portfolio are ready for review"
 
     template = jinja_env.get_template("emails/candidate_onboarding_invitation.html")
     html_content = template.render(
@@ -731,17 +736,25 @@ def send_candidate_onboarding_invitation_email(
         target_role=role_clean,
         portfolio_url=portfolio_url,
         claim_url=claim_url,
-        creator_name=creator_name or "DreemFolio AI Talent Team",
+        creator_name=sender_name,
+        creator_email=creator_email,
         base_url=base_url.rstrip("/"),
         current_year=datetime.utcnow().year
     )
 
     plain_content = (
-        f"Hi {name_clean},\n\n"
-        f"We have pre-built your ATS-Optimized Resume & Live Web Portfolio with DreemFolio AI!\n\n"
-        f"Preview your live website: {portfolio_url or 'https://www.dreemfolio.com'}\n"
-        f"1-Click Claim your profile & editable CV: {claim_url}\n\n"
-        f"Best regards,\nDreemFolio AI Team"
+        f"Hello {name_clean},\n\n"
+        f"{sender_name} has prepared an ATS-compliant resume and a personalized web portfolio for your {role_clean} profile.\n\n"
+        f"You can review your documents and manage your profile here:\n"
+        f"{claim_url}\n\n"
+    )
+    if portfolio_url:
+        plain_content += f"Preview your live web portfolio:\n{portfolio_url}\n\n"
+    plain_content += (
+        f"If you have any questions or require modifications, feel free to reply directly to this email.\n\n"
+        f"Best regards,\n"
+        f"{sender_name}\n"
+        f"DreemFolio AI"
     )
 
     return send_raw_email(
@@ -749,6 +762,7 @@ def send_candidate_onboarding_invitation_email(
         subject=subject,
         html_body=html_content,
         plain_body=plain_content,
+        reply_to=creator_email if creator_email else None,
         enqueue_on_fail=enqueue_on_fail
     )
 

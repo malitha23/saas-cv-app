@@ -445,6 +445,9 @@ class TailoredResume(BaseModel):
     portfolio_show_resume_download: bool = Field(
         default=True, description="Show direct ATS Resume download button on portfolio"
     )
+    portfolio_resume_url: Optional[str] = Field(
+        default=None, description="Custom external resume PDF URL (e.g. Google Drive / Dropbox link). If empty, auto-downloads DreemFolio ATS PDF."
+    )
     portfolio_cta_text: str = Field(
         default="Get in Touch", description="Primary call-to-action button text"
     )
@@ -1018,6 +1021,7 @@ class SavedResumeListItem(BaseModel):
     target_role: Optional[str] = None
     template_style: str
     updated_at: str
+    updated_at_iso: Optional[str] = None
 
 
 class PlanItemConfig(BaseModel):

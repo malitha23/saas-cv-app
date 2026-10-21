@@ -134,7 +134,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
 
     resume_btn_html = (
         f"""
-              <button onclick="window.parent.postMessage('download_resume', '*')"
+              <button onclick="triggerPortfolioCvDownload()"
                 class="group relative px-5 py-3 bg-white/[0.06] hover:bg-white/[0.12] backdrop-blur-xl border border-white/15 hover:border-[var(--accent)]/60 text-white font-semibold text-xs rounded-xl transition-all duration-300 flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-8px_var(--accent-glow)] overflow-hidden">
                 <span class="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent)]/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></span>
                 <i data-lucide="file-down" class="relative w-4 h-4 text-[var(--accent)] group-hover:translate-y-0.5 transition-transform duration-300"></i>

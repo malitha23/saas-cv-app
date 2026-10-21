@@ -139,7 +139,7 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
     bio_html = f'<p class="text-base sm:text-xl text-slate-300 max-w-3xl font-light leading-relaxed pt-2 drop-cap">{summary}</p>' if resume.portfolio_show_bio else ''
 
     resume_btn_html = f'''
-            <button onclick="window.parent.postMessage('download_resume', '*')"
+            <button onclick="triggerPortfolioCvDownload()"
               class="px-7 py-3.5 border border-slate-700 text-white font-semibold text-xs uppercase tracking-widest hover:border-white hover:bg-white/5 transition duration-300">
               Download CV Monograph (PDF)
             </button>

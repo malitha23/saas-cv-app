@@ -116,6 +116,7 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
     pin_gate_html = render_pin_gate_overlay(safe_resume, clean_slug)
     verification_html = render_verification_badge(safe_resume, clean_slug)
     viral_badge_html = render_viral_portfolio_badge(clean_slug)
+    safe_resume_url = sanitize_url(getattr(safe_resume, "portfolio_resume_url", None) or "")
 
     full_name = safe_resume.personal_info.full_name or "Professional Portfolio"
     role_title = safe_resume.target_job_title or "Portfolio"
@@ -165,6 +166,28 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
   {viral_badge_html}
 
   <script>
+    window.__PORTFOLIO_SLUG__ = "{clean_slug}";
+    window.__PORTFOLIO_RESUME_URL__ = "{safe_resume_url}";
+
+    function triggerPortfolioCvDownload() {{
+      if (window.__PORTFOLIO_RESUME_URL__) {{
+        window.open(window.__PORTFOLIO_RESUME_URL__, '_blank');
+        return;
+      }}
+      if (window.self !== window.top) {{
+        window.parent.postMessage('download_resume', '*');
+      }} else {{
+        window.open('/p/' + window.__PORTFOLIO_SLUG__ + '/cv', '_blank');
+      }}
+    }}
+
+    // Intercept download_resume postMessage when in standalone public browser window
+    window.addEventListener('message', function(e) {{
+      if (e.data === 'download_resume' && window.self === window.top) {{
+        triggerPortfolioCvDownload();
+      }}
+    }});
+
     function hydrateIcons() {{
       if (window.lucide && typeof window.lucide.createIcons === 'function') {{
         window.lucide.createIcons();

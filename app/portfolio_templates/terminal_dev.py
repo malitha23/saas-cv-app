@@ -210,7 +210,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     cta_target_text = resume.portfolio_cta_text or "Let's Connect"
 
     resume_btn_html = f'''
-                        <button onclick="window.parent.postMessage('download_resume', '*')"
+                        <button onclick="triggerPortfolioCvDownload()"
                                 class="px-6 py-3 bg-slate-800/60 border border-slate-700/50 text-slate-200 font-semibold rounded-xl text-sm hover:border-[var(--accent)] hover:bg-slate-800 transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2">
                             <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
                             Download CV

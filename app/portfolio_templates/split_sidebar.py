@@ -121,7 +121,7 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
     bio_html = f'<p class="text-sm text-slate-300 leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''
     
     resume_btn_html = f'''
-                <button onclick="window.parent.postMessage('download_resume', '*')"
+                <button onclick="triggerPortfolioCvDownload()"
                   class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl font-semibold text-xs flex items-center gap-2 transition">
                   <i data-lucide="download" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
                   <span>Resume PDF</span>

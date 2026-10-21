@@ -177,7 +177,23 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
             sec.access_pin = re.sub(r"[^\d]", "", str(sec.access_pin))[:6]
         res.security_config = sec
 
+    # Custom Resume URL Sanitization
+    if getattr(res, "portfolio_resume_url", None):
+        res.portfolio_resume_url = sanitize_url(res.portfolio_resume_url)
+
     return res
+
+
+def get_resume_download_onclick(safe_resume: Any, slug: str = "") -> str:
+    """Generate dynamic download handler: custom URL or auto-generated public ATS PDF or iframe postMessage."""
+    custom_url = getattr(safe_resume, "portfolio_resume_url", None)
+    if custom_url and str(custom_url).strip().startswith(("http://", "https://")):
+        safe_link = sanitize_url(str(custom_url).strip())
+        return f"window.open('{safe_link}', '_blank')"
+
+    clean_s = re.sub(r'[^a-zA-Z0-9_-]', '', slug.lower()) if slug else "developer"
+    target_pdf = f"/p/{clean_s}/cv"
+    return f"if (window.self !== window.top) {{ window.parent.postMessage('download_resume', '*'); }} else {{ window.open('{target_pdf}', '_blank'); }}" 
 
 
 def compute_portfolio_hmac(slug: str, role: str) -> str:

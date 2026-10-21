@@ -77,7 +77,7 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
     bio_html = f'<p class="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">{summary}</p>' if resume.portfolio_show_bio else ''
 
     resume_btn_html = f'''
-              <button onclick="window.parent.postMessage('download_resume', '*')"
+              <button onclick="triggerPortfolioCvDownload()"
                 class="px-5 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-xs rounded-2xl transition flex items-center gap-2">
                 <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
                 <span>Download ATS CV</span>

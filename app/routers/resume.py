@@ -351,7 +351,8 @@ async def list_user_resumes(
             title=r.title,
             target_role=r.target_role,
             template_style=r.template_style,
-            updated_at=r.updated_at.strftime("%b %d, %Y %I:%M %p")
+            updated_at=r.updated_at.strftime("%b %d, %Y %I:%M %p"),
+            updated_at_iso=r.updated_at.isoformat() if r.updated_at else None
         )
         for r in resumes
     ]
@@ -437,37 +438,76 @@ async def save_user_resume(
             )
             target_resume = db.scalars(stmt).first()
 
+        saved_id = None
+        saved_title = new_title
         if target_resume:
             target_resume.title = new_title
             target_resume.target_role = req.resume_data.target_job_title
-            target_resume.template_style = req.resume_data.template_style or "visual_sidebar"
+            target_resume.template_style = req.resume_data.template_style or "classic"
             target_resume.resume_data_json = json_data
             target_resume.updated_at = datetime.datetime.utcnow()
             db.commit()
             db.refresh(target_resume)
-            return {
-                "success": True,
-                "resume_id": target_resume.id,
-                "title": target_resume.title,
-                "message": "Resume updated in Cloud!"
-            }
+            saved_id = target_resume.id
+            saved_title = target_resume.title
         else:
             new_resume = UserResume(
                 user_id=current_user.id,
                 title=new_title,
                 target_role=req.resume_data.target_job_title,
-                template_style=req.resume_data.template_style or "visual_sidebar",
+                template_style=req.resume_data.template_style or "classic",
                 resume_data_json=json_data
             )
             db.add(new_resume)
             db.commit()
             db.refresh(new_resume)
-            return {
-                "success": True,
-                "resume_id": new_resume.id,
-                "title": new_resume.title,
-                "message": "Resume successfully saved in Cloud!"
-            }
+            saved_id = new_resume.id
+            saved_title = new_resume.title
+
+        # 2-WAY BIDIRECTIONAL SYNC:
+        # If this user is a candidate linked to a PrebuiltCandidateProfile, sync changes back
+        # to the candidate profile and recompile their live web portfolio so Admin/Recruiter sees the updates!
+        try:
+            from app.models import PrebuiltCandidateProfile
+            from app.portfolio_templates import generate_portfolio_html
+            from app.state import save_published_portfolio
+            from sqlalchemy import func
+
+            candidate_profiles = db.scalars(
+                select(PrebuiltCandidateProfile).where(
+                    (PrebuiltCandidateProfile.claimed_by_user_id == current_user.id) |
+                    (func.lower(PrebuiltCandidateProfile.candidate_email) == (current_user.email or "").strip().lower())
+                )
+            ).all()
+
+            for cp in candidate_profiles:
+                if req.resume_data.personal_info and req.resume_data.personal_info.full_name:
+                    cp.candidate_name = req.resume_data.personal_info.full_name
+                if req.resume_data.target_job_title:
+                    cp.target_role = req.resume_data.target_job_title
+                cp.resume_data_json = json_data
+
+                # Recompile live web portfolio HTML so /p/{slug} and Admin previews are updated
+                if cp.portfolio_slug:
+                    updated_html = generate_portfolio_html(
+                        resume=req.resume_data,
+                        theme=req.resume_data.portfolio_theme or "neon_dark",
+                        slug=cp.portfolio_slug
+                    )
+                    cp.portfolio_html = updated_html
+                    save_published_portfolio(cp.portfolio_slug, updated_html)
+
+            if candidate_profiles:
+                db.commit()
+        except Exception as sync_err:
+            logger.warning("Could not sync candidate profile back to business record: %s", sync_err)
+
+        return {
+            "success": True,
+            "resume_id": saved_id,
+            "title": saved_title,
+            "message": "Resume successfully saved and synchronized in Cloud!"
+        }
     except Exception as e:
         db.rollback()
         logger.error("Failed to save resume for user %s: %s", current_user.id, e, exc_info=True)
@@ -514,10 +554,14 @@ async def load_user_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Saved resume not found or access denied.")
 
+    res_data = json.loads(resume.resume_data_json) if resume.resume_data_json else {}
+    if resume.template_style and ("template_style" not in res_data or not res_data.get("template_style")):
+        res_data["template_style"] = resume.template_style
+
     return {
         "resume_id": resume.id,
         "title": resume.title,
-        "resume_data": json.loads(resume.resume_data_json)
+        "resume_data": res_data
     }
 
 

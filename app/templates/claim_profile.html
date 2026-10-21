@@ -412,7 +412,7 @@
               if (authData.user) {
                 localStorage.setItem('saas_user', JSON.stringify(authData.user));
               }
-              window.location.href = '/app';
+              this.redirectToAppWithCleanState();
             } else {
               const err = await authRes.json();
               this.errorMessage = err.detail || 'Google authentication failed.';
@@ -484,7 +484,7 @@
               if (data.user) {
                 localStorage.setItem('saas_user', JSON.stringify(data.user));
               }
-              window.location.href = '/app';
+              this.redirectToAppWithCleanState();
             } else {
               const err = await res.json();
               this.errorMessage = err.detail || 'Incorrect or expired verification code.';
@@ -516,7 +516,7 @@
               if (data.user) {
                 localStorage.setItem('saas_user', JSON.stringify(data.user));
               }
-              window.location.href = '/app';
+              this.redirectToAppWithCleanState();
             } else {
               const err = await res.json();
               this.errorMessage = err.detail || 'Incorrect password.';
@@ -526,6 +526,23 @@
           } finally {
             this.loading = false;
           }
+        },
+
+        redirectToAppWithCleanState() {
+          try {
+            localStorage.removeItem('dreemfolio_active_resume');
+            localStorage.removeItem('dreemfolio_active_resume_id');
+            localStorage.removeItem('dreemfolio_active_resume_user_id');
+            localStorage.removeItem('dreemfolio_active_template');
+            localStorage.removeItem('dreemfolio_active_job_title');
+            localStorage.removeItem('dreemfolio_active_company');
+            localStorage.removeItem('dreemfolio_active_file_name');
+            localStorage.removeItem('dreemfolio_active_resume_text');
+            localStorage.removeItem('dreemfolio_active_job_description');
+            localStorage.removeItem('dreemfolio_active_role_archetype');
+            localStorage.removeItem('dreemfolio_active_editor_tab');
+          } catch(e) {}
+          window.location.href = '/app';
         }
       }
     }

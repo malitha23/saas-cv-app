@@ -152,7 +152,7 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     bio_html = f'<p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''
 
     resume_btn_html = f'''
-                <button onclick="window.parent.postMessage('download_resume', '*')"
+                <button onclick="triggerPortfolioCvDownload()"
                   class="px-5 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs rounded-2xl shadow hover:-translate-y-0.5 transition transform flex items-center gap-2">
                   <i data-lucide="download" class="w-4 h-4 text-[var(--accent)]"></i>
                   <span>Download ATS Resume</span>

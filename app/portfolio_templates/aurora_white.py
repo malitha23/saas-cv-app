@@ -212,7 +212,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
 
     nav_resume_btn = (
         f"""
-              <button onclick="window.parent.postMessage('download_resume', '*')"
+              <button onclick="triggerPortfolioCvDownload()"
                 class="px-3.5 py-2 bg-white border border-slate-200 hover:border-[var(--accent)]/40 hover:bg-slate-50 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-semibold shadow-[0_1px_3px_-1px_rgba(15,23,42,0.08)] hover:shadow-[0_6px_16px_-6px_rgba(15,23,42,0.15)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-1.5">
                 <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500"></i>
                 <span class="hidden sm:inline">Resume PDF</span>
@@ -230,7 +230,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
 
     hero_resume_btn = (
         f"""
-                <button onclick="window.parent.postMessage('download_resume', '*')"
+                <button onclick="triggerPortfolioCvDownload()"
                   class="px-5 py-3 bg-white border border-slate-200 hover:border-[var(--accent)]/40 hover:bg-slate-50 text-slate-800 hover:text-slate-900 rounded-xl text-xs font-semibold shadow-[0_1px_3px_-1px_rgba(15,23,42,0.08)] hover:shadow-[0_10px_24px_-8px_rgba(15,23,42,0.18)] hover:-translate-y-0.5 transition-all duration-300">
                   Download CV Monograph
                 </button>

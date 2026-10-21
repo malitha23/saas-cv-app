@@ -372,20 +372,34 @@ def sync_prebuilt_candidate_profile(user: User, db: Session, claim_token: Option
         if not profile:
             return False
 
-        # Check if user already has an active resume; if not, create one from prebuilt data
+        # Check if user already has an active resume; create or update with prebuilt candidate data
         existing_resume = db.scalars(
             select(UserResume).where(UserResume.user_id == user.id)
         ).first()
+
+        resume_dict = {}
+        if profile.resume_data_json:
+            try:
+                resume_dict = json.loads(profile.resume_data_json)
+            except Exception:
+                pass
+        tmpl_style = resume_dict.get("template_style") or "classic"
 
         if not existing_resume:
             new_resume = UserResume(
                 user_id=user.id,
                 title=f"{profile.target_role or 'Professional'} ATS Resume",
                 target_role=profile.target_role,
-                template_style="visual_sidebar",
+                template_style=tmpl_style,
                 resume_data_json=profile.resume_data_json
             )
             db.add(new_resume)
+        else:
+            existing_resume.title = f"{profile.target_role or 'Professional'} ATS Resume"
+            existing_resume.target_role = profile.target_role
+            existing_resume.template_style = tmpl_style
+            existing_resume.resume_data_json = profile.resume_data_json
+            existing_resume.updated_at = datetime.utcnow()
 
         # Ensure portfolio HTML is cached and on disk
         if profile.portfolio_slug and profile.portfolio_html:

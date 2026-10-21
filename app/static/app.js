@@ -1855,6 +1855,12 @@ function resumeApp() {
       if (!this.tailoredData) return;
       try {
         localStorage.setItem('dreemfolio_active_resume', JSON.stringify(this.tailoredData));
+        if (this.currentUser) {
+          localStorage.setItem('dreemfolio_active_resume_user_id', String(this.currentUser.id));
+        } else {
+          localStorage.setItem('dreemfolio_active_resume_user_id', 'guest');
+        }
+        localStorage.setItem('dreemfolio_active_resume_saved_at', String(Date.now()));
         if (this.currentResumeId) {
           localStorage.setItem('dreemfolio_active_resume_id', String(this.currentResumeId));
         } else {
@@ -1893,6 +1899,8 @@ function resumeApp() {
       try {
         localStorage.removeItem('dreemfolio_active_resume');
         localStorage.removeItem('dreemfolio_active_resume_id');
+        localStorage.removeItem('dreemfolio_active_resume_user_id');
+        localStorage.removeItem('dreemfolio_active_resume_saved_at');
         localStorage.removeItem('dreemfolio_active_template');
         localStorage.removeItem('dreemfolio_active_job_title');
         localStorage.removeItem('dreemfolio_active_company');
@@ -1909,17 +1917,34 @@ function resumeApp() {
     async restoreActiveResumeSnapshot() {
       try {
         const raw = localStorage.getItem('dreemfolio_active_resume');
-        if (!raw) {
-          // If no active tailored resume in local storage, but user is logged in, auto-restore their latest saved resume!
-          if (this.currentUser) {
-            await this.fetchUserSavedResumes();
-            if (this.userSavedResumes && this.userSavedResumes.length > 0) {
-              const latest = this.userSavedResumes[0];
+        const snapshotUserId = localStorage.getItem('dreemfolio_active_resume_user_id');
+        const currentUserId = this.currentUser ? String(this.currentUser.id) : null;
+
+        // If user is authenticated, check their authoritative cloud documents in MySQL
+        if (this.currentUser) {
+          await this.fetchUserSavedResumes();
+
+          if (this.userSavedResumes && this.userSavedResumes.length > 0) {
+            const latest = this.userSavedResumes[0];
+
+            // Decide whether cloud resume must take precedence:
+            // 1. Snapshot belongs to a different account, or a guest session, or is empty
+            // 2. User is a candidate account (candidate profiles are managed by recruiters/admins)
+            // 3. Cloud resume was updated more recently on the server (e.g. by admin or another device)
+            const isCandidate = (this.currentUser.account_type === 'candidate');
+            const localSavedAt = Number(localStorage.getItem('dreemfolio_active_resume_saved_at') || 0);
+            const cloudUpdatedAt = latest.updated_at_iso ? new Date(latest.updated_at_iso).getTime() : 0;
+            const cloudIsNewer = cloudUpdatedAt > 0 && cloudUpdatedAt > localSavedAt;
+
+            if (snapshotUserId !== currentUserId || !raw || isCandidate || cloudIsNewer) {
               await this.loadSavedResume(latest.id);
               return;
             }
           }
-          // If no active tailored resume, still restore unsubmitted job form if present
+        }
+
+        if (!raw) {
+          // If no active tailored resume in local storage, still restore unsubmitted job form if present
           const savedJobTitle = localStorage.getItem('dreemfolio_active_job_title');
           if (savedJobTitle && !this.targetJobTitle) this.targetJobTitle = savedJobTitle;
           const savedCompany = localStorage.getItem('dreemfolio_active_company');
@@ -2019,6 +2044,19 @@ function resumeApp() {
       // If in candidate profile editing mode, sync directly to candidate record & live portfolio
       if (this.activeCandidateProfile) {
         try {
+          if (this.currentTemplate) {
+            this.tailoredData.template_style = this.currentTemplate;
+          }
+          if (this.portfolioTheme) {
+            this.tailoredData.portfolio_theme = this.portfolioTheme;
+          }
+          if (this.portfolioAccent) {
+            this.tailoredData.portfolio_accent_color = this.portfolioAccent;
+          }
+          if (this.portfolioFont) {
+            this.tailoredData.portfolio_font = this.portfolioFont;
+          }
+
           const payload = {
             candidate_name: this.tailoredData.personal_info?.full_name || this.activeCandidateProfile.candidate_name,
             candidate_email: this.tailoredData.personal_info?.email || this.activeCandidateProfile.candidate_email,
@@ -3112,6 +3150,29 @@ function resumeApp() {
       });
     },
 
+    async onUserAuthenticated(user) {
+      this.currentUser = user;
+      if (user) {
+        localStorage.setItem('saas_user', JSON.stringify(user));
+      }
+      this.avatarImgFailed = false;
+
+      // Clear any guest/other-user local resume cache
+      const snapshotUserId = localStorage.getItem('dreemfolio_active_resume_user_id');
+      if (snapshotUserId !== String(user.id)) {
+        this.clearActiveResumeLocalSnapshot();
+      }
+
+      // Fetch saved cloud resumes and auto-load the latest resume into studio
+      await this.fetchUserSavedResumes();
+      if (this.userSavedResumes && this.userSavedResumes.length > 0) {
+        await this.loadSavedResume(this.userSavedResumes[0].id);
+      } else if (this.tailoredData) {
+        this.saveActiveResumeLocalSnapshot();
+      }
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
     async submitAuth() {
       this.authError = '';
       this.isSubmittingAuth = true;
@@ -3175,12 +3236,8 @@ function resumeApp() {
 
         // Save JWT access token & user profile
         localStorage.setItem('saas_token', data.access_token);
-        if (data.user) {
-          localStorage.setItem('saas_user', JSON.stringify(data.user));
-        }
-        this.avatarImgFailed = false;
-        this.currentUser = data.user;
         this.showAuthModal = false;
+        await this.onUserAuthenticated(data.user);
 
         const wasPendingTailor = (this.pendingAction === 'tailor');
         this.pendingAction = null;
@@ -3231,15 +3288,11 @@ function resumeApp() {
 
         // Save JWT access token & user profile
         localStorage.setItem('saas_token', data.access_token);
-        if (data.user) {
-          localStorage.setItem('saas_user', JSON.stringify(data.user));
-        }
-        this.avatarImgFailed = false;
-        this.currentUser = data.user;
         this.showAuthModal = false;
         this.authMode = 'login';
         this.otpCode = '';
         if (this.otpResendInterval) clearInterval(this.otpResendInterval);
+        await this.onUserAuthenticated(data.user);
 
         const wasPendingTailor = (this.pendingAction === 'tailor');
         this.pendingAction = null;
@@ -3550,12 +3603,8 @@ function resumeApp() {
 
         // Securely store SaaS token
         localStorage.setItem('saas_token', data.access_token);
-        if (data.user) {
-          localStorage.setItem('saas_user', JSON.stringify(data.user));
-        }
-        this.avatarImgFailed = false;
-        this.currentUser = data.user;
         this.showAuthModal = false;
+        await this.onUserAuthenticated(data.user);
 
         const wasPendingTailor = (this.pendingAction === 'tailor');
         this.pendingAction = null;
@@ -4554,6 +4603,12 @@ function resumeApp() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) {
+          sessionStorage.removeItem('active_candidate_edit_id');
+          if (window.history && window.history.replaceState) {
+            const url = new URL(window.location);
+            url.searchParams.delete('edit_candidate');
+            window.history.replaceState({}, document.title, url.pathname + url.search);
+          }
           const err = await res.json();
           throw new Error(err.detail || 'Could not load candidate profile.');
         }
@@ -4622,6 +4677,19 @@ function resumeApp() {
       }
 
       try {
+        if (this.currentTemplate) {
+          this.tailoredData.template_style = this.currentTemplate;
+        }
+        if (this.portfolioTheme) {
+          this.tailoredData.portfolio_theme = this.portfolioTheme;
+        }
+        if (this.portfolioAccent) {
+          this.tailoredData.portfolio_accent_color = this.portfolioAccent;
+        }
+        if (this.portfolioFont) {
+          this.tailoredData.portfolio_font = this.portfolioFont;
+        }
+
         const payload = {
           candidate_name: this.tailoredData.personal_info?.full_name || this.activeCandidateProfile.candidate_name,
           candidate_email: this.tailoredData.personal_info?.email || this.activeCandidateProfile.candidate_email,
@@ -4748,10 +4816,11 @@ function resumeApp() {
         }
         this.targetJobTitle = loadedResume.target_job_title || '';
         this.targetCompany = loadedResume.target_company || '';
-        this.currentTemplate = loadedResume.template_style || 'visual_sidebar';
-        this.portfolioTheme = loadedResume.portfolio_theme || 'bento_grid';
+        this.currentTemplate = loadedResume.template_style || 'classic';
+        this.portfolioTheme = loadedResume.portfolio_theme || 'neon_dark';
         this.portfolioAccent = loadedResume.portfolio_accent_color || '#6366f1';
         this.portfolioFont = loadedResume.portfolio_font || 'Inter';
+        this.roleArchetype = loadedResume.role_archetype || 'auto';
 
         if (!loadedResume.portfolio_metrics || loadedResume.portfolio_metrics.length === 0) {
           loadedResume.portfolio_metrics = [

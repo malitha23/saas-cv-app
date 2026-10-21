@@ -130,10 +130,35 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="align-left" class="w-3.5 h-3.5 text-indigo-400"></i> Professional Summary
                 </span>
-                <span class="text-[10px] text-slate-400" x-text="(tailoredData.professional_summary || '').length + ' chars'"></span>
+                <div class="flex items-center gap-2">
+                  <button type="button"
+                    @click="tailoredData.show_summary = (tailoredData.show_summary === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_summary !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_summary !== false ? 'Click to hide Summary from CV & PDF' : 'Click to show Summary on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_summary !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_summary !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <span x-show="tailoredData.show_summary !== false" class="text-[10px] text-slate-400" x-text="(tailoredData.professional_summary || '').length + ' chars'"></span>
+                </div>
               </div>
-              <textarea x-model="tailoredData.professional_summary" @input="refreshAllPreviews()" rows="3"
-                class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none"></textarea>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_summary === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Summary section is hidden from your ATS CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_summary = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
+                </button>
+              </div>
+
+              <div x-show="tailoredData.show_summary !== false">
+                <textarea x-model="tailoredData.professional_summary" @input="refreshAllPreviews()" rows="3"
+                  class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-300 focus:border-indigo-500 focus:outline-none"></textarea>
+              </div>
             </div>
 
             <!-- 3. Technical Skills Manager -->
@@ -142,11 +167,40 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="cpu" class="w-3.5 h-3.5 text-indigo-400"></i> Technical Skills & Categories
                 </span>
-                <button @click="addSkillCategory()"
-                  class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
-                  <i data-lucide="plus" class="w-3 h-3"></i> Add Category
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_skills = (tailoredData.show_skills === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_skills !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_skills !== false ? 'Click to hide Technical Skills from CV & PDF' : 'Click to show Technical Skills on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_skills !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_skills !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="addSkillCategory()" x-show="tailoredData.show_skills !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Category
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_skills === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Technical Skills section is hidden from your ATS CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_skills = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
                 </button>
               </div>
+
+              <!-- Empty State Helper when Visible -->
+              <div x-show="tailoredData.show_skills !== false && (!tailoredData.skill_categories || tailoredData.skill_categories.length === 0)" class="text-center py-2.5 text-slate-500 text-[11px] bg-slate-900/40 rounded-lg border border-dashed border-slate-800">
+                No skill categories added yet. (Empty sections are excluded from PDF, or click <strong class="text-slate-400">'Shown'</strong> above to Hide).
+              </div>
+
+              <div x-show="tailoredData.show_skills !== false" class="space-y-2.5">
 
               <template x-for="(cat, cIdx) in tailoredData.skill_categories" :key="cIdx">
                 <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-2 text-xs">
@@ -192,6 +246,7 @@
                   </div>
                 </div>
               </template>
+              </div>
             </div>
 
             <!-- 4. Work Experience Manager -->
@@ -200,11 +255,40 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="briefcase" class="w-3.5 h-3.5 text-indigo-400"></i> Work Experience
                 </span>
-                <button @click="addWorkExperience()"
-                  class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
-                  <i data-lucide="plus" class="w-3 h-3"></i> Add Role
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_experience = (tailoredData.show_experience === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_experience !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_experience !== false ? 'Click to hide Work Experience from CV & PDF' : 'Click to show Work Experience on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_experience !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_experience !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="addWorkExperience()" x-show="tailoredData.show_experience !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Role
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_experience === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Work Experience section is hidden from your ATS CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_experience = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
                 </button>
               </div>
+
+              <!-- Empty State Helper when Visible -->
+              <div x-show="tailoredData.show_experience !== false && (!tailoredData.work_experience || tailoredData.work_experience.length === 0)" class="text-center py-2.5 text-slate-500 text-[11px] bg-slate-900/40 rounded-lg border border-dashed border-slate-800">
+                No work experience added yet. (Empty sections are excluded from PDF, or click <strong class="text-slate-400">'Shown'</strong> above to Hide).
+              </div>
+
+              <div x-show="tailoredData.show_experience !== false" class="space-y-2.5">
 
               <template x-for="(exp, expIdx) in tailoredData.work_experience" :key="expIdx">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative text-xs">
@@ -278,6 +362,7 @@
                   </div>
                 </div>
               </template>
+              </div>
             </div>
 
             <!-- 5. Key Projects Manager -->
@@ -286,11 +371,40 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400"></i> Key Projects
                 </span>
-                <button @click="addProject()"
-                  class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
-                  <i data-lucide="plus" class="w-3 h-3"></i> Add Project
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_projects = (tailoredData.show_projects === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_projects !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_projects !== false ? 'Click to hide Key Projects from CV & PDF' : 'Click to show Key Projects on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_projects !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_projects !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="addProject()" x-show="tailoredData.show_projects !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Project
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_projects === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Key Projects section is hidden. It will NOT appear in your ATS CV or PDF.
+                </span>
+                <button type="button" @click="tailoredData.show_projects = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
                 </button>
               </div>
+
+              <!-- Empty State Helper when Visible -->
+              <div x-show="tailoredData.show_projects !== false && (!tailoredData.projects || tailoredData.projects.length === 0)" class="text-center py-2.5 text-slate-500 text-[11px] bg-slate-900/40 rounded-lg border border-dashed border-slate-800">
+                No projects added yet. (Empty sections are automatically omitted from PDF, or click <strong class="text-slate-400">'Shown'</strong> above to Hide).
+              </div>
+
+              <div x-show="tailoredData.show_projects !== false" class="space-y-2.5">
 
               <template x-for="(proj, pIdx) in tailoredData.projects" :key="pIdx">
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative text-xs">
@@ -345,6 +459,7 @@
                   </div>
                 </div>
               </template>
+              </div>
             </div>
 
             <!-- 6. Education Manager -->
@@ -353,11 +468,40 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-indigo-400"></i> Education & Degrees
                 </span>
-                <button @click="addEducation()"
-                  class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
-                  <i data-lucide="plus" class="w-3 h-3"></i> Add Degree
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_education = (tailoredData.show_education === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_education !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_education !== false ? 'Click to hide Education from CV & PDF' : 'Click to show Education on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_education !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_education !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="addEducation()" x-show="tailoredData.show_education !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Degree
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_education === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Education section is hidden from your ATS CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_education = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
                 </button>
               </div>
+
+              <!-- Empty State Helper when Visible -->
+              <div x-show="tailoredData.show_education !== false && (!tailoredData.education || tailoredData.education.length === 0)" class="text-center py-2.5 text-slate-500 text-[11px] bg-slate-900/40 rounded-lg border border-dashed border-slate-800">
+                No education records added yet. (Empty sections are excluded from PDF, or click <strong class="text-slate-400">'Shown'</strong> above to Hide).
+              </div>
+
+              <div x-show="tailoredData.show_education !== false" class="space-y-2.5">
 
               <template x-for="(edu, eIdx) in tailoredData.education" :key="eIdx">
                 <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-2 relative text-xs">
@@ -400,6 +544,7 @@
                   </div>
                 </div>
               </template>
+              </div>
             </div>
 
             <!-- 7. Certifications Manager -->
@@ -408,11 +553,35 @@
                 <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <i data-lucide="award" class="w-3.5 h-3.5 text-indigo-400"></i> Certifications & Licenses
                 </span>
-                <button @click="addCertification()"
-                  class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
-                  <i data-lucide="plus" class="w-3 h-3"></i> Add Certificate
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_certifications = (tailoredData.show_certifications === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_certifications !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_certifications !== false ? 'Click to hide Certifications from CV & PDF' : 'Click to show Certifications on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_certifications !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_certifications !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="addCertification()" x-show="tailoredData.show_certifications !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Certificate
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_certifications === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Certifications section is hidden from your ATS CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_certifications = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
                 </button>
               </div>
+
+              <div x-show="tailoredData.show_certifications !== false" class="space-y-2">
 
               <template x-if="!tailoredData.certifications || tailoredData.certifications.length === 0">
                 <p class="text-[11px] text-slate-500 italic">No certifications added yet. Click "+ Add Certificate" to list your professional credentials.</p>
@@ -431,6 +600,7 @@
                   </button>
                 </div>
               </template>
+              </div>
             </div>
 
           </div>
