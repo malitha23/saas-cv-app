@@ -361,10 +361,11 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         right_bento_col = ""
 
     show_right_col = bool(right_bento_col)
-    exp_col = "lg:col-span-2" if show_right_col else "lg:col-span-3"
+    has_exp = bool(resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool("".join(exp_cards)))
     joined_exp_cards = "".join(exp_cards)
-    exp_card_html = (
-        f"""
+    if has_exp:
+        exp_col = "lg:col-span-2" if show_right_col else "lg:col-span-3"
+        exp_card_html = f"""
           <div class="reveal {exp_col} bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500">
             <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
               <i data-lucide="briefcase" class="w-4 h-4 text-[var(--accent)]"></i>
@@ -372,10 +373,11 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
             </div>
             <div class="pt-2 space-y-4">{joined_exp_cards}</div>
           </div>
-    """
-        if resume.portfolio_show_experience
-        else ""
-    )
+        """
+    else:
+        exp_card_html = ""
+        if show_right_col:
+            right_bento_col = right_bento_col.replace("lg:col-span-1", "lg:col-span-3")
 
     # --- Contact Bento Card ---
     contact_bento_items = []

@@ -1368,6 +1368,9 @@ function resumeApp() {
         this.tailoredData.show_projects = this.tailoredData.show_projects ?? true;
         this.tailoredData.show_education = this.tailoredData.show_education ?? true;
         this.tailoredData.show_certifications = this.tailoredData.show_certifications ?? true;
+        this.tailoredData.show_languages = this.tailoredData.show_languages ?? true;
+        this.tailoredData.show_references = this.tailoredData.show_references ?? true;
+        this.tailoredData.show_personal_details = this.tailoredData.show_personal_details ?? true;
         this.tailoredData.font_size_scale = this.tailoredData.font_size_scale || 'standard';
         this.tailoredData.font_family = this.tailoredData.font_family || 'Helvetica';
         this.tailoredData.show_skill_bars = this.tailoredData.show_skill_bars ?? true;

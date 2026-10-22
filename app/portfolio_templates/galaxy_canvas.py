@@ -138,7 +138,7 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
               {joined_exp_items}
             </div>
           </div>
-    ''' if resume.portfolio_show_experience else ''
+    ''' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_items)) else ''
 
     # --- Education Section ---
     show_edu = (

@@ -145,7 +145,7 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
               </div>
               <div class="space-y-6">{joined_exp_items}</div>
             </section>
-    ''' if resume.portfolio_show_experience else ''
+    ''' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_items)) else ''
 
     joined_project_items = "".join(project_items)
     proj_section_html = f'''

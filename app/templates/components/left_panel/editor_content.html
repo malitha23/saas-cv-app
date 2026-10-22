@@ -603,5 +603,152 @@
               </div>
             </div>
 
+            <!-- 8. Spoken Languages Manager -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="languages" class="w-3.5 h-3.5 text-indigo-400"></i> Spoken Languages
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_languages = (tailoredData.show_languages === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_languages !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_languages !== false ? 'Click to hide Languages from CV & PDF' : 'Click to show Languages on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_languages !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_languages !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_languages === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Spoken Languages section is hidden from your CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_languages = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
+                </button>
+              </div>
+
+              <div x-show="tailoredData.show_languages !== false" class="space-y-2.5">
+                <!-- Current Languages Chips -->
+                <div class="flex flex-wrap gap-1.5">
+                  <template x-for="(lang, lIdx) in (tailoredData.languages || [])" :key="lIdx">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
+                      <span x-text="lang"></span>
+                      <button type="button" @click="tailoredData.languages.splice(lIdx, 1); refreshAllPreviews()" class="hover:text-red-400 transition">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                      </button>
+                    </span>
+                  </template>
+                  <template x-if="!tailoredData.languages || tailoredData.languages.length === 0">
+                    <p class="text-[11px] text-slate-500 italic">No spoken languages added yet.</p>
+                  </template>
+                </div>
+
+                <!-- Add Language Input -->
+                <div class="flex gap-2">
+                  <input type="text" x-ref="cvNewLangInput" @keydown.enter.prevent="if ($refs.cvNewLangInput.value.trim()) { if (!tailoredData.languages) tailoredData.languages = []; tailoredData.languages = [...new Set([...tailoredData.languages, $refs.cvNewLangInput.value.trim()])]; $refs.cvNewLangInput.value = ''; refreshAllPreviews(); }"
+                    placeholder="Type language & press Enter..." class="flex-1 bg-slate-950 border border-slate-800 rounded p-1 text-slate-200 text-xs">
+                  <button type="button" @click="if ($refs.cvNewLangInput.value.trim()) { if (!tailoredData.languages) tailoredData.languages = []; tailoredData.languages = [...new Set([...tailoredData.languages, $refs.cvNewLangInput.value.trim()])]; $refs.cvNewLangInput.value = ''; refreshAllPreviews(); }"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2.5 py-1 rounded border border-indigo-500/30 font-semibold transition">
+                    + Add
+                  </button>
+                </div>
+
+                <!-- Quick Add Chips -->
+                <div class="pt-1 border-t border-slate-800/60">
+                  <span class="text-[10px] text-slate-400 font-semibold uppercase block mb-1.5">Quick Add:</span>
+                  <div class="flex flex-wrap gap-1 text-[10px]">
+                    <template x-for="ql in ['English (Fluent)', 'Sinhala (Fluent)', 'Hindi', 'Arabic', 'Tamil', 'French', 'German', 'Spanish']" :key="ql">
+                      <button type="button" @click="if (!tailoredData.languages) tailoredData.languages = []; if (!tailoredData.languages.includes(ql)) { tailoredData.languages = [...tailoredData.languages, ql]; refreshAllPreviews(); }"
+                        class="px-2 py-0.5 rounded bg-slate-900 hover:bg-indigo-600/20 text-slate-300 hover:text-indigo-200 border border-slate-800 transition">
+                        + <span x-text="ql"></span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 9. Professional References Manager -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i> Professional References
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.show_references = (tailoredData.show_references === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                    :class="tailoredData.show_references !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                    class="text-[10px] px-2 py-0.5 rounded border transition flex items-center gap-1 font-semibold"
+                    :title="tailoredData.show_references !== false ? 'Click to hide References from CV & PDF' : 'Click to show References on CV & PDF'">
+                    <i :data-lucide="tailoredData.show_references !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                    <span x-text="tailoredData.show_references !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button @click="if (!tailoredData.references) tailoredData.references = []; tailoredData.references.push({ name: '', title: '', company: '', phone: '', email: '' }); refreshAllPreviews()" x-show="tailoredData.show_references !== false"
+                    class="text-[10px] bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 px-2 py-0.5 rounded transition flex items-center gap-1 font-semibold">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Reference
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hidden State Alert -->
+              <div x-show="tailoredData.show_references === false" class="bg-slate-900/60 border border-dashed border-slate-800 rounded-lg p-2.5 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="eye-off" class="w-3.5 h-3.5 text-slate-500"></i>
+                  Professional References section is hidden from your CV & PDF preview.
+                </span>
+                <button type="button" @click="tailoredData.show_references = true; refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                  class="text-indigo-400 hover:underline font-semibold text-[10px]">
+                  Unhide
+                </button>
+              </div>
+
+              <div x-show="tailoredData.show_references !== false" class="space-y-2.5">
+                <template x-if="!tailoredData.references || tailoredData.references.length === 0">
+                  <p class="text-[11px] text-slate-500 italic">No professional references added yet. Click "+ Add Reference" to list lecturers or managers.</p>
+                </template>
+
+                <template x-for="(ref, rIdx) in (tailoredData.references || [])" :key="rIdx">
+                  <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-2 relative text-xs">
+                    <button @click="tailoredData.references.splice(rIdx, 1); refreshAllPreviews()" class="absolute top-2 right-2 text-slate-500 hover:text-red-400 p-1">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <div class="grid grid-cols-2 gap-2 pr-6">
+                      <div class="col-span-2">
+                        <label class="text-[9px] text-slate-500 uppercase">Referee Full Name</label>
+                        <input type="text" x-model="ref.name" @input="refreshAllPreviews()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-slate-200 font-semibold" placeholder="e.g. Mrs. Shayamali Pradeepika">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase">Designation / Title</label>
+                        <input type="text" x-model="ref.title" @input="refreshAllPreviews()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-slate-200" placeholder="e.g. Senior Lecturer">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase">Company / Institution</label>
+                        <input type="text" x-model="ref.company" @input="refreshAllPreviews()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-slate-200" placeholder="e.g. SLIATE Kandy">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase">Phone Number</label>
+                        <input type="text" x-model="ref.phone" @input="refreshAllPreviews()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-slate-200" placeholder="e.g. 071 666 1645">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase">Email Address (Optional)</label>
+                        <input type="text" x-model="ref.email" @input="refreshAllPreviews()"
+                          class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-slate-200" placeholder="referee@example.com">
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
           </div>
 

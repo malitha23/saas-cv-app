@@ -172,7 +172,7 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
           </div>
           <div class="space-y-2">{joined_exp_html}</div>
         </section>
-    ''' if resume.portfolio_show_experience else ''
+    ''' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_html)) else ''
 
     num_cats = len(resume.skill_categories)
     if num_cats <= 1:

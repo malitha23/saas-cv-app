@@ -470,7 +470,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
             </div>
           </section>
     """
-        if resume.portfolio_show_experience
+        if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_html))
         else ""
     )
 

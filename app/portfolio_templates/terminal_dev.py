@@ -269,7 +269,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                 </h2>
                 <div class="space-y-2">{joined_exp_html}</div>
             </div>
-    ''' if resume.portfolio_show_experience else ''
+    ''' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_html)) else ''
 
     num_cats = len(resume.skill_categories)
     if num_cats <= 1:

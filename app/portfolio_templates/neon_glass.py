@@ -202,7 +202,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
             </div>
           </div>
     """
-        if resume.portfolio_show_experience
+        if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0 and bool(joined_exp_items))
         else ""
     )
 
