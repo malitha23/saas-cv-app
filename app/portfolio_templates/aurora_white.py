@@ -12,6 +12,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -33,6 +34,8 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
     cta_text = resume.portfolio_cta_text or "Get in Touch"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="hero", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -430,10 +433,13 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
                   <h3 class="text-lg font-bold text-slate-900">Initiate Collaboration</h3>
                   <p class="text-xs sm:text-sm text-slate-500">Open for full-time engineering roles, freelance opportunities, and technical advisory.</p>
                 </div>
-                <a href="{cta_url}" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--accent)] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[var(--accent-glow)] transition shrink-0">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path></svg>
-                  <span>{cta_text}</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                  <a href="{cta_url}" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--accent)] hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-[var(--accent-glow)] transition shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"></path></svg>
+                    <span>{cta_text}</span>
+                  </a>
+                  {wa_contact_btn}
+                </div>
               </div>
               <div class="{contact_grid_class} gap-4">
                 {joined_contact_cards}
@@ -673,9 +679,9 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
           {cert_section_html}
 
           <!-- LANGUAGES, REFERENCES & PERSONAL DETAILS -->
-        {render_spoken_languages_block(resume, card_bg="bg-white/80", border="border-slate-200")}
-        {render_references_block(resume, card_bg="bg-white/80", border="border-slate-200")}
-        {render_personal_kyc_strip(resume, card_bg="bg-white/80", border="border-slate-200")}
+        {render_spoken_languages_block(resume, card_bg="bg-white/80", border="border-slate-200", is_light=True)}
+        {render_references_block(resume, card_bg="bg-white/80", border="border-slate-200", is_light=True)}
+        {render_personal_kyc_strip(resume, card_bg="bg-white/80", border="border-slate-200", is_light=True)}
 
         <!-- CONTACT & DIRECT CONNECT -->
           {contact_section_html}

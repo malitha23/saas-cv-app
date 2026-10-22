@@ -100,6 +100,8 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
     res.professional_summary = sanitize_text(res.professional_summary)
     res.portfolio_cta_text = sanitize_text(res.portfolio_cta_text)
     res.portfolio_cta_url = sanitize_url(res.portfolio_cta_url)
+    res.portfolio_whatsapp_number = sanitize_text(getattr(res, "portfolio_whatsapp_number", None))
+    res.portfolio_whatsapp_message = sanitize_text(getattr(res, "portfolio_whatsapp_message", None))
 
     # Projects
     safe_projects = []
@@ -810,24 +812,32 @@ def render_cert_badge_thumb(cert, accent_var="var(--accent)") -> str:
         return f'<span class="text-[10px] font-mono text-amber-300/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">ID: {cert_url}</span>'
 
 
-def render_personal_kyc_strip(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
-    """Render personal KYC metadata strip (Gender, Nationality, DOB, Civil Status)."""
+def render_personal_kyc_strip(resume, card_bg="bg-slate-900/60", border="border-slate-800", is_light: Optional[bool] = None) -> str:
+    """Render personal KYC metadata strip (Gender, Nationality, DOB, Civil Status) with full light/dark mode contrast."""
     if not getattr(resume, "portfolio_show_personal_details", True):
         return ""
     info = resume.personal_info
+    if not info:
+        return ""
+
+    light_mode = bool(is_light) or (("bg-white" in card_bg or "bg-slate-50" in card_bg) and not any(x in card_bg for x in ["/[0.", "/5", "/10", "/15", "/20"]))
+    lbl_color = "text-slate-500 font-medium" if light_mode else "text-slate-400"
+    val_color = "text-slate-900 font-bold" if light_mode else "text-white font-semibold"
+    shadow_cls = "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]" if light_mode else "shadow-sm"
+
     items = []
     if getattr(info, "gender", None):
-        items.append(f'<div class="flex items-center gap-2"><i data-lucide="user" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Gender:</span><span class="text-white text-xs font-semibold">{info.gender}</span></div>')
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="user" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="{lbl_color} text-xs">Gender:</span><span class="{val_color} text-xs">{info.gender}</span></div>')
     if getattr(info, "nationality", None):
-        items.append(f'<div class="flex items-center gap-2"><i data-lucide="flag" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Nationality:</span><span class="text-white text-xs font-semibold">{info.nationality}</span></div>')
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="flag" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="{lbl_color} text-xs">Nationality:</span><span class="{val_color} text-xs">{info.nationality}</span></div>')
     if getattr(info, "date_of_birth", None):
-        items.append(f'<div class="flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Date of Birth:</span><span class="text-white text-xs font-semibold">{info.date_of_birth}</span></div>')
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="{lbl_color} text-xs">Date of Birth:</span><span class="{val_color} text-xs">{info.date_of_birth}</span></div>')
     if getattr(info, "civil_status", None):
-        items.append(f'<div class="flex items-center gap-2"><i data-lucide="heart" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Civil Status:</span><span class="text-white text-xs font-semibold">{info.civil_status}</span></div>')
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="heart" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="{lbl_color} text-xs">Civil Status:</span><span class="{val_color} text-xs">{info.civil_status}</span></div>')
     if not items:
         return ""
     return f'''
-    <div class="reveal p-4 {card_bg} backdrop-blur-xl border {border} rounded-2xl shadow-sm">
+    <div class="reveal p-4 sm:p-5 {card_bg} backdrop-blur-xl border {border} rounded-2xl {shadow_cls}">
       <div class="flex flex-wrap items-center gap-4 sm:gap-6 justify-between">
         {' '.join(items)}
       </div>
@@ -835,17 +845,27 @@ def render_personal_kyc_strip(resume, card_bg="bg-slate-900/60", border="border-
     '''
 
 
-def render_spoken_languages_block(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
-    """Render spoken natural languages badge list."""
+def render_spoken_languages_block(resume, card_bg="bg-slate-900/60", border="border-slate-800", is_light: Optional[bool] = None) -> str:
+    """Render spoken natural languages badge list with full light/dark mode contrast."""
     if not getattr(resume, "portfolio_show_languages", True):
         return ""
     langs = getattr(resume, "languages", []) or []
     if not langs:
         return ""
-    pills = "".join(f'<span class="px-3 py-1 rounded-full text-xs font-semibold bg-white/[0.05] border border-white/10 text-slate-200 hover:border-[var(--accent)] transition">{l}</span>' for l in langs)
+
+    light_mode = bool(is_light) or (("bg-white" in card_bg or "bg-slate-50" in card_bg) and not any(x in card_bg for x in ["/[0.", "/5", "/10", "/15", "/20"]))
+    title_color = "text-slate-900" if light_mode else "text-white"
+    pill_classes = (
+        "bg-slate-100 border-slate-200/90 text-slate-800 hover:bg-white hover:border-[var(--accent)] shadow-sm"
+        if light_mode
+        else "bg-white/[0.05] border-white/10 text-slate-200 hover:border-[var(--accent)]"
+    )
+    shadow_cls = "shadow-[0_2px_12px_-4px_rgba(15,23,42,0.08)]" if light_mode else "shadow-sm"
+
+    pills = "".join(f'<span class="px-3.5 py-1.5 rounded-full text-xs font-semibold border transition {pill_classes}">{l}</span>' for l in langs)
     return f'''
-    <div class="reveal p-5 {card_bg} backdrop-blur-xl border {border} rounded-2xl space-y-3">
-      <div class="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider">
+    <div class="reveal p-5 sm:p-6 {card_bg} backdrop-blur-xl border {border} rounded-2xl space-y-3 {shadow_cls}">
+      <div class="flex items-center gap-2 text-xs font-bold {title_color} uppercase tracking-wider">
         <i data-lucide="languages" class="w-4 h-4 text-[var(--accent)]"></i>
         <span>Spoken Languages</span>
       </div>
@@ -856,13 +876,27 @@ def render_spoken_languages_block(resume, card_bg="bg-slate-900/60", border="bor
     '''
 
 
-def render_references_block(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
-    """Render professional references cards."""
+def render_references_block(resume, card_bg="bg-slate-900/60", border="border-slate-800", is_light: Optional[bool] = None) -> str:
+    """Render professional references cards with full light/dark mode contrast."""
     if not getattr(resume, "portfolio_show_references", True):
         return ""
     refs = getattr(resume, "references", []) or []
     if not refs:
         return ""
+
+    light_mode = bool(is_light) or (("bg-white" in card_bg or "bg-slate-50" in card_bg) and not any(x in card_bg for x in ["/[0.", "/5", "/10", "/15", "/20"]))
+    title_color = "text-slate-900" if light_mode else "text-white"
+    name_color = "text-slate-900 font-bold" if light_mode else "text-white font-bold"
+    sub_color = "text-slate-500" if light_mode else "text-slate-400"
+    inner_card_bg = (
+        f"bg-slate-50 border-slate-200/90 hover:bg-white hover:border-[var(--accent)]/50 shadow-sm"
+        if light_mode
+        else f"bg-white/[0.02] border {border} hover:border-[var(--accent)]/50"
+    )
+    link_color = "text-slate-700 hover:text-[var(--accent)]" if light_mode else "text-slate-300 hover:text-[var(--accent)]"
+    phone_link_color = "text-slate-700 hover:text-emerald-600" if light_mode else "text-slate-300 hover:text-emerald-400"
+    shadow_cls = "shadow-[0_8px_32px_-12px_rgba(15,23,42,0.08)]" if light_mode else "shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]"
+
     cards = []
     for r in refs:
         name = getattr(r, "name", "")
@@ -874,19 +908,19 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
 
         contacts_html = []
         if email:
-            contacts_html.append(f'<a href="mailto:{email}" class="text-[11px] text-slate-300 hover:text-[var(--accent)] flex items-center gap-1.5 transition truncate"><i data-lucide="mail" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i> {email}</a>')
+            contacts_html.append(f'<a href="mailto:{email}" class="text-[11px] {link_color} flex items-center gap-1.5 transition truncate"><i data-lucide="mail" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i> {email}</a>')
         if phone:
-            contacts_html.append(f'<a href="tel:{phone}" class="text-[11px] text-slate-300 hover:text-emerald-400 flex items-center gap-1.5 transition truncate"><i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i> {phone}</a>')
+            contacts_html.append(f'<a href="tel:{phone}" class="text-[11px] {phone_link_color} flex items-center gap-1.5 transition truncate"><i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i> {phone}</a>')
 
         cards.append(f'''
-        <div class="p-4 bg-white/[0.02] border {border} rounded-2xl space-y-2 hover:border-[var(--accent)]/50 transition">
+        <div class="p-4 rounded-2xl space-y-2 border transition {inner_card_bg}">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs shrink-0">
               <i data-lucide="user-check" class="w-4 h-4"></i>
             </div>
             <div class="min-w-0">
-              <h5 class="text-xs font-bold text-white truncate">{name}</h5>
-              <p class="text-[10px] text-slate-400 truncate">{title_co}</p>
+              <h5 class="text-xs font-bold {name_color} truncate">{name}</h5>
+              <p class="text-[10px] {sub_color} truncate">{title_co}</p>
             </div>
           </div>
           <div class="space-y-1 pt-1.5 border-t {border}/60">
@@ -896,8 +930,8 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
         ''')
 
     return f'''
-    <div class="reveal p-6 {card_bg} backdrop-blur-xl border {border} rounded-3xl space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]">
-      <div class="flex items-center gap-2 text-sm font-bold text-white border-b {border} pb-3">
+    <div class="reveal p-6 {card_bg} backdrop-blur-xl border {border} rounded-3xl space-y-4 {shadow_cls}">
+      <div class="flex items-center gap-2 text-sm font-bold {title_color} border-b {border} pb-3">
         <i data-lucide="users-2" class="w-4 h-4 text-[var(--accent)]"></i>
         <span>Professional References</span>
       </div>
@@ -906,3 +940,59 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
       </div>
     </div>
     '''
+
+
+def get_whatsapp_connect_url(
+    phone_or_wa: Optional[str],
+    default_msg: Optional[str] = None
+) -> Optional[str]:
+    """Generates direct https://wa.me/{digits}?text={msg} link."""
+    if not phone_or_wa:
+        return None
+    raw = str(phone_or_wa).strip()
+    digits = re.sub(r"[^\d]", "", raw)
+    if len(digits) < 7:
+        return None
+    if digits.startswith("00"):
+        digits = digits[2:]
+    elif digits.startswith("0") and len(digits) == 10:
+        digits = "94" + digits[1:]
+
+    msg = default_msg or "Hello, I saw your portfolio and would like to connect."
+    import urllib.parse
+    return f"https://wa.me/{digits}?text={urllib.parse.quote(msg)}"
+
+
+def render_whatsapp_cta_button(
+    resume: TailoredResume,
+    style_classes: Optional[str] = None,
+    label: str = "Chat on WhatsApp",
+    size: str = "standard"
+) -> str:
+    """
+    Renders an official styled WhatsApp Connect CTA button.
+    Returns empty string if whatsapp CTA is disabled or no valid number exists.
+    """
+    if not getattr(resume, "portfolio_show_whatsapp_cta", True):
+        return ""
+
+    wa_num = getattr(resume, "portfolio_whatsapp_number", None) or (resume.personal_info.phone if resume.personal_info else None)
+    if not wa_num:
+        return ""
+
+    wa_msg = getattr(resume, "portfolio_whatsapp_message", None) or "Hello, I saw your portfolio and would like to connect."
+    wa_url = get_whatsapp_connect_url(wa_num, wa_msg)
+    if not wa_url:
+        return ""
+
+    wa_icon_svg = '''<svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.888 9.885m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'''
+
+    if style_classes:
+        return f'''<a href="{wa_url}" target="_blank" rel="noopener noreferrer" class="{style_classes}">{wa_icon_svg}<span>{label}</span></a>'''
+
+    if size == "compact":
+        return f'''<a href="{wa_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 text-xs font-semibold transition-all duration-200 shadow-sm shrink-0">{wa_icon_svg}<span>{label}</span></a>'''
+    elif size == "hero":
+        return f'''<a href="{wa_url}" target="_blank" rel="noopener noreferrer" class="group/wa relative px-5 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs rounded-xl shadow-[0_10px_25px_-5px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(16,185,129,0.6)] hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 shrink-0 overflow-hidden"><span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 translate-x-[-100%] group-hover/wa:translate-x-[100%] transition-transform duration-700"></span>{wa_icon_svg}<span class="relative">{label}</span></a>'''
+    else:
+        return f'''<a href="{wa_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs rounded-xl shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 transition-all duration-200 shrink-0">{wa_icon_svg}<span>{label}</span></a>'''

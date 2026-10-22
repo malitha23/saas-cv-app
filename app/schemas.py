@@ -496,6 +496,18 @@ class TailoredResume(BaseModel):
     portfolio_cta_url: Optional[str] = Field(
         default=None, description="Primary call-to-action URL or mailto"
     )
+    portfolio_whatsapp_number: Optional[str] = Field(
+        default=None,
+        description="WhatsApp number for direct messaging (e.g. +94771234567). If omitted, falls back to personal_info.phone.",
+    )
+    portfolio_whatsapp_message: Optional[str] = Field(
+        default="Hello, I saw your portfolio and would like to connect.",
+        description="Pre-filled WhatsApp message when visitor clicks WhatsApp CTA.",
+    )
+    portfolio_show_whatsapp_cta: bool = Field(
+        default=True,
+        description="Whether to show direct WhatsApp chat button alongside Primary CTA and in Contacts.",
+    )
     portfolio_metrics: List[Dict[str, str]] = Field(
         default_factory=list,
         description="Custom stat counter highlights (label & value)",

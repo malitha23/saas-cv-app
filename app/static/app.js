@@ -1383,6 +1383,9 @@ function resumeApp() {
         this.tailoredData.portfolio_show_skills = this.tailoredData.portfolio_show_skills ?? true;
         this.tailoredData.portfolio_show_experience = this.tailoredData.portfolio_show_experience ?? true;
         this.tailoredData.portfolio_show_projects = this.tailoredData.portfolio_show_projects ?? true;
+        this.tailoredData.portfolio_show_whatsapp_cta = this.tailoredData.portfolio_show_whatsapp_cta ?? true;
+        this.tailoredData.portfolio_whatsapp_number = this.tailoredData.portfolio_whatsapp_number || '';
+        this.tailoredData.portfolio_whatsapp_message = this.tailoredData.portfolio_whatsapp_message || 'Hello, I saw your portfolio and would like to connect.';
         // Sync direct fields into social_links if not already present
         const pInfo = this.tailoredData.personal_info;
         const existingNames = new Set((pInfo.social_links || []).map(l => (l.name || '').toLowerCase()));
@@ -2547,45 +2550,69 @@ function resumeApp() {
     },
 
     // Languages Customizer
-    addPortfolioLanguage(langName = '') {
+    addPortfolioLanguage(langName = null) {
       if (!this.tailoredData) return;
       if (!Array.isArray(this.tailoredData.languages)) this.tailoredData.languages = [];
-      const val = langName || prompt('Enter spoken language (e.g. English, Sinhala, Hindi):');
-      if (val && val.trim()) {
-        const clean = val.trim();
-        if (!this.tailoredData.languages.includes(clean)) {
-          this.tailoredData.languages.push(clean);
+      let val = '';
+      if (typeof langName === 'string' && langName.trim()) {
+        val = langName.trim();
+      } else {
+        const input = prompt('Enter spoken language (e.g. English, Sinhala, Hindi):');
+        if (input) val = input.trim();
+      }
+      if (val) {
+        // Case-insensitive duplicate check
+        const alreadyExists = this.tailoredData.languages.some(l => (l || '').toLowerCase().trim() === val.toLowerCase());
+        if (!alreadyExists) {
+          // Reassign array to trigger Alpine.js proxy reactivity immediately!
+          this.tailoredData.languages = [...this.tailoredData.languages, val];
+          this.tailoredData.portfolio_show_languages = true;
           this.refreshAllPreviews();
-          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          if (this.$nextTick) {
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
         }
       }
     },
 
     removePortfolioLanguage(idx) {
       if (!this.tailoredData || !Array.isArray(this.tailoredData.languages)) return;
-      this.tailoredData.languages.splice(idx, 1);
+      // Reassign array to trigger Alpine.js proxy reactivity immediately!
+      this.tailoredData.languages = this.tailoredData.languages.filter((_, i) => i !== idx);
       this.refreshAllPreviews();
+      if (this.$nextTick) {
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
     },
 
     // References Customizer
     addPortfolioReference() {
       if (!this.tailoredData) return;
       if (!Array.isArray(this.tailoredData.references)) this.tailoredData.references = [];
-      this.tailoredData.references.push({
-        name: 'Professional Referee',
-        title: 'Department Director / Manager',
-        company: 'Company / Organization',
-        email: 'referee@example.com',
-        phone: '+971 50 000 0000'
-      });
+      this.tailoredData.references = [
+        ...this.tailoredData.references,
+        {
+          name: 'Professional Referee',
+          title: 'Department Director / Manager',
+          company: 'Company / Organization',
+          email: 'referee@example.com',
+          phone: '+971 50 000 0000'
+        }
+      ];
+      this.tailoredData.portfolio_show_references = true;
       this.refreshAllPreviews();
-      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      if (this.$nextTick) {
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
     },
 
     removePortfolioReference(idx) {
       if (!this.tailoredData || !Array.isArray(this.tailoredData.references)) return;
-      this.tailoredData.references.splice(idx, 1);
+      this.tailoredData.references = this.tailoredData.references.filter((_, i) => i !== idx);
       this.refreshAllPreviews();
+      if (this.$nextTick) {
+        this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+      }
     },
 
     // Social Links Manager

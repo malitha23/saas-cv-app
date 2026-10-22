@@ -13,6 +13,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -27,6 +28,8 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
     role_html = f'<p class="text-xl sm:text-2xl text-slate-400 font-light tracking-wide italic">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     cta_text = resume.portfolio_cta_text or "Initiate Conversation"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="standard", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -294,9 +297,12 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
             </div>
             <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
               <span class="text-xs font-mono text-slate-400">Direct response within 24 hours</span>
-              <a href="{cta_url}" class="px-6 py-3 border border-white text-white font-semibold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition duration-300">
-                {cta_text} →
-              </a>
+              <div class="flex flex-wrap items-center gap-2">
+                <a href="{cta_url}" class="px-6 py-3 border border-white text-white font-semibold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition duration-300">
+                  {cta_text} →
+                </a>
+                {wa_contact_btn}
+              </div>
             </div>
           </div>
         </section>
@@ -341,6 +347,7 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
             <a href="{cta_url}" class="px-7 py-3.5 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-[var(--accent)] hover:text-white transition duration-300 shadow-lg hover:shadow-xl hover:shadow-[var(--accent-glow)]">
               {cta_text} →
             </a>
+            {wa_hero_btn}
             {resume_btn_html}
           </div>
         </header>

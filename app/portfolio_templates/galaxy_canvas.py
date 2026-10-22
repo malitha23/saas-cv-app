@@ -13,6 +13,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -28,6 +29,8 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     cta_text = resume.portfolio_cta_text or "Connect with Me"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="hero", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -260,10 +263,13 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
                 </div>
                 <p class="text-xs text-slate-400">Initiate conversation for engineering appointments and architectural collaborations.</p>
               </div>
-              <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4"></i>
-                <span>{cta_text}</span>
-              </a>
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-[var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>{cta_text}</span>
+                </a>
+                {wa_contact_btn}
+              </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {''.join(contact_galaxy_cards)}
@@ -322,6 +328,7 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
                 <i data-lucide="sparkles" class="w-4 h-4"></i>
                 <span>{cta_text}</span>
               </a>
+              {wa_hero_btn}
               {resume_btn_html}
             </div>
           </div>

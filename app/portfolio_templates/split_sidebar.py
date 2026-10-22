@@ -13,6 +13,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -28,6 +29,8 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     cta_text = resume.portfolio_cta_text or "Schedule Consultation"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="standard", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -307,10 +310,13 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     {info.availability_badge or "Available for new inquiries"}
                   </span>
-                  <a href="{cta_url}" class="px-4 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition">
-                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                    <span>{cta_text}</span>
-                  </a>
+                  <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <a href="{cta_url}" class="px-4 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition">
+                      <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                      <span>{cta_text}</span>
+                    </a>
+                    {wa_contact_btn}
+                  </div>
                 </div>
               </div>
             </section>
@@ -333,11 +339,12 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
             {bio_html}
             
             <div class="space-y-3 pt-2">
-              <div class="flex items-center gap-3">
+              <div class="flex flex-wrap items-center gap-3">
                 <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-[var(--accent-glow)] flex items-center gap-2 hover:brightness-110 transition">
                   <i data-lucide="send" class="w-3.5 h-3.5"></i>
                   <span>{cta_text}</span>
                 </a>
+                {wa_hero_btn}
                 {resume_btn_html}
               </div>
               {socials_bar}

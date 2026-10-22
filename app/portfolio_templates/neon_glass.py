@@ -21,6 +21,7 @@ from app.portfolio_templates.common import (
     render_personal_kyc_strip,
     render_spoken_languages_block,
     render_references_block,
+    render_whatsapp_cta_button,
 )
 
 
@@ -33,6 +34,8 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for Impact"
     cta_text = resume.portfolio_cta_text or "Connect Now"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="hero", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -383,10 +386,13 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
                 </div>
                 <p class="text-xs text-slate-400">Available for technical roles, freelance development, and engineering consulting.</p>
               </div>
-              <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-[0_12px_36px_-8px_var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
-                <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                <span>{cta_text}</span>
-              </a>
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold text-xs rounded-xl shadow-[0_12px_36px_-8px_var(--accent-glow)] hover:brightness-110 transition shrink-0 flex items-center gap-2">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  <span>{cta_text}</span>
+                </a>
+                {wa_contact_btn}
+              </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {''.join(contact_neon_cards)}
@@ -598,6 +604,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
                 <i data-lucide="sparkles" class="relative w-4 h-4 group-hover/btn:rotate-12 transition-transform duration-300"></i>
                 <span class="relative">{cta_text}</span>
               </a>
+              {wa_hero_btn}
               {resume_btn_html}
             </div>
 

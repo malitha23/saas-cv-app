@@ -13,6 +13,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -28,6 +29,8 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
     cta_text = resume.portfolio_cta_text or "Initiate Collaboration"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="hero", label="WhatsApp Connect")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
     cta_url = resume.portfolio_cta_url or (
         f"mailto:{info.email}" if info.email else "#contact"
     )
@@ -358,10 +361,13 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
                   <h4 class="text-base font-bold text-white">Let\'s Build Something Scalable</h4>
                   <p class="text-xs text-slate-400">Available for engineering roles, technical advisory, and architecture discussions.</p>
                 </div>
-                <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition shrink-0">
-                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                  <span>{cta_text}</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                  <a href="{cta_url}" class="px-5 py-2.5 bg-[var(--accent)] text-slate-950 font-bold rounded-xl text-xs flex items-center gap-2 hover:brightness-110 transition shrink-0">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>{cta_text}</span>
+                  </a>
+                  {wa_contact_btn}
+                </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {''.join(contact_zenith_cards)}
@@ -410,6 +416,7 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
                   <i data-lucide="zap" class="w-4 h-4"></i>
                   <span>{cta_text}</span>
                 </a>
+                {wa_hero_btn}
                 {resume_btn_html}
               </div>
 

@@ -13,6 +13,7 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_whatsapp_cta_button,
     render_cert_badge_thumb,
     render_personal_kyc_strip,
     render_spoken_languages_block,
@@ -232,6 +233,8 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     bio_html = f'<p class="text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''
     cta_target_url = resume.portfolio_cta_url or f"mailto:{info.email}"
     cta_target_text = resume.portfolio_cta_text or "Let's Connect"
+    wa_hero_btn = render_whatsapp_cta_button(resume, size="compact", label="[WhatsApp Chat]")
+    wa_contact_btn = render_whatsapp_cta_button(resume, size="standard", label="Chat on WhatsApp")
 
     resume_btn_html = f'''
                         <button onclick="triggerPortfolioCvDownload()"
@@ -347,10 +350,13 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
             </div>
             <div class="pt-4 border-t border-slate-800/50 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <span class="text-emerald-400 font-mono">status: {info.availability_badge or "available"}</span>
-                <a href="{cta_url}" class="px-5 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-lg hover:brightness-110 transition flex items-center gap-2">
-                    <i data-lucide="terminal" class="w-4 h-4"></i>
-                    <span>{cta_text}</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                  <a href="{cta_url}" class="px-5 py-2 bg-[var(--accent)] text-slate-950 font-bold rounded-lg hover:brightness-110 transition flex items-center gap-2">
+                      <i data-lucide="terminal" class="w-4 h-4"></i>
+                      <span>{cta_text}</span>
+                  </a>
+                  {wa_contact_btn}
+                </div>
             </div>
         </div>
     '''
@@ -390,6 +396,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                             <i data-lucide="sparkles" class="w-4 h-4"></i>
                             {cta_target_text}
                         </a>
+                        {wa_hero_btn}
                         {resume_btn_html}
                     </div>
                 </div>
