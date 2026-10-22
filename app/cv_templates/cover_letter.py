@@ -85,7 +85,7 @@ def generate_cover_letter_pdf(resume: TailoredResume, is_free_watermarked: bool 
 
             canvas.setFont(f_bold, 9.5)
             canvas.setFillColor(colors.HexColor("#E2E8F0"))
-            tag = getattr(cl, "sign_off_title", None) or getattr(resume, "target_job_title", "")
+            tag = ((getattr(cl, "sign_off_title", None) or getattr(resume, "target_job_title", "")) or "").strip()
             if tag:
                 canvas.drawString(44, PAGE_H - 46, tag.upper())
 

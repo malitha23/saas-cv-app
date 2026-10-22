@@ -120,7 +120,8 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
     safe_resume_url = sanitize_url(getattr(safe_resume, "portfolio_resume_url", None) or "")
 
     full_name = safe_resume.personal_info.full_name or "Professional Portfolio"
-    role_title = safe_resume.target_job_title or "Portfolio"
+    clean_role = (safe_resume.target_job_title or "").strip()
+    page_title = f"{full_name} — {clean_role} | Portfolio" if clean_role else f"{full_name} | Portfolio"
     summary = safe_resume.professional_summary or ""
     safe_summary = sanitize_text(summary[:160]) if summary else f"{full_name}'s professional portfolio and verified credentials powered by DreemFolio AI."
     og_img = safe_resume.personal_info.avatar_url if (safe_resume.personal_info.avatar_url and not safe_resume.personal_info.avatar_url.startswith("data:")) else "https://www.dreemfolio.com/static/images/hero_showcase.jpg"
@@ -130,16 +131,16 @@ def generate_portfolio_html(resume: TailoredResume, theme: str = "neon_dark", sl
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{full_name} — {role_title} | Portfolio</title>
+  <title>{page_title}</title>
   
   <meta name="description" content="{safe_summary}">
   <meta property="og:site_name" content="DreemFolio AI">
   <meta property="og:type" content="profile">
-  <meta property="og:title" content="{full_name} — {role_title} | Portfolio">
+  <meta property="og:title" content="{page_title}">
   <meta property="og:description" content="{safe_summary}">
   <meta property="og:image" content="{og_img}">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{full_name} — {role_title} | Portfolio">
+  <meta name="twitter:title" content="{page_title}">
   <meta name="twitter:description" content="{safe_summary}">
   <meta name="twitter:image" content="{og_img}">
   <link rel="icon" type="image/png" href="/static/images/logo.png?v=2">

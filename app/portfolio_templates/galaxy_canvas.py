@@ -19,7 +19,8 @@ from app.portfolio_templates.common import (
 def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Software Developer"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-base sm:text-xl font-semibold text-[var(--accent)]">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     cta_text = resume.portfolio_cta_text or "Connect with Me"
@@ -131,6 +132,80 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
             </div>
           </div>
     ''' if resume.portfolio_show_experience else ''
+
+    # --- Education Section ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_cards = []
+    for edu in resume.education:
+        details_html = f'<p class="text-xs text-slate-300 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-xs font-mono text-[var(--accent)] font-semibold">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_cards.append(f"""
+          <div class="p-5 rounded-2xl bg-slate-900/60 border border-white/10 space-y-2 hover:border-[var(--accent)]/50 transition">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <h4 class="font-bold text-white text-sm">{edu.degree}</h4>
+                <p class="text-xs font-semibold text-[var(--accent)]">{edu.institution} {loc_html}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4" if len(edu_cards) >= 2 else "grid grid-cols-1 gap-4"
+    edu_section_html = f'''
+          <div class="p-8 rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 space-y-6 shadow-2xl pointer-events-auto">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Academic Background & Qualifications</span>
+            </div>
+            <div class="{edu_grid_class}">
+              {''.join(edu_cards)}
+            </div>
+          </div>
+    ''' if show_edu else ''
+
+    # --- Certifications Section ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_cards = []
+    for cert in raw_certs:
+        issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-white/10">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        cert_cards.append(f"""
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="award" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm text-white truncate">{cert.name}</h4>
+                <div class="flex items-center gap-2">{issuer_html} {year_html}</div>
+              </div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" if len(cert_cards) >= 3 else "grid grid-cols-1 md:grid-cols-2 gap-4"
+    cert_section_html = f'''
+          <div class="p-8 rounded-3xl bg-slate-900/60 backdrop-blur-2xl border border-white/10 space-y-6 shadow-2xl pointer-events-auto">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <i data-lucide="award" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Verified Credentials & Certifications</span>
+            </div>
+            <div class="{cert_grid_class}">
+              {''.join(cert_cards)}
+            </div>
+          </div>
+    ''' if show_certs else ''
 
     # --- Contact Section ---
     contact_galaxy_cards = []
@@ -252,6 +327,12 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
 
           <!-- Experience Timeline -->
           {exp_timeline_html}
+
+          <!-- Education Section -->
+          {edu_section_html}
+
+          <!-- Certifications Section -->
+          {cert_section_html}
 
           <!-- Contact Section -->
           {contact_section_html}

@@ -152,7 +152,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     info = resume.personal_info
 
     story.append(Paragraph(info.full_name.upper(), S["AtsName"]))
-    if resume.target_job_title:
+    if resume.target_job_title and resume.target_job_title.strip():
         story.append(Paragraph(resume.target_job_title.upper(), S["AtsTitle"]))
 
     contacts = [p for p in [info.location, info.phone, info.email,

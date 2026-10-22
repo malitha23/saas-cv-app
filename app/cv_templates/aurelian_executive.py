@@ -313,7 +313,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         y -= _draw_sidebar_para(canvas, full_name, S["AuSideName"], SIDE_PAD, y, SIDE_MAX_W)
         y -= 1.0
 
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             y -= _draw_sidebar_para(canvas, resume.target_job_title.upper(), S["AuSideRole"], SIDE_PAD, y, SIDE_MAX_W)
             y -= 2.0
 

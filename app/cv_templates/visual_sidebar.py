@@ -125,7 +125,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         # FULL NAME & TARGET TITLE IN LEFT SIDEBAR (Page 1 Only!)
         y -= _draw_sidebar_para(canvas, (info.full_name or "").upper(), S["V1SideName"], SIDE_X, y, SIDE_MAX_W)
         y -= 3
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             y -= _draw_sidebar_para(canvas, resume.target_job_title, S["V1SideTitle"], SIDE_X, y, SIDE_MAX_W)
             y -= 6
 

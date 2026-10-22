@@ -23,7 +23,8 @@ from app.portfolio_templates.common import (
 def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Software Engineer"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-lg sm:text-2xl font-bold text-[var(--accent)] tracking-tight">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
@@ -291,6 +292,80 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
         else ""
     )
 
+    # --- Education ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_cards = []
+    for edu in resume.education:
+        details_html = f'<p class="text-[13px] text-slate-600 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_html = f'<span class="text-slate-400">·</span> {edu.location}' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-0.5 rounded-full shrink-0">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_cards.append(f"""
+          <div class="reveal group p-6 bg-white border border-slate-200/60 rounded-3xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_48px_-16px_rgba(15,23,42,0.16)] hover:-translate-y-1 transition-all duration-500 space-y-2">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div class="space-y-0.5">
+                <h4 class="font-bold text-slate-900 text-base tracking-tight group-hover:text-[var(--accent)] transition-colors">{edu.degree}</h4>
+                <p class="text-xs font-semibold text-[var(--accent)]">{edu.institution} {loc_html}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-5" if len(edu_cards) >= 2 else "grid grid-cols-1 max-w-2xl mx-auto gap-5"
+    edu_section_html = f"""
+          <section id="education" class="space-y-8 scroll-mt-24">
+            <div class="reveal border-b border-slate-200/70 pb-5 space-y-2">
+              <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--accent)] font-bold">Academic Background</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" style="font-family:'Playfair Display',serif">Education & Qualifications</h2>
+            </div>
+            <div class="{edu_grid_class}">
+              {''.join(edu_cards)}
+            </div>
+          </section>
+    """ if show_edu else ""
+
+    # --- Certifications ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_cards = []
+    for cert in raw_certs:
+        issuer_html = f'<p class="text-xs font-medium text-slate-500">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/60">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0">Verify <span class="text-[10px]">↗</span></a>' if getattr(cert, "url", None) else ''
+        cert_cards.append(f"""
+          <div class="reveal group p-4 sm:p-5 bg-white border border-slate-200/60 rounded-2xl shadow-[0_2px_10px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.12)] hover:-translate-y-1 hover:border-[var(--accent)]/40 transition-all duration-300 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path></svg>
+              </div>
+              <div class="min-w-0 space-y-0.5">
+                <h4 class="font-bold text-slate-900 text-sm truncate group-hover:text-[var(--accent)] transition-colors">{cert.name}</h4>
+                <div class="flex items-center gap-2">{issuer_html} {year_html}</div>
+              </div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" if len(cert_cards) >= 3 else "grid grid-cols-1 sm:grid-cols-2 gap-4"
+    cert_section_html = f"""
+          <section id="certifications" class="space-y-6 scroll-mt-24">
+            <div class="reveal border-b border-slate-200/70 pb-4 space-y-1.5">
+              <span class="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--accent)] font-bold">Verified Credentials</span>
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" style="font-family:'Playfair Display',serif">Professional Certifications</h2>
+            </div>
+            <div class="{cert_grid_class}">
+              {''.join(cert_cards)}
+            </div>
+          </section>
+    """ if show_certs else ""
+
     # --- Contact Section ---
     contact_cards = []
     if info.email:
@@ -520,6 +595,12 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
               {f'''<a href="#skills" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Skills<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
               </a>''' if show_skills else ''}
+              {f'''<a href="#education" class="relative hover:text-slate-900 transition-colors duration-300 group">
+                Education<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
+              </a>''' if show_edu else ''}
+              {f'''<a href="#certifications" class="relative hover:text-slate-900 transition-colors duration-300 group">
+                Certifications<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
+              </a>''' if show_certs else ''}
               <a href="#contact" class="relative hover:text-slate-900 transition-colors duration-300 group">
                 Contact<span class="absolute -bottom-1 left-0 w-0 h-px bg-[var(--accent)] group-hover:w-full transition-all duration-300"></span>
               </a>
@@ -580,6 +661,12 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
 
           <!-- EXPERIENCE -->
           {exp_section_html}
+
+          <!-- EDUCATION -->
+          {edu_section_html}
+
+          <!-- CERTIFICATIONS -->
+          {cert_section_html}
 
           <!-- CONTACT & DIRECT CONNECT -->
           {contact_section_html}

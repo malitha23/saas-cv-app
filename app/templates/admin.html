@@ -3628,6 +3628,11 @@
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition">
                           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                         </button>
+                        <!-- Re-Generate Profile & Portfolio with AI -->
+                        <button type="button" @click="openAdminCandidateRegenerate(cand)" title="Re-Generate with AI (Update role or re-parse CV with certificates)"
+                                class="p-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 transition">
+                          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        </button>
                         <!-- 1-Click Send Email -->
                         <button type="button" @click="sendCandidateEmail(cand)" title="Send VIP invitation email to candidate"
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-pink-600 text-slate-300 hover:text-white transition">
@@ -4172,6 +4177,14 @@
         isSendingOnboardEmail: false,
         showAdminCandidateEditModal: false,
         adminEditingCandidate: null,
+        showAdminCandidateRegenerateModal: false,
+        adminRegeneratingCandidate: null,
+        adminRegenerateTargetRole: '',
+        adminRegenerateAutoEmail: false,
+        adminRegenerateFile: null,
+        adminRegenerateFileName: '',
+        isRegeneratingAdminCandidate: false,
+        adminRegenerateStatusMsg: '',
         adminCandidateResumeData: null,
         isLoadingAdminCandidateResume: false,
         isSavingAdminCandidateResume: false,
@@ -4543,6 +4556,70 @@
           }
         },
 
+        openAdminCandidateRegenerate(cand) {
+          if (!cand || !cand.id) return;
+          this.adminRegeneratingCandidate = cand;
+          this.adminRegenerateTargetRole = cand.target_role || '';
+          this.adminRegenerateAutoEmail = false;
+          this.adminRegenerateFile = null;
+          this.adminRegenerateFileName = '';
+          this.isRegeneratingAdminCandidate = false;
+          this.adminRegenerateStatusMsg = '';
+          this.showAdminCandidateRegenerateModal = true;
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        handleAdminRegenerateFileInput(e) {
+          const file = e.target.files && e.target.files[0];
+          if (file) {
+            this.adminRegenerateFile = file;
+            this.adminRegenerateFileName = file.name;
+          } else {
+            this.adminRegenerateFile = null;
+            this.adminRegenerateFileName = '';
+          }
+        },
+
+        async submitAdminCandidateRegenerate() {
+          if (!this.adminRegeneratingCandidate) return;
+          this.isRegeneratingAdminCandidate = true;
+          this.adminRegenerateStatusMsg = 'Analyzing CV, scanning certificates with Vision AI, and restructuring with Gemini...';
+          const token = localStorage.getItem('saas_token');
+
+          try {
+            const formData = new FormData();
+            if (this.adminRegenerateTargetRole) {
+              formData.append('target_role', this.adminRegenerateTargetRole);
+            }
+            formData.append('auto_send_email', this.adminRegenerateAutoEmail ? 'true' : 'false');
+            if (this.adminRegenerateFile) {
+              formData.append('file', this.adminRegenerateFile);
+            }
+
+            const res = await fetch(`/api/business/candidates/${this.adminRegeneratingCandidate.id}/regenerate`, {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + token },
+              body: formData
+            });
+
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.detail || 'Failed to re-generate candidate profile.');
+            }
+
+            const data = await res.json();
+            this.showAdminCandidateRegenerateModal = false;
+            alert(`Success: Candidate "${data.candidate_name}" was successfully re-generated!\n${data.certifications_count || 0} certifications detected & verified.\nLive Portfolio has been re-compiled.`);
+            await this.loadOnboardingCandidates();
+          } catch (err) {
+            alert('Error re-generating candidate: ' + err.message);
+          } finally {
+            this.isRegeneratingAdminCandidate = false;
+            this.adminRegenerateStatusMsg = '';
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
         async openAdminCandidateEdit(cand) {
           if (!cand || !cand.id) return;
           this.adminEditingCandidate = cand;
@@ -4653,6 +4730,24 @@
           if (!this.adminCandidateResumeData || !this.adminCandidateResumeData.education) return;
           this.adminCandidateResumeData.education.splice(idx, 1);
           this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        },
+
+        addAdminCandidateCertification() {
+          if (!this.adminCandidateResumeData) return;
+          if (!Array.isArray(this.adminCandidateResumeData.certifications)) {
+            this.adminCandidateResumeData.certifications = [];
+          }
+          this.adminCandidateResumeData.certifications.push({
+            name: '',
+            issuer: '',
+            year: '',
+            url: ''
+          });
+        },
+
+        removeAdminCandidateCertification(idx) {
+          if (!this.adminCandidateResumeData || !Array.isArray(this.adminCandidateResumeData.certifications)) return;
+          this.adminCandidateResumeData.certifications.splice(idx, 1);
         },
 
         addAdminCandidateProject() {
@@ -6886,6 +6981,110 @@
     </div>
   </div>
 
+  <!-- Modal: Re-Generate Candidate Profile & Portfolio with AI -->
+  <div x-show="showAdminCandidateRegenerateModal" x-cloak
+       class="fixed inset-0 z-[130] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl shadow-emerald-950/40 space-y-4 relative my-auto"
+         @click.away="if(!isRegeneratingAdminCandidate) showAdminCandidateRegenerateModal = false">
+
+      <!-- Close Button -->
+      <button @click="showAdminCandidateRegenerateModal = false" :disabled="isRegeneratingAdminCandidate" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg transition disabled:opacity-30">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3 pr-8 pb-3 border-b border-slate-800/80">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25 text-white shrink-0">
+          <i data-lucide="sparkles" class="w-5 h-5 text-emerald-200"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base sm:text-lg font-bold text-white">Re-Generate with AI</h3>
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              #<span x-text="adminRegeneratingCandidate?.id"></span>
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Re-parse credentials & re-build portfolio while preserving existing links.</p>
+        </div>
+      </div>
+
+      <!-- Candidate Info Banner -->
+      <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Candidate:</span>
+          <span class="text-white font-bold" x-text="adminRegeneratingCandidate?.candidate_name"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Email:</span>
+          <span class="text-slate-300 font-mono text-[11px]" x-text="adminRegeneratingCandidate?.candidate_email"></span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Current Target Role:</span>
+          <span class="text-indigo-400 font-semibold" x-text="adminRegeneratingCandidate?.target_role || 'Not Set'"></span>
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">
+            Target Job Title / Role
+          </label>
+          <input type="text" x-model="adminRegenerateTargetRole"
+                 placeholder="e.g. Senior Plumbing Technician, Logistics Executive (Leave empty to auto-detect)"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 text-xs">
+          <p class="text-[10px] text-slate-500 mt-1">AI will tailor the professional summary, keywords, and portfolio layout to this specific profession.</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">
+            Upload New / Updated CV (Optional)
+          </label>
+          <input type="file" @change="handleAdminRegenerateFileInput($event)" accept=".pdf,.docx,.doc,.txt"
+                 class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-600/20 file:text-emerald-300 hover:file:bg-emerald-600/30 file:cursor-pointer">
+          <div class="mt-1.5 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-300 flex items-start gap-1.5">
+            <i data-lucide="scan" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
+            <span><strong>Vision AI Active:</strong> Multi-page PDFs with scanned certificates, awards, and diplomas are automatically scanned and extracted into verified portfolio cards! Leave empty to re-generate from existing CV data.</span>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer pt-1">
+          <input type="checkbox" x-model="adminRegenerateAutoEmail"
+                 class="rounded bg-slate-950 border-slate-700 text-emerald-600 focus:ring-0">
+          <span class="text-slate-300">Auto-send VIP invitation email with portfolio & claim link upon completion</span>
+        </label>
+      </div>
+
+      <!-- Link Preservation Guarantee -->
+      <div class="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-[11px] text-indigo-300 flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-indigo-400"></i>
+        <span><strong>URL Preservation:</strong> The candidate's existing Claim Token and Live Portfolio URL will remain 100% identical. Any links already sent will stay live!</span>
+      </div>
+
+      <!-- In-Progress Spinner -->
+      <div x-show="isRegeneratingAdminCandidate" class="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-center space-y-2">
+        <div class="inline-flex items-center gap-2 text-xs font-bold text-emerald-300">
+          <i data-lucide="loader" class="w-4 h-4 animate-spin text-emerald-400"></i>
+          <span x-text="adminRegenerateStatusMsg || 'Re-generating with AI...'"></span>
+        </div>
+        <p class="text-[10px] text-slate-400">Processing OCR for attached certificates and compiling live web portfolio. Please wait...</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+        <button type="button" @click="showAdminCandidateRegenerateModal = false" :disabled="isRegeneratingAdminCandidate"
+                class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition disabled:opacity-40">
+          Cancel
+        </button>
+        <button type="button" @click="submitAdminCandidateRegenerate()" :disabled="isRegeneratingAdminCandidate"
+                class="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white shadow-lg shadow-emerald-500/25 transition flex items-center gap-2 disabled:opacity-50">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5" :class="{'animate-spin': isRegeneratingAdminCandidate}"></i>
+          <span x-text="isRegeneratingAdminCandidate ? 'Processing with AI...' : 'Re-Generate Profile & Portfolio'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- ADMIN CANDIDATE CV & PORTFOLIO EDIT MODAL -->
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -6966,6 +7165,11 @@
                   :class="adminCandidateEditSection === 'projects' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
                   class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
             <i data-lucide="folder-git-2" class="w-3 h-3"></i> Projects (<span x-text="adminCandidateResumeData?.projects?.length || 0"></span>)
+          </button>
+          <button type="button" @click="adminCandidateEditSection = 'certifications'"
+                  :class="adminCandidateEditSection === 'certifications' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="award" class="w-3 h-3"></i> Certifications (<span x-text="adminCandidateResumeData?.certifications?.length || 0"></span>)
           </button>
         </div>
 
@@ -7242,7 +7446,68 @@
           </div>
         </div>
 
-        <!-- Sticky Bottom Save Bar -->
+        <!-- Section 7: Certifications & Verified Credentials (Cards Preview) -->
+        <div x-show="adminCandidateEditSection === 'certifications'" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold">Manage Verified Certifications, Trade Accreditations, and Awards</span>
+            <button type="button" @click="addAdminCandidateCertification()"
+                    class="px-3 py-1 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3 h-3"></i> Add Certificate
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <template x-for="(cert, cIdx) in (adminCandidateResumeData?.certifications || [])" :key="cIdx">
+              <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2.5 hover:border-amber-500/40 transition">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20" x-text="'#' + (cIdx+1)"></span>
+                    <span class="text-xs font-bold text-white" x-text="cert.name || 'Untitled Certificate'"></span>
+                  </div>
+                  <button type="button" @click="removeAdminCandidateCertification(cIdx)"
+                          class="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="Delete">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Certificate / Credential Title</label>
+                    <input type="text" x-model="cert.name" placeholder="e.g. National Certificate - Plumber (NVQ Level 3)"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Issuing Authority / Organization</label>
+                    <input type="text" x-model="cert.issuer" placeholder="e.g. TVEC Sri Lanka, AWS, Atlantis"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-amber-300 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Date / Year / Period</label>
+                    <input type="text" x-model="cert.year" placeholder="e.g. 2011 or 2016 - 2024"
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-xs focus:outline-none focus:border-indigo-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Credential ID or Verification Link</label>
+                    <input type="text" x-model="cert.url" placeholder="Certificate ID: P03/0067000220 or https://..."
+                           class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-indigo-500">
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template x-if="!adminCandidateResumeData?.certifications || adminCandidateResumeData?.certifications?.length === 0">
+              <div class="p-6 rounded-2xl bg-slate-950/40 border border-dashed border-slate-800 text-center space-y-2">
+                <i data-lucide="award" class="w-6 h-6 text-slate-600 mx-auto"></i>
+                <p class="text-xs text-slate-400">No certifications or verified credentials recorded for this candidate.</p>
+                <button type="button" @click="addAdminCandidateCertification()"
+                        class="px-3 py-1 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition inline-flex items-center gap-1.5">
+                  <i data-lucide="plus" class="w-3 h-3"></i> Add First Certificate
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
         <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
           <button type="button" @click="showAdminCandidateEditModal = false" class="text-xs text-slate-400 hover:text-white transition">
             Cancel

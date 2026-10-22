@@ -314,7 +314,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         full_name = info.full_name or "Candidate Name"
         y -= _draw_sidebar_para(canvas, full_name, S["NaSideName"], SIDE_PAD, y, SIDE_MAX_W)
         y -= 2.0
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             y -= _draw_sidebar_para(canvas, resume.target_job_title, S["NaSideRole"], SIDE_PAD, y, SIDE_MAX_W)
             y -= 4.0
 

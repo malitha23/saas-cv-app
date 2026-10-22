@@ -23,7 +23,8 @@ from app.portfolio_templates.common import (
 def render_bento_grid(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Software Engineer"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-sm sm:text-base font-semibold text-[var(--accent)] mt-1 tracking-tight">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
@@ -187,6 +188,30 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           </div>
         """)
 
+    # --- Certifications ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_badges = []
+    for cert in raw_certs:
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-[10px] text-[var(--accent)] hover:underline font-mono shrink-0">Verify ↗</a>' if getattr(cert, "url", None) else ''
+        year_html = f'<span class="text-[10px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        issuer_html = f'<p class="text-[11px] text-slate-400 truncate">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        cert_badges.append(f"""
+          <div class="reveal group p-3 bg-slate-900/60 backdrop-blur border border-slate-800/80 rounded-xl space-y-1 hover:border-[var(--accent)]/50 transition">
+            <div class="flex justify-between items-center gap-2">
+              <span class="text-xs font-bold text-slate-200 truncate group-hover:text-white transition">{cert.name}</span>
+              {year_html}
+            </div>
+            <div class="flex justify-between items-center gap-2">
+              {issuer_html}
+              {url_html}
+            </div>
+          </div>
+        """)
+
     # --- Education ---
     edu_badges = []
     for edu in resume.education:
@@ -289,7 +314,47 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         else ""
     )
 
-    exp_col = "lg:col-span-2" if resume.portfolio_show_education else "lg:col-span-3"
+    joined_edu_badges = "".join(edu_badges)
+    edu_card_html = (
+        f"""
+          <div class="reveal bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500">
+            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
+              <i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--accent)]"></i>
+              <span>Academic Qualifications</span>
+            </div>
+            <div class="space-y-3">{joined_edu_badges}</div>
+          </div>
+    """
+        if (resume.portfolio_show_education and getattr(resume, "show_education", True) and len(resume.education) > 0)
+        else ""
+    )
+
+    joined_cert_badges = "".join(cert_badges)
+    cert_card_html = (
+        f"""
+          <div class="reveal bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500">
+            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
+              <i data-lucide="award" class="w-4 h-4 text-[var(--accent)]"></i>
+              <span>Verified Certifications</span>
+            </div>
+            <div class="space-y-3">{joined_cert_badges}</div>
+          </div>
+    """
+        if show_certs
+        else ""
+    )
+
+    if edu_card_html and cert_card_html:
+        right_bento_col = f'<div class="space-y-6">{edu_card_html}{cert_card_html}</div>'
+    elif edu_card_html:
+        right_bento_col = edu_card_html
+    elif cert_card_html:
+        right_bento_col = cert_card_html
+    else:
+        right_bento_col = ""
+
+    show_right_col = bool(right_bento_col)
+    exp_col = "lg:col-span-2" if show_right_col else "lg:col-span-3"
     joined_exp_cards = "".join(exp_cards)
     exp_card_html = (
         f"""
@@ -302,21 +367,6 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           </div>
     """
         if resume.portfolio_show_experience
-        else ""
-    )
-
-    joined_edu_badges = "".join(edu_badges)
-    edu_card_html = (
-        f"""
-          <div class="reveal bg-slate-900/70 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] hover:border-slate-700 transition-all duration-500">
-            <div class="flex items-center gap-2 text-sm font-bold text-white border-b border-slate-800 pb-3">
-              <i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--accent)]"></i>
-              <span>Qualifications</span>
-            </div>
-            <div class="space-y-3">{joined_edu_badges}</div>
-          </div>
-    """
-        if resume.portfolio_show_education
         else ""
     )
 
@@ -579,10 +629,10 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           {projects_card_html}
         </div>
 
-        <!-- BENTO ROW 3: Experience & Education -->
+        <!-- BENTO ROW 3: Experience & Qualifications -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {exp_card_html}
-          {edu_card_html}
+          {right_bento_col}
         </div>
 
         <!-- BENTO ROW 4: Contact & Direct Channels -->

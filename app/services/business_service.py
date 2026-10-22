@@ -186,14 +186,15 @@ def prebuild_candidate_profile(
         )
 
     # 5. AI structuring and tailoring
-    role_str = (target_role or "").strip() or "Software Engineer"
-    comp_str = getattr(creator, "company_name", None) or "Leading Technology Firm"
+    role_str = (target_role or "").strip()
+    comp_str = getattr(creator, "company_name", None) or "Leading Organization"
+    job_desc = f"Professional job placement profile tailored for {role_str} position." if role_str else "Professional job placement profile tailored for the candidate's verified career track, trade expertise, and credentials."
 
     try:
         tailored_resume = generate_with_gemini(
             resume_text=raw_text,
-            job_description=f"Professional job placement profile tailored for {role_str} position.",
-            job_title=role_str,
+            job_description=job_desc,
+            job_title=role_str if role_str else None,
             company_name=comp_str,
             role_archetype="auto",
             template_style="classic"
@@ -257,7 +258,7 @@ def prebuild_candidate_profile(
         claim_token=claim_token,
         candidate_email=email_clean,
         candidate_name=cand_name,
-        target_role=role_str,
+        target_role=role_str or getattr(tailored_resume.personal_info, "target_job_title", "") or "Professional",
         resume_data_json=tailored_resume.model_dump_json(),
         portfolio_slug=slug,
         portfolio_html=portfolio_html,

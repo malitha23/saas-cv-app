@@ -19,7 +19,7 @@ from app.portfolio_templates.common import (
 def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Professional Executive"
+    role_title = (resume.target_job_title or "").strip()
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for High-Impact Roles"
@@ -48,8 +48,8 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
         """
 
     # Dynamic Typewriter phrases (Adaptive to candidate's exact profession, no hardcoded tech jargon)
-    clean_title = html.unescape(role_title)
-    phrases = [clean_title]
+    clean_title = html.unescape(role_title) if role_title else ""
+    phrases = [clean_title] if clean_title else []
     if resume.skill_categories:
         top_skills = [html.unescape(s) for cat in resume.skill_categories for s in cat.skills[:2]]
         if len(top_skills) >= 2:
@@ -59,10 +59,17 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     
     if info.availability_badge:
         phrases.append(html.unescape(info.availability_badge))
-    elif resume.work_experience:
+    elif clean_title:
         phrases.append(f"Demonstrated Excellence in {clean_title}")
+    elif resume.work_experience:
+        phrases.append("Demonstrated Professional Excellence")
     else:
         phrases.append("Driving Professional Excellence & Value")
+    
+    typewriter_html = f'''<div class="text-lg sm:text-2xl font-bold min-h-[36px] flex items-center justify-center md:justify-start">
+                  <span id="typewriterTarget" class="text-[var(--accent)]"></span>
+                  <span class="w-0.5 h-6 bg-[var(--accent)] inline-block ml-1 animate-pulse"></span>
+                </div>''' if (clean_title or resume.skill_categories or info.availability_badge) else "" 
     
     phrases_json = json.dumps(phrases)
 
@@ -222,6 +229,80 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
           </div>
     ''' if resume.portfolio_show_experience else ''
 
+    # --- Education Showcase ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_cards = []
+    for edu in resume.education:
+        details_html = f'<p class="text-xs text-slate-300 leading-relaxed pt-1">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_cards.append(f"""
+          <div class="p-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-2 hover:border-[var(--accent)]/50 transition">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <h4 class="font-bold text-sm text-white">{edu.degree}</h4>
+                <p class="text-xs font-semibold text-[var(--accent)]">{edu.institution} {loc_html}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4" if len(edu_cards) >= 2 else "grid grid-cols-1 gap-4"
+    edu_showcase_html = f'''
+          <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 space-y-6 shadow-xl">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
+              <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Academic Qualifications</span>
+            </div>
+            <div class="{edu_grid_class}">
+              {''.join(edu_cards)}
+            </div>
+          </div>
+    ''' if show_edu else ''
+
+    # --- Certifications Showcase ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_cards = []
+    for cert in raw_certs:
+        issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        cert_cards.append(f"""
+          <div class="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl flex items-center justify-between gap-3 hover:border-[var(--accent)] transition">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="award" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm text-white truncate">{cert.name}</h4>
+                <div class="flex items-center gap-2">{issuer_html} {year_html}</div>
+              </div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" if len(cert_cards) >= 3 else "grid grid-cols-1 md:grid-cols-2 gap-4"
+    cert_showcase_html = f'''
+          <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-8 space-y-6 shadow-xl">
+            <div class="flex items-center gap-2.5 text-xl font-bold text-white border-b border-slate-800 pb-4">
+              <i data-lucide="award" class="w-5 h-5 text-[var(--accent)]"></i>
+              <span>Verified Certifications & Accreditations</span>
+            </div>
+            <div class="{cert_grid_class}">
+              {''.join(cert_cards)}
+            </div>
+          </div>
+    ''' if show_certs else ''
+
     # --- Contact Showcase ---
     contact_zenith_cards = []
     if info.email:
@@ -315,10 +396,7 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
               
               <div class="space-y-1">
                 <h1 class="text-3xl sm:text-5xl font-black text-white tracking-tight">{full_name}</h1>
-                <div class="text-lg sm:text-2xl font-bold min-h-[36px] flex items-center justify-center md:justify-start">
-                  <span id="typewriterTarget" class="text-[var(--accent)]"></span>
-                  <span class="w-0.5 h-6 bg-[var(--accent)] inline-block ml-1 animate-pulse"></span>
-                </div>
+{typewriter_html}
               </div>
 
               {bio_html}
@@ -343,6 +421,12 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
 
           <!-- Experience Milestones -->
           {exp_showcase_html}
+
+          <!-- Education Qualifications -->
+          {edu_showcase_html}
+
+          <!-- Verified Certifications -->
+          {cert_showcase_html}
 
           <!-- Contact Section -->
           {contact_showcase_html}

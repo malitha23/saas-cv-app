@@ -79,7 +79,7 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
         canvas.drawString(32, PAGE_H - 36, (info.full_name or "").upper())
 
         # Pill badge for headline
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             badge_text = f"[  {resume.target_job_title.upper()}  ]"
             canvas.setFont(f_bold, 9)
             canvas.setFillColor(colors.HexColor("#A7F3D0") if not resume.custom_accent_color else colors.white)

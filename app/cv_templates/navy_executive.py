@@ -537,7 +537,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     info = resume.personal_info
     full_name_upper = (info.full_name or "CANDIDATE NAME").upper()
     body.append(Paragraph(full_name_upper, S["NeName"]))
-    if resume.target_job_title:
+    if resume.target_job_title and resume.target_job_title.strip():
         body.append(Paragraph(resume.target_job_title.upper(), S["NeRole"]))
     else:
         body.append(Spacer(1, 6))

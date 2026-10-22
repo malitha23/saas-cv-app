@@ -540,6 +540,280 @@ async def update_candidate_profile_resume(
     }
 
 
+def _reconstruct_text_from_resume_data(data: Dict[str, Any]) -> str:
+    """Reconstruct structured text from stored resume JSON for AI re-generation."""
+    parts = []
+    pinfo = data.get("personal_info") or {}
+    name = pinfo.get("full_name") or ""
+    email = pinfo.get("email") or ""
+    phone = pinfo.get("phone") or ""
+    loc = pinfo.get("location") or ""
+    title = pinfo.get("target_job_title") or data.get("target_job_title") or ""
+    parts.append(f"{name}\n{email} | {phone} | {loc}\nTarget Title: {title}\n")
+
+    summary = data.get("professional_summary") or ""
+    if summary:
+        parts.append(f"PROFESSIONAL SUMMARY\n{summary}\n")
+
+    skills = data.get("skill_categories") or []
+    if skills:
+        parts.append("SKILLS")
+        for cat in skills:
+            if isinstance(cat, dict):
+                cname = cat.get("name") or "Key Skills"
+                cskills = cat.get("skills", [])
+                if isinstance(cskills, list) and cskills:
+                    parts.append(f"{cname}: {', '.join(str(s) for s in cskills)}")
+        parts.append("")
+
+    experiences = data.get("work_experience") or []
+    if experiences:
+        parts.append("WORK EXPERIENCE")
+        for exp in experiences:
+            if isinstance(exp, dict):
+                parts.append(f"{exp.get('title', '')} at {exp.get('company', '')} ({exp.get('start_date', '')} - {exp.get('end_date', '')})")
+                for b in exp.get("responsibilities", []):
+                    parts.append(f"- {b}")
+        parts.append("")
+
+    educations = data.get("education") or []
+    if educations:
+        parts.append("EDUCATION")
+        for edu in educations:
+            if isinstance(edu, dict):
+                parts.append(f"{edu.get('degree', '')} - {edu.get('institution', '')} ({edu.get('year', '')})")
+        parts.append("")
+
+    certifications = data.get("certifications") or []
+    if certifications:
+        parts.append("=== CERTIFICATIONS & VERIFIED CREDENTIALS ===")
+        for c in certifications:
+            if isinstance(c, dict):
+                parts.append(f"- {c.get('name', '')} | Issuer: {c.get('issuer', '')} | Year: {c.get('year', '')} | URL: {c.get('url', '')}")
+        parts.append("")
+
+    projects = data.get("projects") or []
+    if projects:
+        parts.append("PROJECTS")
+        for p in projects:
+            if isinstance(p, dict):
+                techs = p.get('technologies', [])
+                tech_str = ', '.join(techs) if isinstance(techs, list) else str(techs)
+                parts.append(f"{p.get('name', '')} ({tech_str})")
+                for b in p.get("description_bullets", []):
+                    parts.append(f"- {b}")
+        parts.append("")
+
+    return "\n".join(parts)
+
+
+@router.post("/candidates/{candidate_id}/regenerate")
+async def api_regenerate_candidate_profile(
+    candidate_id: str,
+    request: Request,
+    target_role: Optional[str] = Form(None),
+    auto_send_email: bool = Form(False),
+    file: Optional[UploadFile] = File(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Secure Candidate Re-Generation:
+    Re-processes and re-generates an existing candidate profile with AI without deleting or breaking
+    their existing claim_token, live portfolio URL (portfolio_slug), or account links.
+    Optionally accepts a new CV file (supporting multi-page PDFs with scanned certificates via Vision OCR)
+    and an updated target role.
+    """
+    is_admin = bool(getattr(current_user, "is_admin", False))
+    acc_type = getattr(current_user, "account_type", "candidate")
+
+    if not is_admin and acc_type != "business":
+        raise HTTPException(
+            status_code=403,
+            detail="Access restricted: Candidate management is available only for Business accounts and Admins."
+        )
+
+    profile = None
+    if candidate_id.isdigit():
+        profile = db.get(PrebuiltCandidateProfile, int(candidate_id))
+    if not profile:
+        profile = db.scalar(
+            select(PrebuiltCandidateProfile).where(PrebuiltCandidateProfile.claim_token == candidate_id)
+        )
+
+    if not profile:
+        raise HTTPException(status_code=404, detail="Candidate profile not found.")
+
+    # Strict Zero-Trust Authorization: Only Admin or the exact Creator can re-generate
+    if not is_admin and profile.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to re-generate this candidate.")
+
+    from app.services.business_service import validate_resume_file
+    from app.parser import parse_resume_file
+    from app.ai_engine import generate_with_gemini
+    from app.portfolio_templates import generate_portfolio_html
+    from app.state import save_published_portfolio, PUBLISHED_PORTFOLIOS
+    from app.schemas import TailoredResume
+
+    # 1. Resolve raw text: From new file or from existing stored resume data
+    if file and file.filename:
+        file_bytes = await file.read()
+        if len(file_bytes) > 0:
+            validate_resume_file(file_bytes, file.filename)
+            raw_text, _ = parse_resume_file(file.filename, file_bytes)
+        else:
+            raw_text = ""
+    else:
+        raw_text = ""
+
+    if not raw_text or len(raw_text.strip()) < 40:
+        # Reconstruct text from existing profile JSON
+        existing_data = {}
+        if profile.resume_data_json:
+            try:
+                existing_data = json.loads(profile.resume_data_json)
+            except Exception:
+                pass
+        if not existing_data:
+            raise HTTPException(
+                status_code=400,
+                detail="No resume text or valid existing data available to re-generate. Please upload a CV file."
+            )
+        raw_text = _reconstruct_text_from_resume_data(existing_data)
+
+    if not raw_text or len(raw_text.strip()) < 40:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract readable resume text to re-generate candidate profile."
+        )
+
+    # 2. AI Structuring and Tailoring
+    role_str = (target_role or "").strip() or (profile.target_role or "").strip()
+    # Avoid hardcoded fallback to "Software Engineer"
+    if role_str.lower() in ["software engineer", "professional"] and not (target_role and target_role.strip()):
+        role_str = ""
+
+    comp_str = (profile.creator.company_name or profile.creator.full_name) if profile.creator else "Leading Organization"
+    job_desc = f"Professional job placement profile tailored for {role_str} position." if role_str else "Professional job placement profile tailored for the candidate's verified career track, trade expertise, and credentials."
+
+    try:
+        tailored_resume = generate_with_gemini(
+            resume_text=raw_text,
+            job_description=job_desc,
+            job_title=role_str if role_str else None,
+            company_name=comp_str,
+            role_archetype="auto",
+            template_style="classic"
+        )
+    except Exception as e:
+        logger.error("[Candidate Re-generate] AI generation error: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI Resume Processing encountered an issue: {str(e)}"
+        )
+
+    # 3. Preserve critical candidate identity and links
+    extracted_name = tailored_resume.personal_info.full_name or ""
+    if extracted_name and extracted_name not in ["Candidate", "Candidate Name"]:
+        profile.candidate_name = extracted_name
+    tailored_resume.personal_info.full_name = profile.candidate_name
+
+    clean_email = profile.candidate_email.strip().lower()
+    tailored_resume.personal_info.email = clean_email
+
+    final_role = role_str or getattr(tailored_resume, "target_job_title", "") or profile.target_role or "Professional"
+    profile.target_role = final_role
+    tailored_resume.target_job_title = final_role
+
+    # 4. Save updated resume JSON
+    profile.resume_data_json = tailored_resume.model_dump_json()
+
+    # 5. Re-compile live web portfolio HTML while strictly PRESERVING the existing slug!
+    active_slug = profile.portfolio_slug or f"portfolio_{profile.claim_token[:12]}"
+    profile.portfolio_slug = active_slug
+
+    try:
+        portfolio_html = generate_portfolio_html(
+            resume=tailored_resume,
+            theme="neon_dark",
+            slug=active_slug
+        )
+        profile.portfolio_html = portfolio_html
+        save_published_portfolio(active_slug, portfolio_html)
+    except Exception as render_err:
+        logger.warning("[Candidate Re-generate] Could not re-compile portfolio HTML: %s", render_err)
+
+    # 6. Synchronize claimed candidate UserResume if candidate already claimed account
+    target_user_id = profile.claimed_by_user_id
+    if not target_user_id and clean_email:
+        matched_user = db.scalar(select(User).where(func.lower(User.email) == clean_email))
+        if matched_user:
+            target_user_id = matched_user.id
+            if profile.status == "pending":
+                profile.claimed_by_user_id = matched_user.id
+
+    if target_user_id:
+        try:
+            claimed_user_resume = db.scalar(
+                select(UserResume).where(UserResume.user_id == target_user_id)
+            )
+            if claimed_user_resume:
+                claimed_user_resume.title = f"{final_role} ATS Resume"
+                claimed_user_resume.target_role = final_role
+                claimed_user_resume.resume_data_json = profile.resume_data_json
+                claimed_user_resume.updated_at = datetime.utcnow()
+            else:
+                new_user_resume = UserResume(
+                    user_id=target_user_id,
+                    title=f"{final_role} ATS Resume",
+                    target_role=final_role,
+                    template_style="classic",
+                    resume_data_json=profile.resume_data_json
+                )
+                db.add(new_user_resume)
+        except Exception as sync_err:
+            logger.warning("[Candidate Re-generate] Could not sync candidate UserResume: %s", sync_err)
+
+    db.commit()
+    db.refresh(profile)
+
+    # 7. Base URLs
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+    claim_url = f"{base_url}/claim/{profile.claim_token}"
+    portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
+    # 8. Optional Invitation Email dispatch
+    if auto_send_email and profile.candidate_email:
+        try:
+            creator_name = (profile.creator.company_name or profile.creator.full_name) if profile.creator else "DreemFolio AI Talent Team"
+            send_candidate_onboarding_invitation_email(
+                to_email=profile.candidate_email,
+                candidate_name=profile.candidate_name,
+                target_role=profile.target_role,
+                portfolio_url=portfolio_url,
+                claim_url=claim_url,
+                creator_name=creator_name,
+                creator_email=profile.creator.email if profile.creator else None,
+                base_url=base_url,
+                enqueue_on_fail=True
+            )
+        except Exception as mail_err:
+            logger.error("[Candidate Re-generate] Could not send invitation email: %s", mail_err)
+
+    return {
+        "success": True,
+        "message": f"Candidate profile #{profile.id} ({profile.candidate_name}) successfully re-generated with AI!",
+        "candidate_id": profile.id,
+        "candidate_name": profile.candidate_name,
+        "candidate_email": profile.candidate_email,
+        "target_role": profile.target_role,
+        "portfolio_url": portfolio_url,
+        "claim_url": claim_url,
+        "certifications_count": len(getattr(tailored_resume, "certifications", []))
+    }
+
+
 @router.get("/wallet", response_model=BusinessWalletResponse)
 async def get_business_wallet(
     current_user: User = Depends(get_current_user),

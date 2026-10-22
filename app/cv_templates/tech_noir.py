@@ -91,7 +91,7 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
 
         canvas.setFont(f_bold, 9.5)
         canvas.setFillColor(cyan_tech)
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             canvas.drawString(34, PAGE_H - 56, f"// ROLE: {resume.target_job_title}")
 
         # Contact Prompt Line

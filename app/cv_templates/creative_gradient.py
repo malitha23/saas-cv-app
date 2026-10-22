@@ -80,7 +80,7 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
 
         canvas.setFont(f_bold, 11)
         canvas.setFillColor(colors.HexColor("#A5B4FC") if not resume.custom_accent_color else colors.white)
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             canvas.drawString(32, PAGE_H - 56, resume.target_job_title.upper())
 
         # Photo on right side if enabled

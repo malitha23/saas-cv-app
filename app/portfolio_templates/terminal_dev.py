@@ -19,7 +19,8 @@ from app.portfolio_templates.common import (
 def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate"
-    role_title = resume.target_job_title or "Software Developer"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-lg sm:text-xl font-semibold text-[var(--accent)] mb-3">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     cta_text = resume.portfolio_cta_text or "Connect"
     cta_url = resume.portfolio_cta_url or (f"mailto:{info.email}" if info.email else "#contact")
@@ -221,6 +222,8 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     projects_json_data = json.dumps([p.name for p in resume.projects])
     skills_json_data = json.dumps([s for cat in resume.skill_categories for s in cat.skills])
     exp_json_data = json.dumps([{"title": e.job_title, "company": e.company} for e in resume.work_experience[:3]])
+    raw_certs = getattr(resume, "certifications", []) or []
+    certs_json_data = json.dumps([{"name": c.name, "issuer": getattr(c, "issuer", "") or "", "year": getattr(c, "year", "") or ""} for c in raw_certs])
 
     bio_html = f'<p class="text-sm text-slate-300 leading-relaxed max-w-2xl">{summary}</p>' if resume.portfolio_show_bio else ''
     cta_target_url = resume.portfolio_cta_url or f"mailto:{info.email}"
@@ -455,6 +458,15 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                 div.innerHTML = `<span class="text-[var(--accent)] font-bold">$ journalctl --career</span><div class="space-y-1 text-slate-300">` +
                     exp.map(e => `<div>+ <span class="text-white font-bold">${{e.title}}</span> @ <span class="text-[var(--accent)]">${{e.company}}</span></div>`).join('') +
                     `</div>`;
+            }} else if (cmd === 'certifications') {{
+                const certs = {certs_json_data};
+                if (!certs.length) {{
+                    div.innerHTML = `<span class="text-[var(--accent)] font-bold">$ cat certs.txt</span><p class="text-slate-400">No external certifications recorded.</p>`;
+                }} else {{
+                    div.innerHTML = `<span class="text-[var(--accent)] font-bold">$ cat certs.txt</span><div class="space-y-1 text-slate-300">` +
+                        certs.map(c => `<div>✓ <span class="text-white font-bold">${{c.name}}</span> <span class="text-[var(--accent)]">(${{c.issuer || 'Accredited'}}${{c.year ? ' · ' + c.year : ''}})</span></div>`).join('') +
+                        `</div>`;
+                }}
             }} else if (cmd === 'contact') {{
                 div.innerHTML = `<span class="text-[var(--accent)] font-bold">$ echo $CONTACT</span><div class="flex gap-2 pt-1">{socials_html}</div>`;
             }} else {{

@@ -147,6 +147,7 @@ class CertificationItem(BaseModel):
     name: str = Field(..., description="Certification title or award")
     issuer: str = Field(..., description="Issuing organization")
     year: Optional[str] = Field(None, description="Year awarded")
+    url: Optional[str] = Field(None, description="Credential ID or verification link")
 
 
 class KeywordDetail(BaseModel):
@@ -349,7 +350,7 @@ class VerifyPinResponse(BaseModel):
 
 class TailoredResume(BaseModel):
     personal_info: PersonalInfo
-    target_job_title: str = Field(..., description="Target job title matching the JD")
+    target_job_title: Optional[str] = Field(default="", description="Target job title matching the JD")
     target_company: Optional[str] = Field(None, description="Target company name")
     professional_summary: str = Field(
         ...,
@@ -441,6 +442,9 @@ class TailoredResume(BaseModel):
     )
     portfolio_show_education: bool = Field(
         default=True, description="Show/Hide Education section"
+    )
+    portfolio_show_certifications: bool = Field(
+        default=True, description="Show/Hide Certifications and Credentials section"
     )
     portfolio_show_resume_download: bool = Field(
         default=True, description="Show direct ATS Resume download button on portfolio"

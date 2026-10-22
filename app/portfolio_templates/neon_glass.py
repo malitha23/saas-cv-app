@@ -23,7 +23,8 @@ from app.portfolio_templates.common import (
 def render_neon_glass(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate"
-    role_title = resume.target_job_title or "Professional Executive"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-base sm:text-xl font-semibold text-[var(--accent)] tracking-tight">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     badge_text = info.availability_badge or "Available for Impact"
@@ -247,6 +248,84 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         if resume.portfolio_show_skills
         else ""
     )
+
+    # --- Education Showcase (Frosted Glass) ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_cards = []
+    for edu in resume.education:
+        details_html = f'<p class="text-xs text-slate-300/80 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-[11px] font-mono text-[var(--accent)] bg-white/[0.04] border border-white/10 px-2.5 py-0.5 rounded-full shrink-0">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_cards.append(f"""
+          <div class="reveal group p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/50 hover:bg-white/[0.06] transition-all duration-300 space-y-2">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <h4 class="font-bold text-white text-sm group-hover:text-[var(--accent)] transition-colors">{edu.degree}</h4>
+                <p class="text-xs font-semibold text-[var(--accent)]">{edu.institution} {loc_html}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4" if len(edu_cards) >= 2 else "grid grid-cols-1 gap-4"
+    edu_showcase_html = f"""
+          <div class="reveal bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl p-8 space-y-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] relative overflow-hidden hover:border-white/20 transition-all duration-500">
+            <div class="relative flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <span class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--accent)]"></i>
+              </span>
+              <span class="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Academic Background & Qualifications</span>
+            </div>
+            <div class="{edu_grid_class}">
+              {''.join(edu_cards)}
+            </div>
+          </div>
+    """ if show_edu else ""
+
+    # --- Certifications Showcase (Neon Glow Badges) ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_cards = []
+    for cert in raw_certs:
+        issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/10">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3 h-3"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        cert_cards.append(f"""
+          <div class="reveal group p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/60 hover:shadow-[0_8px_24px_-6px_var(--accent-glow)] transition-all duration-300 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="award" class="w-5 h-5"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-white text-sm truncate group-hover:text-[var(--accent)] transition-colors">{cert.name}</h4>
+                <div class="flex items-center gap-2">{issuer_html} {year_html}</div>
+              </div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" if len(cert_cards) >= 3 else "grid grid-cols-1 sm:grid-cols-2 gap-4"
+    cert_showcase_html = f"""
+          <div class="reveal bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-3xl p-8 space-y-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] relative overflow-hidden hover:border-white/20 transition-all duration-500">
+            <div class="relative flex items-center gap-2.5 text-xl font-bold text-white border-b border-white/10 pb-4">
+              <span class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+                <i data-lucide="award" class="w-4 h-4 text-[var(--accent)]"></i>
+              </span>
+              <span class="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Verified Credentials & Certifications</span>
+            </div>
+            <div class="{cert_grid_class}">
+              {''.join(cert_cards)}
+            </div>
+          </div>
+    """ if show_certs else ""
 
     # --- Contact Showcase ---
     contact_neon_cards = []
@@ -529,6 +608,12 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
 
           <!-- Skills Showcase -->
           {skills_showcase_html}
+
+          <!-- Education Showcase -->
+          {edu_showcase_html}
+
+          <!-- Certifications Showcase -->
+          {cert_showcase_html}
 
           <!-- Contact Showcase -->
           {contact_showcase_html}

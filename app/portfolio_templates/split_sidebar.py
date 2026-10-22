@@ -19,7 +19,8 @@ from app.portfolio_templates.common import (
 def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Engineering Leader"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-base font-semibold text-[var(--accent)]">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     avatar_url = info.avatar_url or ""
     cta_text = resume.portfolio_cta_text or "Schedule Consultation"
@@ -178,6 +179,75 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
             </section>
     ''' if resume.portfolio_show_skills else ''
 
+    # --- Education ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_items = []
+    for edu in resume.education:
+        details_html = f'<p class="text-xs text-slate-400 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_suffix = f' · {edu.location}' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-xs font-mono text-[var(--accent)] font-semibold">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_items.append(f"""
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 space-y-2 hover:border-[var(--accent)]/50 transition">
+            <div class="flex flex-wrap justify-between items-start gap-2">
+              <div>
+                <h4 class="text-sm font-bold text-white">{edu.degree}</h4>
+                <p class="text-xs text-[var(--accent)] font-medium">{edu.institution}{loc_suffix}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_section_html = f'''
+            <section id="education" class="space-y-6">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="graduation-cap" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Education & Academic Background</h2>
+              </div>
+              <div class="space-y-4">{"".join(edu_items)}</div>
+            </section>
+    ''' if show_edu else ''
+
+    # --- Certifications ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_items = []
+    for cert in raw_certs:
+        issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-[11px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3 h-3"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        cert_items.append(f"""
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                <i data-lucide="award" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <h4 class="text-xs font-bold text-white truncate">{cert.name}</h4>
+                <div class="flex items-center gap-2 pt-0.5">{issuer_html} {year_html}</div>
+              </div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-3" if len(cert_items) >= 2 else "grid grid-cols-1 gap-3"
+    cert_section_html = f'''
+            <section id="certifications" class="space-y-6">
+              <div class="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <i data-lucide="award" class="w-5 h-5 text-[var(--accent)]"></i>
+                <h2 class="text-lg font-bold text-white">Verified Certifications & Licenses</h2>
+              </div>
+              <div class="{cert_grid_class}">{"".join(cert_items)}</div>
+            </section>
+    ''' if show_certs else ''
+
     # --- Contact Section ---
     contact_cards = []
     if info.email:
@@ -274,6 +344,8 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
               {f'<a href="#experience" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Career Milestones</a>' if (resume.portfolio_show_experience and getattr(resume, "show_experience", True) and len(resume.work_experience) > 0) else ''}
               {f'<a href="#projects" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Key Projects & Initiatives</a>' if (resume.portfolio_show_projects and getattr(resume, "show_projects", True) and len(resume.projects) > 0) else ''}
               {f'<a href="#skills" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Core Technical Arsenal</a>' if (resume.portfolio_show_skills and getattr(resume, "show_skills", True) and len(resume.skill_categories) > 0) else ''}
+              {f'<a href="#education" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Education & Degrees</a>' if show_edu else ''}
+              {f'<a href="#certifications" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Verified Certifications</a>' if show_certs else ''}
               <a href="#contact" class="hover:text-[var(--accent)] flex items-center gap-2 transition"><i data-lucide="chevron-right" class="w-3 h-3"></i> Get In Touch & Connect</a>
             </nav>
           </div>
@@ -289,6 +361,12 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
 
             <!-- Skills -->
             {skills_section_html}
+
+            <!-- Education -->
+            {edu_section_html}
+
+            <!-- Certifications -->
+            {cert_section_html}
 
             <!-- Contact -->
             {contact_section_html}

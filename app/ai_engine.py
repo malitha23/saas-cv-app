@@ -1011,7 +1011,7 @@ Return ONLY valid JSON matching this schema:
                         in_tok = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
                         out_tok = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
                         tot_tok = getattr(response.usage_metadata, "total_token_count", 0) or 0
-                        print(f"⚡ [Gemini Token Usage] Model: {model_name} | Input Tokens: {in_tok:,} | Output Tokens: {out_tok:,} | Total: {tot_tok:,}")
+                        print(f"[Gemini Token Usage] Model: {model_name} | Input Tokens: {in_tok:,} | Output Tokens: {out_tok:,} | Total: {tot_tok:,}")
                     break
             except Exception as me:
                 last_error = me

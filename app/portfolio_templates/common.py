@@ -163,6 +163,8 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
         c_copy.name = sanitize_text(c_copy.name)
         c_copy.issuer = sanitize_text(c_copy.issuer)
         c_copy.year = sanitize_text(c_copy.year)
+        if getattr(c_copy, "url", None):
+            c_copy.url = sanitize_text(c_copy.url)
         safe_certs.append(c_copy)
     res.certifications = safe_certs
 
@@ -314,7 +316,7 @@ def generate_vcard_content(resume: TailoredResume, portfolio_url: str, include_p
     name_parts = (info.full_name or "Candidate").split()
     last_name = name_parts[-1] if len(name_parts) > 1 else ""
     first_name = " ".join(name_parts[:-1]) if len(name_parts) > 1 else info.full_name
-    role = resume.target_job_title or "Professional"
+    role = (resume.target_job_title or "").strip()
     company = resume.target_company or "DreemFolio Verified Talent"
 
     vcard_lines = [
@@ -476,7 +478,7 @@ def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
             <span>Confidential Portfolio</span>
           </div>
           <h3 class="text-xl font-bold text-white">{safe_resume.personal_info.full_name}</h3>
-          <p class="text-xs text-slate-400">{safe_resume.target_job_title}</p>
+          {f'<p class="text-xs text-slate-400">{safe_resume.target_job_title}</p>' if (safe_resume.target_job_title and safe_resume.target_job_title.strip()) else ""}
         </div>
 
         <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
@@ -590,7 +592,7 @@ def render_pin_gate_overlay(safe_resume: TailoredResume, slug: str) -> str:
 
 def render_verification_badge(safe_resume: TailoredResume, slug: str) -> str:
     """Render tamper-proof cryptographic verification badge at top of portfolio."""
-    role = safe_resume.target_job_title or "Professional"
+    role = (safe_resume.target_job_title or "").strip() or "Verified Candidate"
     hmac_sig = compute_portfolio_hmac(slug or "candidate", role)
     return f"""
     <div class="w-full bg-gradient-to-r from-slate-950 via-indigo-950/60 to-slate-950 border-b border-indigo-500/20 py-1.5 px-4 text-center">

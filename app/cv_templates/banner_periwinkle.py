@@ -80,7 +80,7 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
 
         canvas.setFont(f_reg, 12)
         canvas.setFillColor(colors.HexColor("#1E293B"))
-        if resume.target_job_title:
+        if resume.target_job_title and resume.target_job_title.strip():
             canvas.drawString(28, PAGE_H - 68, resume.target_job_title)
 
         has_photo = bool(getattr(resume, "show_photo", False) and info.avatar_url and info.avatar_url.strip())

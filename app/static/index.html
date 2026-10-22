@@ -2769,7 +2769,7 @@
                   class="p-3 rounded-xl border text-left space-y-1 transition group">
                   <div class="flex items-center justify-between">
                     <span class="font-bold text-slate-200 flex items-center gap-1.5">
-                      <span class="text-sm">💻</span> Cyber Terminal CLI
+                      <span class="text-sm">💻</span> Cyber Terminal CLI <span class="ml-1 px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/20 text-emerald-300">Dev & Tech</span>
                     </span>
                     <span class="w-2 h-2 rounded-full"
                       :class="portfolioTheme === 'terminal_dev' ? 'bg-emerald-400' : 'bg-transparent'"></span>
@@ -3208,6 +3208,94 @@
               </div>
             </div>
 
+            <!-- 8.5. Verified Certifications Studio (Cards Preview & CRUD) -->
+            <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                  <span>Verified Certifications Studio (Cards Preview)</span>
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button type="button"
+                    @click="tailoredData.portfolio_show_certifications = (tailoredData.portfolio_show_certifications === false ? true : false); refreshAllPreviews(); $nextTick(() => { if (window.lucide) window.lucide.createIcons(); })"
+                    :class="tailoredData.portfolio_show_certifications !== false ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'"
+                    class="px-2.5 py-1 border rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition">
+                    <i :data-lucide="tailoredData.portfolio_show_certifications !== false ? 'eye' : 'eye-off'" class="w-3.5 h-3.5"></i>
+                    <span x-text="tailoredData.portfolio_show_certifications !== false ? 'Shown' : 'Hidden'"></span>
+                  </button>
+                  <button type="button" @click="addCertification()"
+                    class="px-2.5 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg font-semibold text-[11px] transition flex items-center gap-1">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Add Certificate
+                  </button>
+                </div>
+              </div>
+
+              <!-- Notice when hidden -->
+              <div x-show="tailoredData.portfolio_show_certifications === false" class="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[11px] text-rose-300 flex items-center gap-2">
+                <i data-lucide="eye-off" class="w-4 h-4 shrink-0 text-rose-400"></i>
+                <span>Verified Certifications section is <strong>hidden</strong> from your live portfolio.</span>
+              </div>
+
+              <!-- Certifications Cards List -->
+              <div class="space-y-3" x-show="tailoredData.portfolio_show_certifications !== false">
+                <template x-for="(c, cIdx) in (tailoredData.certifications || [])" :key="cIdx">
+                  <div class="p-3 bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 rounded-xl space-y-2.5 transition">
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-mono text-amber-400 font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20" x-text="'#' + (cIdx+1)"></span>
+                        <span class="text-xs font-semibold text-slate-200" x-text="c.name || 'Untitled Credential'"></span>
+                      </div>
+                      <button type="button" @click="removeCertification(cIdx)" class="text-slate-500 hover:text-red-400 p-1 transition" title="Delete Certificate">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase font-semibold">Certificate / Credential Title</label>
+                        <input type="text" x-model="c.name" @input="refreshAllPreviews()"
+                          placeholder="e.g. NVQ Level 3 Plumber, AWS Architect"
+                          class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-100 font-medium text-[11px]">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase font-semibold">Issuing Organization / Authority</label>
+                        <input type="text" x-model="c.issuer" @input="refreshAllPreviews()"
+                          placeholder="e.g. TVEC, Amazon Web Services, Atlantis"
+                          class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-amber-300 text-[11px]">
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase font-semibold">Issue Date / Year</label>
+                        <input type="text" x-model="c.year" @input="refreshAllPreviews()"
+                          placeholder="e.g. 2021 or 2016 - 2024"
+                          class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 text-[11px]">
+                      </div>
+                      <div>
+                        <label class="text-[9px] text-slate-500 uppercase font-semibold">Verification URL / Credential ID (Optional)</label>
+                        <input type="text" x-model="c.url" @input="refreshAllPreviews()"
+                          placeholder="https://... or ID: P03/0067000220"
+                          class="w-full mt-0.5 bg-slate-950 border border-slate-800 rounded p-1.5 text-slate-300 font-mono text-[10px]">
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Empty State -->
+                <template x-if="!tailoredData.certifications || tailoredData.certifications.length === 0">
+                  <div class="p-4 rounded-xl bg-slate-900/40 border border-dashed border-slate-800 text-center space-y-2">
+                    <i data-lucide="award" class="w-6 h-6 text-slate-600 mx-auto"></i>
+                    <p class="text-xs text-slate-400">No certifications added yet.</p>
+                    <button type="button" @click="addCertification()"
+                      class="px-3 py-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 rounded-lg font-semibold text-xs transition inline-flex items-center gap-1">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add First Certificate
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </div>
+
             <!-- 9. Custom Domain Connector Box -->
             <div
               class="bg-gradient-to-r from-pink-950/40 to-indigo-950/40 border border-pink-500/30 rounded-xl p-3.5 space-y-2">
@@ -3485,7 +3573,8 @@
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📑 Split</button>
               <button @click="setPortfolioTheme('terminal_dev')"
                 :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'terminal_dev', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'terminal_dev'}"
-                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">💻 Terminal</button>
+                title="Recommended for Software Engineers & DevOps specialists"
+                class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">💻 Terminal (Dev & Tech)</button>
               <button @click="setPortfolioTheme('editorial_swiss')"
                 :class="{'bg-pink-600 text-white font-bold shadow-sm': portfolioTheme === 'editorial_swiss', 'text-slate-400 hover:text-slate-200 hover:bg-slate-900': portfolioTheme !== 'editorial_swiss'}"
                 class="px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap transition">📰 Swiss</button>
@@ -3742,7 +3831,7 @@
                       <h2 class="text-xl font-bold tracking-tight uppercase"
                         x-text="tailoredData.personal_info.full_name"></h2>
                       <p class="text-xs text-slate-200 uppercase font-semibold tracking-wider mt-0.5"
-                        x-text="tailoredData.cover_letter.sign_off_title || tailoredData.target_job_title || 'Software Engineer'">
+                        x-text="tailoredData.cover_letter.sign_off_title || tailoredData.target_job_title || ''">
                       </p>
                     </div>
                     <div
@@ -7528,7 +7617,7 @@
                 <div class="text-base font-extrabold text-white"
                   x-text="tailoredData?.personal_info?.full_name || 'Candidate Name'">Candidate Name</div>
                 <div class="text-xs text-slate-300 font-medium"
-                  x-text="tailoredData?.target_job_title || 'Professional Role'">Automotive Specialist</div>
+                  x-text="tailoredData?.target_job_title || ''">Automotive Specialist</div>
                 <div
                   class="text-[11px] text-slate-400 flex items-center justify-center sm:justify-start gap-2 pt-1 font-mono">
                   <span x-text="tailoredData?.personal_info?.location || 'Worldwide'">Location</span>

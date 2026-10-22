@@ -19,7 +19,8 @@ from app.portfolio_templates.common import (
 def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
     info = resume.personal_info
     full_name = info.full_name or "Candidate Name"
-    role_title = resume.target_job_title or "Software Architect"
+    role_title = (resume.target_job_title or "").strip()
+    role_html = f'<p class="text-xl sm:text-2xl text-slate-400 font-light tracking-wide italic">{role_title}</p>' if role_title else ""
     summary = resume.professional_summary or ""
     cta_text = resume.portfolio_cta_text or "Initiate Conversation"
     cta_url = resume.portfolio_cta_url or (
@@ -47,7 +48,7 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
     # Marquee
     marquee_words = [
         html.unescape(full_name).upper(),
-        html.unescape(role_title).upper(),
+        html.unescape(role_title).upper() if role_title else "CURRICULUM VITAE",
         "OPERATIONAL EXCELLENCE",
         "PROVEN LEADERSHIP",
         "VERIFIED CREDENTIALS",
@@ -188,6 +189,70 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
         </section>
     ''' if resume.portfolio_show_skills else ''
 
+    # --- Education Section (Swiss Grid) ---
+    show_edu = (
+        getattr(resume, "portfolio_show_education", True)
+        and getattr(resume, "show_education", True)
+        and len(resume.education) > 0
+    )
+    edu_items = []
+    for edu in resume.education:
+        details_html = f'<p class="text-xs text-slate-400 font-light leading-relaxed pt-1">{edu.details}</p>' if getattr(edu, "details", None) else ''
+        loc_html = f'<span class="text-slate-500"> // {edu.location}</span>' if getattr(edu, "location", None) else ''
+        year_html = f'<span class="text-xs font-mono text-slate-400">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        edu_items.append(f"""
+          <div class="py-4 border-b border-slate-800 space-y-1">
+            <div class="flex flex-wrap justify-between items-baseline gap-2">
+              <div>
+                <h4 class="text-base font-bold text-white tracking-tight uppercase">{edu.degree}</h4>
+                <p class="text-xs font-mono text-[var(--accent)] uppercase">{edu.institution}{loc_html}</p>
+              </div>
+              {year_html}
+            </div>
+            {details_html}
+          </div>
+        """)
+    edu_section_html = f'''
+        <section class="space-y-6 animate-fade-in-up">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">04 / ACADEMIC BACKGROUND</h3>
+            <span class="text-xs font-mono text-slate-500">{len(resume.education)} DEGREES / QUALIFICATIONS</span>
+          </div>
+          <div class="space-y-2">{"".join(edu_items)}</div>
+        </section>
+    ''' if show_edu else ''
+
+    # --- Certifications Section (Swiss Monograph) ---
+    raw_certs = getattr(resume, "certifications", []) or []
+    show_certs = (
+        getattr(resume, "portfolio_show_certifications", True)
+        and len(raw_certs) > 0
+    )
+    cert_items = []
+    for cert in raw_certs:
+        issuer_html = f'<span class="text-xs font-mono text-slate-400 uppercase">{cert.issuer}</span>' if getattr(cert, "issuer", None) else ''
+        year_html = f'<span class="text-xs font-mono text-slate-500">{cert.year}</span>' if getattr(cert, "year", None) else ''
+        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs font-mono text-[var(--accent)] hover:underline uppercase">VERIFY →</a>' if getattr(cert, "url", None) else ''
+        cert_items.append(f"""
+          <div class="p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-white/[0.01]">
+            <div class="space-y-0.5">
+              <h4 class="text-sm font-bold text-white uppercase tracking-tight">{cert.name}</h4>
+              <div class="flex items-center gap-3">{issuer_html} {year_html}</div>
+            </div>
+            {url_html}
+          </div>
+        """)
+    cert_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4" if len(cert_items) >= 2 else "grid grid-cols-1 gap-4"
+    cert_section_html = f'''
+        <section class="space-y-6 animate-fade-in-up">
+          <div class="flex justify-between items-baseline border-b border-white pb-3">
+            <h3 class="text-sm font-mono tracking-widest uppercase text-slate-400">05 / VERIFIED CREDENTIALS & LICENSES</h3>
+            <span class="text-xs font-mono text-slate-500">{len(raw_certs)} ACCREDITED</span>
+          </div>
+          <div class="{cert_grid_class}">{"".join(cert_items)}</div>
+        </section>
+    ''' if show_certs else ''
+
     # --- Contact Section ---
     contact_items = []
     if info.email:
@@ -292,6 +357,12 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
 
         <!-- Skills -->
         {skills_section_html}
+
+        <!-- Academic Background -->
+        {edu_section_html}
+
+        <!-- Certifications -->
+        {cert_section_html}
 
         <!-- Contact Section -->
         {contact_section_html}
