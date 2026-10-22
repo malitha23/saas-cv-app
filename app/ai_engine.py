@@ -17,6 +17,7 @@ from app.schemas import (
     EducationItem,
     ProjectItem,
     CertificationItem,
+    ReferenceItem,
     ATSAnalysis,
     CoverLetter,
     MatchedJobOpportunity,
@@ -2123,6 +2124,150 @@ def _parse_and_tailor_user_data(
         tone=cover_letter_tone,
     )
 
+    # KYC Personal Info
+    gender = None
+    gender_match = re.search(r"(?:gender|sex)\s*[:\-–]\s*([a-zA-Z]+)", clean_text, re.IGNORECASE)
+    if gender_match:
+        gender = gender_match.group(1).strip().capitalize()
+
+    nationality = None
+    nat_match = re.search(r"(?:nationality|citizenship)\s*[:\-–]\s*([a-zA-Z\s]{3,30}?)(?:[\r\n]|$)", clean_text, re.IGNORECASE)
+    if nat_match:
+        nationality = nat_match.group(1).strip().title()
+
+    date_of_birth = None
+    dob_match = re.search(r"(?:date\s+of\s+birth|dob|birth\s*date)\s*[:\-–]\s*([0-9]{2,4}[\/\-\.][0-9]{1,2}[\/\-\.][0-9]{2,4}|[0-9]{1,2}\s+[a-zA-Z]{3,9}\s+[0-9]{4})", clean_text, re.IGNORECASE)
+    if dob_match:
+        date_of_birth = dob_match.group(1).strip()
+
+    civil_status = None
+    civil_match = re.search(r"(?:civil\s+status|marital\s+status)\s*[:\-–]\s*([a-zA-Z]+)", clean_text, re.IGNORECASE)
+    if civil_match:
+        civil_status = civil_match.group(1).strip().capitalize()
+
+    # Certifications
+    parsed_certifications: List[CertificationItem] = []
+    cert_match = re.search(
+        r"(?:^|\n)[ \t]*(?:CERTIFICATIONS|LICENSES\s+&\s+CERTIFICATIONS|COURSES\s+&\s+CERTIFICATES|CERTIFICATES)[ \t]*\n([\s\S]*?)(?=(?:\n[ \t]*(?:LANGUAGES|REFERENCES|REFEREES|DECLARATION|PERSONAL\s+INFORMATION|EDUCATION|EXPERIENCE)[ \t]*\n)|\Z)",
+        clean_text,
+        re.IGNORECASE,
+    )
+    if cert_match:
+        cert_lines = [l.strip() for l in cert_match.group(1).splitlines() if l.strip()]
+        for cline in cert_lines:
+            c_val = re.sub(r"^[\-•\*\d\.\s]+", "", cline).strip()
+            if not c_val or len(c_val) < 4:
+                continue
+            c_url = ""
+            url_m = re.search(r"(https?://\S+)", c_val)
+            if url_m:
+                c_url = url_m.group(1).rstrip(").,")
+                c_val = c_val.replace(url_m.group(1), "").strip()
+
+            c_issuer = ""
+            c_date = ""
+            date_m = re.search(r"\(?((?:19|20)\d{2})\)?", c_val)
+            if date_m:
+                c_date = date_m.group(1)
+                c_val = c_val.replace(date_m.group(0), "").strip()
+
+            if " - " in c_val or " – " in c_val or " | " in c_val:
+                parts = re.split(r"\s*[-–|]\s*", c_val, 1)
+                c_name = parts[0].strip()
+                c_issuer = parts[1].strip()
+            else:
+                c_name = c_val
+
+            parsed_certifications.append(CertificationItem(
+                name=c_name,
+                issuer=c_issuer,
+                date=c_date,
+                url=c_url
+            ))
+
+    # Languages
+    languages: List[str] = []
+    lang_match = re.search(
+        r"(?:^|\n)[ \t]*(?:LANGUAGES|SPOKEN\s+LANGUAGES|LANGUAGE\s+PROFICIENCY)[ \t]*\n([\s\S]*?)(?=(?:\n[ \t]*(?:REFERENCES|REFEREES|DECLARATION|CERTIFICATIONS|PERSONAL\s+INFORMATION|EDUCATION|EXPERIENCE)[ \t]*\n)|\Z)",
+        clean_text,
+        re.IGNORECASE,
+    )
+    if lang_match:
+        l_text = lang_match.group(1).strip()
+        for raw_l in l_text.splitlines():
+            raw_l = re.sub(r"^[\-•\*\s]+", "", raw_l).strip()
+            if not raw_l:
+                continue
+            parts = re.split(r"[\/,|]", raw_l) if ("/" in raw_l or "|" in raw_l or "," in raw_l) else [raw_l]
+            for p in parts:
+                p_clean = re.sub(r"\s*[-–(].*$", "", p).strip()
+                if p_clean and len(p_clean) < 30 and p_clean.lower() not in [x.lower() for x in languages]:
+                    languages.append(p_clean.capitalize())
+    if not languages:
+        inline_lang = re.search(r"(?:languages|spoken\s+languages)\s*[:\-–]\s*([^\n]+)", clean_text, re.IGNORECASE)
+        if inline_lang:
+            parts = re.split(r"[\/,|]", inline_lang.group(1))
+            for p in parts:
+                p_clean = re.sub(r"\s*[-–(].*$", "", p).strip()
+                if p_clean and len(p_clean) < 30 and p_clean.lower() not in [x.lower() for x in languages]:
+                    languages.append(p_clean.capitalize())
+
+    # References
+    parsed_references: List[ReferenceItem] = []
+    ref_match = re.search(
+        r"(?:^|\n)[ \t]*(?:REFERENCES|REFEREES|PROFESSIONAL\s+REFERENCES)[ \t]*\n([\s\S]*?)(?=(?:\n[ \t]*(?:DECLARATION|APPENDIX)[ \t]*\n)|\Z)",
+        clean_text,
+        re.IGNORECASE,
+    )
+    if ref_match:
+        ref_text = ref_match.group(1).strip()
+        if "available upon request" not in ref_text.lower():
+            ref_blocks = re.split(r"\n\s*(?:[•\-*]|\d+\.)\s*", "\n" + ref_text)
+            for rb in ref_blocks:
+                rb = rb.strip()
+                if not rb or len(rb) < 8:
+                    continue
+                lines = [l.strip() for l in rb.splitlines() if l.strip()]
+                if not lines:
+                    continue
+                r_name = re.sub(r"^[\-•\*\d\.\s]+", "", lines[0]).strip()
+                if any(w in r_name.lower() for w in ["available", "request", "declaration", "date", "signature", "referee"]):
+                    continue
+                r_title = None
+                r_company = None
+                r_email = None
+                r_phone = None
+
+                em_m = re.search(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", rb)
+                if em_m:
+                    r_email = em_m.group(1)
+                ph_m = re.search(r"((?:\+?\d{1,4}[\s-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,5})", rb)
+                if ph_m:
+                    r_phone = ph_m.group(1).strip()
+
+                for line in lines[1:]:
+                    if r_email and r_email in line:
+                        continue
+                    if r_phone and r_phone in line:
+                        continue
+                    if not r_title:
+                        if "," in line:
+                            tp = line.split(",", 1)
+                            r_title = tp[0].strip()
+                            r_company = tp[1].strip()
+                        else:
+                            r_title = line
+                    elif not r_company:
+                        r_company = line
+
+                parsed_references.append(ReferenceItem(
+                    name=r_name,
+                    title=r_title,
+                    company=r_company,
+                    email=r_email,
+                    phone=r_phone
+                ))
+
     flat_skills = []
     for cat in skill_categories:
         flat_skills.extend(cat.skills)
@@ -2145,6 +2290,10 @@ def _parse_and_tailor_user_data(
             availability_badge="Available for Immediate Employment & Opportunities",
             custom_domain="",
             social_links=social_links,
+            gender=gender if gender else None,
+            nationality=nationality if nationality else None,
+            date_of_birth=date_of_birth if date_of_birth else None,
+            civil_status=civil_status if civil_status else None,
         ),
         target_job_title=detected_title,
         target_company=detected_company,
@@ -2169,7 +2318,9 @@ def _parse_and_tailor_user_data(
         work_experience=work_experience,
         education=education,
         projects=projects,
-        certifications=[],
+        certifications=parsed_certifications,
+        languages=languages,
+        references=parsed_references,
         ats_analysis=ats_analysis,
         cover_letter=cover_letter,
         matched_jobs=matched_jobs,

@@ -13,6 +13,10 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_cert_badge_thumb,
+    render_personal_kyc_strip,
+    render_spoken_languages_block,
+    render_references_block,
     sanitize_text, sanitize_url, get_social_svg, get_social_icon, hex_to_rgba
 )
 
@@ -427,6 +431,11 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         <!-- EDUCATION -->
         {edu_section_html}
         
+        <!-- LANGUAGES, REFERENCES & PERSONAL DETAILS -->
+        {render_spoken_languages_block(resume, card_bg="bg-slate-950/70", border="border-emerald-500/20")}
+        {render_references_block(resume, card_bg="bg-slate-950/70", border="border-emerald-500/20")}
+        {render_personal_kyc_strip(resume, card_bg="bg-slate-950/70", border="border-emerald-500/20")}
+
         <!-- CONTACT SECTION -->
         {contact_section_html}
         

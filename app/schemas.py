@@ -48,6 +48,10 @@ class PersonalInfo(BaseModel):
         default_factory=list,
         description="Dynamic list of social media and custom links",
     )
+    gender: Optional[str] = Field(None, description="Gender (e.g. 'Male', 'Female')")
+    nationality: Optional[str] = Field(None, description="Nationality (e.g. 'Sri Lankan')")
+    date_of_birth: Optional[str] = Field(None, description="Date of birth (e.g. '1993/06/02')")
+    civil_status: Optional[str] = Field(None, description="Civil/marital status (e.g. 'Married', 'Single')")
 
     @field_validator("full_name")
     @classmethod
@@ -148,6 +152,14 @@ class CertificationItem(BaseModel):
     issuer: str = Field(..., description="Issuing organization")
     year: Optional[str] = Field(None, description="Year awarded")
     url: Optional[str] = Field(None, description="Credential ID or verification link")
+
+
+class ReferenceItem(BaseModel):
+    name: str = Field(..., description="Referee full name")
+    title: Optional[str] = Field(None, description="Designation / job title")
+    company: Optional[str] = Field(None, description="Organization / company")
+    email: Optional[str] = Field(None, description="Contact email")
+    phone: Optional[str] = Field(None, description="Contact phone")
 
 
 class KeywordDetail(BaseModel):
@@ -389,6 +401,15 @@ class TailoredResume(BaseModel):
     show_certifications: bool = Field(
         default=True, description="Show/Hide Certifications"
     )
+    show_languages: bool = Field(
+        default=True, description="Show/Hide Spoken Languages in CV"
+    )
+    show_references: bool = Field(
+        default=True, description="Show/Hide Professional References in CV"
+    )
+    show_personal_details: bool = Field(
+        default=True, description="Show/Hide Personal Details (Gender, Nationality, DOB, Civil Status) in CV"
+    )
     role_archetype: str = Field(
         default="general_professional",
         description="Role blueprint: 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'",
@@ -409,6 +430,14 @@ class TailoredResume(BaseModel):
     education: List[EducationItem] = Field(default_factory=list)
     projects: List[ProjectItem] = Field(default_factory=list)
     certifications: List[CertificationItem] = Field(default_factory=list)
+    languages: List[str] = Field(
+        default_factory=list,
+        description="Spoken languages (e.g. ['English', 'Sinhala', 'Hindi'])",
+    )
+    references: List[ReferenceItem] = Field(
+        default_factory=list,
+        description="Professional references",
+    )
     ats_analysis: ATSAnalysis
     cover_letter: CoverLetter
 
@@ -445,6 +474,15 @@ class TailoredResume(BaseModel):
     )
     portfolio_show_certifications: bool = Field(
         default=True, description="Show/Hide Certifications and Credentials section"
+    )
+    portfolio_show_languages: bool = Field(
+        default=True, description="Show/Hide Spoken Languages section"
+    )
+    portfolio_show_references: bool = Field(
+        default=True, description="Show/Hide Professional References section"
+    )
+    portfolio_show_personal_details: bool = Field(
+        default=True, description="Show/Hide Personal KYC Details (Gender, Nationality, DOB, Civil Status)"
     )
     portfolio_show_resume_download: bool = Field(
         default=True, description="Show direct ATS Resume download button on portfolio"

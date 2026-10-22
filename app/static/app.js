@@ -2546,6 +2546,48 @@ function resumeApp() {
       this.refreshAllPreviews();
     },
 
+    // Languages Customizer
+    addPortfolioLanguage(langName = '') {
+      if (!this.tailoredData) return;
+      if (!Array.isArray(this.tailoredData.languages)) this.tailoredData.languages = [];
+      const val = langName || prompt('Enter spoken language (e.g. English, Sinhala, Hindi):');
+      if (val && val.trim()) {
+        const clean = val.trim();
+        if (!this.tailoredData.languages.includes(clean)) {
+          this.tailoredData.languages.push(clean);
+          this.refreshAllPreviews();
+          this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+        }
+      }
+    },
+
+    removePortfolioLanguage(idx) {
+      if (!this.tailoredData || !Array.isArray(this.tailoredData.languages)) return;
+      this.tailoredData.languages.splice(idx, 1);
+      this.refreshAllPreviews();
+    },
+
+    // References Customizer
+    addPortfolioReference() {
+      if (!this.tailoredData) return;
+      if (!Array.isArray(this.tailoredData.references)) this.tailoredData.references = [];
+      this.tailoredData.references.push({
+        name: 'Professional Referee',
+        title: 'Department Director / Manager',
+        company: 'Company / Organization',
+        email: 'referee@example.com',
+        phone: '+971 50 000 0000'
+      });
+      this.refreshAllPreviews();
+      this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+    },
+
+    removePortfolioReference(idx) {
+      if (!this.tailoredData || !Array.isArray(this.tailoredData.references)) return;
+      this.tailoredData.references.splice(idx, 1);
+      this.refreshAllPreviews();
+    },
+
     // Social Links Manager
     addSocialLink() {
       if (!this.tailoredData) return;

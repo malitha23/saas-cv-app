@@ -168,6 +168,40 @@ def sanitize_resume_for_portfolio(resume: TailoredResume) -> TailoredResume:
         safe_certs.append(c_copy)
     res.certifications = safe_certs
 
+    # Languages Sanitization
+    safe_langs = []
+    for l in getattr(res, "languages", []):
+        clean_l = sanitize_text(str(l))
+        if clean_l:
+            safe_langs.append(clean_l)
+    res.languages = safe_langs
+
+    # References Sanitization
+    from app.schemas import ReferenceItem
+    safe_refs = []
+    for r in getattr(res, "references", []):
+        r_name = sanitize_text(getattr(r, "name", ""))
+        if r_name:
+            safe_refs.append(ReferenceItem(
+                name=r_name,
+                title=sanitize_text(getattr(r, "title", None)),
+                company=sanitize_text(getattr(r, "company", None)),
+                email=sanitize_text(getattr(r, "email", None)),
+                phone=sanitize_text(getattr(r, "phone", None)),
+            ))
+    res.references = safe_refs
+
+    # Personal KYC Info Sanitization
+    pinfo = res.personal_info
+    if getattr(pinfo, "gender", None):
+        pinfo.gender = sanitize_text(pinfo.gender)
+    if getattr(pinfo, "nationality", None):
+        pinfo.nationality = sanitize_text(pinfo.nationality)
+    if getattr(pinfo, "date_of_birth", None):
+        pinfo.date_of_birth = sanitize_text(pinfo.date_of_birth)
+    if getattr(pinfo, "civil_status", None):
+        pinfo.civil_status = sanitize_text(pinfo.civil_status)
+
     # Proof of Work Evidence Sanitization
     safe_pow = []
     for pow_item in getattr(res, "proof_of_work", []):
@@ -746,3 +780,129 @@ def render_viral_portfolio_badge(slug: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # MASTER PORTFOLIO COMPOSER
 # ─────────────────────────────────────────────────────────────────────────────
+
+def is_image_url(url: Optional[str]) -> bool:
+    """Check if a URL points to an image resource (file extension or data-uri)."""
+    if not url or not isinstance(url, str):
+        return False
+    u = url.strip().lower()
+    if u.startswith("data:image/"):
+        return True
+    path = u.split("?")[0].split("#")[0]
+    return path.endswith((".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif", ".bmp", ".jfif"))
+
+
+def render_cert_badge_thumb(cert, accent_var="var(--accent)") -> str:
+    """Render small certificate thumbnail preview or verification link."""
+    cert_url = getattr(cert, "url", None)
+    if not cert_url:
+        return ""
+    if is_image_url(cert_url):
+        return f'''<a href="{cert_url}" target="_blank" title="View Certificate Document" class="relative group/thumb shrink-0 block w-11 h-11 rounded-xl overflow-hidden border border-amber-500/40 hover:border-amber-400 shadow-md">
+          <img src="{cert_url}" alt="{getattr(cert, "name", "Certificate")}" class="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-300">
+          <div class="absolute inset-0 bg-black/30 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center text-white">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+          </div>
+        </a>'''
+    elif cert_url.startswith("http://") or cert_url.startswith("https://"):
+        return f'<a href="{cert_url}" target="_blank" class="text-xs text-[{accent_var}] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3 h-3"></i> Verify</a>'
+    else:
+        return f'<span class="text-[10px] font-mono text-amber-300/90 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">ID: {cert_url}</span>'
+
+
+def render_personal_kyc_strip(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
+    """Render personal KYC metadata strip (Gender, Nationality, DOB, Civil Status)."""
+    if not getattr(resume, "portfolio_show_personal_details", True):
+        return ""
+    info = resume.personal_info
+    items = []
+    if getattr(info, "gender", None):
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="user" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Gender:</span><span class="text-white text-xs font-semibold">{info.gender}</span></div>')
+    if getattr(info, "nationality", None):
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="flag" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Nationality:</span><span class="text-white text-xs font-semibold">{info.nationality}</span></div>')
+    if getattr(info, "date_of_birth", None):
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="calendar" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Date of Birth:</span><span class="text-white text-xs font-semibold">{info.date_of_birth}</span></div>')
+    if getattr(info, "civil_status", None):
+        items.append(f'<div class="flex items-center gap-2"><i data-lucide="heart" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i><span class="text-slate-400 text-xs">Civil Status:</span><span class="text-white text-xs font-semibold">{info.civil_status}</span></div>')
+    if not items:
+        return ""
+    return f'''
+    <div class="reveal p-4 {card_bg} backdrop-blur-xl border {border} rounded-2xl shadow-sm">
+      <div class="flex flex-wrap items-center gap-4 sm:gap-6 justify-between">
+        {' '.join(items)}
+      </div>
+    </div>
+    '''
+
+
+def render_spoken_languages_block(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
+    """Render spoken natural languages badge list."""
+    if not getattr(resume, "portfolio_show_languages", True):
+        return ""
+    langs = getattr(resume, "languages", []) or []
+    if not langs:
+        return ""
+    pills = "".join(f'<span class="px-3 py-1 rounded-full text-xs font-semibold bg-white/[0.05] border border-white/10 text-slate-200 hover:border-[var(--accent)] transition">{l}</span>' for l in langs)
+    return f'''
+    <div class="reveal p-5 {card_bg} backdrop-blur-xl border {border} rounded-2xl space-y-3">
+      <div class="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider">
+        <i data-lucide="languages" class="w-4 h-4 text-[var(--accent)]"></i>
+        <span>Spoken Languages</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {pills}
+      </div>
+    </div>
+    '''
+
+
+def render_references_block(resume, card_bg="bg-slate-900/60", border="border-slate-800") -> str:
+    """Render professional references cards."""
+    if not getattr(resume, "portfolio_show_references", True):
+        return ""
+    refs = getattr(resume, "references", []) or []
+    if not refs:
+        return ""
+    cards = []
+    for r in refs:
+        name = getattr(r, "name", "")
+        title = getattr(r, "title", None)
+        company = getattr(r, "company", None)
+        email = getattr(r, "email", None)
+        phone = getattr(r, "phone", None)
+        title_co = f"{title} • {company}" if (title and company) else (title or company or "")
+
+        contacts_html = []
+        if email:
+            contacts_html.append(f'<a href="mailto:{email}" class="text-[11px] text-slate-300 hover:text-[var(--accent)] flex items-center gap-1.5 transition truncate"><i data-lucide="mail" class="w-3.5 h-3.5 text-[var(--accent)] shrink-0"></i> {email}</a>')
+        if phone:
+            contacts_html.append(f'<a href="tel:{phone}" class="text-[11px] text-slate-300 hover:text-emerald-400 flex items-center gap-1.5 transition truncate"><i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i> {phone}</a>')
+
+        cards.append(f'''
+        <div class="p-4 bg-white/[0.02] border {border} rounded-2xl space-y-2 hover:border-[var(--accent)]/50 transition">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs shrink-0">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <h5 class="text-xs font-bold text-white truncate">{name}</h5>
+              <p class="text-[10px] text-slate-400 truncate">{title_co}</p>
+            </div>
+          </div>
+          <div class="space-y-1 pt-1.5 border-t {border}/60">
+            {' '.join(contacts_html)}
+          </div>
+        </div>
+        ''')
+
+    return f'''
+    <div class="reveal p-6 {card_bg} backdrop-blur-xl border {border} rounded-3xl space-y-4 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]">
+      <div class="flex items-center gap-2 text-sm font-bold text-white border-b {border} pb-3">
+        <i data-lucide="users-2" class="w-4 h-4 text-[var(--accent)]"></i>
+        <span>Professional References</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {' '.join(cards)}
+      </div>
+    </div>
+    '''

@@ -144,6 +144,13 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
         if info.github:    contacts.append(("GITHUB", info.github))
         if info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
+        if getattr(resume, "show_personal_details", True):
+            if getattr(info, "nationality", None): contacts.append(("NATIONALITY", info.nationality))
+            if getattr(info, "date_of_birth", None): contacts.append(("DOB", info.date_of_birth))
+            if getattr(info, "gender", None): contacts.append(("GENDER", info.gender))
+            if getattr(info, "civil_status", None): contacts.append(("CIVIL STATUS", info.civil_status))
+        if getattr(resume, "show_languages", True) and getattr(resume, "languages", None):
+            contacts.append(("LANGUAGES", ", ".join(resume.languages)))
 
         for lbl, val in contacts:
             if y < 60: break
@@ -253,6 +260,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         ("projects", resume.show_projects and resume.projects),
         ("education", resume.show_education and resume.education),
         ("certifications", resume.show_certifications and resume.certifications),
+        ("references", getattr(resume, "show_references", True) and getattr(resume, "references", None)),
     ]:
         if is_active and sec_name not in order:
             order.append(sec_name)
@@ -371,6 +379,25 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                 body.append(KeepTogether(item_flow))
                 body.append(Spacer(1, spacer_h * 0.6))
 
+    def add_references():
+        if getattr(resume, "show_references", True) and getattr(resume, "references", None):
+            sec_flow = [
+                Paragraph("PROFESSIONAL REFERENCES", S["V1SecHdr"]),
+                HRFlowable(width="100%", thickness=1.4, color=accent, spaceBefore=0, spaceAfter=3),
+            ]
+            for ref in resume.references:
+                comp = f", {ref.company}" if getattr(ref, "company", None) else ""
+                title = f" – {ref.title}" if getattr(ref, "title", None) else ""
+                contact_bits = []
+                if getattr(ref, "email", None):
+                    contact_bits.append(ref.email)
+                if getattr(ref, "phone", None):
+                    contact_bits.append(ref.phone)
+                contact_str = f" <font color='#4B5563'>({', '.join(contact_bits)})</font>" if contact_bits else ""
+                sec_flow.append(Paragraph(f"<b>{ref.name}</b>{title}{comp}{contact_str}", S["V1Body"]))
+            body.append(KeepTogether(sec_flow))
+            body.append(Spacer(1, spacer_h))
+
     for sec in order:
         if sec == "summary":
             add_summary()
@@ -382,6 +409,8 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             add_education()
         elif sec == "certifications":
             add_certifications()
+        elif sec == "references":
+            add_references()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=28, bottomMargin=20)

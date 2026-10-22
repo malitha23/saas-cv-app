@@ -158,6 +158,15 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     contacts = [p for p in [info.location, info.phone, info.email,
                              info.linkedin, info.github, info.portfolio] if p]
     story.append(Paragraph(" | ".join(contacts), S["AtsCntct"]))
+
+    kyc_items = []
+    if getattr(info, "nationality", None): kyc_items.append(f"Nationality: {info.nationality}")
+    if getattr(info, "date_of_birth", None): kyc_items.append(f"DOB: {info.date_of_birth}")
+    if getattr(info, "gender", None): kyc_items.append(f"Gender: {info.gender}")
+    if getattr(info, "civil_status", None): kyc_items.append(f"Civil Status: {info.civil_status}")
+    if getattr(resume, "show_personal_details", True) and kyc_items:
+        story.append(Paragraph(" • ".join(kyc_items), S["AtsCntct"]))
+
     story.append(HRFlowable(width="100%", thickness=1.5, color=primary, spaceBefore=1, spaceAfter=5))
 
     order = list(getattr(resume, "section_order", None) or ["summary", "skills", "experience", "projects", "education", "certifications"])
@@ -168,6 +177,8 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         ("projects", resume.show_projects and resume.projects),
         ("education", resume.show_education and resume.education),
         ("certifications", resume.show_certifications and resume.certifications),
+        ("languages", getattr(resume, "show_languages", True) and getattr(resume, "languages", None)),
+        ("references", getattr(resume, "show_references", True) and getattr(resume, "references", None)),
     ]:
         if is_active and sec_name not in order:
             order.append(sec_name)
@@ -302,6 +313,35 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
             story.append(KeepTogether(sec_flow))
             story.append(Spacer(1, spacer_gap * 0.8))
 
+    def add_ats_languages():
+        if getattr(resume, "show_languages", True) and getattr(resume, "languages", None):
+            sec_flow = [
+                Paragraph("LANGUAGES", S["AtsSecHdr"]),
+                HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3),
+                Paragraph(" • ".join(resume.languages), S["AtsBody"])
+            ]
+            story.append(KeepTogether(sec_flow))
+            story.append(Spacer(1, spacer_gap * 0.8))
+
+    def add_ats_references():
+        if getattr(resume, "show_references", True) and getattr(resume, "references", None):
+            sec_flow = [
+                Paragraph("PROFESSIONAL REFERENCES", S["AtsSecHdr"]),
+                HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3)
+            ]
+            for ref in resume.references:
+                comp = f", {ref.company}" if getattr(ref, "company", None) else ""
+                title = f" – {ref.title}" if getattr(ref, "title", None) else ""
+                contact_bits = []
+                if getattr(ref, "email", None):
+                    contact_bits.append(ref.email)
+                if getattr(ref, "phone", None):
+                    contact_bits.append(ref.phone)
+                contact_str = f" <font color='#4B5563'>({', '.join(contact_bits)})</font>" if contact_bits else ""
+                sec_flow.append(Paragraph(f"<b>{ref.name}</b>{title}{comp}{contact_str}", S["AtsBody"]))
+            story.append(KeepTogether(sec_flow))
+            story.append(Spacer(1, spacer_gap * 0.8))
+
     for sec in order:
         if sec == "summary":
             add_ats_summary()
@@ -315,6 +355,10 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
             add_ats_education()
         elif sec == "certifications":
             add_ats_certifications()
+        elif sec == "languages":
+            add_ats_languages()
+        elif sec == "references":
+            add_ats_references()
 
     doc.build(story)
     buf.seek(0)

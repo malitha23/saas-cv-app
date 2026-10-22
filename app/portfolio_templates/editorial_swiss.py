@@ -13,6 +13,10 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_cert_badge_thumb,
+    render_personal_kyc_strip,
+    render_spoken_languages_block,
+    render_references_block,
     sanitize_text, sanitize_url, get_social_svg, get_social_icon, hex_to_rgba
 )
 
@@ -363,6 +367,11 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
 
         <!-- Certifications -->
         {cert_section_html}
+
+        <!-- Languages, References & Personal Details -->
+        {render_spoken_languages_block(resume, card_bg="bg-neutral-900", border="border-neutral-800")}
+        {render_references_block(resume, card_bg="bg-neutral-900", border="border-neutral-800")}
+        {render_personal_kyc_strip(resume, card_bg="bg-neutral-900", border="border-neutral-800")}
 
         <!-- Contact Section -->
         {contact_section_html}

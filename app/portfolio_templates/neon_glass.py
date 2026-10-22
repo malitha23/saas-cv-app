@@ -17,6 +17,10 @@ from app.portfolio_templates.common import (
     get_social_svg,
     get_social_icon,
     hex_to_rgba,
+    render_cert_badge_thumb,
+    render_personal_kyc_strip,
+    render_spoken_languages_block,
+    render_references_block,
 )
 
 
@@ -297,7 +301,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
     for cert in raw_certs:
         issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/10">{cert.year}</span>' if getattr(cert, "year", None) else ''
-        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3 h-3"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        url_html = render_cert_badge_thumb(cert)
         cert_cards.append(f"""
           <div class="reveal group p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/60 hover:shadow-[0_8px_24px_-6px_var(--accent-glow)] transition-all duration-300 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3.5 min-w-0">
@@ -614,6 +618,15 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
 
           <!-- Certifications Showcase -->
           {cert_showcase_html}
+
+          <!-- Languages Showcase -->
+          {render_spoken_languages_block(resume, card_bg="bg-white/[0.04]", border="border-white/10")}
+
+          <!-- References Showcase -->
+          {render_references_block(resume, card_bg="bg-white/[0.04]", border="border-white/10")}
+
+          <!-- Personal KYC Strip -->
+          {render_personal_kyc_strip(resume, card_bg="bg-white/[0.04]", border="border-white/10")}
 
           <!-- Contact Showcase -->
           {contact_showcase_html}

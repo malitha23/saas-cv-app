@@ -12,6 +12,10 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_cert_badge_thumb,
+    render_personal_kyc_strip,
+    render_spoken_languages_block,
+    render_references_block,
     sanitize_text,
     sanitize_url,
     get_social_svg,
@@ -196,7 +200,7 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
     )
     cert_badges = []
     for cert in raw_certs:
-        url_html = f'<a href="{cert.url}" target="_blank" class="text-[10px] text-[var(--accent)] hover:underline font-mono shrink-0">Verify ↗</a>' if getattr(cert, "url", None) else ''
+        url_html = render_cert_badge_thumb(cert)
         year_html = f'<span class="text-[10px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
         issuer_html = f'<p class="text-[11px] text-slate-400 truncate">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         cert_badges.append(f"""
@@ -634,6 +638,11 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
           {exp_card_html}
           {right_bento_col}
         </div>
+
+        <!-- BENTO ROW 3.5: Languages, References & Personal Details -->
+        {render_spoken_languages_block(resume, card_bg="bg-slate-900/70", border="border-slate-800")}
+        {render_references_block(resume, card_bg="bg-slate-900/70", border="border-slate-800")}
+        {render_personal_kyc_strip(resume, card_bg="bg-slate-900/70", border="border-slate-800")}
 
         <!-- BENTO ROW 4: Contact & Direct Channels -->
         {contact_card_html}

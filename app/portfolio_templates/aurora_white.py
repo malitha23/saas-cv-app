@@ -12,6 +12,10 @@ import json
 from typing import List, Optional, Dict, Any
 from app.schemas import TailoredResume
 from app.portfolio_templates.common import (
+    render_cert_badge_thumb,
+    render_personal_kyc_strip,
+    render_spoken_languages_block,
+    render_references_block,
     sanitize_text,
     sanitize_url,
     get_social_svg,
@@ -338,7 +342,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
     for cert in raw_certs:
         issuer_html = f'<p class="text-xs font-medium text-slate-500">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/60">{cert.year}</span>' if getattr(cert, "year", None) else ''
-        url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0">Verify <span class="text-[10px]">↗</span></a>' if getattr(cert, "url", None) else ''
+        url_html = render_cert_badge_thumb(cert)
         cert_cards.append(f"""
           <div class="reveal group p-4 sm:p-5 bg-white border border-slate-200/60 rounded-2xl shadow-[0_2px_10px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.12)] hover:-translate-y-1 hover:border-[var(--accent)]/40 transition-all duration-300 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3.5 min-w-0">
@@ -668,7 +672,12 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
           <!-- CERTIFICATIONS -->
           {cert_section_html}
 
-          <!-- CONTACT & DIRECT CONNECT -->
+          <!-- LANGUAGES, REFERENCES & PERSONAL DETAILS -->
+        {render_spoken_languages_block(resume, card_bg="bg-white/80", border="border-slate-200")}
+        {render_references_block(resume, card_bg="bg-white/80", border="border-slate-200")}
+        {render_personal_kyc_strip(resume, card_bg="bg-white/80", border="border-slate-200")}
+
+        <!-- CONTACT & DIRECT CONNECT -->
           {contact_section_html}
 
         </main>
