@@ -115,11 +115,11 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
         canvas.line(0, ribbon_y, PAGE_W, ribbon_y)
 
         # Ribbon contacts
-        pub_url = get_published_portfolio_url(resume)
+        pub_url = get_published_portfolio_url(resume, position="header")
         contact_items = [p for p in [info.email, info.phone, info.location, info.linkedin, info.github] if p]
         if pub_url:
             contact_items.append("More on My Portfolio")
-        elif info.portfolio:
+        elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio:
             contact_items.append(info.portfolio.replace("https://www.", "").replace("https://", ""))
         ribbon_text = "   •   ".join(contact_items)
         canvas.setFillColor(colors.HexColor("#312E81"))

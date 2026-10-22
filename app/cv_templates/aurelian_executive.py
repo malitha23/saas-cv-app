@@ -332,9 +332,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         if info.email:     contacts.append(("email", info.email))
         if info.location:  contacts.append(("location", info.location))
         if info.linkedin:  contacts.append(("linkedin", info.linkedin.replace("https://www.", "").replace("https://", "")))
-        pub_url = get_published_portfolio_url(resume)
+        pub_url = get_published_portfolio_url(resume, position="header")
         if pub_url:        contacts.append(("portfolio", f"<a href='{pub_url}'><u>More on My Portfolio</u></a>"))
-        elif info.portfolio: contacts.append(("portfolio", info.portfolio.replace("https://www.", "").replace("https://", "")))
+        elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio: contacts.append(("portfolio", info.portfolio.replace("https://www.", "").replace("https://", "")))
         if info.github:    contacts.append(("github", info.github.replace("https://www.", "").replace("https://", "")))
 
         for c_type, c_text in contacts:

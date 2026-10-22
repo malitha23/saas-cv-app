@@ -159,12 +159,12 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     if resume.target_job_title and resume.target_job_title.strip():
         story.append(Paragraph(resume.target_job_title.upper(), S["AtsTitle"]))
 
-    pub_url = get_published_portfolio_url(resume)
+    pub_url = get_published_portfolio_url(resume, position="header")
     contacts = [p for p in [info.location, info.phone, info.email,
                              info.linkedin, info.github] if p]
     if pub_url:
         contacts.append(f"<a href='{pub_url}'><u>More on My Portfolio</u></a>")
-    elif info.portfolio:
+    elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio:
         contacts.append(info.portfolio)
     story.append(Paragraph(" | ".join(contacts), S["AtsCntct"]))
 

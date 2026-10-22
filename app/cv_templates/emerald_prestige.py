@@ -89,6 +89,11 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
 
         # Contact strip on dark card
         contacts = [p for p in [info.email, info.phone, info.location, info.linkedin] if p]
+        pub_url = get_published_portfolio_url(resume, position="header")
+        if pub_url:
+            contacts.append(pub_url)
+        elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio:
+            contacts.append(info.portfolio)
         canvas.setFont(f_reg, 7.8)
         canvas.setFillColor(colors.HexColor("#D1FAE5") if not resume.custom_accent_color else colors.white)
         canvas.drawString(32, PAGE_H - 72, "  |  ".join(contacts)[:130])

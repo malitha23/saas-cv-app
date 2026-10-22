@@ -537,14 +537,21 @@ def _sync_resume_social_links(resume: TailoredResume):
 # PUBLISHED PORTFOLIO CV LINK & FOOTER INTEGRATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-def get_published_portfolio_url(resume: TailoredResume) -> Optional[str]:
+def get_published_portfolio_url(resume: TailoredResume, position: Optional[str] = None) -> Optional[str]:
     """
     Returns the live public web portfolio URL ONLY if the portfolio is currently published.
     Returns None if:
     - User has disabled show_portfolio_link (getattr(resume, 'show_portfolio_link', True) is False)
+    - position == 'header' and show_portfolio_header is False
+    - position == 'footer' and show_portfolio_footer is False
     - The portfolio is NOT published in the local or disk published store
     """
     if not getattr(resume, "show_portfolio_link", True):
+        return None
+
+    if position == "header" and not getattr(resume, "show_portfolio_header", True):
+        return None
+    if position == "footer" and not getattr(resume, "show_portfolio_footer", True):
         return None
 
     try:
@@ -605,13 +612,13 @@ def render_cv_portfolio_footer(
     font_size: float = 8.0,
     leading: float = 10.5,
     alignment: int = TA_CENTER,
-    spacer_before: float = 3.0,
+    spacer_before: float = 12.0,
 ) -> List[Any]:
     """
     Renders an ATS-friendly, elegant footer banner flowable with the published portfolio link.
-    Returns a list of Flowables (Spacer, HRFlowable, Paragraph) or empty list if not published / hidden.
+    Returns a list of Flowables (Spacer, KeepTogether[HRFlowable, Paragraph]) or empty list if not published / hidden.
     """
-    pub_url = get_published_portfolio_url(resume)
+    pub_url = get_published_portfolio_url(resume, position="footer")
     if not pub_url:
         return []
 
@@ -634,9 +641,11 @@ def render_cv_portfolio_footer(
 
     return [
         Spacer(1, spacer_before),
-        HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#E2E8F0"), spaceBefore=1, spaceAfter=2.5),
-        Paragraph(
-            f"<b>More on My Portfolio:</b> <a href='{pub_url}'><u><font color='{color_hex}'>{pub_url}</font></u></a> &nbsp;<font color='#94A3B8'>•</font>&nbsp; <font color='#64748B'>Interactive Projects & Verified Credentials</font>",
-            style
-        )
+        KeepTogether([
+            HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#CBD5E1"), spaceBefore=4.0, spaceAfter=4.5),
+            Paragraph(
+                f"<b>More on My Portfolio:</b> <a href='{pub_url}'><u><font color='{color_hex}'>{pub_url}</font></u></a> &nbsp;<font color='#94A3B8'>•</font>&nbsp; <font color='#64748B'>Interactive Projects & Verified Credentials</font>",
+                style
+            )
+        ])
     ]

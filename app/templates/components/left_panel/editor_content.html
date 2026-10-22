@@ -121,24 +121,45 @@
                     </div>
                   </template>
 
-                  <!-- Published Portfolio Link on CV Toggle Badge -->
-                  <div class="mt-2.5 p-2.5 bg-indigo-950/30 border border-indigo-500/20 rounded-xl space-y-1.5">
+                  <!-- Published Portfolio Link on CV Toggle Badges (Header & Footer) -->
+                  <div class="mt-2.5 p-2.5 bg-indigo-950/30 border border-indigo-500/20 rounded-xl space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
                         <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
-                        <span>"More on My Portfolio" Link on CV</span>
+                        <span>"More on My Portfolio" Links</span>
                       </div>
-                      <button type="button"
-                        @click="tailoredData.show_portfolio_link = (tailoredData.show_portfolio_link === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
-                        :class="tailoredData.show_portfolio_link !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
-                        class="text-[10px] px-2.5 py-0.5 rounded-full border flex items-center gap-1 transition font-bold"
-                        :title="tailoredData.show_portfolio_link !== false ? 'Click to hide portfolio link from CV' : 'Click to show portfolio link on CV'">
-                        <i :data-lucide="tailoredData.show_portfolio_link !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
-                        <span x-text="tailoredData.show_portfolio_link !== false ? 'Shown' : 'Hidden'"></span>
-                      </button>
+                      <span class="text-[9.5px] text-indigo-400/80 font-medium">When published</span>
                     </div>
-                    <p class="text-[10px] text-slate-400 leading-relaxed">
-                      Automatically displays a verified <b>"More on My Portfolio"</b> clickable link & footer banner on your CV & PDF. <i>(Only shown when your web portfolio is published)</i>.
+
+                    <!-- Independent Position Controls: Top Header & Bottom Footer -->
+                    <div class="grid grid-cols-2 gap-2 pt-0.5">
+                      <div class="flex items-center justify-between bg-slate-900/90 px-2 py-1.5 rounded-lg border border-slate-800">
+                        <span class="text-[10px] text-slate-300 font-medium">Top Header</span>
+                        <button type="button"
+                          @click="tailoredData.show_portfolio_header = (tailoredData.show_portfolio_header === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                          :class="tailoredData.show_portfolio_header !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                          class="text-[9.5px] px-2 py-0.5 rounded border flex items-center gap-1 transition font-bold"
+                          :title="tailoredData.show_portfolio_header !== false ? 'Click to hide portfolio link from top header' : 'Click to show portfolio link in top header'">
+                          <i :data-lucide="tailoredData.show_portfolio_header !== false ? 'eye' : 'eye-off'" class="w-2.5 h-2.5"></i>
+                          <span x-text="tailoredData.show_portfolio_header !== false ? 'Shown' : 'Hidden'"></span>
+                        </button>
+                      </div>
+
+                      <div class="flex items-center justify-between bg-slate-900/90 px-2 py-1.5 rounded-lg border border-slate-800">
+                        <span class="text-[10px] text-slate-300 font-medium">Bottom Footer</span>
+                        <button type="button"
+                          @click="tailoredData.show_portfolio_footer = (tailoredData.show_portfolio_footer === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                          :class="tailoredData.show_portfolio_footer !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                          class="text-[9.5px] px-2 py-0.5 rounded border flex items-center gap-1 transition font-bold"
+                          :title="tailoredData.show_portfolio_footer !== false ? 'Click to hide portfolio banner from bottom footer' : 'Click to show portfolio banner in bottom footer'">
+                          <i :data-lucide="tailoredData.show_portfolio_footer !== false ? 'eye' : 'eye-off'" class="w-2.5 h-2.5"></i>
+                          <span x-text="tailoredData.show_portfolio_footer !== false ? 'Shown' : 'Hidden'"></span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <p class="text-[9.5px] text-slate-400 leading-tight">
+                      Display your verified live web portfolio link in the top contact section, bottom footer banner, both, or neither.
                     </p>
                   </div>
                 </div>

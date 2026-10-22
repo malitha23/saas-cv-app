@@ -145,9 +145,9 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         if info.location:  contacts.append(("LOCATION", info.location))
         if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
         if info.github:    contacts.append(("GITHUB", info.github))
-        pub_url = get_published_portfolio_url(resume)
+        pub_url = get_published_portfolio_url(resume, position="header")
         if pub_url:        contacts.append(("PORTFOLIO", f"<a href='{pub_url}'><u>More on My Portfolio</u></a>"))
-        elif info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
+        elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
         if getattr(resume, "show_personal_details", True):
             if getattr(info, "nationality", None): contacts.append(("NATIONALITY", info.nationality))
             if getattr(info, "date_of_birth", None): contacts.append(("DOB", info.date_of_birth))

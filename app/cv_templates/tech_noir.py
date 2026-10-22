@@ -102,9 +102,9 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
         if info.phone:    contacts.append(f"> tel: {info.phone}")
         if info.location: contacts.append(f"> loc: {info.location}")
         if info.github:   contacts.append(f"> git: {info.github}")
-        pub_url = get_published_portfolio_url(resume)
+        pub_url = get_published_portfolio_url(resume, position="header")
         if pub_url:       contacts.append(f"> web: More on My Portfolio")
-        elif info.portfolio: contacts.append(f"> web: {info.portfolio}")
+        elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio: contacts.append(f"> web: {info.portfolio}")
 
         canvas.setFont(f_reg, 7.5)
         canvas.setFillColor(colors.HexColor("#94A3B8"))

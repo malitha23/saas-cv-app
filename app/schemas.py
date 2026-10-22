@@ -411,7 +411,13 @@ class TailoredResume(BaseModel):
         default=True, description="Show/Hide Personal Details (Gender, Nationality, DOB, Civil Status) in CV"
     )
     show_portfolio_link: bool = Field(
-        default=True, description="Show/Hide live interactive web portfolio link on CV (only rendered when portfolio is published)"
+        default=True, description="Master Show/Hide toggle for live interactive web portfolio link on CV"
+    )
+    show_portfolio_header: bool = Field(
+        default=True, description="Show/Hide portfolio link in CV Top Header / Contact Bar"
+    )
+    show_portfolio_footer: bool = Field(
+        default=True, description="Show/Hide portfolio footer banner at the bottom of CV"
     )
     portfolio_slug: Optional[str] = Field(
         default=None, description="Slug of published web portfolio e.g. 'john-doe'"
