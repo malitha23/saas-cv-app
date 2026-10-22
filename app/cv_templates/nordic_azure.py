@@ -641,8 +641,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         pagesize=A4,
         leftMargin=SIDE_W + 24,
         rightMargin=24,
-        topMargin=36,
-        bottomMargin=24
+        topMargin=18,
+        bottomMargin=16
     )
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

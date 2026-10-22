@@ -31,41 +31,45 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
 
     if font_scale == "compact":
-        margin = 26
-        top_margin = 20
+        margin = 24
+        top_margin = 14
+        bottom_margin = 14
         body_font_size = 8.5
-        body_leading = 11.5
-        hdr_font_size = 10.2
-        hdr_leading = 13.0
-        name_font_size = 16.5
-        spacer_gap = 2.0
+        body_leading = 11.0
+        hdr_font_size = 10.0
+        hdr_leading = 12.5
+        name_font_size = 16.0
+        spacer_gap = 1.6
     elif font_scale == "large":
-        margin = 38
-        top_margin = 26
-        body_font_size = 9.8
-        body_leading = 13.6
-        hdr_font_size = 11.5
-        hdr_leading = 14.5
-        name_font_size = 19.0
-        spacer_gap = 3.8
-    elif font_scale == "spacious":
-        margin = 42
-        top_margin = 28
-        body_font_size = 10.5
-        body_leading = 14.5
-        hdr_font_size = 12.2
-        hdr_leading = 15.5
-        name_font_size = 20.0
-        spacer_gap = 4.5
-    else:  # standard
-        margin = 36
-        top_margin = 24
-        body_font_size = 9.2
-        body_leading = 12.8
-        hdr_font_size = 11.0
+        margin = 32
+        top_margin = 18
+        bottom_margin = 18
+        body_font_size = 9.5
+        body_leading = 13.0
+        hdr_font_size = 11.2
         hdr_leading = 14.0
-        name_font_size = 18.0
-        spacer_gap = 3.0
+        name_font_size = 18.5
+        spacer_gap = 2.8
+    elif font_scale == "spacious":
+        margin = 36
+        top_margin = 22
+        bottom_margin = 22
+        body_font_size = 10.0
+        body_leading = 13.8
+        hdr_font_size = 11.8
+        hdr_leading = 14.8
+        name_font_size = 19.5
+        spacer_gap = 3.4
+    else:  # standard
+        margin = 28
+        top_margin = 16
+        bottom_margin = 16
+        body_font_size = 9.0
+        body_leading = 12.0
+        hdr_font_size = 10.6
+        hdr_leading = 13.2
+        name_font_size = 17.0
+        spacer_gap = 2.0
 
     # Color palette
     if resume.custom_accent_color:
@@ -95,7 +99,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         leftMargin=margin,
         rightMargin=margin,
         topMargin=top_margin,
-        bottomMargin=margin
+        bottomMargin=bottom_margin
     )
 
     S = getSampleStyleSheet()
@@ -112,7 +116,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     _add(S, ParagraphStyle("AtsBody", fontName=f_reg, fontSize=body_font_size,
                             leading=body_leading, textColor=body, spaceAfter=2))
     _add(S, ParagraphStyle("AtsBullet", fontName=f_reg, fontSize=body_font_size,
-                            leading=body_leading, textColor=body, leftIndent=11, firstLineIndent=-7, spaceAfter=1.8))
+                            leading=body_leading, textColor=body, leftIndent=11, firstLineIndent=-7, spaceAfter=1.0))
     _add(S, ParagraphStyle("AtsSkill", fontName=f_reg, fontSize=body_font_size,
                             leading=body_leading, textColor=body, spaceAfter=2.0))
 

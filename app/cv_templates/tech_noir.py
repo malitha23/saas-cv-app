@@ -278,7 +278,7 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
             add_tn_certifications()
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=18, bottomMargin=16)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()

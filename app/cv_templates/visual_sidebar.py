@@ -413,7 +413,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             add_references()
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=28, bottomMargin=20)
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=18, bottomMargin=16)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()
