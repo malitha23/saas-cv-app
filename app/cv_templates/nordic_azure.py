@@ -609,11 +609,31 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
             body.append(KeepTogether(cert_flow))
             body.append(Spacer(1, spacer_h * 0.5))
 
+    # 5. REFERENCES
+    def add_references():
+        if getattr(resume, "show_references", True) and getattr(resume, "references", None):
+            body.extend(make_main_header("Professional References", "references"))
+            ref_flow = []
+            for ref in resume.references:
+                comp = f", {ref.company}" if getattr(ref, "company", None) else ""
+                title = f" – {ref.title}" if getattr(ref, "title", None) else ""
+                contact_bits = []
+                if getattr(ref, "phone", None):
+                    contact_bits.append(ref.phone)
+                if getattr(ref, "email", None):
+                    contact_bits.append(ref.email)
+                contact_str = f" <font color='#6B6B6B' size='7.5'>({', '.join(contact_bits)})</font>" if contact_bits else ""
+                ref_flow.append(Paragraph(f"• <b>{ref.name}</b>{title}{comp}{contact_str}", S["NaJobTitle"]))
+                ref_flow.append(Spacer(1, 2))
+            body.append(KeepTogether(ref_flow))
+            body.append(Spacer(1, spacer_h * 0.5))
+
     # Build sequence
     add_education()
     add_experience()
     add_projects()
     add_certifications()
+    add_references()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(

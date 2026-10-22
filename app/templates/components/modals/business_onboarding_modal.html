@@ -487,7 +487,8 @@
       </div>
 
       <!-- Editor Content -->
-      <div x-show="!isLoadingCandidateResume && candidateResumeData" class="space-y-4">
+      <template x-if="!isLoadingCandidateResume && candidateResumeData && candidateResumeData.personal_info">
+        <div class="space-y-4">
         <!-- Sub-section Pills -->
         <div class="flex flex-wrap gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs">
           <button type="button" @click="candidateEditSection = 'personal'"
@@ -807,6 +808,7 @@
           </button>
         </div>
       </div>
+      </template>
     </div>
 
   </div>

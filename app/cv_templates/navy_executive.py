@@ -550,6 +550,8 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         ("experience", resume.show_experience and resume.work_experience),
         ("projects", resume.show_projects and resume.projects),
         ("certifications", resume.show_certifications and resume.certifications),
+        ("languages", getattr(resume, "show_languages", True) and getattr(resume, "languages", None)),
+        ("references", getattr(resume, "show_references", True) and getattr(resume, "references", None)),
     ]:
         if is_active and sec_name not in order:
             order.append(sec_name)
@@ -640,6 +642,34 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             body.append(KeepTogether(cert_flow))
             body.append(Spacer(1, spacer_h * 0.5))
 
+    # 6. SPOKEN LANGUAGES
+    def add_languages():
+        if getattr(resume, "show_languages", True) and getattr(resume, "languages", None):
+            body.append(make_main_header("Languages", "languages"))
+            body.append(Spacer(1, 2))
+            body.append(Paragraph(" • ".join(resume.languages), S["NeBody"]))
+            body.append(Spacer(1, spacer_h * 0.5))
+
+    # 7. PROFESSIONAL REFERENCES
+    def add_references():
+        if getattr(resume, "show_references", True) and getattr(resume, "references", None):
+            body.append(make_main_header("References", "references"))
+            body.append(Spacer(1, 3))
+            ref_flow = []
+            for ref in resume.references:
+                comp = f", {ref.company}" if getattr(ref, "company", None) else ""
+                title = f" – {ref.title}" if getattr(ref, "title", None) else ""
+                contact_bits = []
+                if getattr(ref, "phone", None):
+                    contact_bits.append(ref.phone)
+                if getattr(ref, "email", None):
+                    contact_bits.append(ref.email)
+                contact_str = f" <font color='#7A7A7A' size='7.5'>({', '.join(contact_bits)})</font>" if contact_bits else ""
+                ref_flow.append(Paragraph(f"• <b>{ref.name}</b>{title}{comp}{contact_str}", S["NeJobTitle"]))
+                ref_flow.append(Spacer(1, 2))
+            body.append(KeepTogether(ref_flow))
+            body.append(Spacer(1, spacer_h * 0.5))
+
     for sec in order:
         if sec == "summary":
             add_summary()
@@ -649,6 +679,10 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             add_projects()
         elif sec == "certifications":
             add_certifications()
+        elif sec == "languages":
+            add_languages()
+        elif sec == "references":
+            add_references()
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(

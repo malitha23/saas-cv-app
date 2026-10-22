@@ -227,7 +227,12 @@ def prebuild_candidate_profile(
         cand_name = email_clean.split("@")[0].replace(".", " ").title()
         tailored_resume.personal_info.full_name = cand_name
 
-    tailored_resume.personal_info.email = email_clean
+    extracted_email = (tailored_resume.personal_info.email or "").strip().lower()
+    if extracted_email and "@" in extracted_email and "candidate.com" not in extracted_email:
+        tailored_resume.personal_info.email = extracted_email
+        email_clean = extracted_email
+    elif email_clean:
+        tailored_resume.personal_info.email = email_clean
 
     # 6. Generate Slug & Live Portfolio HTML
     slug = generate_unique_candidate_slug(cand_name, db)

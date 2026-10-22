@@ -324,6 +324,144 @@ def validate_title_resume_match(resume_text: str, target_title: str) -> tuple[bo
     return True, ""
 
 
+
+def _extract_fallback_languages(clean_text: str) -> list[str]:
+    """Extract spoken languages from text when missed by model."""
+    languages = []
+    lang_match = re.search(
+        r"(?:^|\n)[ \t]*(?:LANGUAGES|SPOKEN\s+LANGUAGES|LANGUAGE\s+PROFICIENCY)[ \t]*\n([\s\S]*?)(?=(?:\n[ \t]*(?:REFERENCES|REFEREES|DECLARATION|CERTIFICATIONS|PERSONAL\s+INFORMATION|EDUCATION|EXPERIENCE)[ \t]*\n)|\Z)",
+        clean_text,
+        re.IGNORECASE,
+    )
+    if lang_match:
+        l_text = lang_match.group(1).strip()
+        for raw_l in l_text.splitlines():
+            raw_l = re.sub(r"^[\-•\*\s]+", "", raw_l).strip()
+            if not raw_l:
+                continue
+            parts = re.split(r"[/,|]", raw_l) if ("/" in raw_l or "|" in raw_l or "," in raw_l) else [raw_l]
+            for p in parts:
+                p_clean = re.sub(r"\s*[-–(].*$", "", p).strip()
+                if p_clean and len(p_clean) < 35 and p_clean.lower() not in [x.lower() for x in languages]:
+                    languages.append(p_clean.capitalize())
+    if not languages:
+        inline_lang = re.search(r"(?:languages|spoken\s+languages)\s*[:\-–]\s*([^\n]+)", clean_text, re.IGNORECASE)
+        if inline_lang:
+            parts = re.split(r"[,|/]", inline_lang.group(1))
+            for p in parts:
+                p_clean = p.strip()
+                if p_clean and len(p_clean) < 35 and p_clean.lower() not in [x.lower() for x in languages]:
+                    languages.append(p_clean)
+    return languages
+
+
+def _extract_fallback_references(clean_text: str) -> list[dict]:
+    """Extract professional references with names, titles, organizations, and contact info."""
+    parsed = []
+    ref_match = re.search(
+        r"(?:^|\n)[ \t]*(?:REFERENCES|REFEREES|PROFESSIONAL\s+REFERENCES)[ \t]*\n([\s\S]*?)(?=(?:\n[ \t]*(?:DECLARATION|APPENDIX)[ \t]*\n)|\Z)",
+        clean_text,
+        re.IGNORECASE,
+    )
+    if ref_match:
+        ref_text = ref_match.group(1).strip()
+        if "available upon request" not in ref_text.lower():
+            blocks = re.split(
+                r"(?:\n\s*(?:[•\-*]|\d+\.)\s*|\n\s*\n|\n(?=(?:Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Eng\.)\s+[A-Z]))",
+                "\n" + ref_text
+            )
+            for rb in blocks:
+                rb = rb.strip()
+                if not rb or len(rb) < 8:
+                    continue
+                lines = [l.strip() for l in rb.splitlines() if l.strip()]
+                if not lines:
+                    continue
+                name = re.sub(r"^[\-•\*\d\.\s]+", "", lines[0]).strip()
+                if any(w in name.lower() for w in ["available", "request", "declaration", "date", "signature", "referee"]):
+                    continue
+                phone = ""
+                pm = re.search(r"((?:\+?\d{1,4}[\s-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,5})", rb)
+                if pm:
+                    phone = pm.group(1).strip()
+                em = re.search(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", rb)
+                email = em.group(1) if em else ""
+                title = ""
+                company = ""
+                for l in lines[1:]:
+                    if (phone and phone in l) or (email and email in l) or l.lower().startswith(("phone", "tel", "email", "mobile")):
+                        continue
+                    if not title:
+                        if "," in l:
+                            tp = l.split(",", 1)
+                            title = tp[0].strip()
+                            company = tp[1].strip()
+                        else:
+                            title = l
+                    elif not company:
+                        company = l
+                parsed.append({"name": name, "title": title, "company": company, "phone": phone, "email": email})
+    return parsed
+
+
+def _extract_fallback_kyc(clean_text: str) -> dict[str, str]:
+    """Extract gender, nationality, DOB, and civil status from text."""
+    kyc = {}
+    g_m = re.search(r"(?:gender|sex)\s*[:\-–]\s*(male|female|other)", clean_text, re.IGNORECASE)
+    if g_m:
+        kyc["gender"] = g_m.group(1).capitalize()
+    n_m = re.search(r"(?:nationality|citizenship)\s*[:\-–]\s*([^\n,]+)", clean_text, re.IGNORECASE)
+    if n_m:
+        kyc["nationality"] = n_m.group(1).strip()
+    d_m = re.search(r"(?:date\s+of\s+birth|dob|birth\s+date)\s*[:\-–]\s*([^\n,]+)", clean_text, re.IGNORECASE)
+    if d_m:
+        kyc["date_of_birth"] = d_m.group(1).strip()
+    c_m = re.search(r"(?:civil\s+status|marital\s+status)\s*[:\-–]\s*(single|married|divorced|unmarried)", clean_text, re.IGNORECASE)
+    if c_m:
+        kyc["civil_status"] = c_m.group(1).capitalize()
+    return kyc
+
+
+def _supplement_skills_if_missing(data: dict, clean_text: str) -> None:
+    """Supplement skill categories with soft skills and tools if omitted."""
+    cats = data.setdefault("skill_categories", [])
+    existing_skills_lower = set()
+    for c in cats:
+        if isinstance(c, dict):
+            for s in c.get("skills", []):
+                existing_skills_lower.add(s.lower())
+
+    soft_m = re.search(r"(?:soft\s+skills|personal\s+skills|competencies)\s*[:\-–]\s*([^\n]+)", clean_text, re.IGNORECASE)
+    if soft_m:
+        raw_soft = soft_m.group(1).strip()
+        soft_list = [s.strip() for s in re.split(r"[,|/]", raw_soft) if s.strip()]
+        new_soft = [s for s in soft_list if s.lower() not in existing_skills_lower]
+        if new_soft:
+            cats.append({"category_name": "Soft Skills & Competencies", "skills": new_soft})
+
+    KEY_TOOLS = [
+        "VS Code", "IntelliJ IDEA", "Eclipse", "Maven", "npm", "yarn", "Postman",
+        "Vercel", "Netlify", "Docker", "Git", "GitHub", "GitLab", "Jira", "Figma"
+    ]
+    tools_found = []
+    for tool in KEY_TOOLS:
+        if re.search(rf"\b{re.escape(tool)}\b", clean_text, re.IGNORECASE):
+            if tool.lower() not in existing_skills_lower:
+                tools_found.append(tool)
+    if tools_found:
+        tools_cat = None
+        for c in cats:
+            if isinstance(c, dict) and any(w in c.get("category_name", "").lower() for w in ["tool", "devops", "cloud", "environment"]):
+                tools_cat = c
+                break
+        if tools_cat:
+            for tf in tools_found:
+                if tf.lower() not in [s.lower() for s in tools_cat.get("skills", [])]:
+                    tools_cat["skills"].append(tf)
+        else:
+            cats.append({"category_name": "Tools & Environment", "skills": tools_found})
+
+
 def generate_with_gemini(
     resume_text: str,
     job_description: str,
@@ -872,14 +1010,21 @@ Detected Role Archetype: {archetype}
 
 INSTRUCTIONS:
 1. Extract Candidate Full Name, Email, Phone, Location, and Social/Web links directly from the candidate's resume text.
-   - CRITICAL: Candidate Full Name is NEVER an educational institution (like Cardiff Metropolitan University), school, company, or address. Extract the candidate's actual human name (e.g. 'Malitha Sayuranga').
+   - CRITICAL: Extract the candidate's authentic primary email from the header or contact line (e.g. 'udara7355@gmail.com'). Do NOT invent, alter, or replace the email with usernames or handles.
+   - Candidate Full Name is NEVER an educational institution (like Cardiff Metropolitan University), school, company, or address. Extract the candidate's actual human name.
+   - Extract personal details (Gender, Nationality, Date of Birth, Civil Status) into 'personal_info' if present in the CV.
 2. Accurately detect the target job title and target organization/employer from the provided target job description or context.
 3. Extract ALL REAL work experience entries across all pages (Job Titles, Company/Workshop/Organization names, Dates, Locations, Bullet points). Do NOT drop or truncate any past employer, internship, or freelance work.
-4. Refine the candidate's actual bullet points with role-appropriate action verbs and measurable impact without inventing non-existent experience (keep 2-3 crisp, high-impact bullet points per role to maintain strict single-to-two-page ATS density).
+4. Refine the candidate's actual bullet points with role-appropriate action verbs and measurable impact without inventing non-existent experience.
 5. Extract ALL REAL education & certifications across all pages (Degrees, NVQ levels, Diplomas, School exams like A/L or O/L, Institutions, Years, Certificate Numbers).
-6. Group ALL the candidate's real skills, programming languages, frameworks, libraries, databases, and tools into clean, logical industry-appropriate categories.
+6. Group ALL the candidate's real skills, programming languages, frameworks, libraries, databases, and developer tools/IDEs (e.g. VS Code, IntelliJ IDEA, Eclipse, Maven, npm, Git, GitHub, Postman, Vercel) and core concepts into clean, logical categories.
+   - CRITICAL: DO NOT drop developer tools, IDEs, or engineering methodologies!
+   - If the candidate includes 'Soft Skills' (e.g. Teamwork, Leadership, Communication, Problem Solving), preserve them completely in a dedicated "Soft Skills & Competencies" category in skill_categories.
 7. Extract ALL real projects mentioned in the CV with their names, technologies, and bullet points.
-8. Generate ATS match analysis and a tailored {cover_letter_tone} cover letter (keep 'matched_jobs' concise with 2 top roles; the backend enriches further).
+   - CRITICAL: If the candidate structured projects using the STAR method (Situation, Task, Action, Result) or structured problem-action-impact points, PRESERVE those rich STAR lines (including '• Situation: ...', '• Task: ...', '• Action: ...', '• Result: ...') in description_bullets rather than compressing them into generic lines.
+8. Extract Spoken Languages: Extract ALL spoken natural languages mentioned in the CV (e.g. ['English (Fluent)', 'Sinhala (Fluent)']) into the 'languages' list.
+9. Extract Professional References: Extract ALL professional references or referees mentioned in the CV (names, titles/designations, institutions/companies, phone numbers, and email addresses) into the 'references' list. If references are present in the CV, NEVER omit them!
+10. Generate ATS match analysis and a tailored {cover_letter_tone} cover letter (keep 'matched_jobs' concise with 2 top roles; the backend enriches further).
 
 Return ONLY valid JSON matching this schema:
 {{
@@ -894,7 +1039,11 @@ Return ONLY valid JSON matching this schema:
     "availability_badge": "Available for High-Impact Roles & Sponsorship",
     "social_links": [
       {{"name": "Email", "url": "mailto:...", "icon": "mail", "enabled": true}}
-    ]
+    ],
+    "gender": "Candidate gender if stated (e.g. 'Male', 'Female') or null",
+    "nationality": "Candidate nationality if stated (e.g. 'Sri Lankan') or null",
+    "date_of_birth": "Date of birth if stated (e.g. '1993/06/02') or null",
+    "civil_status": "Marital/civil status if stated (e.g. 'Single', 'Married') or null"
   }},
   "target_job_title": "Target Role Title (Accurately aligned with Opportunity)",
   "target_company": "Target Company / Organization / Employer",
@@ -936,6 +1085,18 @@ Return ONLY valid JSON matching this schema:
   ],
   "certifications": [
     {{"name": "Certification Name", "issuer": "Issuing Body", "year": "Year"}}
+  ],
+  "languages": [
+    "Language 1 (e.g. English (Fluent))", "Language 2 (e.g. Sinhala (Fluent))"
+  ],
+  "references": [
+    {{
+      "name": "Reference Full Name",
+      "title": "Designation / Role",
+      "company": "Institution / Organization",
+      "phone": "Phone number if stated",
+      "email": "Email address if stated"
+    }}
   ],
   "ats_analysis": {{
     "overall_score": 94,
@@ -1110,6 +1271,39 @@ Return ONLY valid JSON matching this schema:
     if "cover_letter" in data and isinstance(data["cover_letter"], dict):
         if not data["cover_letter"].get("sign_off_title"):
             data["cover_letter"]["sign_off_title"] = data.get("target_job_title", "")
+
+    # 1. Fallback / supplementary extraction for languages if Gemini missed them
+    if not data.get("languages") or len(data["languages"]) == 0:
+        extracted_langs = _extract_fallback_languages(resume_text)
+        if extracted_langs:
+            data["languages"] = extracted_langs
+
+    # 2. Fallback / supplementary extraction for references if Gemini missed them
+    if not data.get("references") or len(data["references"]) == 0:
+        extracted_refs = _extract_fallback_references(resume_text)
+        if extracted_refs:
+            data["references"] = extracted_refs
+
+    # 3. Fallback for personal details (gender, nationality, DOB, civil status)
+    pi = data.setdefault("personal_info", {})
+    if not isinstance(pi, dict):
+        pi = {}
+        data["personal_info"] = pi
+    kyc_extracted = _extract_fallback_kyc(resume_text)
+    for k, v in kyc_extracted.items():
+        if not pi.get(k) and v:
+            pi[k] = v
+
+    # 4. Fallback for Soft Skills & Tools in skill_categories if dropped
+    _supplement_skills_if_missing(data, resume_text)
+
+    # 5. Ensure section_order includes "languages" and "references" if active
+    order = list(data.get("section_order") or ["summary", "skills", "experience", "projects", "education", "certifications"])
+    if data.get("languages") and "languages" not in order:
+        order.append("languages")
+    if data.get("references") and "references" not in order:
+        order.append("references")
+    data["section_order"] = order
 
     if (
         not data.get("matched_jobs")

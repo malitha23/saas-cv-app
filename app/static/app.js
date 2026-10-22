@@ -292,7 +292,16 @@ function resumeApp() {
     isBuyingCreditPack: false,
     bizCustomCredits: 20,
     editingCandidate: null,
-    candidateResumeData: null,
+    candidateResumeData: {
+      personal_info: { full_name: '', email: '', phone: '', location: '', linkedin: '', github: '', website: '' },
+      target_job_title: '',
+      target_company: '',
+      professional_summary: '',
+      work_experience: [],
+      education: [],
+      skill_categories: [],
+      projects: []
+    },
     isLoadingCandidateResume: false,
     isSavingCandidateResume: false,
     candidateEditSection: 'personal',
@@ -3872,6 +3881,23 @@ function resumeApp() {
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // Unified In-App Toast & Notification Method
+    notify(message, type = 'info') {
+      const isErr = type === 'error';
+      const isSuccess = type === 'success';
+      return this.openAppDialog({
+        type: isErr ? 'error' : isSuccess ? 'info' : 'info',
+        title: isErr ? 'Notice' : isSuccess ? 'Success' : 'Notice',
+        message: String(message || ''),
+        confirmText: 'OK',
+        isDanger: isErr
+      });
+    },
+
+    showToast(message, type = 'info') {
+      return this.notify(message, type);
+    },
+
     // MODERN APP DIALOG SYSTEM (CONFIRM & ALERT)
     // ═══════════════════════════════════════════════════════════════════════════
     openAppDialog({ type = 'info', title = '', message = '', confirmText = 'OK', cancelText = 'Cancel', isDanger = false }) {

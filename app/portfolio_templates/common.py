@@ -899,11 +899,18 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
 
     cards = []
     for r in refs:
-        name = getattr(r, "name", "")
-        title = getattr(r, "title", None)
-        company = getattr(r, "company", None)
-        email = getattr(r, "email", None)
-        phone = getattr(r, "phone", None)
+        if isinstance(r, dict):
+            name = r.get("name", "")
+            title = r.get("title")
+            company = r.get("company")
+            email = r.get("email")
+            phone = r.get("phone")
+        else:
+            name = getattr(r, "name", "")
+            title = getattr(r, "title", None)
+            company = getattr(r, "company", None)
+            email = getattr(r, "email", None)
+            phone = getattr(r, "phone", None)
         title_co = f"{title} • {company}" if (title and company) else (title or company or "")
 
         contacts_html = []

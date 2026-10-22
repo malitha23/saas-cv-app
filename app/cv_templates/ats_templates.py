@@ -329,16 +329,40 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
                 Paragraph("PROFESSIONAL REFERENCES", S["AtsSecHdr"]),
                 HRFlowable(width="100%", thickness=0.6, color=div, spaceBefore=1, spaceAfter=3)
             ]
-            for ref in resume.references:
-                comp = f", {ref.company}" if getattr(ref, "company", None) else ""
-                title = f" – {ref.title}" if getattr(ref, "title", None) else ""
-                contact_bits = []
-                if getattr(ref, "email", None):
-                    contact_bits.append(ref.email)
-                if getattr(ref, "phone", None):
-                    contact_bits.append(ref.phone)
-                contact_str = f" <font color='#4B5563'>({', '.join(contact_bits)})</font>" if contact_bits else ""
-                sec_flow.append(Paragraph(f"<b>{ref.name}</b>{title}{comp}{contact_str}", S["AtsBody"]))
+            refs = [r for r in resume.references if getattr(r, "name", None)]
+            if len(refs) == 2:
+                col_cells = []
+                for ref in refs:
+                    title_part = f"<br/>{ref.title}" if getattr(ref, "title", None) else ""
+                    comp_part = f", {ref.company}" if (getattr(ref, "company", None) and getattr(ref, "title", None)) else (f"<br/>{ref.company}" if getattr(ref, "company", None) else "")
+                    contacts = []
+                    if getattr(ref, "phone", None):
+                        contacts.append(f"Phone: {ref.phone}")
+                    if getattr(ref, "email", None):
+                        contacts.append(f"Email: {ref.email}")
+                    cnt_str = f"<br/><font color='#4B5563'>{' | '.join(contacts)}</font>" if contacts else ""
+                    col_cells.append(Paragraph(f"<b>{ref.name}</b>{title_part}{comp_part}{cnt_str}", S["AtsBody"]))
+                col_w = (doc.width) / 2.0
+                tbl = Table([[col_cells[0], col_cells[1]]], colWidths=[col_w, col_w])
+                tbl.setStyle(TableStyle([
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ]))
+                sec_flow.append(tbl)
+            else:
+                for ref in refs:
+                    comp = f", {ref.company}" if getattr(ref, "company", None) else ""
+                    title = f" – {ref.title}" if getattr(ref, "title", None) else ""
+                    contact_bits = []
+                    if getattr(ref, "phone", None):
+                        contact_bits.append(f"Phone: {ref.phone}")
+                    if getattr(ref, "email", None):
+                        contact_bits.append(f"Email: {ref.email}")
+                    contact_str = f" <font color='#4B5563'>({', '.join(contact_bits)})</font>" if contact_bits else ""
+                    sec_flow.append(Paragraph(f"<b>{ref.name}</b>{title}{comp}{contact_str}", S["AtsBody"]))
             story.append(KeepTogether(sec_flow))
             story.append(Spacer(1, spacer_gap * 0.8))
 

@@ -718,8 +718,14 @@ async def api_regenerate_candidate_profile(
         profile.candidate_name = extracted_name
     tailored_resume.personal_info.full_name = profile.candidate_name
 
+    extracted_email = (tailored_resume.personal_info.email or "").strip().lower()
     clean_email = profile.candidate_email.strip().lower()
-    tailored_resume.personal_info.email = clean_email
+    # Strictly preserve the authentic extracted email from the candidate's CV
+    if extracted_email and "@" in extracted_email and "candidate.com" not in extracted_email:
+        tailored_resume.personal_info.email = extracted_email
+        profile.candidate_email = extracted_email
+    elif clean_email:
+        tailored_resume.personal_info.email = clean_email
 
     final_role = role_str or getattr(tailored_resume, "target_job_title", "") or profile.target_role or "Professional"
     profile.target_role = final_role
