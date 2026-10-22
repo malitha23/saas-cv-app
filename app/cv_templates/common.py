@@ -13,7 +13,7 @@ import ipaddress
 import unicodedata
 import urllib.request
 import urllib.parse
-from typing import Optional, List
+from typing import Optional, List, Any, Dict, Tuple
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
