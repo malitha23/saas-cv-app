@@ -1126,6 +1126,38 @@
 
                 </div>
 
+                <!-- 1-Click Smart Page Fit & Density Controls -->
+                <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                  <span class="hidden md:inline text-[9px] font-mono text-slate-400 uppercase px-1 font-semibold">Page Fit:</span>
+                  <button type="button" 
+                    @click="setFontScale('compact'); if (window.showToast) window.showToast('Adjusted to Fit on 1 Single Page!', 'info')"
+                    :class="tailoredData.font_size_scale === 'compact' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+                    class="px-2 py-0.5 rounded text-[10px] transition flex items-center gap-1 font-medium"
+                    title="Auto-Fit CV to 1 Page: Compresses spacing & margins to pull overflow back onto Page 1">
+                    <i data-lucide="file" class="w-3 h-3 text-emerald-400"></i>
+                    <span class="hidden sm:inline">Fit 1 Page</span>
+                    <span class="inline sm:hidden">1P</span>
+                  </button>
+
+                  <button type="button" 
+                    @click="setFontScale('spacious'); if (window.showToast) window.showToast('Expanded to Fill 2 Balanced Pages!', 'info')"
+                    :class="tailoredData.font_size_scale === 'spacious' ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+                    class="px-2 py-0.5 rounded text-[10px] transition flex items-center gap-1 font-medium"
+                    title="Auto-Balance 2 Pages: Expands font, line-height & margins so Page 2 fills gracefully">
+                    <i data-lucide="files" class="w-3 h-3 text-cyan-400"></i>
+                    <span class="hidden sm:inline">Fill 2 Pages</span>
+                    <span class="inline sm:hidden">2P</span>
+                  </button>
+
+                  <button type="button" 
+                    @click="setFontScale('standard')"
+                    :class="(tailoredData.font_size_scale || 'standard') === 'standard' ? 'bg-slate-800 text-indigo-300 font-bold' : 'text-slate-500 hover:text-slate-300'"
+                    class="px-1.5 py-0.5 rounded text-[10px] transition"
+                    title="Reset to Standard Default Density">
+                    <span>Default</span>
+                  </button>
+                </div>
+
 
 
                 <!-- Page Count & Multi-Page Guarantee Indicator -->

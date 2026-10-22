@@ -93,29 +93,32 @@
               <div class="grid grid-cols-4 gap-2 text-xs">
                 <button @click="setFontScale('compact')"
                   :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'compact', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'compact'}"
-                  class="p-2 rounded-lg text-center transition">
-                  <span class="block font-bold text-[11px]">Compact</span>
-                  <span class="text-[8.5px] opacity-75">8.5pt (Fit Max)</span>
+                  class="p-2 rounded-lg text-center transition" title="Compresses spacing to fit onto 1 single page">
+                  <span class="block font-bold text-[11px]">Fit 1 Page</span>
+                  <span class="text-[8.5px] opacity-75">Compact (8.5pt)</span>
                 </button>
                 <button @click="setFontScale('standard')"
                   :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.font_size_scale || 'standard') === 'standard', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.font_size_scale || 'standard') !== 'standard'}"
-                  class="p-2 rounded-lg text-center transition">
+                  class="p-2 rounded-lg text-center transition" title="Default balanced document spacing">
                   <span class="block font-bold text-[11px]">Standard</span>
-                  <span class="text-[8.5px] opacity-75">9.2pt (Default)</span>
+                  <span class="text-[8.5px] opacity-75">9.0pt (Default)</span>
                 </button>
                 <button @click="setFontScale('large')"
                   :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'large', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'large'}"
-                  class="p-2 rounded-lg text-center transition">
+                  class="p-2 rounded-lg text-center transition" title="Clearer larger body text">
                   <span class="block font-bold text-[11px]">Large</span>
-                  <span class="text-[8.5px] opacity-75">9.8pt (Clear)</span>
+                  <span class="text-[8.5px] opacity-75">9.5pt (Clear)</span>
                 </button>
                 <button @click="setFontScale('spacious')"
                   :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.font_size_scale === 'spacious', 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.font_size_scale !== 'spacious'}"
-                  class="p-2 rounded-lg text-center transition">
-                  <span class="block font-bold text-[11px]">Spacious</span>
-                  <span class="text-[8.5px] opacity-75">10.5pt (Airy)</span>
+                  class="p-2 rounded-lg text-center transition" title="Expands font & line height so 2 pages look full and balanced">
+                  <span class="block font-bold text-[11px]">Fill 2 Pages</span>
+                  <span class="text-[8.5px] opacity-75">Spacious (10pt)</span>
                 </button>
               </div>
+              <p class="text-[10px] text-slate-400 leading-tight">
+                💡 <span class="text-slate-300 font-semibold">Pro Tip:</span> If Page 2 has only a few lines, click <b>"Fit 1 Page"</b> to pull them onto 1 page, or <b>"Fill 2 Pages"</b> to expand and balance across 2 full pages.
+              </p>
             </div>
 
             <!-- 3. Section Visibility Switches -->
