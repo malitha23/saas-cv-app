@@ -7567,3 +7567,56 @@ function resumeApp() {
 }
 
 
+
+
+// Global Window Fallbacks for Portfolio Studio Callers
+window.addPortfolioLanguage = function(langName) {
+  if (window.__resumeApp) {
+    if (!window.__resumeApp.tailoredData) return;
+    if (!Array.isArray(window.__resumeApp.tailoredData.languages)) window.__resumeApp.tailoredData.languages = [];
+    let val = '';
+    if (typeof langName === 'string' && langName.trim()) {
+      val = langName.trim();
+    } else {
+      const input = prompt('Enter spoken language (e.g. English, Sinhala, Hindi):');
+      if (input) val = input.trim();
+    }
+    if (val) {
+      const exists = window.__resumeApp.tailoredData.languages.some(l => (l || '').toLowerCase().trim() === val.toLowerCase());
+      if (!exists) {
+        window.__resumeApp.tailoredData.languages = [...window.__resumeApp.tailoredData.languages, val];
+        window.__resumeApp.tailoredData.portfolio_show_languages = true;
+        window.__resumeApp.refreshAllPreviews();
+      }
+    }
+  }
+};
+window.removePortfolioLanguage = function(idx) {
+  if (window.__resumeApp && window.__resumeApp.tailoredData && Array.isArray(window.__resumeApp.tailoredData.languages)) {
+    window.__resumeApp.tailoredData.languages = window.__resumeApp.tailoredData.languages.filter((_, i) => i !== idx);
+    window.__resumeApp.refreshAllPreviews();
+  }
+};
+window.addPortfolioReference = function() {
+  if (window.__resumeApp && window.__resumeApp.tailoredData) {
+    if (!Array.isArray(window.__resumeApp.tailoredData.references)) window.__resumeApp.tailoredData.references = [];
+    window.__resumeApp.tailoredData.references = [
+      ...window.__resumeApp.tailoredData.references,
+      {
+        name: 'Professional Referee',
+        title: 'Department Director / Manager',
+        company: 'Company / Organization',
+        email: 'referee@example.com',
+        phone: '+971 50 000 0000'
+      }
+    ];
+    window.__resumeApp.tailoredData.portfolio_show_references = true;
+    window.__resumeApp.refreshAllPreviews();
+  }
+};
+window.removePortfolioReference = function(idx) {
+  if (window.__resumeApp && window.__resumeApp.tailoredData && Array.isArray(window.__resumeApp.tailoredData.references)) {
+    window.__resumeApp.tailoredData.references = window.__resumeApp.tailoredData.references.filter((_, i) => i !== idx);
+    window.__resumeApp.refreshAllPreviews();
+  }
+};
