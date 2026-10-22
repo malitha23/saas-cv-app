@@ -270,7 +270,10 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)
+    top_m = 34 if font_scale == "spacious" else (18 if font_scale == "compact" else 24)
+    bot_m = 30 if font_scale == "spacious" else (16 if font_scale == "compact" else 22)
+    margin = 38 if font_scale == "spacious" else (26 if font_scale == "compact" else 32)
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=margin, rightMargin=margin, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()

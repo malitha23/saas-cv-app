@@ -421,7 +421,10 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=18, bottomMargin=16)
+    top_m = 30 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
+    bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
+    right_m = 22 if font_scale == "spacious" else (16 if font_scale == "compact" else 18)
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()

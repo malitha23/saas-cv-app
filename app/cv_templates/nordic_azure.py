@@ -222,9 +222,9 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         side_size, side_leading = 8.5, 12.0
         spacer_h = 5.8
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 11.0, 15.5, 23.0
+        body_size, body_leading, name_size = 11.2, 16.0, 24.0
         side_size, side_leading = 9.2, 13.0
-        spacer_h = 7.0
+        spacer_h = 8.5
     else:  # standard
         body_size, body_leading, name_size = 8.8, 12.4, 18.5
         side_size, side_leading = 7.8, 11.0
@@ -644,13 +644,16 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
+    top_m = 30 if font_scale == "spacious" else (15 if font_scale == "compact" else 18)
+    bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
+    right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
         leftMargin=SIDE_W + 24,
-        rightMargin=24,
-        topMargin=18,
-        bottomMargin=16
+        rightMargin=right_m,
+        topMargin=top_m,
+        bottomMargin=bot_m
     )
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

@@ -51,15 +51,15 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         name_font_size = 18.5
         spacer_gap = 2.8
     elif font_scale == "spacious":
-        margin = 36
-        top_margin = 24
-        bottom_margin = 24
-        body_font_size = 10.0
-        body_leading = 14.0
-        hdr_font_size = 12.0
-        hdr_leading = 15.0
-        name_font_size = 20.0
-        spacer_gap = 4.0
+        margin = 38
+        top_margin = 32
+        bottom_margin = 32
+        body_font_size = 10.2
+        body_leading = 14.8
+        hdr_font_size = 12.5
+        hdr_leading = 16.0
+        name_font_size = 21.0
+        spacer_gap = 5.5
     else:  # standard
         margin = 28
         top_margin = 16
@@ -104,21 +104,21 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
 
     S = getSampleStyleSheet()
     _add(S, ParagraphStyle("AtsName", fontName=f_bold, fontSize=name_font_size,
-                            leading=name_font_size + 4, alignment=TA_CENTER, textColor=primary, spaceAfter=2))
-    _add(S, ParagraphStyle("AtsTitle", fontName=f_bold, fontSize=10.5,
-                            leading=14, alignment=TA_CENTER, textColor=primary, spaceAfter=2))
+                            leading=name_font_size + 4, alignment=TA_CENTER, textColor=primary, spaceAfter=2 if font_scale != "spacious" else 5))
+    _add(S, ParagraphStyle("AtsTitle", fontName=f_bold, fontSize=10.5 if font_scale != "spacious" else 11.5,
+                            leading=14 if font_scale != "spacious" else 16.0, alignment=TA_CENTER, textColor=primary, spaceAfter=2 if font_scale != "spacious" else 4))
     _add(S, ParagraphStyle("AtsCntct", fontName=f_reg, fontSize=body_font_size,
-                            leading=body_leading, alignment=TA_CENTER, textColor=sub, spaceAfter=6))
+                            leading=body_leading, alignment=TA_CENTER, textColor=sub, spaceAfter=6 if font_scale != "spacious" else 10))
     _add(S, ParagraphStyle("AtsSecHdr", fontName=f_bold, fontSize=hdr_font_size,
-                            leading=hdr_leading, textColor=primary, spaceBefore=6, spaceAfter=2, keepWithNext=True))
+                            leading=hdr_leading, textColor=primary, spaceBefore=6 if font_scale != "spacious" else 10, spaceAfter=2 if font_scale != "spacious" else 4, keepWithNext=True))
     _add(S, ParagraphStyle("AtsJob", fontName=f_bold, fontSize=body_font_size + 0.5,
-                            leading=body_leading + 1, textColor=body, keepWithNext=True, spaceBefore=0 if font_scale != "spacious" else 2.0))
+                            leading=body_leading + 1, textColor=body, keepWithNext=True, spaceBefore=0 if font_scale != "spacious" else 3.5))
     _add(S, ParagraphStyle("AtsBody", fontName=f_reg, fontSize=body_font_size,
-                            leading=body_leading, textColor=body, spaceAfter=2 if font_scale != "spacious" else 3.5))
+                            leading=body_leading, textColor=body, spaceAfter=2 if font_scale != "spacious" else 4.2))
     _add(S, ParagraphStyle("AtsBullet", fontName=f_reg, fontSize=body_font_size,
-                            leading=body_leading, textColor=body, leftIndent=11, firstLineIndent=-7, spaceAfter=1.0 if font_scale != "spacious" else 2.2))
+                            leading=body_leading, textColor=body, leftIndent=11, firstLineIndent=-7, spaceAfter=1.0 if font_scale != "spacious" else 3.2))
     _add(S, ParagraphStyle("AtsSkill", fontName=f_reg, fontSize=body_font_size,
-                            leading=body_leading, textColor=body, spaceAfter=2.0 if font_scale != "spacious" else 3.2))
+                            leading=body_leading, textColor=body, spaceAfter=2.0 if font_scale != "spacious" else 4.0))
 
     # Apply dynamic colors & sizes
     S["AtsName"].fontName = f_bold

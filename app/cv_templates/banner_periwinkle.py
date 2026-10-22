@@ -359,7 +359,10 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=195, rightMargin=24, topMargin=18, bottomMargin=16)
+    top_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
+    bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
+    right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=195, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()

@@ -197,9 +197,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         side_size, side_leading = 8.5, 12.0
         spacer_h = 5.8
     elif font_scale == "spacious":
-        body_size, body_leading, name_size = 11.0, 15.5, 26.0
+        body_size, body_leading, name_size = 11.2, 16.0, 26.0
         side_size, side_leading = 9.2, 13.0
-        spacer_h = 7.0
+        spacer_h = 8.5
     else:  # standard
         body_size, body_leading, name_size = 8.8, 12.4, 21.5
         side_size, side_leading = 7.8, 11.0
@@ -686,13 +686,16 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
+    top_m = 32 if font_scale == "spacious" else (16 if font_scale == "compact" else 20)
+    bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
+    right_m = 26 if font_scale == "spacious" else (18 if font_scale == "compact" else 22)
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
         leftMargin=MAIN_LEFT,
-        rightMargin=22,
-        topMargin=20,
-        bottomMargin=16
+        rightMargin=right_m,
+        topMargin=top_m,
+        bottomMargin=bot_m
     )
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
