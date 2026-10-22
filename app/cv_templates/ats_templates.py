@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_layout_metrics,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data, get_published_portfolio_url, render_cv_portfolio_footer
@@ -70,6 +71,22 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         hdr_leading = 13.2
         name_font_size = 17.0
         spacer_gap = 2.0
+
+    body_font_size, body_leading, hdr_font_size, spacer_gap, margin, _ = resolve_custom_layout_metrics(
+        resume,
+        base_body_size=body_font_size,
+        base_body_leading=body_leading,
+        base_sec_size=hdr_font_size,
+        base_spacer_h=spacer_gap,
+        base_margin=margin
+    )
+    if getattr(resume, "custom_page_margin", None) is not None:
+        top_margin = max(10.0, round(margin * 0.6, 1))
+        bottom_margin = max(10.0, round(margin * 0.6, 1))
+    if getattr(resume, "custom_font_size", None) is not None:
+        ratio = body_font_size / 9.0
+        hdr_leading = round(13.2 * ratio, 1)
+        name_font_size = round(17.0 * ratio, 1)
 
     # Color palette
     if resume.custom_accent_color:

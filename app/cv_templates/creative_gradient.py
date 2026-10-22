@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -49,6 +50,16 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
         body_size, body_leading, sec_size, spacer_h = 10.5, 14.8, 12.5, 6.5
     else:
         body_size, body_leading, sec_size, spacer_h = 9.0, 12.8, 11.0, 4.5
+
+    doc_margin = 32.0
+    body_size, body_leading, sec_size, spacer_h, doc_margin, _ = resolve_custom_layout_metrics(
+        resume,
+        base_body_size=body_size,
+        base_body_leading=body_leading,
+        base_sec_size=sec_size,
+        base_spacer_h=spacer_h,
+        base_margin=doc_margin
+    )
 
     dark_indigo = colors.HexColor("#1E1B4B")
     violet_accent = colors.HexColor("#6366F1")

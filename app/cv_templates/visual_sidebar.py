@@ -20,6 +20,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -61,6 +62,19 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         body_size, body_leading, sec_size, spacer_h = 10.5, 14.8, 12.5, 6.5
     else:
         body_size, body_leading, sec_size, spacer_h = 9.0, 12.8, 11.0, 4.5
+
+    body_size, body_leading, sec_size, spacer_h, custom_margin, custom_side_w = resolve_custom_layout_metrics(
+        resume,
+        base_body_size=body_size,
+        base_body_leading=body_leading,
+        base_sec_size=sec_size,
+        base_spacer_h=spacer_h,
+        base_margin=18.0 if font_scale != "compact" else 16.0,
+        base_side_w=SIDE_W
+    )
+    if custom_side_w is not None:
+        SIDE_W = custom_side_w
+        SIDE_MAX_W = SIDE_W - (SIDE_X * 2)
 
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
@@ -424,6 +438,10 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     top_m = 30 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
     bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
     right_m = 22 if font_scale == "spacious" else (16 if font_scale == "compact" else 18)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(12.0, float(resume.custom_page_margin))
+        top_m = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

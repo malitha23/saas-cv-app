@@ -27,6 +27,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -204,6 +205,28 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         body_size, body_leading, name_size = 8.8, 12.4, 21.5
         side_size, side_leading = 7.8, 11.0
         spacer_h = 4.8
+
+    MAIN_PAD = 22.0
+    body_size, body_leading, _, spacer_h, custom_margin, custom_side_w = resolve_custom_layout_metrics(
+        resume,
+        base_body_size=body_size,
+        base_body_leading=body_leading,
+        base_sec_size=body_size + 1.5,
+        base_spacer_h=spacer_h,
+        base_margin=MAIN_PAD,
+        base_side_w=SIDE_W
+    )
+    if custom_side_w is not None:
+        SIDE_W = custom_side_w
+        SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        MAIN_PAD = float(resume.custom_page_margin)
+    MAIN_LEFT = SIDE_W + MAIN_PAD
+    MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
+    if getattr(resume, "custom_font_size", None) is not None:
+        name_size = round(body_size * 2.4, 1)
+        side_size = round(body_size * 0.88, 1)
+        side_leading = round(body_leading * 0.88, 1)
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()

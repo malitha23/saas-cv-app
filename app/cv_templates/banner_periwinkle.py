@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -51,6 +52,23 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     else:
         body_size, body_leading, sec_size, spacer_h = 9.0, 12.8, 11.0, 4.5
 
+    SIDE_W = 180
+    SIDE_X = 24
+    SIDE_MAX_W = 155
+
+    body_size, body_leading, sec_size, spacer_h, custom_margin, custom_side_w = resolve_custom_layout_metrics(
+        resume,
+        base_body_size=body_size,
+        base_body_leading=body_leading,
+        base_sec_size=sec_size,
+        base_spacer_h=spacer_h,
+        base_margin=20.0,
+        base_side_w=SIDE_W
+    )
+    if custom_side_w is not None:
+        SIDE_W = custom_side_w
+        SIDE_MAX_W = max(100, SIDE_W - (SIDE_X * 2))
+
     S = getSampleStyleSheet()
     _add(S, ParagraphStyle("PwSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=dark_text, spaceBefore=6, spaceAfter=2, keepWithNext=True))
     _add(S, ParagraphStyle("PwJob", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1, textColor=dark_text, keepWithNext=True))
@@ -64,8 +82,6 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("PwSideEduSub", fontName=f_reg, fontSize=7.2, leading=9.5, textColor=sub_text))
     _add(S, ParagraphStyle("PwSideSkill", fontName=f_reg, fontSize=7.5, leading=10, textColor=body_text))
 
-    SIDE_X = 24
-    SIDE_MAX_W = 155
 
     rendered_pw_skills = [0]
 

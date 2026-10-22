@@ -649,3 +649,74 @@ def render_cv_portfolio_footer(
             )
         ])
     ]
+
+
+def resolve_custom_layout_metrics(
+    resume: TailoredResume,
+    base_body_size: float,
+    base_body_leading: float,
+    base_sec_size: float,
+    base_spacer_h: float,
+    base_margin: float,
+    base_side_w: Optional[float] = None,
+) -> Tuple[float, float, float, float, float, Optional[float]]:
+    """
+    Applies custom layout sliders (font size, section spacing, page margin, sidebar width)
+    if set on the resume. When the custom attributes are None, preserves the template's
+    built-in styling metrics completely untouched.
+
+    Returns:
+        (body_size, body_leading, sec_size, spacer_h, margin, side_w)
+    """
+    body_size = base_body_size
+    body_leading = base_body_leading
+    sec_size = base_sec_size
+    spacer_h = base_spacer_h
+    margin = base_margin
+    side_w = base_side_w
+
+    # 1. Custom Font Size
+    c_font = getattr(resume, "custom_font_size", None)
+    if c_font is not None:
+        try:
+            val = float(c_font)
+            if 6.0 <= val <= 16.0:
+                scale = val / (base_body_size if base_body_size > 0 else 9.0)
+                body_size = round(val, 2)
+                body_leading = round(base_body_leading * scale, 1)
+                sec_size = round(base_sec_size * scale, 1)
+        except (ValueError, TypeError):
+            pass
+
+    # 2. Custom Section Spacing / Margin
+    c_space = getattr(resume, "custom_section_spacing", None)
+    if c_space is not None:
+        try:
+            val = float(c_space)
+            if 0.5 <= val <= 30.0:
+                spacer_h = round(val, 2)
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Custom Page Margin / Padding
+    c_margin = getattr(resume, "custom_page_margin", None)
+    if c_margin is not None:
+        try:
+            val = float(c_margin)
+            if 10.0 <= val <= 60.0:
+                margin = round(val, 2)
+        except (ValueError, TypeError):
+            pass
+
+    # 4. Custom Sidebar Column Width
+    c_side = getattr(resume, "custom_sidebar_width", None)
+    if side_w is not None and c_side is not None:
+        try:
+            val = float(c_side)
+            if 120.0 <= val <= 260.0:
+                side_w = round(val, 2)
+        except (ValueError, TypeError):
+            pass
+
+    return (body_size, body_leading, sec_size, spacer_h, margin, side_w)
+

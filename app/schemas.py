@@ -382,6 +382,18 @@ class TailoredResume(BaseModel):
     custom_accent_color: Optional[str] = Field(
         default=None, description="Custom hex accent color e.g. '#1E3A8A'"
     )
+    custom_font_size: Optional[float] = Field(
+        default=None, description="Custom base body font size in pt (7.5 - 12.0 pt). If None, defaults to template standard."
+    )
+    custom_section_spacing: Optional[float] = Field(
+        default=None, description="Custom spacer gap between sections in pt (1.0 - 18.0 pt). If None, defaults to template standard."
+    )
+    custom_page_margin: Optional[float] = Field(
+        default=None, description="Custom document page margin in pt (14.0 - 48.0 pt). If None, defaults to template standard."
+    )
+    custom_sidebar_width: Optional[float] = Field(
+        default=None, description="Custom sidebar column width for two-column visual formats in pt (140.0 - 230.0 pt)."
+    )
     show_photo: bool = Field(
         default=False, description="Show/Hide Profile Photo in Visual Resumes"
     )

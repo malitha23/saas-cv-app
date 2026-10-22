@@ -121,6 +121,117 @@
               </p>
             </div>
 
+            <!-- 3.1 Advanced Layout, Margin & Padding Drag Sliders -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3" x-data="{ showSliders: true }">
+              <div class="flex items-center justify-between">
+                <button type="button" @click="showSliders = !showSliders" class="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-indigo-300 transition text-left">
+                  <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Custom Margin, Padding & Font Sliders</span>
+                </button>
+                <div class="flex items-center gap-2">
+                  <button type="button"
+                    x-show="tailoredData.custom_font_size || tailoredData.custom_section_spacing || tailoredData.custom_page_margin || tailoredData.custom_sidebar_width"
+                    @click="tailoredData.custom_font_size = null; tailoredData.custom_section_spacing = null; tailoredData.custom_page_margin = null; tailoredData.custom_sidebar_width = null; refreshAllPreviews();"
+                    class="text-[10px] text-amber-400 hover:text-amber-300 font-semibold transition bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20" title="Reset all sliders to standard template defaults">
+                    ↺ Reset Sliders
+                  </button>
+                  <button type="button" @click="showSliders = !showSliders" class="text-slate-400 hover:text-slate-200">
+                    <i :data-lucide="showSliders ? 'chevron-up' : 'chevron-down'" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <p class="text-[10px] text-slate-400 leading-tight">
+                Drag the slider bars to customize document margins, space between sections, base font size, or sidebar width without altering standard formats.
+              </p>
+
+              <!-- Sliders container -->
+              <div class="space-y-2.5 pt-1" x-show="showSliders" x-transition>
+                
+                <!-- 1. Font Size Slider -->
+                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="type" class="w-3 h-3 text-indigo-400"></i> Base Font Size
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_font_size ? tailoredData.custom_font_size + ' pt' : 'Auto (Template Standard)')"></span>
+                  </div>
+                  <input type="range" min="7.5" max="11.5" step="0.1"
+                    :value="tailoredData.custom_font_size || 9.0"
+                    @input="tailoredData.custom_font_size = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Compact (7.5pt)</span>
+                    <span>Standard (9.0pt)</span>
+                    <span>Large (11.5pt)</span>
+                  </div>
+                </div>
+
+                <!-- 2. Section Spacing / Margin Slider -->
+                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="rows" class="w-3 h-3 text-indigo-400"></i> Section Margin & Spacing
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_section_spacing ? tailoredData.custom_section_spacing + ' pt' : 'Auto (Template Standard)')"></span>
+                  </div>
+                  <input type="range" min="1.0" max="16.0" step="0.5"
+                    :value="tailoredData.custom_section_spacing || 4.0"
+                    @input="tailoredData.custom_section_spacing = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Tight (1pt)</span>
+                    <span>Standard (4pt)</span>
+                    <span>Spacious (16pt)</span>
+                  </div>
+                </div>
+
+                <!-- 3. Document Page Margin Slider -->
+                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="box" class="w-3 h-3 text-indigo-400"></i> Page Margins (Outer Padding)
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_page_margin ? tailoredData.custom_page_margin + ' pt' : 'Auto (Template Standard)')"></span>
+                  </div>
+                  <input type="range" min="14" max="48" step="1"
+                    :value="tailoredData.custom_page_margin || 28"
+                    @input="tailoredData.custom_page_margin = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Slim (14pt)</span>
+                    <span>Standard (28pt)</span>
+                    <span>Wide (48pt)</span>
+                  </div>
+                </div>
+
+                <!-- 4. Sidebar Width Slider (Visual 2-Column Formats) -->
+                <div x-show="['visual_sidebar', 'navy_executive', 'nordic_azure', 'aurelian_executive', 'banner_periwinkle'].includes(tailoredData.template_style)"
+                     class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="columns" class="w-3 h-3 text-indigo-400"></i> Sidebar Column Width
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_sidebar_width ? tailoredData.custom_sidebar_width + ' pt' : 'Auto (185 pt)')"></span>
+                  </div>
+                  <input type="range" min="140" max="230" step="2"
+                    :value="tailoredData.custom_sidebar_width || 185"
+                    @input="tailoredData.custom_sidebar_width = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Narrow (140pt)</span>
+                    <span>Standard (185pt)</span>
+                    <span>Wide (230pt)</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
             <!-- 3. Section Visibility Switches -->
             <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5">
               <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
