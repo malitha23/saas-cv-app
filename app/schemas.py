@@ -410,6 +410,15 @@ class TailoredResume(BaseModel):
     show_personal_details: bool = Field(
         default=True, description="Show/Hide Personal Details (Gender, Nationality, DOB, Civil Status) in CV"
     )
+    show_portfolio_link: bool = Field(
+        default=True, description="Show/Hide live interactive web portfolio link on CV (only rendered when portfolio is published)"
+    )
+    portfolio_slug: Optional[str] = Field(
+        default=None, description="Slug of published web portfolio e.g. 'john-doe'"
+    )
+    portfolio_url: Optional[str] = Field(
+        default=None, description="Full URL of published web portfolio e.g. 'https://www.dreemfolio.com/p/john-doe'"
+    )
     role_archetype: str = Field(
         default="general_professional",
         description="Role blueprint: 'software_engineering', 'trade_technical', 'management_executive', 'healthcare_medical', 'general_professional'",

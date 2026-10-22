@@ -21,7 +21,7 @@ from app.schemas import TailoredResume
 from app.cv_templates.common import (
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
-    _sync_resume_social_links, _sanitize_pdf_data
+    _sync_resume_social_links, _sanitize_pdf_data, get_published_portfolio_url, render_cv_portfolio_footer
 )
 
 def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
@@ -159,8 +159,13 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     if resume.target_job_title and resume.target_job_title.strip():
         story.append(Paragraph(resume.target_job_title.upper(), S["AtsTitle"]))
 
+    pub_url = get_published_portfolio_url(resume)
     contacts = [p for p in [info.location, info.phone, info.email,
-                             info.linkedin, info.github, info.portfolio] if p]
+                             info.linkedin, info.github] if p]
+    if pub_url:
+        contacts.append(f"<a href='{pub_url}'><u>More on My Portfolio</u></a>")
+    elif info.portfolio:
+        contacts.append(info.portfolio)
     story.append(Paragraph(" | ".join(contacts), S["AtsCntct"]))
 
     kyc_items = []
@@ -387,6 +392,10 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
             add_ats_languages()
         elif sec == "references":
             add_ats_references()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=primary, font_reg=f_reg, font_bold=f_bold, alignment=TA_CENTER)
+    if footer_flow:
+        story.extend(footer_flow)
 
     doc.build(story)
     buf.seek(0)

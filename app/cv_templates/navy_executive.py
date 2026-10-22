@@ -23,6 +23,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar, _clean_pdf_text,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -330,7 +332,9 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         if info.email:     contacts.append(info.email)
         if info.location:  contacts.append(info.location)
         if info.linkedin:  contacts.append(info.linkedin.replace("https://www.", "").replace("https://", ""))
-        if info.portfolio: contacts.append(info.portfolio.replace("https://www.", "").replace("https://", ""))
+        pub_url = get_published_portfolio_url(resume)
+        if pub_url:        contacts.append(f"<a href='{pub_url}'><u>More on My Portfolio</u></a>")
+        elif info.portfolio: contacts.append(info.portfolio.replace("https://www.", "").replace("https://", ""))
         if info.github:    contacts.append(info.github.replace("https://www.", "").replace("https://", ""))
 
         for c_text in contacts:
@@ -683,6 +687,10 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             add_languages()
         elif sec == "references":
             add_references()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=navy_color, font_reg=f_reg, font_bold=f_bold, alignment=TA_LEFT)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(

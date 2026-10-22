@@ -160,6 +160,10 @@
                   <input type="checkbox" x-model="tailoredData.show_personal_details" @change="refreshAllPreviews()" class="rounded text-indigo-600">
                   <span class="text-slate-300 text-[11px]">Personal Details (KYC)</span>
                 </label>
+                <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                  <input type="checkbox" x-model="tailoredData.show_portfolio_link" @change="refreshAllPreviews()" class="rounded text-indigo-600">
+                  <span class="text-slate-300 text-[11px]">More on My Portfolio Link</span>
+                </label>
                 <label class="flex items-center space-x-2 bg-slate-900 p-2 rounded-lg border border-slate-800 cursor-pointer col-span-2">
                   <input type="checkbox" x-model="tailoredData.show_photo" @change="refreshAllPreviews()" class="rounded text-indigo-600">
                   <span class="text-slate-300 text-[11px]">Profile Photo (Visual Resumes)</span>

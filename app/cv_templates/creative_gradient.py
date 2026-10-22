@@ -19,6 +19,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -113,7 +115,12 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
         canvas.line(0, ribbon_y, PAGE_W, ribbon_y)
 
         # Ribbon contacts
+        pub_url = get_published_portfolio_url(resume)
         contact_items = [p for p in [info.email, info.phone, info.location, info.linkedin, info.github] if p]
+        if pub_url:
+            contact_items.append("More on My Portfolio")
+        elif info.portfolio:
+            contact_items.append(info.portfolio.replace("https://www.", "").replace("https://", ""))
         ribbon_text = "   •   ".join(contact_items)
         canvas.setFillColor(colors.HexColor("#312E81"))
         canvas.setFont(f_bold, 7.8)
@@ -269,6 +276,10 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
             add_cg_education()
         elif sec == "certifications":
             add_cg_certifications()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=violet_accent, font_reg=f_reg, font_bold=f_bold, alignment=TA_CENTER)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)

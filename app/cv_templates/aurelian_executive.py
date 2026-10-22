@@ -27,6 +27,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar, _clean_pdf_text,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -330,7 +332,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         if info.email:     contacts.append(("email", info.email))
         if info.location:  contacts.append(("location", info.location))
         if info.linkedin:  contacts.append(("linkedin", info.linkedin.replace("https://www.", "").replace("https://", "")))
-        if info.portfolio: contacts.append(("portfolio", info.portfolio.replace("https://www.", "").replace("https://", "")))
+        pub_url = get_published_portfolio_url(resume)
+        if pub_url:        contacts.append(("portfolio", f"<a href='{pub_url}'><u>More on My Portfolio</u></a>"))
+        elif info.portfolio: contacts.append(("portfolio", info.portfolio.replace("https://www.", "").replace("https://", "")))
         if info.github:    contacts.append(("github", info.github.replace("https://www.", "").replace("https://", "")))
 
         for c_type, c_text in contacts:
@@ -676,6 +680,10 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     ]))
     sig_flow.append(sig_table)
     body.append(KeepTogether(sig_flow))
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=bronze_color, font_reg=f_reg, font_bold=f_bold, alignment=TA_LEFT)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(

@@ -120,6 +120,27 @@
                       </button>
                     </div>
                   </template>
+
+                  <!-- Published Portfolio Link on CV Toggle Badge -->
+                  <div class="mt-2.5 p-2.5 bg-indigo-950/30 border border-indigo-500/20 rounded-xl space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-300">
+                        <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        <span>"More on My Portfolio" Link on CV</span>
+                      </div>
+                      <button type="button"
+                        @click="tailoredData.show_portfolio_link = (tailoredData.show_portfolio_link === false ? true : false); refreshAllPreviews(); if (window.lucide) $nextTick(() => lucide.createIcons());"
+                        :class="tailoredData.show_portfolio_link !== false ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20' : 'text-slate-400 bg-slate-900 border-slate-700 hover:text-slate-200'"
+                        class="text-[10px] px-2.5 py-0.5 rounded-full border flex items-center gap-1 transition font-bold"
+                        :title="tailoredData.show_portfolio_link !== false ? 'Click to hide portfolio link from CV' : 'Click to show portfolio link on CV'">
+                        <i :data-lucide="tailoredData.show_portfolio_link !== false ? 'eye' : 'eye-off'" class="w-3 h-3"></i>
+                        <span x-text="tailoredData.show_portfolio_link !== false ? 'Shown' : 'Hidden'"></span>
+                      </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                      Automatically displays a verified <b>"More on My Portfolio"</b> clickable link & footer banner on your CV & PDF. <i>(Only shown when your web portfolio is published)</i>.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -20,6 +20,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -143,7 +145,9 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         if info.location:  contacts.append(("LOCATION", info.location))
         if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
         if info.github:    contacts.append(("GITHUB", info.github))
-        if info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
+        pub_url = get_published_portfolio_url(resume)
+        if pub_url:        contacts.append(("PORTFOLIO", f"<a href='{pub_url}'><u>More on My Portfolio</u></a>"))
+        elif info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
         if getattr(resume, "show_personal_details", True):
             if getattr(info, "nationality", None): contacts.append(("NATIONALITY", info.nationality))
             if getattr(info, "date_of_birth", None): contacts.append(("DOB", info.date_of_birth))
@@ -411,6 +415,10 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             add_certifications()
         elif sec == "references":
             add_references()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=accent, font_reg=f_reg, font_bold=f_bold, alignment=TA_LEFT)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=18, topMargin=18, bottomMargin=16)

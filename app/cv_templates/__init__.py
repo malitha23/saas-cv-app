@@ -14,7 +14,7 @@ Provides individual modules for each template format:
 """
 
 from app.schemas import TailoredResume
-from app.cv_templates.common import _sync_resume_social_links, _sanitize_pdf_data
+from app.cv_templates.common import _sync_resume_social_links, _sanitize_pdf_data, get_published_portfolio_url, render_cv_portfolio_footer
 from app.cv_templates.ats_templates import _ats_pdf
 from app.cv_templates.visual_sidebar import _visual_sidebar_pdf
 from app.cv_templates.banner_periwinkle import _banner_periwinkle_pdf
@@ -53,6 +53,8 @@ def generate_resume_pdf(resume: TailoredResume) -> bytes:
 
 __all__ = [
     "generate_resume_pdf",
+    "get_published_portfolio_url",
+    "render_cv_portfolio_footer",
     "generate_cover_letter_pdf",
     "_ats_pdf",
     "_visual_sidebar_pdf",

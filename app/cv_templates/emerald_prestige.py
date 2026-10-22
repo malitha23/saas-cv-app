@@ -19,6 +19,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -262,6 +264,10 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
             add_em_education()
         elif sec == "certifications":
             add_em_certifications()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=emerald_dark, font_reg=f_reg, font_bold=f_bold, alignment=TA_CENTER)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=24, bottomMargin=22)

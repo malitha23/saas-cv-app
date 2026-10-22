@@ -19,6 +19,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -111,7 +113,9 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         if info.location:  contacts.append(("LOCATION", info.location))
         if info.linkedin:  contacts.append(("LINKEDIN", info.linkedin))
         if info.github:    contacts.append(("GITHUB", info.github))
-        if info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
+        pub_url = get_published_portfolio_url(resume)
+        if pub_url:        contacts.append(("PORTFOLIO", f"<a href='{pub_url}'><u>More on My Portfolio</u></a>"))
+        elif info.portfolio: contacts.append(("PORTFOLIO", info.portfolio))
 
         for lbl, val in contacts:
             if y < 80: break
@@ -349,6 +353,10 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             add_pw_education()
         elif sec == "certifications":
             add_pw_certifications()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=colors.HexColor("#1E3A8A"), font_reg=f_reg, font_bold=f_bold, alignment=TA_LEFT)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=195, rightMargin=24, topMargin=18, bottomMargin=16)

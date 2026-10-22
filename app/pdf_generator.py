@@ -28,6 +28,8 @@ from app.cv_templates import (
 )
 
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add,
     _hex_to_rgb,
     _is_safe_remote_url,
@@ -43,6 +45,8 @@ from app.cv_templates.common import (
 
 __all__ = [
     "generate_resume_pdf",
+    "get_published_portfolio_url",
+    "render_cv_portfolio_footer",
     "generate_cover_letter_pdf",
     "_ats_pdf",
     "_visual_sidebar_pdf",

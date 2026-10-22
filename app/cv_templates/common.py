@@ -531,3 +531,112 @@ def _sync_resume_social_links(resume: TailoredResume):
             info.portfolio = other_active_links[0]
 
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PUBLISHED PORTFOLIO CV LINK & FOOTER INTEGRATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+def get_published_portfolio_url(resume: TailoredResume) -> Optional[str]:
+    """
+    Returns the live public web portfolio URL ONLY if the portfolio is currently published.
+    Returns None if:
+    - User has disabled show_portfolio_link (getattr(resume, 'show_portfolio_link', True) is False)
+    - The portfolio is NOT published in the local or disk published store
+    """
+    if not getattr(resume, "show_portfolio_link", True):
+        return None
+
+    try:
+        from app.state import get_published_portfolio, resolve_custom_domain_slug
+    except ImportError:
+        return None
+
+    info = getattr(resume, "personal_info", None)
+    if not info:
+        return None
+
+    import re
+    # 1. Check custom domain if candidate has one
+    if getattr(info, "custom_domain", None) and info.custom_domain.strip():
+        cd = info.custom_domain.strip()
+        slug = resolve_custom_domain_slug(cd)
+        if slug and get_published_portfolio(slug):
+            if not cd.startswith("http"):
+                return f"https://{cd}"
+            return cd
+
+    # Base URL for default DreemFolio public path
+    base_url = os.getenv("APP_BASE_URL", "https://www.dreemfolio.com").rstrip("/")
+
+    # 2. Check explicitly assigned portfolio_slug
+    p_slug = getattr(resume, "portfolio_slug", None)
+    if p_slug and p_slug.strip():
+        clean_slug = p_slug.strip()
+        if get_published_portfolio(clean_slug):
+            return f"{base_url}/p/{clean_slug}"
+
+    # 3. Check candidate's full name clean slug
+    if getattr(info, "full_name", None) and info.full_name.strip():
+        name_slug = re.sub(r'[^a-zA-Z0-9]', '-', info.full_name.lower()).strip('-')
+        if name_slug and get_published_portfolio(name_slug):
+            return f"{base_url}/p/{name_slug}"
+
+    # 4. Check if info.portfolio or resume.portfolio_url has a /p/{slug} pattern
+    for candidate_url in [getattr(resume, "portfolio_url", None), getattr(info, "portfolio", None)]:
+        if candidate_url and isinstance(candidate_url, str):
+            clean_u = candidate_url.strip()
+            match = re.search(r'/p/([a-zA-Z0-9_\-]+)', clean_u)
+            if match:
+                extracted_slug = match.group(1)
+                if get_published_portfolio(extracted_slug):
+                    if clean_u.startswith("http"):
+                        return clean_u
+                    return f"{base_url}/p/{extracted_slug}"
+
+    return None
+
+
+def render_cv_portfolio_footer(
+    resume: TailoredResume,
+    primary_color=None,
+    font_reg: str = "Helvetica",
+    font_bold: str = "Helvetica-Bold",
+    font_size: float = 8.0,
+    leading: float = 10.5,
+    alignment: int = TA_CENTER,
+    spacer_before: float = 3.0,
+) -> List[Any]:
+    """
+    Renders an ATS-friendly, elegant footer banner flowable with the published portfolio link.
+    Returns a list of Flowables (Spacer, HRFlowable, Paragraph) or empty list if not published / hidden.
+    """
+    pub_url = get_published_portfolio_url(resume)
+    if not pub_url:
+        return []
+
+    if primary_color is None:
+        primary_color = colors.HexColor("#2563EB")
+    elif isinstance(primary_color, str):
+        primary_color = colors.HexColor(primary_color)
+
+    color_hex = primary_color.hexval() if hasattr(primary_color, "hexval") else "#2563EB"
+
+    style = ParagraphStyle(
+        f"CvPortfolioFooter_{id(resume)}",
+        fontName=font_reg,
+        fontSize=font_size,
+        leading=leading,
+        alignment=alignment,
+        textColor=colors.HexColor("#475569"),
+        spaceAfter=0,
+    )
+
+    return [
+        Spacer(1, spacer_before),
+        HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#E2E8F0"), spaceBefore=1, spaceAfter=2.5),
+        Paragraph(
+            f"<b>More on My Portfolio:</b> <a href='{pub_url}'><u><font color='{color_hex}'>{pub_url}</font></u></a> &nbsp;<font color='#94A3B8'>•</font>&nbsp; <font color='#64748B'>Interactive Projects & Verified Credentials</font>",
+            style
+        )
+    ]

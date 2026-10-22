@@ -19,6 +19,8 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    get_published_portfolio_url,
+    render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
     _draw_diagonal_watermark, _draw_sidebar_para, _draw_skill_progress_bar,
     _sync_resume_social_links, _sanitize_pdf_data
@@ -100,6 +102,9 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
         if info.phone:    contacts.append(f"> tel: {info.phone}")
         if info.location: contacts.append(f"> loc: {info.location}")
         if info.github:   contacts.append(f"> git: {info.github}")
+        pub_url = get_published_portfolio_url(resume)
+        if pub_url:       contacts.append(f"> web: More on My Portfolio")
+        elif info.portfolio: contacts.append(f"> web: {info.portfolio}")
 
         canvas.setFont(f_reg, 7.5)
         canvas.setFillColor(colors.HexColor("#94A3B8"))
@@ -276,6 +281,10 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
             add_tn_education()
         elif sec == "certifications":
             add_tn_certifications()
+
+    footer_flow = render_cv_portfolio_footer(resume, primary_color=cyan_tech, font_reg=f_reg, font_bold=f_bold, alignment=TA_CENTER)
+    if footer_flow:
+        body.extend(footer_flow)
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=32, rightMargin=32, topMargin=18, bottomMargin=16)
