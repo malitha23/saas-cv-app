@@ -279,7 +279,7 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "grid grid-cols-1 gap-5"
     elif num_cats == 2:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-5"
-    elif num_cats == 3:
+    elif num_cats in [3, 5, 6]:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
     else:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5"
@@ -305,13 +305,15 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
         and getattr(resume, "show_education", True)
         and len(resume.education) > 0
     )
+    num_edu = len(resume.education)
     edu_cards = []
-    for edu in resume.education:
+    for idx, edu in enumerate(resume.education):
         details_html = f'<p class="text-[13px] text-slate-600 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
         loc_html = f'<span class="text-slate-400">·</span> {edu.location}' if getattr(edu, "location", None) else ''
         year_html = f'<span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-200/70 px-2.5 py-0.5 rounded-full shrink-0">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        span_cls = "md:col-span-2" if (num_edu % 2 != 0 and idx == num_edu - 1) else ""
         edu_cards.append(f"""
-          <div class="reveal group p-6 bg-white border border-slate-200/60 rounded-3xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_48px_-16px_rgba(15,23,42,0.16)] hover:-translate-y-1 transition-all duration-500 space-y-2">
+          <div class="reveal group p-6 bg-white border border-slate-200/60 rounded-3xl shadow-[0_2px_12px_-6px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_48px_-16px_rgba(15,23,42,0.16)] hover:-translate-y-1 transition-all duration-500 space-y-2 {span_cls}">
             <div class="flex flex-wrap justify-between items-start gap-2">
               <div class="space-y-0.5">
                 <h4 class="font-bold text-slate-900 text-base tracking-tight group-hover:text-[var(--accent)] transition-colors">{edu.degree}</h4>
@@ -341,13 +343,15 @@ def render_aurora_white(resume: TailoredResume, accent: str) -> str:
         getattr(resume, "portfolio_show_certifications", True)
         and len(raw_certs) > 0
     )
+    num_certs = len(raw_certs)
     cert_cards = []
-    for cert in raw_certs:
+    for idx, cert in enumerate(raw_certs):
         issuer_html = f'<p class="text-xs font-medium text-slate-500">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/60">{cert.year}</span>' if getattr(cert, "year", None) else ''
         url_html = render_cert_badge_thumb(cert)
+        span_cls = "sm:col-span-2 lg:col-span-3" if (num_certs >= 3 and num_certs % 3 == 1 and idx == num_certs - 1) else ("sm:col-span-2" if (num_certs < 3 and num_certs % 2 != 0 and idx == num_certs - 1) else "")
         cert_cards.append(f"""
-          <div class="reveal group p-4 sm:p-5 bg-white border border-slate-200/60 rounded-2xl shadow-[0_2px_10px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.12)] hover:-translate-y-1 hover:border-[var(--accent)]/40 transition-all duration-300 flex items-center justify-between gap-3">
+          <div class="reveal group p-4 sm:p-5 bg-white border border-slate-200/60 rounded-2xl shadow-[0_2px_10px_-4px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_36px_-12px_rgba(15,23,42,0.12)] hover:-translate-y-1 hover:border-[var(--accent)]/40 transition-all duration-300 flex items-center justify-between gap-3 {span_cls}">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"></path></svg>

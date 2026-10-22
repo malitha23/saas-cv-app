@@ -112,6 +112,7 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
         """
 
     # --- Project cards with hover lift + corner glow ---
+    num_proj = len(resume.projects)
     project_cards = []
     for idx, p in enumerate(resume.projects):
         tech = "".join(
@@ -136,8 +137,9 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
                 f'<a href="{p.link}" target="_blank" class="px-3 py-1.5 bg-slate-800 text-slate-200 font-medium rounded-lg text-xs border border-slate-700 flex items-center gap-1.5 hover:border-[var(--accent)] hover:text-white hover:-translate-y-0.5 transition-all duration-300"><i data-lucide="github" class="w-3.5 h-3.5"></i> Repo</a>'
             )
 
+        span_cls = "sm:col-span-2" if (num_proj % 2 != 0 and idx == num_proj - 1) else ""
         project_cards.append(f"""
-          <div class="reveal group relative bg-slate-950/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between space-y-3 hover:border-[var(--accent)]/60 hover:-translate-y-1 hover:shadow-[0_20px_50px_-20px_var(--accent-glow)] transition-all duration-500 overflow-hidden" style="transition-delay: {idx*80}ms">
+          <div class="reveal group relative bg-slate-950/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between space-y-3 hover:border-[var(--accent)]/60 hover:-translate-y-1 hover:shadow-[0_20px_50px_-20px_var(--accent-glow)] transition-all duration-500 overflow-hidden {span_cls}" style="transition-delay: {idx*80}ms">
             <!-- corner glow -->
             <div class="absolute -top-16 -right-16 w-32 h-32 rounded-full bg-[var(--accent)]/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             <!-- top accent line -->
@@ -280,8 +282,10 @@ def render_bento_grid(resume: TailoredResume, accent: str) -> str:
             skills_badges_grid = "relative grid grid-cols-1 gap-4"
         elif num_cats == 2:
             skills_badges_grid = "relative grid grid-cols-1 md:grid-cols-2 gap-6"
-        else:
+        elif num_cats in [3, 5, 6]:
             skills_badges_grid = "relative grid grid-cols-1 md:grid-cols-3 gap-6"
+        else:
+            skills_badges_grid = "relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
     else:
         skills_col_span = "lg:col-span-1"
         skills_badges_grid = "relative space-y-4"

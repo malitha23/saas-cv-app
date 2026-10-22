@@ -897,8 +897,9 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
     phone_link_color = "text-slate-700 hover:text-emerald-600" if light_mode else "text-slate-300 hover:text-emerald-400"
     shadow_cls = "shadow-[0_8px_32px_-12px_rgba(15,23,42,0.08)]" if light_mode else "shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]"
 
+    num_refs = len(refs)
     cards = []
-    for r in refs:
+    for idx, r in enumerate(refs):
         if isinstance(r, dict):
             name = r.get("name", "")
             title = r.get("title")
@@ -919,8 +920,9 @@ def render_references_block(resume, card_bg="bg-slate-900/60", border="border-sl
         if phone:
             contacts_html.append(f'<a href="tel:{phone}" class="text-[11px] {phone_link_color} flex items-center gap-1.5 transition truncate"><i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i> {phone}</a>')
 
+        span_cls = "sm:col-span-2" if (num_refs % 2 != 0 and idx == num_refs - 1) else ""
         cards.append(f'''
-        <div class="p-4 rounded-2xl space-y-2 border transition {inner_card_bg}">
+        <div class="p-4 rounded-2xl space-y-2 border transition {inner_card_bg} {span_cls}">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-xs shrink-0">
               <i data-lucide="user-check" class="w-4 h-4"></i>

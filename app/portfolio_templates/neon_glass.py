@@ -90,6 +90,7 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
     )
 
     # --- Projects with 3D tilt hint + corner glow + trace border ---
+    num_proj = len(resume.projects)
     projects = []
     for idx, p in enumerate(resume.projects):
         tech = "".join(
@@ -114,8 +115,9 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
                 f'<a href="{p.link}" target="_blank" class="px-3 py-1.5 bg-white/[0.06] text-white border border-white/10 rounded-lg text-xs transition-all duration-300 flex items-center gap-1 hover:bg-white/[0.12] hover:border-[var(--accent)]/50 hover:-translate-y-0.5"><i data-lucide="github" class="w-3 h-3"></i> Code</a>'
             )
 
+        span_cls = "sm:col-span-2" if (num_proj % 2 != 0 and idx == num_proj - 1) else ""
         projects.append(f"""
-          <div class="reveal group relative bg-white/[0.04] backdrop-blur-2xl border border-white/10 hover:border-[var(--accent)]/60 hover:shadow-[0_20px_60px_-20px_var(--accent-glow)] rounded-3xl p-6 space-y-4 transition-all duration-500 overflow-hidden hover:-translate-y-2" style="transition-delay: {idx*90}ms">
+          <div class="reveal group relative bg-white/[0.04] backdrop-blur-2xl border border-white/10 hover:border-[var(--accent)]/60 hover:shadow-[0_20px_60px_-20px_var(--accent-glow)] rounded-3xl p-6 space-y-4 transition-all duration-500 overflow-hidden hover:-translate-y-2 {span_cls}" style="transition-delay: {idx*90}ms">
             <!-- Inner highlight -->
             <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none"></div>
             <!-- Corner glow -->
@@ -231,8 +233,8 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "relative grid grid-cols-1 gap-6"
     elif num_cats == 2:
         skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-2 gap-6"
-    elif num_cats == 3:
-        skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-3 gap-6"
+    elif num_cats in [3, 5, 6]:
+        skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
     else:
         skills_grid_class = "relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
 
@@ -262,13 +264,15 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         and getattr(resume, "show_education", True)
         and len(resume.education) > 0
     )
+    num_edu = len(resume.education)
     edu_cards = []
-    for edu in resume.education:
+    for idx, edu in enumerate(resume.education):
         details_html = f'<p class="text-xs text-slate-300/80 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
         loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
         year_html = f'<span class="text-[11px] font-mono text-[var(--accent)] bg-white/[0.04] border border-white/10 px-2.5 py-0.5 rounded-full shrink-0">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        span_cls = "sm:col-span-2" if (num_edu % 2 != 0 and idx == num_edu - 1) else ""
         edu_cards.append(f"""
-          <div class="reveal group p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/50 hover:bg-white/[0.06] transition-all duration-300 space-y-2">
+          <div class="reveal group p-5 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/50 hover:bg-white/[0.06] transition-all duration-300 space-y-2 {span_cls}">
             <div class="flex flex-wrap justify-between items-start gap-2">
               <div>
                 <h4 class="font-bold text-white text-sm group-hover:text-[var(--accent)] transition-colors">{edu.degree}</h4>
@@ -300,13 +304,15 @@ def render_neon_glass(resume: TailoredResume, accent: str) -> str:
         getattr(resume, "portfolio_show_certifications", True)
         and len(raw_certs) > 0
     )
+    num_certs = len(raw_certs)
     cert_cards = []
-    for cert in raw_certs:
+    for idx, cert in enumerate(raw_certs):
         issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-[10px] font-mono text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/10">{cert.year}</span>' if getattr(cert, "year", None) else ''
         url_html = render_cert_badge_thumb(cert)
+        span_cls = "sm:col-span-2 lg:col-span-3" if (num_certs >= 3 and num_certs % 3 == 1 and idx == num_certs - 1) else ("sm:col-span-2" if (num_certs < 3 and num_certs % 2 != 0 and idx == num_certs - 1) else "")
         cert_cards.append(f"""
-          <div class="reveal group p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/60 hover:shadow-[0_8px_24px_-6px_var(--accent-glow)] transition-all duration-300 flex items-center justify-between gap-3">
+          <div class="reveal group p-4 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-[var(--accent)]/60 hover:shadow-[0_8px_24px_-6px_var(--accent-glow)] transition-all duration-300 flex items-center justify-between gap-3 {span_cls}">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
                 <i data-lucide="award" class="w-5 h-5"></i>

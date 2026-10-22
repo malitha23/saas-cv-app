@@ -64,6 +64,7 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
     socials_html = "".join(socials)
 
     # Projects with modern cards
+    num_proj = len(resume.projects)
     projects_html = []
     for idx, p in enumerate(resume.projects):
         tech_tags = "".join(
@@ -89,8 +90,9 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
                 f'<a href="{p.link}" target="_blank" class="px-4 py-2 bg-slate-800/60 border border-slate-700/50 text-slate-200 font-medium rounded-lg text-xs hover:border-[var(--accent)] hover:bg-slate-800 transition-all duration-300 flex items-center gap-1.5"><i data-lucide="github" class="w-3.5 h-3.5"></i> Source</a>'
             )
 
+        span_cls = "md:col-span-2" if (num_proj % 2 != 0 and idx == num_proj - 1) else ""
         projects_html.append(f"""
-            <div class="group bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 hover:border-[var(--accent)] rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[var(--accent-glow)] stagger-item">
+            <div class="group bg-slate-900/40 backdrop-blur-sm border border-slate-800/50 hover:border-[var(--accent)] rounded-2xl p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[var(--accent-glow)] stagger-item {span_cls}">
                 <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
                     <div class="flex items-center gap-3">
                         <span class="text-xs font-mono text-[var(--accent)] font-bold">#{idx+1:02d}</span>
@@ -276,10 +278,10 @@ def render_terminal_dev(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "grid grid-cols-1 gap-4"
     elif num_cats == 2:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4"
-    elif num_cats == 3:
+    elif num_cats in [3, 5, 6]:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-3 gap-4"
     else:
-        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-4"
+        skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
 
     joined_skills_html = "".join(skills_html)
     skills_section_html = f'''

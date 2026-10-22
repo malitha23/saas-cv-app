@@ -169,7 +169,7 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "grid grid-cols-1 gap-4"
     elif num_cats == 2:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4"
-    elif num_cats == 3:
+    elif num_cats in [3, 5, 6]:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-3 gap-4"
     else:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-4"
@@ -225,13 +225,15 @@ def render_split_sidebar(resume: TailoredResume, accent: str) -> str:
         getattr(resume, "portfolio_show_certifications", True)
         and len(raw_certs) > 0
     )
+    num_certs = len(raw_certs)
     cert_items = []
-    for cert in raw_certs:
+    for idx, cert in enumerate(raw_certs):
         issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-[11px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
         url_html = render_cert_badge_thumb(cert)
+        span_cls = "sm:col-span-2" if (num_certs % 2 != 0 and idx == num_certs - 1) else ""
         cert_items.append(f"""
-          <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition">
+          <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition {span_cls}">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                 <i data-lucide="award" class="w-4 h-4"></i>

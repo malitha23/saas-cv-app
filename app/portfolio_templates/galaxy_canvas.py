@@ -71,8 +71,9 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
         """
 
     # Projects
+    num_proj = len(resume.projects)
     projects_cards = []
-    for p in resume.projects:
+    for idx, p in enumerate(resume.projects):
         tech = " · ".join(p.technologies[:4])
         bullets = "".join(
             [
@@ -90,8 +91,9 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
                 f'<a href="{p.link}" target="_blank" class="px-3 py-1 bg-white/10 text-white rounded-lg text-xs hover:bg-white/20 transition flex items-center gap-1"><i data-lucide="github" class="w-3 h-3"></i> Code</a>'
             )
 
+        span_cls = "md:col-span-2" if (num_proj % 2 != 0 and idx == num_proj - 1) else ""
         projects_cards.append(f"""
-          <div class="p-6 rounded-3xl bg-slate-900/50 backdrop-blur-xl border border-white/10 hover:border-[var(--accent)] transition duration-300 space-y-3 shadow-xl">
+          <div class="p-6 rounded-3xl bg-slate-900/50 backdrop-blur-xl border border-white/10 hover:border-[var(--accent)] transition duration-300 space-y-3 shadow-xl {span_cls}">
             <div class="flex items-center justify-between">
               <h4 class="font-bold text-base text-white">{p.name}</h4>
               <div class="flex items-center gap-2">{"".join(actions)}</div>
@@ -146,13 +148,15 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
         and getattr(resume, "show_education", True)
         and len(resume.education) > 0
     )
+    num_edu = len(resume.education)
     edu_cards = []
-    for edu in resume.education:
+    for idx, edu in enumerate(resume.education):
         details_html = f'<p class="text-xs text-slate-300 pt-1 leading-relaxed">{edu.details}</p>' if getattr(edu, "details", None) else ''
         loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
         year_html = f'<span class="text-xs font-mono text-[var(--accent)] font-semibold">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        span_cls = "md:col-span-2" if (num_edu % 2 != 0 and idx == num_edu - 1) else ""
         edu_cards.append(f"""
-          <div class="p-5 rounded-2xl bg-slate-900/60 border border-white/10 space-y-2 hover:border-[var(--accent)]/50 transition">
+          <div class="p-5 rounded-2xl bg-slate-900/60 border border-white/10 space-y-2 hover:border-[var(--accent)]/50 transition {span_cls}">
             <div class="flex flex-wrap justify-between items-start gap-2">
               <div>
                 <h4 class="font-bold text-white text-sm">{edu.degree}</h4>
@@ -182,13 +186,15 @@ def render_galaxy_canvas(resume: TailoredResume, accent: str) -> str:
         getattr(resume, "portfolio_show_certifications", True)
         and len(raw_certs) > 0
     )
+    num_certs = len(raw_certs)
     cert_cards = []
-    for cert in raw_certs:
+    for idx, cert in enumerate(raw_certs):
         issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-white/10">{cert.year}</span>' if getattr(cert, "year", None) else ''
         url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        span_cls = "md:col-span-2 lg:col-span-3" if (num_certs >= 3 and num_certs % 3 == 1 and idx == num_certs - 1) else ("md:col-span-2" if (num_certs < 3 and num_certs % 2 != 0 and idx == num_certs - 1) else "")
         cert_cards.append(f"""
-          <div class="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition">
+          <div class="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex items-center justify-between gap-3 hover:border-[var(--accent)]/50 transition {span_cls}">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                 <i data-lucide="award" class="w-5 h-5"></i>

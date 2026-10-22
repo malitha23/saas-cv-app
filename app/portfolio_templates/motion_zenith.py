@@ -107,8 +107,9 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
     socials_html = "".join(social_links)
 
     # 3D Tilt Project Cards
+    num_proj = len(resume.projects)
     project_cards = []
-    for p in resume.projects:
+    for p_idx, p in enumerate(resume.projects):
         tech_tags = "".join(
             [
                 f'<span class="px-2.5 py-0.5 text-[10px] font-mono bg-white/5 border border-white/10 text-slate-300 rounded-md">{t}</span>'
@@ -131,8 +132,9 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
                 f'<a href="{p.link}" target="_blank" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium rounded-xl text-xs flex items-center gap-1.5 transition"><i data-lucide="github" class="w-3.5 h-3.5"></i> Source</a>'
             )
 
+        span_cls = "md:col-span-2" if (num_proj % 2 != 0 and p_idx == num_proj - 1) else ""
         project_cards.append(f"""
-          <div class="tilt-card bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-[var(--accent)] rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-4 shadow-xl transition-all duration-300 group">
+          <div class="tilt-card bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 hover:border-[var(--accent)] rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-4 shadow-xl transition-all duration-300 group {span_cls}">
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <div class="w-10 h-10 rounded-2xl bg-[var(--accent-glow)] border border-[var(--accent)] flex items-center justify-center text-[var(--accent)] font-bold group-hover:rotate-6 transition transform">
@@ -202,7 +204,7 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "grid grid-cols-1 gap-6"
     elif num_cats == 2:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 gap-6"
-    elif num_cats == 3:
+    elif num_cats in [3, 5, 6]:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
     else:
         skills_grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
@@ -242,13 +244,15 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
         and getattr(resume, "show_education", True)
         and len(resume.education) > 0
     )
+    num_edu = len(resume.education)
     edu_cards = []
-    for edu in resume.education:
+    for edu_idx, edu in enumerate(resume.education):
         details_html = f'<p class="text-xs text-slate-300 leading-relaxed pt-1">{edu.details}</p>' if getattr(edu, "details", None) else ''
         loc_html = f'<span class="text-slate-500">·</span> {edu.location}' if getattr(edu, "location", None) else ''
         year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-0.5 rounded-full border border-slate-800">{edu.graduation_year}</span>' if getattr(edu, "graduation_year", None) else ''
+        span_cls = "md:col-span-2" if (num_edu % 2 != 0 and edu_idx == num_edu - 1) else ""
         edu_cards.append(f"""
-          <div class="p-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-2 hover:border-[var(--accent)]/50 transition">
+          <div class="p-5 bg-slate-900/60 border border-slate-800/80 rounded-2xl space-y-2 hover:border-[var(--accent)]/50 transition {span_cls}">
             <div class="flex flex-wrap justify-between items-start gap-2">
               <div>
                 <h4 class="font-bold text-sm text-white">{edu.degree}</h4>
@@ -278,13 +282,15 @@ def render_motion_zenith(resume: TailoredResume, accent: str) -> str:
         getattr(resume, "portfolio_show_certifications", True)
         and len(raw_certs) > 0
     )
+    num_certs = len(raw_certs)
     cert_cards = []
-    for cert in raw_certs:
+    for c_idx, cert in enumerate(raw_certs):
         issuer_html = f'<p class="text-xs text-slate-400">{cert.issuer}</p>' if getattr(cert, "issuer", None) else ''
         year_html = f'<span class="text-xs font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{cert.year}</span>' if getattr(cert, "year", None) else ''
         url_html = f'<a href="{cert.url}" target="_blank" class="text-xs text-[var(--accent)] hover:underline font-semibold flex items-center gap-1 shrink-0"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Verify</a>' if getattr(cert, "url", None) else ''
+        span_cls = "md:col-span-2 lg:col-span-3" if (num_certs >= 3 and num_certs % 3 == 1 and c_idx == num_certs - 1) else ("md:col-span-2" if (num_certs < 3 and num_certs % 2 != 0 and c_idx == num_certs - 1) else "")
         cert_cards.append(f"""
-          <div class="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl flex items-center justify-between gap-3 hover:border-[var(--accent)] transition">
+          <div class="p-4 bg-slate-900/60 border border-slate-800/80 rounded-2xl flex items-center justify-between gap-3 hover:border-[var(--accent)] transition {span_cls}">
             <div class="flex items-center gap-3.5 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                 <i data-lucide="award" class="w-5 h-5"></i>

@@ -179,7 +179,7 @@ def render_editorial_swiss(resume: TailoredResume, accent: str) -> str:
         skills_grid_class = "grid grid-cols-1 gap-8 pt-2"
     elif num_cats == 2:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2"
-    elif num_cats == 3:
+    elif num_cats in [3, 5, 6]:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2"
     else:
         skills_grid_class = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pt-2"
