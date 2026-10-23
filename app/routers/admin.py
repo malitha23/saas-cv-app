@@ -2125,8 +2125,119 @@ async def get_admin_ai_usage_stats(
     return get_ai_metrics_overview(db)
 
 
+class GrowthBotConfigUpdate(BaseModel):
+    is_enabled: Optional[bool] = None
+    daily_limit: Optional[int] = None
+    preferred_language: Optional[str] = None
+    enable_affiliate_booster: Optional[bool] = None
+    enable_resume_booster: Optional[bool] = None
+    enable_portfolio_booster: Optional[bool] = None
+
+class GrowthBotTriggerRequest(BaseModel):
+    max_to_send: Optional[int] = 5
 
 
+@router.get("/api/admin/growth-bot/status")
+async def get_growth_bot_status(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Returns real-time configuration, window status, and recent activity logs for Autonomous Growth Bot."""
+    from app.services.growth_bot import (
+        get_or_create_growth_bot_config, reset_daily_limits_if_needed,
+        get_prime_window_info
+    )
+    from app.models import GrowthBotLog
+    cfg = get_or_create_growth_bot_config(db)
+    reset_daily_limits_if_needed(cfg, db)
+    window_info = get_prime_window_info()
+
+    recent_logs = db.scalars(
+        select(GrowthBotLog).order_by(desc(GrowthBotLog.created_at)).limit(25)
+    ).all()
+
+    logs_data = [
+        {
+            "id": l.id,
+            "action": l.action,
+            "recipient_email": l.recipient_email,
+            "recipient_name": l.recipient_name,
+            "segment": l.segment,
+            "language": l.language,
+            "subject": l.subject,
+            "details": l.details,
+            "created_at": l.created_at.strftime("%Y-%m-%d %I:%M %p") if l.created_at else None
+        }
+        for l in recent_logs
+    ]
+
+    return {
+        "success": True,
+        "config": {
+            "is_enabled": cfg.is_enabled,
+            "daily_limit": cfg.daily_limit,
+            "sent_today": cfg.sent_today,
+            "remaining_today": max(0, cfg.daily_limit - cfg.sent_today),
+            "preferred_language": cfg.preferred_language,
+            "enable_affiliate_booster": cfg.enable_affiliate_booster,
+            "enable_resume_booster": cfg.enable_resume_booster,
+            "enable_portfolio_booster": cfg.enable_portfolio_booster,
+            "last_run_at": cfg.last_run_at.strftime("%Y-%m-%d %I:%M %p") if cfg.last_run_at else None,
+            "last_run_status": cfg.last_run_status
+        },
+        "window_info": window_info,
+        "recent_logs": logs_data
+    }
 
 
+@router.post("/api/admin/growth-bot/config")
+async def update_growth_bot_config(
+    payload: GrowthBotConfigUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Updates master switch, daily limits, and targeted segment settings for Growth Bot."""
+    from app.services.growth_bot import get_or_create_growth_bot_config
+    cfg = get_or_create_growth_bot_config(db)
+
+    if payload.is_enabled is not None:
+        cfg.is_enabled = payload.is_enabled
+    if payload.daily_limit is not None and 1 <= payload.daily_limit <= 500:
+        cfg.daily_limit = payload.daily_limit
+    if payload.preferred_language is not None and payload.preferred_language in ("auto", "si", "en", "ta"):
+        cfg.preferred_language = payload.preferred_language
+    if payload.enable_affiliate_booster is not None:
+        cfg.enable_affiliate_booster = payload.enable_affiliate_booster
+    if payload.enable_resume_booster is not None:
+        cfg.enable_resume_booster = payload.enable_resume_booster
+    if payload.enable_portfolio_booster is not None:
+        cfg.enable_portfolio_booster = payload.enable_portfolio_booster
+
+    db.commit()
+    db.refresh(cfg)
+    return {"success": True, "message": "Growth bot configuration updated successfully."}
+
+
+@router.post("/api/admin/growth-bot/audit")
+async def trigger_growth_bot_audit(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Executes a non-destructive research audit on database candidates and returns breakdown."""
+    from app.services.growth_bot import run_growth_bot_audit
+    result = run_growth_bot_audit(db)
+    return {"success": True, "audit": result}
+
+
+@router.post("/api/admin/growth-bot/trigger")
+async def trigger_growth_bot_now(
+    payload: Optional[GrowthBotTriggerRequest] = None,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Force executes an immediate outreach dispatch batch bypassing prime time window check."""
+    from app.services.growth_bot import execute_growth_bot_cycle
+    max_send = (payload.max_to_send if payload else 5) or 5
+    result = execute_growth_bot_cycle(db, force_now=True, max_to_send=max_send)
+    return {"success": True, "result": result}
 

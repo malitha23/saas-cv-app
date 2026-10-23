@@ -365,11 +365,18 @@ async def on_startup():
     except Exception as seed_err:
         print("[DB] Note on pricing seed:", seed_err)
 
-    # Launch background worker
+    # Launch background workers
     try:
         asyncio.create_task(email_queue_worker_loop())
     except Exception as worker_err:
         logger.warning("Failed to start email queue worker: %s", worker_err)
+
+    try:
+        from app.services.growth_bot import growth_bot_worker_loop
+        asyncio.create_task(growth_bot_worker_loop())
+        logger.info("🤖 Autonomous Growth Bot daemon worker successfully scheduled.")
+    except Exception as bot_err:
+        logger.warning("Failed to start growth bot worker: %s", bot_err)
 
 
 @app.on_event("shutdown")
@@ -377,6 +384,11 @@ def on_shutdown():
     """Gracefully terminate background workers."""
     global _email_worker_running
     _email_worker_running = False
+    try:
+        from app.services import growth_bot
+        growth_bot._bot_worker_active = False
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -3087,6 +3087,255 @@
           </div>
         </div>
 
+        <!-- ═════════════════════════════════════════════════════════════════ -->
+        <!-- 🤖 AUTONOMOUS GROWTH & EMAIL MARKETING BOT (Auto-Pilot Outreach)  -->
+        <!-- ═════════════════════════════════════════════════════════════════ -->
+        <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-900 p-5 shadow-2xl space-y-4">
+          
+          <!-- Top Row: Bot Identity, Master Toggle & Live Status Badges -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-500/20 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-pink-600/30">
+                <span class="text-xl">🤖</span>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-base font-black text-white flex items-center gap-1.5">
+                    Autonomous Growth & Promotion Bot
+                  </h3>
+                  <!-- Master Status Badge -->
+                  <span :class="growthBotConfig.is_enabled ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="growthBotConfig.is_enabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'"></span>
+                    <span x-text="growthBotConfig.is_enabled ? 'Auto-Pilot Active' : 'Paused'"></span>
+                  </span>
+                  <!-- Prime Time Window Badge -->
+                  <span :class="growthBotWindowInfo.is_prime ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-slate-800/80 text-slate-400 border-slate-700'"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-mono border flex items-center gap-1"
+                    :title="'Local SL Time: ' + (growthBotWindowInfo.current_sl_time || 'Calculating...')">
+                    <i data-lucide="clock" class="w-3 h-3 text-indigo-400"></i>
+                    <span x-text="growthBotWindowInfo.window_name || 'Calculating window...'"></span>
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">
+                  Researches database candidate states, auto-detects language (Sinhala, English, Tamil), and sends personalized promotional boosters at the highest-converting hours.
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" @click="toggleGrowthBotMaster()"
+                :class="growthBotConfig.is_enabled ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
+                class="px-3 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i :data-lucide="growthBotConfig.is_enabled ? 'pause-circle' : 'play-circle'" class="w-4 h-4"></i>
+                <span x-text="growthBotConfig.is_enabled ? 'Pause Bot' : 'Enable Bot (Auto-Pilot)'"></span>
+              </button>
+              <button type="button" @click="triggerGrowthBotAudit()" :disabled="isAuditingGrowthBot"
+                class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-cyan-300 border border-slate-700 transition flex items-center gap-1.5 shadow-sm"
+                title="Perform research audit on current database candidates without sending any emails">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400" :class="{'animate-spin': isAuditingGrowthBot}"></i>
+                <span x-text="isAuditingGrowthBot ? 'Auditing...' : 'Research System State'">Research System State</span>
+              </button>
+              <button type="button" @click="triggerGrowthBotDispatchNow()" :disabled="isTriggeringGrowthBot"
+                class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white shadow-md shadow-pink-600/25 transition flex items-center gap-1.5"
+                title="Immediately test-fire a safe batch (5 emails) bypassing the clock window">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300" :class="{'animate-spin': isTriggeringGrowthBot}"></i>
+                <span x-text="isTriggeringGrowthBot ? 'Sending...' : 'Trigger Dispatch Now ⚡'">Trigger Dispatch Now ⚡</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Configuration & Telemetry Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <!-- Metric 1: Quota -->
+            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10.5px]">Daily Dispatch Limit (Anti-Spam Shield)</span>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-black text-white" x-text="growthBotConfig.sent_today || 0">0</span>
+                  <span class="text-slate-500 font-bold">/</span>
+                  <input type="number" min="5" max="200" step="5"
+                    x-model.number="growthBotConfig.daily_limit" @change="saveGrowthBotConfig()"
+                    class="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-xs font-bold text-indigo-300 text-center">
+                  <span class="text-slate-500 text-[10px]">max/day</span>
+                </div>
+                <span class="text-[10px] font-mono" :class="(growthBotConfig.remaining_today > 0) ? 'text-emerald-400' : 'text-rose-400'"
+                      x-text="(growthBotConfig.remaining_today || 0) + ' remaining'"></span>
+              </div>
+            </div>
+
+            <!-- Metric 2: Language Preference -->
+            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10.5px]">Language Intelligence Engine</span>
+              <select x-model="growthBotConfig.preferred_language" @change="saveGrowthBotConfig()"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-indigo-300 font-semibold focus:outline-none focus:border-indigo-500">
+                <option value="auto">🌐 Auto-Detect (Sinhala, English, Tamil)</option>
+                <option value="si">🇱🇰 Force Sinhala (සිංහල)</option>
+                <option value="en">🇬🇧 Force English</option>
+                <option value="ta">🇱🇰 Force Tamil (தமிழ்)</option>
+              </select>
+              <span class="text-[9.5px] text-slate-500 block">Detects Unicode scripts, names & regions.</span>
+            </div>
+
+            <!-- Metric 3: Active Growth Segments -->
+            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+              <span class="text-slate-400 text-[10.5px]">Autonomous Promotional Segments</span>
+              <div class="space-y-1">
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_affiliate_booster" @change="saveGrowthBotConfig()" class="rounded text-pink-600">
+                  <span>💸 20% Cash Affiliate Booster</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_resume_booster" @change="saveGrowthBotConfig()" class="rounded text-indigo-600">
+                  <span>📄 Free ATS Score & CV Reminder</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_portfolio_booster" @change="saveGrowthBotConfig()" class="rounded text-cyan-600">
+                  <span>🌐 Live Portfolio Publishing</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Metric 4: Schedule & Last Run Status -->
+            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1">
+              <span class="text-slate-400 text-[10.5px]">Next Prime Delivery Window</span>
+              <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span x-text="growthBotWindowInfo.next_scheduled_window || 'Calculating...'"></span>
+              </div>
+              <p class="text-[10px] text-slate-400 line-clamp-2 leading-tight" x-text="growthBotConfig.last_run_status || 'Waiting for prime window.'"></p>
+            </div>
+          </div>
+
+          <!-- Recent Bot Actions & Live Decisions Log Feed -->
+          <div class="space-y-2 pt-1 border-t border-slate-800/80">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="activity" class="w-3.5 h-3.5 text-pink-400"></i>
+                <span>Live Bot Activity Feed & Decisions (ස්වයංක්‍රීය ක්‍රියාකාරීත්වය)</span>
+              </span>
+              <button type="button" @click="loadGrowthBotStatus()" class="text-[11px] text-cyan-400 hover:underline">
+                Refresh Logs
+              </button>
+            </div>
+
+            <!-- Log Table -->
+            <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/90 max-h-48 overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/90 text-slate-400 text-[10px] uppercase font-bold sticky top-0">
+                  <tr>
+                    <th class="p-2">Time</th>
+                    <th class="p-2">Action</th>
+                    <th class="p-2">Candidate</th>
+                    <th class="p-2">Language</th>
+                    <th class="p-2">Segment</th>
+                    <th class="p-2">Details / Subject</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-[11px]">
+                  <template x-if="growthBotLogs.length === 0">
+                    <tr>
+                      <td colspan="6" class="p-4 text-center text-slate-500">
+                        No activity recorded yet. Click "Research System State" to run an immediate audit.
+                      </td>
+                    </tr>
+                  </template>
+                  <template x-for="log in growthBotLogs" :key="log.id">
+                    <tr class="hover:bg-slate-900/50 transition">
+                      <td class="p-2 text-slate-400 font-mono text-[10px]" x-text="log.created_at"></td>
+                      <td class="p-2">
+                        <span :class="{
+                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/30': log.action === 'dispatched',
+                          'bg-cyan-500/10 text-cyan-400 border-cyan-500/30': log.action === 'audit',
+                          'bg-rose-500/10 text-rose-400 border-rose-500/30': log.action === 'error',
+                          'bg-amber-500/10 text-amber-400 border-amber-500/30': log.action === 'skipped'
+                        }" class="px-1.5 py-0.5 rounded text-[9.5px] font-bold border uppercase font-mono" x-text="log.action"></span>
+                      </td>
+                      <td class="p-2 font-medium text-slate-200">
+                        <span x-text="log.recipient_name || log.recipient_email || 'System Audit'"></span>
+                        <div class="text-[9.5px] text-slate-500" x-text="log.recipient_email" x-show="log.recipient_email"></div>
+                      </td>
+                      <td class="p-2">
+                        <span class="text-[10px] font-semibold"
+                          x-text="log.language === 'si' ? '🇱🇰 සිංහල' : (log.language === 'ta' ? '🇱🇰 தமிழ்' : '🇬🇧 English')"></span>
+                      </td>
+                      <td class="p-2 text-slate-300 font-mono text-[10px]" x-text="log.segment || 'System'"></td>
+                      <td class="p-2 text-slate-400 text-[10px] truncate max-w-xs" :title="log.details || log.subject" x-text="log.details || log.subject"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ════ RESEARCH AUDIT RESULTS MODAL ════ -->
+        <div x-show="showGrowthBotAuditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" x-cloak>
+          <div class="bg-slate-900 border border-cyan-500/30 rounded-2xl w-full max-w-2xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🔍</span>
+                <div>
+                  <h4 class="text-sm font-bold text-white">System Research & Candidate Opportunity Audit</h4>
+                  <p class="text-[11px] text-slate-400">Real-time candidate intelligence without sending any emails.</p>
+                </div>
+              </div>
+              <button type="button" @click="showGrowthBotAuditModal = false" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs" x-show="growthBotAuditResult">
+              <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+                <p class="text-slate-200 font-semibold" x-text="growthBotAuditResult?.summary"></p>
+              </div>
+
+              <!-- Segment Breakdown -->
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-pink-950/30 border border-pink-500/20 p-2.5 rounded-xl">
+                  <div class="text-lg font-black text-pink-400" x-text="growthBotAuditResult?.by_segment?.affiliate_earning || 0"></div>
+                  <div class="text-[10px] text-slate-400 font-medium">Affiliate Cash Booster</div>
+                </div>
+                <div class="bg-indigo-950/30 border border-indigo-500/20 p-2.5 rounded-xl">
+                  <div class="text-lg font-black text-indigo-400" x-text="growthBotAuditResult?.by_segment?.ats_resume || 0"></div>
+                  <div class="text-[10px] text-slate-400 font-medium">ATS Resume & Score</div>
+                </div>
+                <div class="bg-cyan-950/30 border border-cyan-500/20 p-2.5 rounded-xl">
+                  <div class="text-lg font-black text-cyan-400" x-text="growthBotAuditResult?.by_segment?.portfolio_launch || 0"></div>
+                  <div class="text-[10px] text-slate-400 font-medium">Live Portfolio Launch</div>
+                </div>
+              </div>
+
+              <!-- Language Breakdown -->
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-around text-center">
+                <div>
+                  <span class="text-slate-400 text-[10px]">Sinhala (සිංහල)</span>
+                  <div class="text-sm font-bold text-emerald-400" x-text="growthBotAuditResult?.by_language?.si || 0"></div>
+                </div>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div>
+                  <span class="text-slate-400 text-[10px]">English</span>
+                  <div class="text-sm font-bold text-indigo-400" x-text="growthBotAuditResult?.by_language?.en || 0"></div>
+                </div>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div>
+                  <span class="text-slate-400 text-[10px]">Tamil (தமிழ்)</span>
+                  <div class="text-sm font-bold text-amber-400" x-text="growthBotAuditResult?.by_language?.ta || 0"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button type="button" @click="showGrowthBotAuditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+                Close
+              </button>
+              <button type="button" @click="showGrowthBotAuditModal = false; triggerGrowthBotDispatchNow()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 text-xs font-bold text-white shadow-md">
+                Launch 5 Emails Now 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 4 Quick Stats Badges -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
@@ -4161,6 +4410,32 @@
         },
         campaignPreviewHtml: '',
         showCampaignPreview: false,
+
+        // Autonomous Growth Bot State
+        growthBotConfig: {
+          is_enabled: false,
+          daily_limit: 25,
+          sent_today: 0,
+          remaining_today: 25,
+          preferred_language: 'auto',
+          enable_affiliate_booster: true,
+          enable_resume_booster: true,
+          enable_portfolio_booster: true,
+          last_run_at: null,
+          last_run_status: 'Loading growth bot...'
+        },
+        growthBotWindowInfo: {
+          is_prime: false,
+          window_name: '',
+          current_sl_time: '',
+          next_scheduled_window: ''
+        },
+        growthBotLogs: [],
+        isLoadingGrowthBot: false,
+        isAuditingGrowthBot: false,
+        isTriggeringGrowthBot: false,
+        growthBotAuditResult: null,
+        showGrowthBotAuditModal: false,
 
         // Magic Candidate Onboarding State
         onboardingFile: null,
@@ -6165,6 +6440,108 @@
           })
         },
 
+        async loadGrowthBotStatus() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          try {
+            this.isLoadingGrowthBot = true;
+            const res = await fetch('/api/admin/growth-bot/status', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.config) this.growthBotConfig = data.config;
+              if (data.window_info) this.growthBotWindowInfo = data.window_info;
+              if (data.recent_logs) this.growthBotLogs = data.recent_logs;
+            }
+          } catch (e) {
+            console.error('Failed to load growth bot status:', e);
+          } finally {
+            this.isLoadingGrowthBot = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async toggleGrowthBotMaster() {
+          this.growthBotConfig.is_enabled = !this.growthBotConfig.is_enabled;
+          await this.saveGrowthBotConfig();
+        },
+
+        async saveGrowthBotConfig() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            await fetch('/api/admin/growth-bot/config', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                is_enabled: this.growthBotConfig.is_enabled,
+                daily_limit: parseInt(this.growthBotConfig.daily_limit, 10) || 25,
+                preferred_language: this.growthBotConfig.preferred_language,
+                enable_affiliate_booster: this.growthBotConfig.enable_affiliate_booster,
+                enable_resume_booster: this.growthBotConfig.enable_resume_booster,
+                enable_portfolio_booster: this.growthBotConfig.enable_portfolio_booster
+              })
+            });
+            await this.loadGrowthBotStatus();
+          } catch (e) {
+            console.error('Failed to update growth bot config:', e);
+          }
+        },
+
+        async triggerGrowthBotAudit() {
+          const token = localStorage.getItem('saas_token');
+          try {
+            this.isAuditingGrowthBot = true;
+            const res = await fetch('/api/admin/growth-bot/audit', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.growthBotAuditResult = data.audit;
+              this.showGrowthBotAuditModal = true;
+              await this.loadGrowthBotStatus();
+            }
+          } catch (e) {
+            console.error('Audit failed:', e);
+          } finally {
+            this.isAuditingGrowthBot = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async triggerGrowthBotDispatchNow() {
+          if (!confirm('Are you sure you want to test-fire an autonomous dispatch cycle now? It will safely send up to 5 personalized promotional emails.')) {
+            return;
+          }
+          const token = localStorage.getItem('saas_token');
+          try {
+            this.isTriggeringGrowthBot = true;
+            const res = await fetch('/api/admin/growth-bot/trigger', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ max_to_send: 5 })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              alert(`🤖 Bot Dispatch Result:\n${data.result.message}`);
+              await this.loadGrowthBotStatus();
+              await this.loadMarketingCampaignsData();
+            }
+          } catch (e) {
+            console.error('Failed to trigger bot dispatch:', e);
+          } finally {
+            this.isTriggeringGrowthBot = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
         async loadMarketingCampaignsData() {
           const token = localStorage.getItem('saas_token');
           this.isLoadingCampaignData = true;
@@ -6179,6 +6556,7 @@
             if (leadsRes.ok) {
               this.campaignLeadsList = await leadsRes.json();
             }
+            await this.loadGrowthBotStatus();
           } catch (err) {
             console.error('Failed to load marketing campaign data:', err);
           } finally {

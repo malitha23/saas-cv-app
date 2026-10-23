@@ -595,8 +595,46 @@ class AiUsageLog(Base):
         return f"<AiUsageLog(id={self.id}, user='{self.user_email}', op='{self.operation}', tokens={self.total_tokens}, cost_usd=${self.estimated_cost_usd:.4f})>"
 
 
+class GrowthBotConfig(Base):
+    """
+    Persistent configuration and real-time state for the Autonomous Growth Bot.
+    """
+    __tablename__ = "growth_bot_config"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    daily_limit: Mapped[int] = mapped_column(Integer, default=25, nullable=False)
+    sent_today: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_reset_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    preferred_language: Mapped[str] = mapped_column(String(20), default="auto", nullable=False)
+    enable_affiliate_booster: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    enable_resume_booster: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    enable_portfolio_booster: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_run_status: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<GrowthBotConfig(enabled={self.is_enabled}, limit={self.daily_limit}, sent_today={self.sent_today})>"
 
 
+class GrowthBotLog(Base):
+    """
+    Real-time audit log of bot research, decisions, and dispatches.
+    """
+    __tablename__ = "growth_bot_logs"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    recipient_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    recipient_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    segment: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
+    subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True, nullable=False)
 
+    def __repr__(self) -> str:
+        return f"<GrowthBotLog(id={self.id}, action='{self.action}', email='{self.recipient_email}', lang='{self.language}')>"
 
