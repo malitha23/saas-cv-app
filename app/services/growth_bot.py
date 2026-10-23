@@ -37,37 +37,75 @@ def get_sri_lanka_time() -> datetime:
     return datetime.now(timezone.utc).astimezone(SL_TZ)
 
 
-def get_prime_window_info() -> Dict[str, Any]:
+def parse_time_str_to_dec(time_str: str, default: float) -> float:
+    try:
+        parts = str(time_str).strip().split(":")
+        return float(parts[0]) + (float(parts[1]) / 60.0)
+    except Exception:
+        return default
+
+def format_time_str_to_ampm(time_str: str, default: str) -> str:
+    try:
+        parts = str(time_str).strip().split(":")
+        h = int(parts[0])
+        m = int(parts[1])
+        suffix = "AM" if h < 12 else "PM"
+        h12 = h % 12
+        if h12 == 0:
+            h12 = 12
+        return f"{h12:02d}:{m:02d} {suffix}"
+    except Exception:
+        return default
+
+def get_prime_window_info(cfg: Optional[GrowthBotConfig] = None) -> Dict[str, Any]:
     """
     Evaluates whether the current local time falls into high-converting email open windows:
-    - Morning Prime Window: 09:30 AM - 11:30 AM (SL Time)
-    - Evening Prime Window: 07:30 PM - 09:30 PM (SL Time)
+    Supports custom configured morning & evening start/end hours from GrowthBotConfig.
     """
     now_sl = get_sri_lanka_time()
     current_time_dec = now_sl.hour + (now_sl.minute / 60.0)
 
-    # Window 1: Morning 09:30 - 11:30 (9.5 to 11.5)
-    is_morning = 9.5 <= current_time_dec < 11.5
-    # Window 2: Evening 19:30 - 21:30 (19.5 to 21.5)
-    is_evening = 19.5 <= current_time_dec < 21.5
+    m_start_str = getattr(cfg, "morning_window_start", "09:30") or "09:30"
+    m_end_str = getattr(cfg, "morning_window_end", "11:30") or "11:30"
+    e_start_str = getattr(cfg, "evening_window_start", "19:30") or "19:30"
+    e_end_str = getattr(cfg, "evening_window_end", "21:30") or "21:30"
 
+    m_start = parse_time_str_to_dec(m_start_str, 9.5)
+    m_end = parse_time_str_to_dec(m_end_str, 11.5)
+    e_start = parse_time_str_to_dec(e_start_str, 19.5)
+    e_end = parse_time_str_to_dec(e_end_str, 21.5)
+
+    is_morning = m_start <= current_time_dec < m_end
+    is_evening = e_start <= current_time_dec < e_end
     is_prime = is_morning or is_evening
-    window_name = "Morning Prime (09:30 AM - 11:30 AM)" if is_morning else (
-        "Evening Prime (07:30 PM - 09:30 PM)" if is_evening else "Off-Peak Sleeping"
+
+    m_start_ampm = format_time_str_to_ampm(m_start_str, "09:30 AM")
+    m_end_ampm = format_time_str_to_ampm(m_end_str, "11:30 AM")
+    e_start_ampm = format_time_str_to_ampm(e_start_str, "07:30 PM")
+    e_end_ampm = format_time_str_to_ampm(e_end_str, "09:30 PM")
+
+    window_name = f"Morning Prime ({m_start_ampm} - {m_end_ampm})" if is_morning else (
+        f"Evening Prime ({e_start_ampm} - {e_end_ampm})" if is_evening else "Off-Peak Sleeping"
     )
 
-    if current_time_dec < 9.5:
-        next_run = f"Today at 09:30 AM (Morning Prime)"
-    elif 9.5 <= current_time_dec < 19.5:
-        next_run = f"Today at 07:30 PM (Evening Prime)"
+    if current_time_dec < m_start:
+        next_run = f"Today at {m_start_ampm} (Morning Prime)"
+    elif m_start <= current_time_dec < e_start:
+        next_run = f"Today at {e_start_ampm} (Evening Prime)"
     else:
-        next_run = f"Tomorrow at 09:30 AM (Morning Prime)"
+        next_run = f"Tomorrow at {m_start_ampm} (Morning Prime)"
 
     return {
         "is_prime": is_prime,
         "window_name": window_name,
         "current_sl_time": now_sl.strftime("%Y-%m-%d %I:%M:%S %p"),
-        "next_scheduled_window": next_run
+        "next_scheduled_window": next_run,
+        "morning_window_start": m_start_str,
+        "morning_window_end": m_end_str,
+        "evening_window_start": e_start_str,
+        "evening_window_end": e_end_str,
+        "morning_display": f"{m_start_ampm} - {m_end_ampm}",
+        "evening_display": f"{e_start_ampm} - {e_end_ampm}"
     }
 
 
@@ -486,7 +524,7 @@ def run_growth_bot_audit(db: Session) -> Dict[str, Any]:
     """
     cfg = get_or_create_growth_bot_config(db)
     reset_daily_limits_if_needed(cfg, db)
-    window_info = get_prime_window_info()
+    window_info = get_prime_window_info(cfg)
 
     # Audit inspects fresh opportunities (12h window) to give admin full visibility
     eligible = research_system_candidates(db, limit=150, force_fresh=True)
@@ -542,7 +580,7 @@ def execute_growth_bot_cycle(db: Session, force_now: bool = False, max_to_send: 
     """
     cfg = get_or_create_growth_bot_config(db)
     reset_daily_limits_if_needed(cfg, db)
-    window_info = get_prime_window_info()
+    window_info = get_prime_window_info(cfg)
 
     if not cfg.is_enabled and not force_now:
         return {
@@ -702,7 +740,7 @@ async def growth_bot_worker_loop():
                     cfg = get_or_create_growth_bot_config(db)
                     if not cfg.is_enabled:
                         return
-                    w_info = get_prime_window_info()
+                    w_info = get_prime_window_info(cfg)
                     if not w_info["is_prime"]:
                         return
                     execute_growth_bot_cycle(db, force_now=False, max_to_send=5)

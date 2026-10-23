@@ -3197,14 +3197,41 @@
               </div>
             </div>
 
-            <!-- Metric 4: Schedule & Last Run Status -->
-            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1">
-              <span class="text-slate-400 text-[10.5px]">Next Prime Delivery Window</span>
-              <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400"></i>
-                <span x-text="growthBotWindowInfo.next_scheduled_window || 'Calculating...'"></span>
+            <!-- Metric 4: Prime Windows Configuration -->
+            <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400 text-[10.5px]">Prime Hours Schedule</span>
+                <span class="text-[10px] font-mono font-bold" :class="growthBotWindowInfo.is_prime ? 'text-emerald-400' : 'text-slate-500'" 
+                      x-text="growthBotWindowInfo.is_prime ? '● ACTIVE NOW' : '○ Sleeping'"></span>
               </div>
-              <p class="text-[10px] text-slate-400 line-clamp-2 leading-tight" x-text="growthBotConfig.last_run_status || 'Waiting for prime window.'"></p>
+
+              <!-- Morning Window -->
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1"><i data-lucide="sun" class="w-3 h-3 text-amber-400"></i> Morning:</span>
+                <div class="flex items-center gap-1">
+                  <input type="time" x-model="growthBotConfig.morning_window_start" @change="saveGrowthBotConfig()"
+                    class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-semibold text-indigo-300 text-center focus:outline-none">
+                  <span class="text-slate-500">-</span>
+                  <input type="time" x-model="growthBotConfig.morning_window_end" @change="saveGrowthBotConfig()"
+                    class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-semibold text-indigo-300 text-center focus:outline-none">
+                </div>
+              </div>
+
+              <!-- Evening Window -->
+              <div class="flex items-center justify-between gap-1 text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1"><i data-lucide="moon" class="w-3 h-3 text-indigo-400"></i> Evening:</span>
+                <div class="flex items-center gap-1">
+                  <input type="time" x-model="growthBotConfig.evening_window_start" @change="saveGrowthBotConfig()"
+                    class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-semibold text-indigo-300 text-center focus:outline-none">
+                  <span class="text-slate-500">-</span>
+                  <input type="time" x-model="growthBotConfig.evening_window_end" @change="saveGrowthBotConfig()"
+                    class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-semibold text-indigo-300 text-center focus:outline-none">
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-400 truncate pt-0.5 border-t border-slate-800/80" :title="growthBotWindowInfo.next_scheduled_window">
+                Next: <span class="text-amber-300 font-semibold" x-text="growthBotWindowInfo.next_scheduled_window || 'Calculating...'"></span>
+              </div>
             </div>
           </div>
 
@@ -4421,6 +4448,10 @@
           enable_affiliate_booster: true,
           enable_resume_booster: true,
           enable_portfolio_booster: true,
+          morning_window_start: '09:30',
+          morning_window_end: '11:30',
+          evening_window_start: '19:30',
+          evening_window_end: '21:30',
           last_run_at: null,
           last_run_status: 'Loading growth bot...'
         },
@@ -6483,7 +6514,11 @@
                 preferred_language: this.growthBotConfig.preferred_language,
                 enable_affiliate_booster: this.growthBotConfig.enable_affiliate_booster,
                 enable_resume_booster: this.growthBotConfig.enable_resume_booster,
-                enable_portfolio_booster: this.growthBotConfig.enable_portfolio_booster
+                enable_portfolio_booster: this.growthBotConfig.enable_portfolio_booster,
+                morning_window_start: this.growthBotConfig.morning_window_start,
+                morning_window_end: this.growthBotConfig.morning_window_end,
+                evening_window_start: this.growthBotConfig.evening_window_start,
+                evening_window_end: this.growthBotConfig.evening_window_end
               })
             });
             await this.loadGrowthBotStatus();

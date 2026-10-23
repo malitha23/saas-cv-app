@@ -159,6 +159,18 @@ def init_engine():
                     if "company_name" not in otp_cols:
                         mig_conn.execute(text("ALTER TABLE email_verification_otps ADD COLUMN company_name VARCHAR(255) NULL"))
 
+                if insp.has_table("growth_bot_config"):
+                    gb_cols = {c["name"] for c in insp.get_columns("growth_bot_config")}
+                    needed_gb_cols = [
+                        ("morning_window_start", "VARCHAR(10) NOT NULL DEFAULT '09:30'"),
+                        ("morning_window_end", "VARCHAR(10) NOT NULL DEFAULT '11:30'"),
+                        ("evening_window_start", "VARCHAR(10) NOT NULL DEFAULT '19:30'"),
+                        ("evening_window_end", "VARCHAR(10) NOT NULL DEFAULT '21:30'")
+                    ]
+                    for col_name, col_def in needed_gb_cols:
+                        if col_name not in gb_cols:
+                            mig_conn.execute(text(f"ALTER TABLE growth_bot_config ADD COLUMN {col_name} {col_def}"))
+
                 mig_conn.commit()
     except Exception as mig_err:
         logger.warning("Database schema check warning: %s", mig_err)
