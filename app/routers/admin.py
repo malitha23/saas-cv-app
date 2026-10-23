@@ -2153,7 +2153,7 @@ async def get_growth_bot_status(
     window_info = get_prime_window_info()
 
     recent_logs = db.scalars(
-        select(GrowthBotLog).order_by(desc(GrowthBotLog.created_at)).limit(25)
+        select(GrowthBotLog).order_by(GrowthBotLog.created_at.desc()).limit(25)
     ).all()
 
     logs_data = [
