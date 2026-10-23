@@ -351,27 +351,34 @@ def reset_daily_limits_if_needed(cfg: GrowthBotConfig, db: Session):
 # ─────────────────────────────────────────────────────────────────────────────
 # CANDIDATE RESEARCH ENGINE
 # ─────────────────────────────────────────────────────────────────────────────
-def research_system_candidates(db: Session, limit: int = 100) -> List[Dict[str, Any]]:
+def research_system_candidates(db: Session, limit: int = 100, force_fresh: bool = False) -> List[Dict[str, Any]]:
     """
     Intelligently analyzes the database to find eligible candidates for marketing outreach:
-    1. Checks cooldown period (never emailed within last 7 days).
-    2. Excludes active paid users (Pro/Executive).
-    3. Excludes unsubscribed leads.
+    1. Checks cooldown period (7 days in normal autonomous mode, 12 hours when manually triggered).
+    2. Excludes active paid users (Pro/Executive) and admin users.
+    3. Excludes unsubscribed and bounced leads.
     4. Categorizes candidate into optimal segment:
        - 'affiliate_earning' (0 referrals)
        - 'ats_resume' (0 resumes or downloads)
        - 'portfolio_launch' (has resume but portfolio not live)
     5. Auto-detects preferred language (Sinhala, English, Tamil).
     """
-    cutoff_time = datetime.utcnow() - timedelta(days=COOLDOWN_DAYS)
+    cooldown_hours = 12 if force_fresh else (COOLDOWN_DAYS * 24)
+    cutoff_time = datetime.utcnow() - timedelta(hours=cooldown_hours)
     candidates = []
 
-    # 1. Inspect registered Users first (High intent)
+    # 1. Inspect registered Users first (High intent non-admin users)
     users_stmt = (
         select(User)
         .where(
-            User.is_active == True,
-            User.plan_tier == "free"
+            User.is_active.isnot(False),
+            User.is_admin.isnot(True),
+            or_(
+                User.plan_tier == "free",
+                User.plan_tier == None,
+                User.plan_tier == "",
+                User.plan_tier == "starter"
+            )
         )
         .order_by(desc(User.created_at))
         .limit(limit)
@@ -426,7 +433,7 @@ def research_system_candidates(db: Session, limit: int = 100) -> List[Dict[str, 
     leads_stmt = (
         select(MarketingLead)
         .where(
-            MarketingLead.status.in_(["pending", "sent"]),
+            MarketingLead.status.notin_(["unsubscribed", "bounced"]),
             or_(
                 MarketingLead.last_sent_at == None,
                 MarketingLead.last_sent_at < cutoff_time
@@ -559,7 +566,7 @@ def execute_growth_bot_cycle(db: Session, force_now: bool = False, max_to_send: 
         }
 
     batch_limit = min(max_to_send, available_quota)
-    eligible = research_system_candidates(db, limit=50)
+    eligible = research_system_candidates(db, limit=50, force_fresh=force_now)
 
     # Filter by enabled segment flags in config
     filtered = []
