@@ -488,7 +488,8 @@ def run_growth_bot_audit(db: Session) -> Dict[str, Any]:
     reset_daily_limits_if_needed(cfg, db)
     window_info = get_prime_window_info()
 
-    eligible = research_system_candidates(db, limit=150)
+    # Audit inspects fresh opportunities (12h window) to give admin full visibility
+    eligible = research_system_candidates(db, limit=150, force_fresh=True)
     by_segment = {"affiliate_earning": 0, "ats_resume": 0, "portfolio_launch": 0}
     by_lang = {"si": 0, "en": 0, "ta": 0}
 
