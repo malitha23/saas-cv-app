@@ -395,6 +395,12 @@ async def get_candidate_profile_resume(
             except Exception:
                 pass
 
+    if profile.portfolio_slug and isinstance(resume_data, dict):
+        if not resume_data.get("portfolio_slug"):
+            resume_data["portfolio_slug"] = profile.portfolio_slug
+        if not resume_data.get("portfolio_url"):
+            resume_data["portfolio_url"] = portfolio_url
+
     return {
         "success": True,
         "id": profile.id,
@@ -461,6 +467,10 @@ async def update_candidate_profile_resume(
     profile.candidate_name = new_name
     profile.candidate_email = new_email.strip().lower()
     profile.target_role = new_role
+    if profile.portfolio_slug and isinstance(resume_data, dict):
+        resume_data.setdefault("portfolio_slug", profile.portfolio_slug)
+        if portfolio_url and not resume_data.get("portfolio_url"):
+            resume_data["portfolio_url"] = portfolio_url
     profile.resume_data_json = json.dumps(resume_data, ensure_ascii=False)
 
     # Re-compile live web portfolio HTML and save to disk cache

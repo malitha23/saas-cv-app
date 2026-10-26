@@ -539,12 +539,12 @@ def _sync_resume_social_links(resume: TailoredResume):
 
 def get_published_portfolio_url(resume: TailoredResume, position: Optional[str] = None) -> Optional[str]:
     """
-    Returns the live public web portfolio URL ONLY if the portfolio is currently published.
+    Returns the public web portfolio URL for the candidate's CV if enabled.
     Returns None if:
     - User has disabled show_portfolio_link (getattr(resume, 'show_portfolio_link', True) is False)
     - position == 'header' and show_portfolio_header is False
     - position == 'footer' and show_portfolio_footer is False
-    - The portfolio is NOT published in the local or disk published store
+    - No candidate information or identifier exists to construct a portfolio URL
     """
     if not getattr(resume, "show_portfolio_link", True):
         return None
@@ -554,52 +554,77 @@ def get_published_portfolio_url(resume: TailoredResume, position: Optional[str] 
     if position == "footer" and not getattr(resume, "show_portfolio_footer", True):
         return None
 
-    try:
-        from app.state import get_published_portfolio, resolve_custom_domain_slug
-    except ImportError:
-        return None
-
     info = getattr(resume, "personal_info", None)
     if not info:
         return None
 
     import re
-    # 1. Check custom domain if candidate has one
-    if getattr(info, "custom_domain", None) and info.custom_domain.strip():
-        cd = info.custom_domain.strip()
-        slug = resolve_custom_domain_slug(cd)
-        if slug and get_published_portfolio(slug):
-            if not cd.startswith("http"):
-                return f"https://{cd}"
-            return cd
-
     # Base URL for default DreemFolio public path
     base_url = os.getenv("APP_BASE_URL", "https://www.dreemfolio.com").rstrip("/")
 
-    # 2. Check explicitly assigned portfolio_slug
+    # 1. Custom domain if candidate has one configured
+    if getattr(info, "custom_domain", None) and info.custom_domain.strip():
+        cd = info.custom_domain.strip()
+        if not cd.startswith("http://") and not cd.startswith("https://"):
+            return f"https://{cd}"
+        return cd
+
+    # 2. Explicitly assigned portfolio_url on resume
+    p_url = getattr(resume, "portfolio_url", None)
+    if p_url and isinstance(p_url, str) and p_url.strip():
+        clean_u = p_url.strip()
+        if clean_u.startswith("http://") or clean_u.startswith("https://"):
+            return clean_u
+        return f"{base_url}/{clean_u.lstrip('/')}"
+
+    # 3. Explicitly assigned portfolio_slug on resume
     p_slug = getattr(resume, "portfolio_slug", None)
-    if p_slug and p_slug.strip():
-        clean_slug = p_slug.strip()
-        if get_published_portfolio(clean_slug):
-            return f"{base_url}/p/{clean_slug}"
+    if p_slug and isinstance(p_slug, str) and p_slug.strip():
+        clean_slug = p_slug.strip().lstrip("/").replace("p/", "")
+        return f"{base_url}/p/{clean_slug}"
 
-    # 3. Check candidate's full name clean slug
-    if getattr(info, "full_name", None) and info.full_name.strip():
-        name_slug = re.sub(r'[^a-zA-Z0-9]', '-', info.full_name.lower()).strip('-')
-        if name_slug and get_published_portfolio(name_slug):
+    # 4. Check personal_info.portfolio if defined
+    cand_p = getattr(info, "portfolio", None)
+    if cand_p and isinstance(cand_p, str) and cand_p.strip():
+        clean_cp = cand_p.strip()
+        if clean_cp.startswith("http://") or clean_cp.startswith("https://"):
+            return clean_cp
+        if clean_cp.startswith("/p/"):
+            return f"{base_url}{clean_cp}"
+        return f"https://{clean_cp}"
+
+    # 5. Database lookup for Prebuilt Candidate Profile by email or full name
+    cand_email = getattr(info, "email", None)
+    cand_name = getattr(info, "full_name", None)
+    try:
+        from app.database import SessionLocal
+        from app.models import PrebuiltCandidateProfile
+        from sqlalchemy import select, func
+        with SessionLocal() as db_session:
+            profile = None
+            if cand_email and cand_email.strip():
+                profile = db_session.scalar(
+                    select(PrebuiltCandidateProfile).where(
+                        func.lower(PrebuiltCandidateProfile.candidate_email) == cand_email.strip().lower()
+                    ).order_by(PrebuiltCandidateProfile.id.desc())
+                )
+            if not profile and cand_name and cand_name.strip():
+                profile = db_session.scalar(
+                    select(PrebuiltCandidateProfile).where(
+                        func.lower(PrebuiltCandidateProfile.candidate_name) == cand_name.strip().lower()
+                    ).order_by(PrebuiltCandidateProfile.id.desc())
+                )
+            if profile and profile.portfolio_slug:
+                return f"{base_url}/p/{profile.portfolio_slug}"
+    except Exception:
+        pass
+
+    # 6. Fallback: Clean slug generated from candidate full name
+    if cand_name and cand_name.strip():
+        name_slug = re.sub(r'[^a-zA-Z0-9]', '-', cand_name.lower()).strip('-')
+        name_slug = re.sub(r'-+', '-', name_slug)
+        if name_slug:
             return f"{base_url}/p/{name_slug}"
-
-    # 4. Check if info.portfolio or resume.portfolio_url has a /p/{slug} pattern
-    for candidate_url in [getattr(resume, "portfolio_url", None), getattr(info, "portfolio", None)]:
-        if candidate_url and isinstance(candidate_url, str):
-            clean_u = candidate_url.strip()
-            match = re.search(r'/p/([a-zA-Z0-9_\-]+)', clean_u)
-            if match:
-                extracted_slug = match.group(1)
-                if get_published_portfolio(extracted_slug):
-                    if clean_u.startswith("http"):
-                        return clean_u
-                    return f"{base_url}/p/{extracted_slug}"
 
     return None
 

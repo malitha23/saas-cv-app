@@ -257,7 +257,13 @@ def prebuild_candidate_profile(
         )
         db.add(txn)
 
-    # 9. Create Prebuilt Candidate Record
+    # 9. Attach portfolio slug and URL to resume schema
+    base_clean = base_url.rstrip("/")
+    portfolio_url = f"{base_clean}/p/{slug}"
+    tailored_resume.portfolio_slug = slug
+    tailored_resume.portfolio_url = portfolio_url
+
+    # Create Prebuilt Candidate Record
     prebuilt_profile = PrebuiltCandidateProfile(
         creator_id=creator.id,
         claim_token=claim_token,

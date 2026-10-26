@@ -2776,6 +2776,11 @@ function resumeApp() {
         this.publishedSlug = data.slug;
         const dom = this.tailoredData?.personal_info?.custom_domain || this.customDomainInput;
         const liveDomainUrl = dom ? `https://${dom}` : `${window.location.origin}${data.live_url}`;
+        if (this.tailoredData) {
+          this.tailoredData.portfolio_slug = data.slug;
+          this.tailoredData.portfolio_url = liveDomainUrl;
+          this.refreshAllPreviews();
+        }
         alert(`🎉 Awesome! Your portfolio is now published live!\n\n🌐 Live Link: ${liveDomainUrl}\n🔗 Default Link: ${window.location.origin}${data.live_url}`);
       } catch (err) {
         alert('Publish Error: ' + err.message);
@@ -4830,6 +4835,14 @@ function resumeApp() {
 
         // Populate main dashboard workspace
         this.tailoredData = rData;
+        if (this.tailoredData) {
+          if (!this.tailoredData.portfolio_slug && data.portfolio_slug) {
+            this.tailoredData.portfolio_slug = data.portfolio_slug;
+          }
+          if (!this.tailoredData.portfolio_url && data.portfolio_url) {
+            this.tailoredData.portfolio_url = data.portfolio_url;
+          }
+        }
         if (this.tailoredData && this.tailoredData.education && Array.isArray(this.tailoredData.education)) {
           this.tailoredData.education.forEach(edu => this.syncEduDates(edu));
         }
