@@ -447,6 +447,10 @@ async def update_candidate_profile_resume(
     if not is_admin and profile.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="You do not have permission to edit this candidate's resume.")
 
+    env_base = os.getenv("APP_BASE_URL", "").strip().rstrip("/")
+    base_url = env_base if env_base else str(request.base_url).rstrip("/")
+    portfolio_url = f"{base_url}/p/{profile.portfolio_slug}" if profile.portfolio_slug else None
+
     # Extract resume_data dictionary from payload
     resume_data = payload.get("resume_data") if "resume_data" in payload else payload
     if not isinstance(resume_data, dict):
