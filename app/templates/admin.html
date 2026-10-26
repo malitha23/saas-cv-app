@@ -3194,6 +3194,18 @@
                   <input type="checkbox" x-model="growthBotConfig.enable_portfolio_booster" @change="saveGrowthBotConfig()" class="rounded text-cyan-600">
                   <span>🌐 Live Portfolio Publishing</span>
                 </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_job_hunter_booster" @change="saveGrowthBotConfig()" class="rounded text-emerald-500">
+                  <span>🎯 AI Job Hunter & Remote Matches</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_interview_booster" @change="saveGrowthBotConfig()" class="rounded text-amber-500">
+                  <span>🎙️ AI Mock Interview & Voice Coach</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-300">
+                  <input type="checkbox" x-model="growthBotConfig.enable_copilot_booster" @change="saveGrowthBotConfig()" class="rounded text-violet-500">
+                  <span>⚡ 1-Click Auto-Fill Job Copilot</span>
+                </label>
               </div>
             </div>
 
@@ -4448,6 +4460,9 @@
           enable_affiliate_booster: true,
           enable_resume_booster: true,
           enable_portfolio_booster: true,
+          enable_job_hunter_booster: true,
+          enable_interview_booster: true,
+          enable_copilot_booster: true,
           morning_window_start: '09:30',
           morning_window_end: '11:30',
           evening_window_start: '19:30',
@@ -6515,6 +6530,9 @@
                 enable_affiliate_booster: this.growthBotConfig.enable_affiliate_booster,
                 enable_resume_booster: this.growthBotConfig.enable_resume_booster,
                 enable_portfolio_booster: this.growthBotConfig.enable_portfolio_booster,
+                enable_job_hunter_booster: this.growthBotConfig.enable_job_hunter_booster,
+                enable_interview_booster: this.growthBotConfig.enable_interview_booster,
+                enable_copilot_booster: this.growthBotConfig.enable_copilot_booster,
                 morning_window_start: this.growthBotConfig.morning_window_start,
                 morning_window_end: this.growthBotConfig.morning_window_end,
                 evening_window_start: this.growthBotConfig.evening_window_start,

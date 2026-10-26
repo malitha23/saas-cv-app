@@ -2132,6 +2132,9 @@ class GrowthBotConfigUpdate(BaseModel):
     enable_affiliate_booster: Optional[bool] = None
     enable_resume_booster: Optional[bool] = None
     enable_portfolio_booster: Optional[bool] = None
+    enable_job_hunter_booster: Optional[bool] = None
+    enable_interview_booster: Optional[bool] = None
+    enable_copilot_booster: Optional[bool] = None
     morning_window_start: Optional[str] = None
     morning_window_end: Optional[str] = None
     evening_window_start: Optional[str] = None
@@ -2186,6 +2189,9 @@ async def get_growth_bot_status(
             "enable_affiliate_booster": cfg.enable_affiliate_booster,
             "enable_resume_booster": cfg.enable_resume_booster,
             "enable_portfolio_booster": cfg.enable_portfolio_booster,
+            "enable_job_hunter_booster": getattr(cfg, "enable_job_hunter_booster", True),
+            "enable_interview_booster": getattr(cfg, "enable_interview_booster", True),
+            "enable_copilot_booster": getattr(cfg, "enable_copilot_booster", True),
             "morning_window_start": getattr(cfg, "morning_window_start", "09:30") or "09:30",
             "morning_window_end": getattr(cfg, "morning_window_end", "11:30") or "11:30",
             "evening_window_start": getattr(cfg, "evening_window_start", "19:30") or "19:30",
@@ -2220,6 +2226,12 @@ async def update_growth_bot_config(
         cfg.enable_resume_booster = payload.enable_resume_booster
     if payload.enable_portfolio_booster is not None:
         cfg.enable_portfolio_booster = payload.enable_portfolio_booster
+    if payload.enable_job_hunter_booster is not None:
+        cfg.enable_job_hunter_booster = payload.enable_job_hunter_booster
+    if payload.enable_interview_booster is not None:
+        cfg.enable_interview_booster = payload.enable_interview_booster
+    if payload.enable_copilot_booster is not None:
+        cfg.enable_copilot_booster = payload.enable_copilot_booster
     if payload.morning_window_start is not None and payload.morning_window_start.strip():
         cfg.morning_window_start = payload.morning_window_start.strip()
     if payload.morning_window_end is not None and payload.morning_window_end.strip():

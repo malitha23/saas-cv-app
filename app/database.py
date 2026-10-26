@@ -165,7 +165,10 @@ def init_engine():
                         ("morning_window_start", "VARCHAR(10) NOT NULL DEFAULT '09:30'"),
                         ("morning_window_end", "VARCHAR(10) NOT NULL DEFAULT '11:30'"),
                         ("evening_window_start", "VARCHAR(10) NOT NULL DEFAULT '19:30'"),
-                        ("evening_window_end", "VARCHAR(10) NOT NULL DEFAULT '21:30'")
+                        ("evening_window_end", "VARCHAR(10) NOT NULL DEFAULT '21:30'"),
+                        ("enable_job_hunter_booster", "BOOLEAN NOT NULL DEFAULT 1"),
+                        ("enable_interview_booster", "BOOLEAN NOT NULL DEFAULT 1"),
+                        ("enable_copilot_booster", "BOOLEAN NOT NULL DEFAULT 1")
                     ]
                     for col_name, col_def in needed_gb_cols:
                         if col_name not in gb_cols:
