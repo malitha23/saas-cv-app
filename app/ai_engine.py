@@ -1221,6 +1221,15 @@ Return ONLY valid JSON matching this schema:
         print(
             f"[AI Engine] All Gemini models failed. Last error: {last_error}. Using universal fallback parser."
         )
+        try:
+            from app.email_service import notify_admin_of_ai_failure
+            notify_admin_of_ai_failure(
+                error_message=str(last_error),
+                context=f"ATS Resume & Portfolio Generation (Job: '{job_title or 'General'}', Company: '{company_name or 'N/A'}')"
+            )
+        except Exception as _alert_err:
+            print(f"[AI Health Alert Error] {_alert_err}")
+
         return _parse_and_tailor_user_data(
             resume_text,
             job_description,

@@ -854,3 +854,112 @@ def send_candidate_reactivation_email(
     )
 
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI ENGINE HEALTH MONITORING & ADMIN ALERTS
+# ─────────────────────────────────────────────────────────────────────────────
+_LAST_AI_ALERT_TIME = 0.0
+_AI_ALERT_THROTTLE_SECONDS = 1800  # Throttle to max 1 alert per 30 minutes
+
+
+def notify_admin_of_ai_failure(error_message: str, context: str = "Resume Generation / AI Tailoring", db=None) -> None:
+    """
+    Instantly alerts SaaS administrators when the Gemini API encounters a critical
+    failure (e.g. 401 Unauthenticated, 403 Forbidden, 429 Resource Exhausted, or deleted service account).
+    Throttled to 1 email every 30 minutes to avoid spamming the admin inbox during high traffic.
+    """
+    global _LAST_AI_ALERT_TIME
+    import time
+    now = time.time()
+    if now - _LAST_AI_ALERT_TIME < _AI_ALERT_THROTTLE_SECONDS:
+        logger.info("[AI Health Alert] Alert throttled (sent within 30 mins). Error snippet: %s", str(error_message)[:120])
+        return
+
+    _LAST_AI_ALERT_TIME = now
+    error_str = str(error_message).strip()
+
+    is_401 = any(k in error_str for k in ("401", "UNAUTHENTICATED", "deleted or disabled", "ACCOUNT_STATE_INVALID"))
+    is_429 = any(k in error_str for k in ("429", "RESOURCE_EXHAUSTED", "Quota exceeded", "Rate limit"))
+
+    if is_401:
+        issue_title = "Gemini API Key Disabled or Service Account Deleted (401)"
+        severity_color = "#ef4444"
+        summary_text = "Your GEMINI_API_KEY was rejected by Google AI. The bound service account or Google Cloud project has been deleted or disabled."
+    elif is_429:
+        issue_title = "Gemini Rate Limit / Quota Exceeded (429)"
+        severity_color = "#f59e0b"
+        summary_text = "The Google Gemini API free-tier request rate limit has been reached. Requests are temporarily failing."
+    else:
+        issue_title = "Gemini AI Engine Generation Failure"
+        severity_color = "#ef4444"
+        summary_text = "All primary Gemini AI model requests failed. The engine has fallen back to heuristic parsing."
+
+    now_utc = datetime.utcnow().strftime("%Y-%m-%d %I:%M:%S %p UTC")
+
+    html_body = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #f8fafc; margin: 0; padding: 24px;">
+  <div style="max-width: 600px; margin: 0 auto; background: #131b2e; border: 1px solid {severity_color}; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+    
+    <div style="background: linear-gradient(135deg, #b91c1c, #7f1d1d); padding: 24px; text-align: center;">
+      <span style="font-size: 36px; display: block; margin-bottom: 8px;">🚨</span>
+      <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">DreemFolio AI Engine Alert</h1>
+      <p style="color: #fecaca; margin: 6px 0 0 0; font-size: 13px;">Immediate Administrator Attention Required</p>
+    </div>
+
+    <div style="padding: 24px;">
+      <div style="background: #231215; border-left: 4px solid {severity_color}; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #fca5a5;">Issue: {issue_title}</p>
+        <p style="margin: 6px 0 0 0; font-size: 12.5px; color: #cbd5e1; line-height: 1.5;">{summary_text}</p>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px;">
+        <tr style="border-bottom: 1px solid #1e293b;">
+          <td style="padding: 8px 0; color: #94a3b8; width: 140px; font-weight: 600;">Trigger Context:</td>
+          <td style="padding: 8px 0; color: #f8fafc; font-weight: 600;">{context}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #1e293b;">
+          <td style="padding: 8px 0; color: #94a3b8; font-weight: 600;">Current User Impact:</td>
+          <td style="padding: 8px 0; color: #34d399; font-weight: 700;">✅ Fallback Parser Active (Zero 500 crashes)</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #94a3b8; font-weight: 600;">Server Timestamp:</td>
+          <td style="padding: 8px 0; color: #f8fafc;">{now_utc}</td>
+        </tr>
+      </table>
+
+      <div style="margin-bottom: 20px;">
+        <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Technical Error Traceback:</span>
+        <pre style="background: #090d16; padding: 12px; border-radius: 8px; font-family: ui-monospace, Menlo, Monaco, Consolas, monospace; font-size: 11px; color: #f87171; white-space: pre-wrap; word-break: break-all; margin: 6px 0 0 0; border: 1px solid #1e293b; max-height: 140px; overflow-y: auto;">{error_str[:500]}</pre>
+      </div>
+
+      <div style="background: #0d1527; padding: 18px; border-radius: 12px; border: 1px solid #38bdf8; margin-bottom: 22px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 13.5px; color: #38bdf8; font-weight: 700;">🔧 Quick Resolution (Takes Under 2 Minutes):</h3>
+        <ol style="margin: 0; padding-left: 20px; font-size: 12px; color: #cbd5e1; line-height: 1.7;">
+          <li>Go to <a href="https://aistudio.google.com/app/apikey" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">Google AI Studio API Keys</a>.</li>
+          <li>Click <strong>"Create API Key"</strong> in an active Google project.</li>
+          <li>Copy the new <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #38bdf8;">AIzaSy...</code> key.</li>
+          <li>Update <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #38bdf8;">GEMINI_API_KEY</code> in your server's <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #e2e8f0;">.env</code> or Docker environment.</li>
+          <li>Restart your containers: <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; color: #a78bfa;">docker compose restart</code>.</li>
+        </ol>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="https://aistudio.google.com/app/apikey" style="background: #2563eb; color: #ffffff; text-decoration: none; padding: 11px 24px; font-weight: 700; font-size: 12.5px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">Open Google AI Studio →</a>
+      </div>
+    </div>
+
+    <div style="background: #090d16; padding: 14px; text-align: center; border-top: 1px solid #1e293b; font-size: 11px; color: #64748b;">
+      DreemFolio AI Observability &bull; Automated Proactive Incident Telemetry
+    </div>
+  </div>
+</body>
+</html>"""
+
+    subject = f"🚨 [Action Required] DreemFolio Gemini AI Failure: {issue_title}"
+    admin_recipients = get_admin_emails(db=db)
+    for admin_email in admin_recipients:
+        dispatch_email_in_background(admin_email, subject, html_body)
+    logger.warning("🚨 [AI Health Alert] Sent failure alert to admins (%s): %s", admin_recipients, issue_title)
