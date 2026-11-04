@@ -72,8 +72,10 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
 
+    sec_space_before = max(0.5, round(spacer_h * 0.7, 1))
+    sec_space_after = max(0.5, round(spacer_h * 0.3, 1))
     S = getSampleStyleSheet()
-    _add(S, ParagraphStyle("EmSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=emerald_dark, spaceBefore=6, spaceAfter=2, keepWithNext=True))
+    _add(S, ParagraphStyle("EmSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=emerald_dark, spaceBefore=sec_space_before, spaceAfter=sec_space_after, keepWithNext=True))
     _add(S, ParagraphStyle("EmJob", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1, textColor=dark_text, keepWithNext=True))
     _add(S, ParagraphStyle("EmCompany", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=colors.HexColor("#047857")))
     _add(S, ParagraphStyle("EmBody", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))

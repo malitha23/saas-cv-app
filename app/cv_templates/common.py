@@ -747,6 +747,27 @@ def resolve_custom_layout_metrics(
 
 
 
+def resolve_custom_sidebar_font_size(
+    resume: TailoredResume,
+    fallback_body_size: float
+) -> float:
+    """
+    Resolves custom sidebar font size for two-column visual templates.
+    If explicitly set in resume.custom_sidebar_font_size, applies it directly.
+    Otherwise defaults to fallback_body_size, keeping left sidebar text proportionally
+    readable and matching the main right column font size.
+    """
+    c_side_font = getattr(resume, "custom_sidebar_font_size", None)
+    if c_side_font is not None:
+        try:
+            val = float(c_side_font)
+            if 6.0 <= val <= 16.0:
+                return round(val, 2)
+        except (ValueError, TypeError):
+            pass
+    return round(fallback_body_size, 2)
+
+
 def resolve_custom_avatar_metrics(
     resume: TailoredResume,
     base_size: float,

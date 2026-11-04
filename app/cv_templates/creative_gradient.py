@@ -73,8 +73,10 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
 
+    sec_space_before = max(0.5, round(spacer_h * 0.7, 1))
+    sec_space_after = max(0.5, round(spacer_h * 0.3, 1))
     S = getSampleStyleSheet()
-    _add(S, ParagraphStyle("CgSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=violet_accent, spaceBefore=6, spaceAfter=2, keepWithNext=True))
+    _add(S, ParagraphStyle("CgSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=violet_accent, spaceBefore=sec_space_before, spaceAfter=sec_space_after, keepWithNext=True))
     _add(S, ParagraphStyle("CgJob", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1, textColor=dark_text, keepWithNext=True))
     _add(S, ParagraphStyle("CgCompany", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=colors.HexColor("#475569")))
     _add(S, ParagraphStyle("CgBody", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))

@@ -28,7 +28,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -224,10 +224,11 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         MAIN_PAD = float(resume.custom_page_margin)
     MAIN_LEFT = SIDE_W + MAIN_PAD
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
-    if getattr(resume, "custom_font_size", None) is not None:
-        name_size = round(body_size * 2.4, 1)
-        side_size = round(body_size * 0.88, 1)
-        side_leading = round(body_leading * 0.88, 1)
+    side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
+    side_leading = round(side_size * 1.35, 1)
+    name_size = round(body_size * 2.3, 1)
+    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_item_gap = max(1.0, round(spacer_h * 0.5, 1))
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
@@ -241,12 +242,12 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("AuProjSub", fontName=f_italic, fontSize=body_size - 0.2, leading=body_leading, textColor=bronze_color, spaceAfter=2))
 
     # Styles for Left Sidebar
-    _add(S, ParagraphStyle("AuEyebrow", fontName=f_bold, fontSize=side_size - 0.6, leading=side_leading, textColor=bronze_color, alignment=TA_CENTER, spaceAfter=3))
+    _add(S, ParagraphStyle("AuEyebrow", fontName=f_bold, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=bronze_color, alignment=TA_CENTER, spaceAfter=2))
     _add(S, ParagraphStyle("AuSideName", fontName=f_bold, fontSize=name_size, leading=name_size + 2.5, textColor=ink_primary, alignment=TA_CENTER, spaceAfter=3))
-    _add(S, ParagraphStyle("AuSideRole", fontName=f_bold, fontSize=side_size + 0.8, leading=side_leading + 1.5, textColor=ink_muted, alignment=TA_CENTER, spaceAfter=6))
+    _add(S, ParagraphStyle("AuSideRole", fontName=f_bold, fontSize=round(side_size * 1.05, 1), leading=round(side_size * 1.35, 1), textColor=ink_muted, alignment=TA_CENTER, spaceAfter=4))
     _add(S, ParagraphStyle("AuSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=ink_soft))
-    _add(S, ParagraphStyle("AuSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=ink_soft, spaceAfter=4))
-    _add(S, ParagraphStyle("AuSideCat", fontName=f_bold, fontSize=side_size - 0.8, leading=side_leading, textColor=bronze_color, spaceAfter=2))
+    _add(S, ParagraphStyle("AuSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=ink_soft, spaceAfter=3))
+    _add(S, ParagraphStyle("AuSideCat", fontName=f_bold, fontSize=round(side_size * 0.95, 1), leading=round(side_size * 1.25, 1), textColor=bronze_color, spaceAfter=2))
 
     MAIN_LEFT = SIDE_W + MAIN_PAD
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
@@ -333,7 +334,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.setStrokeColor(bronze_color)
         canvas.setLineWidth(1.0)
         canvas.line(cx - 16.0, y, cx + 16.0, y)
-        y -= 12.0
+        y -= side_sec_gap
 
         # 7. SECTION 01: CONTACT
         au_hdr_title_size = max(8.5, round(side_size * 1.45, 1))
@@ -355,15 +356,15 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             canvas.setFillColor(bronze_color)
             canvas.circle(SIDE_PAD + 2.0, y - 5.5, 1.4, fill=1, stroke=0)
             y -= _draw_sidebar_para(canvas, c_text, S["AuSideContact"], SIDE_PAD + 8.0, y, SIDE_MAX_W - 8.0)
-            y -= 2.5
+            y -= side_item_gap
 
-        y -= 8.0
+        y -= side_sec_gap
 
         # 8. SECTION 02: PROFILE
         if resume.show_summary and resume.professional_summary and y > 150:
             y -= _draw_aurelian_sidebar_header(canvas, "02", "Profile", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= _draw_sidebar_para(canvas, resume.professional_summary, S["AuSideAbout"], SIDE_PAD, y, SIDE_MAX_W)
-            y -= 8.0
+            y -= side_sec_gap
 
         # 9. SECTION 03: EXPERTISE (Skills with Dot Ratings)
         if resume.show_skills and resume.skill_categories and y > 60:
@@ -483,8 +484,8 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
             ('LEFTPADDING', (0, 0), (-1, -1), 0),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), max(1, round(spacer_h * 0.4, 1))),
+            ('TOPPADDING', (0, 0), (-1, -1), max(1, round(spacer_h * 0.8, 1))),
             ('LINEBELOW', (0, 0), (-1, -1), 0.8, hairline_color),
         ]))
         flow.append(h_table)

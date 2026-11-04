@@ -21,7 +21,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -81,25 +81,30 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     body_text = colors.HexColor("#1E293B")
     date_text = colors.HexColor("#64748B")
 
+    side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
+    side_leading = round(side_size * 1.35, 1)
+    sec_space_before = max(0.5, round(spacer_h * 0.7, 1))
+    sec_space_after = max(0.5, round(spacer_h * 0.3, 1))
+    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_item_gap = max(1.0, round(spacer_h * 0.6, 1))
+
     S = getSampleStyleSheet()
-    _add(S, ParagraphStyle("V1SecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=accent, spaceBefore=6, spaceAfter=2, keepWithNext=True))
+    _add(S, ParagraphStyle("V1SecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=accent, spaceBefore=sec_space_before, spaceAfter=sec_space_after, keepWithNext=True))
     _add(S, ParagraphStyle("V1Job", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1, textColor=dark_text, keepWithNext=True))
     _add(S, ParagraphStyle("V1Company", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=colors.HexColor("#334155")))
-    _add(S, ParagraphStyle("V1Date", fontName=f_italic, fontSize=8.2, leading=11, textColor=date_text, spaceAfter=1))
+    _add(S, ParagraphStyle("V1Date", fontName=f_italic, fontSize=max(7.5, round(body_size * 0.9, 1)), leading=round(body_leading * 0.9, 1), textColor=date_text, spaceAfter=1))
     _add(S, ParagraphStyle("V1Body", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))
     _add(S, ParagraphStyle("V1Bullet", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, leftIndent=10, firstLineIndent=-7, spaceAfter=1.8))
 
-    font_scale_factor = body_size / 9.0
-
-    _add(S, ParagraphStyle("V1SideName", fontName=f_bold, fontSize=round(13.0 * font_scale_factor, 1), leading=round(16.0 * font_scale_factor, 1), textColor=colors.white, alignment=TA_CENTER))
-    _add(S, ParagraphStyle("V1SideTitle", fontName=f_bold, fontSize=round(8.8 * font_scale_factor, 1), leading=round(11.5 * font_scale_factor, 1), textColor=accent, alignment=TA_CENTER))
-    _add(S, ParagraphStyle("V1SideSecHdr", fontName=f_bold, fontSize=round(8.0 * font_scale_factor, 1), leading=round(11.0 * font_scale_factor, 1), textColor=accent, keepWithNext=True))
-    _add(S, ParagraphStyle("V1SideLabel", fontName=f_bold, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#94A3B8")))
-    _add(S, ParagraphStyle("V1SideVal", fontName=f_reg, fontSize=round(7.5 * font_scale_factor, 1), leading=round(10.0 * font_scale_factor, 1), textColor=colors.white))
-    _add(S, ParagraphStyle("V1SideCat", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=colors.HexColor("#CBD5E1")))
-    _add(S, ParagraphStyle("V1SideSkill", fontName=f_reg, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#E2E8F0")))
-    _add(S, ParagraphStyle("V1SideEduDeg", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=colors.white))
-    _add(S, ParagraphStyle("V1SideEduSub", fontName=f_reg, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#94A3B8")))
+    _add(S, ParagraphStyle("V1SideName", fontName=f_bold, fontSize=round(side_size * 1.5, 1), leading=round(side_size * 1.85, 1), textColor=colors.white, alignment=TA_CENTER))
+    _add(S, ParagraphStyle("V1SideTitle", fontName=f_bold, fontSize=round(side_size * 1.05, 1), leading=round(side_size * 1.35, 1), textColor=accent, alignment=TA_CENTER))
+    _add(S, ParagraphStyle("V1SideSecHdr", fontName=f_bold, fontSize=round(side_size * 1.15, 1), leading=round(side_size * 1.4, 1), textColor=accent, keepWithNext=True))
+    _add(S, ParagraphStyle("V1SideLabel", fontName=f_bold, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=colors.HexColor("#94A3B8")))
+    _add(S, ParagraphStyle("V1SideVal", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.white))
+    _add(S, ParagraphStyle("V1SideCat", fontName=f_bold, fontSize=round(side_size * 0.95, 1), leading=round(side_size * 1.25, 1), textColor=colors.HexColor("#CBD5E1")))
+    _add(S, ParagraphStyle("V1SideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.HexColor("#E2E8F0")))
+    _add(S, ParagraphStyle("V1SideEduDeg", fontName=f_bold, fontSize=side_size, leading=side_leading, textColor=colors.white))
+    _add(S, ParagraphStyle("V1SideEduSub", fontName=f_reg, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=colors.HexColor("#94A3B8")))
 
     rendered_v1_skills = [0]
 
@@ -142,7 +147,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         canvas.setStrokeColorRGB(0.25, 0.32, 0.45)
         canvas.setLineWidth(0.6)
         canvas.line(SIDE_X, y, SIDE_W - SIDE_X, y)
-        y -= 10
+        y -= side_sec_gap
 
         # Contact Details (Page 1 Only!)
         y -= _draw_sidebar_para(canvas, "CONTACT", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
@@ -169,7 +174,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             y -= _draw_sidebar_para(canvas, lbl, S["V1SideLabel"], SIDE_X, y, SIDE_MAX_W)
             y -= 1
             y -= _draw_sidebar_para(canvas, val, S["V1SideVal"], SIDE_X, y, SIDE_MAX_W)
-            y -= 5
+            y -= side_sec_gap
 
         # Technical Skills in Sidebar (Page 1)
         if resume.show_skills and resume.skill_categories and y > 90:
@@ -194,7 +199,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                             consumed = _draw_skill_progress_bar(
                                 canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
                                 style=bar_style, bar_color=accent, bg_color=colors.HexColor('#334155'),
-                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(7.2 * font_scale_factor, 1)
+                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(side_size * 0.95, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
@@ -242,7 +247,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                             consumed = _draw_skill_progress_bar(
                                 canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
                                 style=bar_style, bar_color=accent, bg_color=colors.HexColor('#334155'),
-                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(7.2 * font_scale_factor, 1)
+                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(side_size * 0.95, 1)
                             )
                             y -= (consumed + 2.0)
                     else:

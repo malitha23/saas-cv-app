@@ -20,7 +20,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -70,20 +70,26 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         SIDE_W = custom_side_w
         SIDE_MAX_W = max(100, SIDE_W - (SIDE_X * 2))
 
+    side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
+    side_leading = round(side_size * 1.35, 1)
+    sec_space_before = max(0.5, round(spacer_h * 0.7, 1))
+    sec_space_after = max(0.5, round(spacer_h * 0.3, 1))
+    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_item_gap = max(1.0, round(spacer_h * 0.6, 1))
+
     S = getSampleStyleSheet()
-    _add(S, ParagraphStyle("PwSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=dark_text, spaceBefore=6, spaceAfter=2, keepWithNext=True))
+    _add(S, ParagraphStyle("PwSecHdr", fontName=f_bold, fontSize=sec_size, leading=sec_size + 3.0, textColor=dark_text, spaceBefore=sec_space_before, spaceAfter=sec_space_after, keepWithNext=True))
     _add(S, ParagraphStyle("PwJob", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1, textColor=dark_text, keepWithNext=True))
     _add(S, ParagraphStyle("PwCompany", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=sub_text))
     _add(S, ParagraphStyle("PwBody", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))
     _add(S, ParagraphStyle("PwBullet", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, leftIndent=10, firstLineIndent=-7, spaceAfter=1.8))
-    font_scale_factor = body_size / 9.0
 
-    _add(S, ParagraphStyle("PwSideSecHdr", fontName=f_bold, fontSize=round(9.5 * font_scale_factor, 1), leading=round(12.0 * font_scale_factor, 1), textColor=dark_text, keepWithNext=True))
-    _add(S, ParagraphStyle("PwSideLabel", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=sub_text))
-    _add(S, ParagraphStyle("PwSideVal", fontName=f_reg, fontSize=round(7.8 * font_scale_factor, 1), leading=round(10.5 * font_scale_factor, 1), textColor=dark_text))
-    _add(S, ParagraphStyle("PwSideEduDeg", fontName=f_bold, fontSize=round(7.8 * font_scale_factor, 1), leading=round(10.5 * font_scale_factor, 1), textColor=dark_text))
-    _add(S, ParagraphStyle("PwSideEduSub", fontName=f_reg, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=sub_text))
-    _add(S, ParagraphStyle("PwSideSkill", fontName=f_reg, fontSize=round(7.5 * font_scale_factor, 1), leading=round(10.0 * font_scale_factor, 1), textColor=body_text))
+    _add(S, ParagraphStyle("PwSideSecHdr", fontName=f_bold, fontSize=round(side_size * 1.15, 1), leading=round(side_size * 1.4, 1), textColor=dark_text, keepWithNext=True))
+    _add(S, ParagraphStyle("PwSideLabel", fontName=f_bold, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=sub_text))
+    _add(S, ParagraphStyle("PwSideVal", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=dark_text))
+    _add(S, ParagraphStyle("PwSideEduDeg", fontName=f_bold, fontSize=side_size, leading=side_leading, textColor=dark_text))
+    _add(S, ParagraphStyle("PwSideEduSub", fontName=f_reg, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=sub_text))
+    _add(S, ParagraphStyle("PwSideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=body_text))
 
 
     rendered_pw_skills = [0]
@@ -115,7 +121,7 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
 
         y = PAGE_H - BANNER_H - 18
         y -= _draw_sidebar_para(canvas, "CONTACT", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-        y -= 4
+        y -= side_item_gap
         contacts = []
         if info.email:     contacts.append(("EMAIL", info.email))
         if info.phone:     contacts.append(("PHONE", info.phone))
@@ -131,7 +137,7 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             y -= _draw_sidebar_para(canvas, lbl, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
             y -= 1
             y -= _draw_sidebar_para(canvas, val, S["PwSideVal"], SIDE_X, y, SIDE_MAX_W)
-            y -= 4
+            y -= side_item_gap
 
         # Technical Skills in Sidebar (Page 1)
         if resume.show_skills and resume.skill_categories and y > 80:
@@ -140,14 +146,14 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             canvas.line(SIDE_X, y, SIDE_X + SIDE_MAX_W, y)
             y -= 10
             y -= _draw_sidebar_para(canvas, "SKILLS", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
-            y -= 4
+            y -= side_item_gap
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "segmented")
             for cat_idx, cat in enumerate(resume.skill_categories):
                 if y < 45: break
                 if cat.skills:
                     y -= _draw_sidebar_para(canvas, cat.category_name, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
-                    y -= 4
+                    y -= side_item_gap
                     if show_bars:
                         levels = getattr(cat, "skill_levels", {}) or {}
                         for s in cat.skills[:4]:
@@ -161,12 +167,12 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                                 text_color=dark_text,
                                 pct_color=sub_text,
                                 font_name=f_reg,
-                                font_size=round(7.5 * font_scale_factor, 1)
+                                font_size=round(side_size * 0.95, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
                         y -= _draw_sidebar_para(canvas, ", ".join(cat.skills), S["PwSideSkill"], SIDE_X, y, SIDE_MAX_W)
-                        y -= 4
+                        y -= side_item_gap
                     y -= 6
                     rendered_pw_skills[0] = cat_idx + 1
 
@@ -198,7 +204,7 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                 if y < 45: break
                 if cat.skills:
                     y -= _draw_sidebar_para(canvas, cat.category_name, S["PwSideLabel"], SIDE_X, y, SIDE_MAX_W)
-                    y -= 4
+                    y -= side_item_gap
                     if show_bars:
                         levels = getattr(cat, "skill_levels", {}) or {}
                         for s in cat.skills[:4]:
@@ -212,12 +218,12 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                                 text_color=dark_text,
                                 pct_color=sub_text,
                                 font_name=f_reg,
-                                font_size=round(7.5 * font_scale_factor, 1)
+                                font_size=round(side_size * 0.95, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
                         y -= _draw_sidebar_para(canvas, ", ".join(cat.skills), S["PwSideSkill"], SIDE_X, y, SIDE_MAX_W)
-                        y -= 4
+                        y -= side_item_gap
                     y -= 6
 
         canvas.setFillColor(colors.HexColor("#94A3B8"))

@@ -385,6 +385,9 @@ class TailoredResume(BaseModel):
     custom_font_size: Optional[float] = Field(
         default=None, description="Custom base body font size in pt (7.5 - 12.0 pt). If None, defaults to template standard."
     )
+    custom_sidebar_font_size: Optional[float] = Field(
+        default=None, description="Custom sidebar font size in pt (7.0 - 13.0 pt). If None, defaults to base font size."
+    )
     custom_section_spacing: Optional[float] = Field(
         default=None, description="Custom spacer gap between sections in pt (1.0 - 18.0 pt). If None, defaults to template standard."
     )

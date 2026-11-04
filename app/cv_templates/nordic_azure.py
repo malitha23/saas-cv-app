@@ -24,7 +24,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -244,10 +244,11 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
-    if getattr(resume, "custom_font_size", None) is not None:
-        name_size = round(body_size * 2.1, 1)
-        side_size = round(body_size * 0.88, 1)
-        side_leading = round(body_leading * 0.88, 1)
+    side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
+    side_leading = round(side_size * 1.35, 1)
+    name_size = round(body_size * 2.2, 1)
+    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_item_gap = max(1.0, round(spacer_h * 0.6, 1))
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
@@ -260,11 +261,11 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
     # Styles for Left Sidebar Text
     _add(S, ParagraphStyle("NaSideName", fontName=f_reg, fontSize=name_size, leading=name_size + 3.0, textColor=blue_color, spaceAfter=2))
-    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=side_size + 1.8, leading=side_leading + 2.0, textColor=colors.HexColor("#5A5A5A"), spaceAfter=12))
+    _add(S, ParagraphStyle("NaSideRole", fontName=f_reg, fontSize=round(side_size * 1.1, 1), leading=round(side_size * 1.35, 1), textColor=colors.HexColor("#5A5A5A"), spaceAfter=8))
     _add(S, ParagraphStyle("NaSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=body_text_color))
-    _add(S, ParagraphStyle("NaSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=colors.HexColor("#555555"), spaceAfter=6))
+    _add(S, ParagraphStyle("NaSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=colors.HexColor("#555555"), spaceAfter=4))
     _add(S, ParagraphStyle("NaSideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=body_text_color, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
-    _add(S, ParagraphStyle("NaSideCat", fontName=f_bold, fontSize=side_size - 0.4, leading=side_leading, textColor=colors.HexColor("#5A5A5A"), spaceAfter=2))
+    _add(S, ParagraphStyle("NaSideCat", fontName=f_bold, fontSize=round(side_size * 0.95, 1), leading=side_leading, textColor=colors.HexColor("#5A5A5A"), spaceAfter=2))
 
     # State tracking for multi-page skills continuation
     rendered_skills_state = {"cat_idx": 0, "skill_idx": 0}

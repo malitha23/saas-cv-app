@@ -119,6 +119,8 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
         bottomMargin=bottom_margin
     )
 
+    sec_space_before = max(0.5, round(spacer_gap * 0.7, 1))
+    sec_space_after = max(0.5, round(spacer_gap * 0.3, 1))
     S = getSampleStyleSheet()
     _add(S, ParagraphStyle("AtsName", fontName=f_bold, fontSize=name_font_size,
                             leading=name_font_size + 4, alignment=TA_CENTER, textColor=primary, spaceAfter=2 if font_scale != "spacious" else 5))
@@ -127,7 +129,7 @@ def _ats_pdf(resume: TailoredResume, style: str) -> bytes:
     _add(S, ParagraphStyle("AtsCntct", fontName=f_reg, fontSize=body_font_size,
                             leading=body_leading, alignment=TA_CENTER, textColor=sub, spaceAfter=6 if font_scale != "spacious" else 10))
     _add(S, ParagraphStyle("AtsSecHdr", fontName=f_bold, fontSize=hdr_font_size,
-                            leading=hdr_leading, textColor=primary, spaceBefore=6 if font_scale != "spacious" else 10, spaceAfter=2 if font_scale != "spacious" else 4, keepWithNext=True))
+                            leading=hdr_leading, textColor=primary, spaceBefore=sec_space_before, spaceAfter=sec_space_after, keepWithNext=True))
     _add(S, ParagraphStyle("AtsJob", fontName=f_bold, fontSize=body_font_size + 0.5,
                             leading=body_leading + 1, textColor=body, keepWithNext=True, spaceBefore=0 if font_scale != "spacious" else 3.5))
     _add(S, ParagraphStyle("AtsBody", fontName=f_reg, fontSize=body_font_size,

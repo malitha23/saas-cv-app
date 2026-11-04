@@ -24,7 +24,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -260,10 +260,11 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
-    if getattr(resume, "custom_font_size", None) is not None:
-        name_size = round(body_size * 2.8, 1)
-        side_size = round(body_size * 0.88, 1)
-        side_leading = round(body_leading * 0.88, 1)
+    side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
+    side_leading = round(side_size * 1.35, 1)
+    name_size = round(body_size * 2.6, 1)
+    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_item_gap = max(1.0, round(spacer_h * 0.6, 1))
 
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
@@ -279,11 +280,11 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
     # Styles for Left Sidebar Text
     _add(S, ParagraphStyle("NeSideContact", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.white))
-    _add(S, ParagraphStyle("NeSideEduInst", fontName=f_bold, fontSize=side_size + 0.4, leading=side_leading, textColor=colors.white))
-    _add(S, ParagraphStyle("NeSideEduDeg", fontName=f_reg, fontSize=side_size - 0.4, leading=side_leading - 0.5, textColor=colors.HexColor("#C5D3E0")))
-    _add(S, ParagraphStyle("NeSideEduYear", fontName=f_reg, fontSize=side_size - 0.8, leading=side_leading - 1.0, textColor=colors.HexColor("#9FB7CE"), spaceAfter=5))
+    _add(S, ParagraphStyle("NeSideEduInst", fontName=f_bold, fontSize=round(side_size * 1.05, 1), leading=side_leading, textColor=colors.white))
+    _add(S, ParagraphStyle("NeSideEduDeg", fontName=f_reg, fontSize=round(side_size * 0.95, 1), leading=side_leading, textColor=colors.HexColor("#C5D3E0")))
+    _add(S, ParagraphStyle("NeSideEduYear", fontName=f_reg, fontSize=round(side_size * 0.88, 1), leading=round(side_size * 1.15, 1), textColor=colors.HexColor("#9FB7CE"), spaceAfter=3))
     _add(S, ParagraphStyle("NeSideSkill", fontName=f_reg, fontSize=side_size, leading=side_leading, textColor=colors.white, leftIndent=7, firstLineIndent=-5, spaceAfter=2))
-    _add(S, ParagraphStyle("NeSideCat", fontName=f_bold, fontSize=side_size - 0.4, leading=side_leading - 0.5, textColor=colors.HexColor("#C5D3E0"), spaceAfter=2))
+    _add(S, ParagraphStyle("NeSideCat", fontName=f_bold, fontSize=round(side_size * 0.95, 1), leading=side_leading, textColor=colors.HexColor("#C5D3E0"), spaceAfter=2))
 
     # Track rendered items to handle clean multi-page continuation
     rendered_edu_count = [0]
@@ -331,7 +332,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         y = photo_y - 20.0
 
         # 3. CONTACT SECTION (Left Sidebar)
-        badge_hdr_size = max(7.5, round(side_size * 1.2, 1))
+        badge_hdr_size = max(8.0, round(side_size * 1.15, 1))
         y -= _draw_sidebar_badge_header(canvas, "Contact", "contact", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, badge_hdr_size)
         contacts = []
         if info.phone:     contacts.append(info.phone)
@@ -346,7 +347,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         for c_text in contacts:
             if y < 70: break
             y -= _draw_sidebar_para(canvas, c_text, S["NeSideContact"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
-            y -= 4.0
+            y -= side_item_gap
 
         y -= 10.0
 
@@ -362,7 +363,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 dates = edu.graduation_year or (f"{edu.start_date} – {edu.end_date}" if (edu.start_date or edu.end_date) else "")
                 if dates:
                     y -= _draw_sidebar_para(canvas, dates, S["NeSideEduYear"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
-                y -= 4.0
+                y -= side_item_gap
                 rendered_edu_count[0] = idx + 1
 
             y -= 8.0
@@ -419,7 +420,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 if not cat_finished:
                     break
 
-                y -= 4.0
+                y -= side_item_gap
 
             if completed_all:
                 rendered_skills_state["cat_idx"] = len(resume.skill_categories)
@@ -458,7 +459,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 dates = edu.graduation_year or (f"{edu.start_date} – {edu.end_date}" if (edu.start_date or edu.end_date) else "")
                 if dates:
                     y -= _draw_sidebar_para(canvas, dates, S["NeSideEduYear"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
-                y -= 4.0
+                y -= side_item_gap
 
         # Overflow Skills if any
         if resume.show_skills and resume.skill_categories and rendered_skills_state["cat_idx"] < len(resume.skill_categories):
@@ -504,7 +505,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                         y -= _draw_sidebar_para(canvas, f"• {s}", S["NeSideSkill"], SIDE_PAD + 4, y, SIDE_MAX_W - 6)
                         y -= 2.0
 
-                y -= 4.0
+                y -= side_item_gap
 
         # Page N Footer inside sidebar
         canvas.setFillColor(colors.HexColor("#7A9EBF"))
