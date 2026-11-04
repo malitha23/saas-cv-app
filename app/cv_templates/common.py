@@ -802,6 +802,25 @@ def resolve_custom_vertical_margins(
     return (top_m, bot_m)
 
 
+def resolve_custom_sidebar_section_spacing(
+    resume: TailoredResume,
+    fallback_spacing: float
+) -> float:
+    """
+    Resolves custom vertical spacing between sections in the left sidebar.
+    Allows independent fine-tuning of sidebar density without altering main column layout.
+    """
+    c_space = getattr(resume, "custom_sidebar_section_spacing", None)
+    if c_space is not None:
+        try:
+            val = float(c_space)
+            if 1.0 <= val <= 35.0:
+                return round(val, 2)
+        except (ValueError, TypeError):
+            pass
+    return round(fallback_spacing, 2)
+
+
 def resolve_custom_avatar_metrics(
     resume: TailoredResume,
     base_size: float,

@@ -21,7 +21,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins, resolve_custom_sidebar_section_spacing,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -90,7 +90,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     side_leading = round(side_size * 1.35, 1)
     sec_space_before = max(0.5, round(spacer_h * 0.7, 1))
     sec_space_after = max(0.5, round(spacer_h * 0.3, 1))
-    side_sec_gap = max(2.0, round(spacer_h * 1.5, 1))
+    side_sec_gap = resolve_custom_sidebar_section_spacing(resume, fallback_spacing=max(2.0, round(spacer_h * 1.5, 1)))
     side_item_gap = max(1.0, round(spacer_h * 0.6, 1))
 
     S = getSampleStyleSheet()

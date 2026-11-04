@@ -400,6 +400,9 @@ class TailoredResume(BaseModel):
     custom_bottom_margin: Optional[float] = Field(
         default=None, description="Custom bottom margin / footer padding in pt (10.0 - 50.0 pt). If None, defaults to template standard."
     )
+    custom_sidebar_section_spacing: Optional[float] = Field(
+        default=None, description="Custom spacing between sections in the left sidebar for 2-column visual templates (e.g. 2.0 - 25.0 pt). If None, follows general section spacing."
+    )
     custom_sidebar_width: Optional[float] = Field(
         default=None, description="Custom sidebar column width for two-column visual formats in pt (140.0 - 230.0 pt)."
     )
