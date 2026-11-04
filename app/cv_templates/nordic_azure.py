@@ -247,7 +247,20 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=24.0, base_bottom_margin=20.0)
+
+    right_m = 28.0 if font_scale == "spacious" else (20.0 if font_scale == "compact" else 24.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(12.0, float(resume.custom_page_margin))
+
+    base_top = 28.0 if font_scale == "spacious" else (16.0 if font_scale == "compact" else 20.0)
+    base_bot = 24.0 if font_scale == "spacious" else (14.0 if font_scale == "compact" else 18.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        if getattr(resume, "custom_top_margin", None) is None:
+            base_top = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        if getattr(resume, "custom_bottom_margin", None) is None:
+            base_bot = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=base_top, base_bottom_margin=base_bot)
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
     name_size = round(body_size * 2.2, 1)
@@ -488,10 +501,10 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         # Top right subtle page header in main column
         canvas.setFillColor(text_muted)
         canvas.setFont("Helvetica", 8)
-        canvas.drawRightString(PAGE_W - 24, PAGE_H - 20, f"Page {doc.page}")
+        canvas.drawRightString(PAGE_W - right_m, PAGE_H - 20, f"Page {doc.page}")
         canvas.setStrokeColor(colors.HexColor("#E0E0E0"))
         canvas.setLineWidth(0.5)
-        canvas.line(SIDE_W + 24, PAGE_H - 24, PAGE_W - 24, PAGE_H - 24)
+        canvas.line(SIDE_W + 24, PAGE_H - 24, PAGE_W - right_m, PAGE_H - 24)
 
         if getattr(resume, "watermark", False):
             _draw_diagonal_watermark(canvas, PAGE_W, PAGE_H)
@@ -500,7 +513,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
     # RIGHT COLUMN FLOWABLES
     body = []
-    CONTENT_W = PAGE_W - (SIDE_W + 24) - 24  # ~345 pt
+    CONTENT_W = PAGE_W - (SIDE_W + 24) - right_m
 
     # Helper: Main Column Section Header with Icon & 1.5pt solid Steel Blue underline
     def make_main_header(title: str, icon_type: str) -> List:
@@ -524,7 +537,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         if resume.show_summary and resume.professional_summary and not summary_on_left:
             body.extend(make_main_header("Professional Summary", "profile"))
             body.append(Paragraph(resume.professional_summary, S["NaBody"]))
-            body.append(Spacer(1, spacer_h * 0.6))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 1. EDUCATION (Timeline with Steel Blue line & dots)
     def add_education():
@@ -557,7 +570,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(edu_table)
-            body.append(Spacer(1, spacer_h * 0.6))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 2. WORK EXPERIENCE (Timeline with Steel Blue line & dots)
     def add_experience():
@@ -591,7 +604,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(timeline_table)
-            body.append(Spacer(1, spacer_h * 0.6))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 3. KEY PROJECTS / REFERENCES
     def add_projects():
@@ -614,7 +627,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                 p_flow.append(Spacer(1, 4))
                 body.append(KeepTogether(p_flow))
 
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 4. CERTIFICATIONS
     def add_certifications():
@@ -628,7 +641,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                 cert_flow.append(Spacer(1, 2))
 
             body.append(KeepTogether(cert_flow))
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 5. REFERENCES
     def add_references():
@@ -647,7 +660,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
                 ref_flow.append(Paragraph(f"• <b>{ref.name}</b>{title}{comp}{contact_str}", S["NaJobTitle"]))
                 ref_flow.append(Spacer(1, 2))
             body.append(KeepTogether(ref_flow))
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # Build sequence
     add_summary()
@@ -662,13 +675,6 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    top_m = 30 if font_scale == "spacious" else (15 if font_scale == "compact" else 18)
-    bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
-    if getattr(resume, "custom_page_margin", None) is not None:
-        right_m = max(14.0, float(resume.custom_page_margin))
-        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
-        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,

@@ -71,7 +71,21 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         SIDE_W = custom_side_w
         SIDE_MAX_W = max(100, SIDE_W - (SIDE_X * 2))
 
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=BANNER_H + 16.0, base_bottom_margin=20.0)
+    right_m = 28.0 if font_scale == "spacious" else (20.0 if font_scale == "compact" else 24.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(12.0, float(resume.custom_page_margin))
+
+    base_top = BANNER_H + 16.0
+    base_bot = 20.0
+    if getattr(resume, "custom_bottom_margin", None) is not None:
+        base_bot = float(resume.custom_bottom_margin)
+    elif getattr(resume, "custom_page_margin", None) is not None:
+        base_bot = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+
+    if getattr(resume, "custom_top_margin", None) is not None:
+        base_top = BANNER_H + float(resume.custom_top_margin)
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=base_top, base_bottom_margin=base_bot)
 
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
@@ -379,13 +393,6 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    top_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
-    bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
-    if getattr(resume, "custom_page_margin", None) is not None:
-        right_m = max(14.0, float(resume.custom_page_margin))
-        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
-        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

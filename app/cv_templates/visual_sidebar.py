@@ -43,7 +43,6 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     SIDE_X = 14
     SIDE_MAX_W = SIDE_W - (SIDE_X * 2)
 
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=22.0, base_bottom_margin=22.0)  # 157 pt
 
     side_bg = colors.HexColor("#0F172A")
     accent = colors.HexColor("#2563EB")
@@ -80,7 +79,19 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_X * 2)
 
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=22.0, base_bottom_margin=22.0)
+    right_m = 22.0 if font_scale == "spacious" else (16.0 if font_scale == "compact" else 18.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(12.0, float(resume.custom_page_margin))
+
+    base_top = 26.0 if font_scale == "spacious" else (16.0 if font_scale == "compact" else 20.0)
+    base_bot = 24.0 if font_scale == "spacious" else (14.0 if font_scale == "compact" else 18.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        if getattr(resume, "custom_top_margin", None) is None:
+            base_top = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        if getattr(resume, "custom_bottom_margin", None) is None:
+            base_bot = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=base_top, base_bottom_margin=base_bot)
 
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
@@ -319,7 +330,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             body.append(KeepTogether(first_flow))
             for b in first_exp.bullet_points[1:]:
                 body.append(Paragraph(f"• {b.lstrip('•- ')}", S["V1Bullet"]))
-            body.append(Spacer(1, spacer_h * 0.9))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
             for exp in resume.work_experience[1:]:
                 loc = f" · {exp.location}" if exp.location else ""
@@ -333,7 +344,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                 body.append(KeepTogether(item_flow))
                 for b in exp.bullet_points[1:]:
                     body.append(Paragraph(f"• {b.lstrip('•- ')}", S["V1Bullet"]))
-                body.append(Spacer(1, spacer_h * 0.9))
+                body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     def add_projects():
         if resume.show_projects and resume.projects:
@@ -351,7 +362,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             body.append(KeepTogether(first_flow))
             for b in first_proj.description_bullets[1:]:
                 body.append(Paragraph(f"• {b.lstrip('•- ')}", S["V1Bullet"]))
-            body.append(Spacer(1, spacer_h * 0.9))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
             for proj in resume.projects[1:]:
                 tech = f" <font color='{acc_hex}'>[{', '.join(proj.technologies)}]</font>" if proj.technologies else ""
@@ -363,7 +374,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                 body.append(KeepTogether(item_flow))
                 for b in proj.description_bullets[1:]:
                     body.append(Paragraph(f"• {b.lstrip('•- ')}", S["V1Bullet"]))
-                body.append(Spacer(1, spacer_h * 0.9))
+                body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     def add_education():
         if resume.show_education and resume.education:
@@ -377,7 +388,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             sec_flow.append(Paragraph(f"<b>{first_edu.degree}</b>", S["V1Job"]))
             sec_flow.append(Paragraph(f"{first_edu.institution}{loc0} <font color='#64748B' size='8'>({first_edu.graduation_year})</font>{det0}", S["V1Company"]))
             body.append(KeepTogether(sec_flow))
-            body.append(Spacer(1, spacer_h * 0.7))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
             for edu in resume.education[1:]:
                 loc = f" · {edu.location}" if edu.location else ""
@@ -387,7 +398,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                     Paragraph(f"{edu.institution}{loc} <font color='#64748B' size='8'>({edu.graduation_year})</font>{det}", S["V1Company"]),
                 ]
                 body.append(KeepTogether(item_flow))
-                body.append(Spacer(1, spacer_h * 0.7))
+                body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     def add_certifications():
         if resume.show_certifications and resume.certifications:
@@ -445,13 +456,6 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    top_m = 30 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
-    bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    right_m = 22 if font_scale == "spacious" else (16 if font_scale == "compact" else 18)
-    if getattr(resume, "custom_page_margin", None) is not None:
-        right_m = max(12.0, float(resume.custom_page_margin))
-        top_m = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
-        bot_m = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

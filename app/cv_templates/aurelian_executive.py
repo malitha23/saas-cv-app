@@ -224,11 +224,20 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
+    MAIN_PAD = 26.0 if font_scale == "spacious" else (18.0 if font_scale == "compact" else 22.0)
     if getattr(resume, "custom_page_margin", None) is not None:
-        MAIN_PAD = float(resume.custom_page_margin)
+        MAIN_PAD = max(12.0, float(resume.custom_page_margin))
     MAIN_LEFT = SIDE_W + MAIN_PAD
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=32.0, base_bottom_margin=24.0)
+
+    base_top = 32.0 if font_scale == "spacious" else (16.0 if font_scale == "compact" else 20.0)
+    base_bot = 28.0 if font_scale == "spacious" else (14.0 if font_scale == "compact" else 16.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        if getattr(resume, "custom_top_margin", None) is None:
+            base_top = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        if getattr(resume, "custom_bottom_margin", None) is None:
+            base_bot = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=base_top, base_bottom_margin=base_bot)
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
     name_size = round(body_size * 2.3, 1)
@@ -500,7 +509,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             section_counter += 1
             body.extend(make_main_header(r_num, "Professional Summary"))
             body.append(Paragraph(resume.professional_summary, S["AuBody"]))
-            body.append(Spacer(1, spacer_h * 0.6))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # SECTION I: EDUCATION
     section_counter = 1
@@ -553,7 +562,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(edu_table)
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # SECTION II: WORK EXPERIENCE
     def add_experience():
@@ -606,7 +615,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(exp_table)
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # SECTION III: KEY PROJECTS
     def add_projects():
@@ -643,7 +652,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(proj_table)
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # SECTION IV: CERTIFICATIONS & LICENSES
     def add_certifications():
@@ -673,7 +682,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ]))
             body.append(cert_table)
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # Build sequence
     add_education()
@@ -688,18 +697,11 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    top_m = 32 if font_scale == "spacious" else (16 if font_scale == "compact" else 20)
-    bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    right_m = 26 if font_scale == "spacious" else (18 if font_scale == "compact" else 22)
-    if getattr(resume, "custom_page_margin", None) is not None:
-        right_m = max(14.0, float(resume.custom_page_margin))
-        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
-        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
         leftMargin=MAIN_LEFT,
-        rightMargin=right_m,
+        rightMargin=MAIN_PAD,
         topMargin=top_m,
         bottomMargin=bot_m
     )

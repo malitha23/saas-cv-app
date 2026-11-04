@@ -168,6 +168,27 @@
                   </div>
                 </div>
 
+                <!-- 1b. Sidebar Font Size Slider (Visual 2-Column Formats) -->
+                <div x-show="['visual_sidebar', 'navy_executive', 'nordic_azure', 'aurelian_executive', 'banner_periwinkle'].includes(tailoredData.template_style)"
+                     class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="type" class="w-3 h-3 text-indigo-400"></i> Sidebar Font Size
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_sidebar_font_size ? tailoredData.custom_sidebar_font_size + ' pt' : 'Auto (Synced with Document)')"></span>
+                  </div>
+                  <input type="range" min="6.5" max="11.5" step="0.1"
+                    :value="tailoredData.custom_sidebar_font_size || (tailoredData.custom_font_size ? (tailoredData.custom_font_size * 0.9).toFixed(1) : 8.0)"
+                    @input="tailoredData.custom_sidebar_font_size = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Compact (6.5pt)</span>
+                    <span>Standard (8.0pt)</span>
+                    <span>Large (11.5pt)</span>
+                  </div>
+                </div>
+
                 <!-- 2. Section Spacing / Margin Slider -->
                 <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
                   <div class="flex items-center justify-between text-xs">
@@ -205,6 +226,46 @@
                     <span>Slim (14pt)</span>
                     <span>Standard (28pt)</span>
                     <span>Wide (48pt)</span>
+                  </div>
+                </div>
+
+                <!-- 3b. Top Margin (Header Space) Slider -->
+                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="arrow-up-to-line" class="w-3 h-3 text-indigo-400"></i> Top Margin (Header Padding)
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_top_margin ? tailoredData.custom_top_margin + ' pt' : 'Auto (Template Standard)')"></span>
+                  </div>
+                  <input type="range" min="8" max="50" step="1"
+                    :value="tailoredData.custom_top_margin || 20"
+                    @input="tailoredData.custom_top_margin = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Tight (8pt)</span>
+                    <span>Standard (20pt)</span>
+                    <span>Spacious (50pt)</span>
+                  </div>
+                </div>
+
+                <!-- 3c. Bottom Margin (Footer Space) Slider -->
+                <div class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-1.5">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="arrow-down-to-line" class="w-3 h-3 text-indigo-400"></i> Bottom Margin (Footer Padding)
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.custom_bottom_margin ? tailoredData.custom_bottom_margin + ' pt' : 'Auto (Template Standard)')"></span>
+                  </div>
+                  <input type="range" min="8" max="50" step="1"
+                    :value="tailoredData.custom_bottom_margin || 18"
+                    @input="tailoredData.custom_bottom_margin = parseFloat($event.target.value); refreshAllPreviews();"
+                    class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+                  <div class="flex justify-between text-[9px] text-slate-500">
+                    <span>Tight (8pt)</span>
+                    <span>Standard (18pt)</span>
+                    <span>Spacious (50pt)</span>
                   </div>
                 </div>
 

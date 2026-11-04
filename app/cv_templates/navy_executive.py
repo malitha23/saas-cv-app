@@ -262,7 +262,20 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
-    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=24.0, base_bottom_margin=20.0)
+
+    right_m = 28.0 if font_scale == "spacious" else (20.0 if font_scale == "compact" else 24.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(12.0, float(resume.custom_page_margin))
+
+    base_top = 28.0 if font_scale == "spacious" else (16.0 if font_scale == "compact" else 20.0)
+    base_bot = 24.0 if font_scale == "spacious" else (14.0 if font_scale == "compact" else 18.0)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        if getattr(resume, "custom_top_margin", None) is None:
+            base_top = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        if getattr(resume, "custom_bottom_margin", None) is None:
+            base_bot = max(12.0, round(float(resume.custom_page_margin) * 0.8, 1))
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=base_top, base_bottom_margin=base_bot)
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
     name_size = round(body_size * 2.6, 1)
@@ -518,10 +531,10 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         # Top right subtle page header in main column
         canvas.setFillColor(text_muted)
         canvas.setFont("Helvetica", 8)
-        canvas.drawRightString(PAGE_W - 24, PAGE_H - 20, f"Page {doc.page}")
+        canvas.drawRightString(PAGE_W - right_m, PAGE_H - 20, f"Page {doc.page}")
         canvas.setStrokeColor(divider_color)
         canvas.setLineWidth(0.5)
-        canvas.line(SIDE_W + 24, PAGE_H - 24, PAGE_W - 24, PAGE_H - 24)
+        canvas.line(SIDE_W + 24, PAGE_H - 24, PAGE_W - right_m, PAGE_H - 24)
 
         if getattr(resume, "watermark", False):
             _draw_diagonal_watermark(canvas, PAGE_W, PAGE_H)
@@ -530,7 +543,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
     # RIGHT COLUMN FLOWABLES
     body = []
-    CONTENT_W = PAGE_W - (SIDE_W + 24) - 24  # ~339 pt
+    CONTENT_W = PAGE_W - (SIDE_W + 24) - right_m
 
     # Helper: Main Column Section Header Table (Navy circular badge + Section Title)
     def make_main_header(title: str, icon_type: str) -> Table:
@@ -542,8 +555,8 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             ("LEFTPADDING", (0, 0), (0, -1), 0),
             ("RIGHTPADDING", (0, 0), (0, -1), 0),
             ("LEFTPADDING", (1, 0), (1, 0), 6),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), max(2, round(spacer_h * 0.8, 1))),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), max(1, round(spacer_h * 0.4, 1))),
         ]))
         return hdr_table
 
@@ -615,7 +628,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]))
             body.append(timeline_table)
-            body.append(Spacer(1, spacer_h * 0.6))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 4. KEY PROJECTS
     def add_projects():
@@ -639,7 +652,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 p_flow.append(Spacer(1, 4))
                 body.append(KeepTogether(p_flow))
 
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 5. CERTIFICATIONS
     def add_certifications():
@@ -654,7 +667,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 cert_flow.append(Spacer(1, 2))
 
             body.append(KeepTogether(cert_flow))
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 6. SPOKEN LANGUAGES
     def add_languages():
@@ -662,7 +675,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             body.append(make_main_header("Languages", "languages"))
             body.append(Spacer(1, 2))
             body.append(Paragraph(" • ".join(resume.languages), S["NeBody"]))
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     # 7. PROFESSIONAL REFERENCES
     def add_references():
@@ -682,7 +695,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
                 ref_flow.append(Paragraph(f"• <b>{ref.name}</b>{title}{comp}{contact_str}", S["NeJobTitle"]))
                 ref_flow.append(Spacer(1, 2))
             body.append(KeepTogether(ref_flow))
-            body.append(Spacer(1, spacer_h * 0.5))
+            body.append(Spacer(1, max(3.0, round(spacer_h * 1.0, 1))))
 
     for sec in order:
         if sec == "summary":
@@ -703,13 +716,6 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         body.extend(footer_flow)
 
     buf = io.BytesIO()
-    top_m = 30 if font_scale == "spacious" else (15 if font_scale == "compact" else 18)
-    bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
-    if getattr(resume, "custom_page_margin", None) is not None:
-        right_m = max(14.0, float(resume.custom_page_margin))
-        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
-        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
