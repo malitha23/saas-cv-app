@@ -266,6 +266,13 @@
                           x-text="(tailoredData.photo_size ? tailoredData.photo_size + ' pt' : 'Auto') + ' • ' + (tailoredData.photo_shape || 'Circle')"></span>
                   </div>
 
+                  <template x-if="tailoredData.personal_info && tailoredData.personal_info.avatar_url">
+                    <button type="button" @click="openPhotoCropper(tailoredData.personal_info.avatar_url)"
+                      class="w-full py-1.5 px-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-md text-[11px] font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+                      <i data-lucide="crop" class="w-3.5 h-3.5"></i> Crop &amp; Reposition Photo
+                    </button>
+                  </template>
+
                   <!-- Shape selector buttons -->
                   <div class="grid grid-cols-3 gap-1.5 pt-0.5">
                     <button type="button" @click="tailoredData.photo_shape = 'circle'; tailoredData.photo_radius = 999; refreshAllPreviews();"

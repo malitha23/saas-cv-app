@@ -1,0 +1,133 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- INTERACTIVE PROFILE PHOTO CROPPER & RESIZER MODAL                        -->
+<!-- Pure HTML5 Canvas + Alpine.js, zero third-party dependencies            -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div x-show="cropperModalOpen" x-cloak
+  @keydown.escape.window="if (cropperModalOpen) closePhotoCropper()"
+  class="fixed inset-0 z-[220] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md transition-all duration-200">
+
+  <!-- Backdrop click -->
+  <div class="fixed inset-0" @click="closePhotoCropper()"></div>
+
+  <!-- Modal Card -->
+  <div class="relative bg-slate-900/95 border border-slate-800 rounded-3xl max-w-sm sm:max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 overflow-hidden backdrop-blur-xl z-10 animate-in fade-in zoom-in-95"
+    @click.stop>
+
+    <!-- Ambient glow -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none"></div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+          <i data-lucide="crop" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-100 text-sm sm:text-base leading-tight">Crop &amp; Position Photo</h3>
+          <p class="text-[11px] text-slate-400">Drag to center • Zoom to frame headshot</p>
+        </div>
+      </div>
+      <button @click="closePhotoCropper()" type="button"
+        class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800/60 transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Canvas Viewport -->
+    <div class="flex flex-col items-center justify-center">
+      <div class="relative w-[300px] h-[300px] rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-inner select-none touch-none">
+        <canvas id="cropperCanvas" width="300" height="300"
+          @mousedown="startCropperDrag($event)"
+          @mousemove="onCropperDrag($event)"
+          @mouseup="endCropperDrag()"
+          @mouseleave="endCropperDrag()"
+          @touchstart="startCropperDrag($event)"
+          @touchmove="onCropperDrag($event)"
+          @touchend="endCropperDrag()"
+          @wheel.prevent="handleCropperWheel($event)"
+          class="w-full h-full cursor-grab active:cursor-grabbing block">
+        </canvas>
+
+        <!-- Guide Overlay Text Overlay when idle -->
+        <div class="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+          <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-900/80 text-slate-400 border border-slate-800/80 backdrop-blur-sm shadow-sm">
+            Drag to pan &bull; Scroll to zoom
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Section -->
+    <div class="space-y-3 pt-1">
+      <!-- Zoom Slider -->
+      <div class="bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5">
+        <div class="flex items-center justify-between text-[11px]">
+          <span class="text-slate-300 font-medium flex items-center gap-1.5">
+            <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-indigo-400"></i> Zoom Level
+          </span>
+          <span class="font-mono text-indigo-300 font-bold" x-text="cropperZoom.toFixed(2) + 'x'"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" @click="cropperZoom = Math.max(0.5, +(cropperZoom - 0.1).toFixed(2)); drawCropperCanvas();"
+            class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold transition">
+            -
+          </button>
+          <input type="range" min="0.5" max="3.0" step="0.05"
+            x-model="cropperZoom"
+            @input="cropperZoom = parseFloat($event.target.value); drawCropperCanvas();"
+            class="flex-1 accent-indigo-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg">
+          <button type="button" @click="cropperZoom = Math.min(3.0, +(cropperZoom + 0.1).toFixed(2)); drawCropperCanvas();"
+            class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold transition">
+            +
+          </button>
+        </div>
+      </div>
+
+      <!-- Toolbar: Shape + Rotate + Reset + Replace -->
+      <div class="grid grid-cols-4 gap-1.5 text-[10px]">
+        <!-- Rotate -->
+        <button type="button" @click="rotateCropper()"
+          class="py-1.5 px-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg flex items-center justify-center gap-1 transition font-medium">
+          <i data-lucide="rotate-cw" class="w-3 h-3 text-indigo-400"></i> Rotate 90&deg;
+        </button>
+
+        <!-- Reset -->
+        <button type="button" @click="resetCropper()"
+          class="py-1.5 px-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg flex items-center justify-center gap-1 transition font-medium">
+          <i data-lucide="refresh-cw" class="w-3 h-3 text-indigo-400"></i> Center
+        </button>
+
+        <!-- Preview Shape Switcher -->
+        <button type="button" @click="toggleCropperShape()"
+          class="py-1.5 px-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg flex items-center justify-center gap-1 transition font-medium capitalize">
+          <span class="w-2.5 h-2.5 border border-current inline-block"
+            :class="{
+              'rounded-full': (cropperMaskShape || 'circle') === 'circle',
+              'rounded-sm': cropperMaskShape === 'rounded',
+              'rounded-none': cropperMaskShape === 'square'
+            }"></span>
+          <span x-text="cropperMaskShape || 'Circle'"></span>
+        </button>
+
+        <!-- Choose Different Photo -->
+        <label class="py-1.5 px-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg flex items-center justify-center gap-1 transition font-medium cursor-pointer">
+          <i data-lucide="upload" class="w-3 h-3 text-indigo-400"></i> Change
+          <input type="file" accept="image/*" @change="handleCropperFileChange($event)" class="hidden">
+        </label>
+      </div>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800/80">
+      <button type="button" @click="closePhotoCropper()"
+        class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
+        Cancel
+      </button>
+      <button type="button" @click="applyCroppedPhoto()"
+        class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 active:scale-95 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/25 border border-indigo-500/30 transition flex items-center gap-1.5">
+        <i data-lucide="check" class="w-3.5 h-3.5"></i> Apply &amp; Save to CV
+      </button>
+    </div>
+
+  </div>
+</div>

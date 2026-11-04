@@ -85,6 +85,20 @@ function resumeApp() {
     currentUser: initialUser,
     isAuthChecking: isChecking,
     avatarImgFailed: false,
+    // Interactive Profile Photo Cropper & Adjuster State
+    cropperModalOpen: false,
+    cropperImage: null,
+    cropperRawSrc: '',
+    cropperZoom: 1.0,
+    cropperOffsetX: 0,
+    cropperOffsetY: 0,
+    cropperRotation: 0,
+    cropperMaskShape: 'circle',
+    cropperDragging: false,
+    cropperStartX: 0,
+    cropperStartY: 0,
+    cropperOrigOffsetX: 0,
+    cropperOrigOffsetY: 0,
 
     // Promo Codes & Viral Campaigns State
     promoInputCode: '',
@@ -2230,7 +2244,7 @@ function resumeApp() {
     // ── FULL CUSTOMIZATION HELPERS ───────────────────────────────────────
 
     handlePhotoUpload(event) {
-      const file = event.target.files[0];
+      const file = event.target.files && event.target.files[0];
       if (!file) return;
       if (!file.type.startsWith('image/')) {
         alert('Please select a valid image file (PNG, JPG, JPEG, WEBP).');
@@ -2242,52 +2256,226 @@ function resumeApp() {
       }
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          try {
-            // Downscale & center-crop to crisp 300-DPI square avatar (max 400x400)
-            const canvas = document.createElement('canvas');
-            const maxDim = 400;
-            let width = img.width;
-            let height = img.height;
-
-            const minSide = Math.min(width, height);
-            const sx = (width - minSide) / 2;
-            const sy = (height - minSide) / 2;
-
-            canvas.width = Math.min(minSide, maxDim);
-            canvas.height = Math.min(minSide, maxDim);
-
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, canvas.width, canvas.height);
-
-            // Compress to lightweight high-quality JPEG (~20KB - 40KB)
-            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-            if (this.tailoredData && this.tailoredData.personal_info) {
-              this.tailoredData.personal_info.avatar_url = optimizedDataUrl;
-              this.tailoredData.show_photo = true;
-              this.refreshAllPreviews();
-              this.triggerAutoSave();
-            }
-          } catch (err) {
-            console.error('Photo optimization error:', err);
-            if (this.tailoredData && this.tailoredData.personal_info) {
-              this.tailoredData.personal_info.avatar_url = e.target.result;
-              this.tailoredData.show_photo = true;
-              this.refreshAllPreviews();
-              this.triggerAutoSave();
-            }
-          }
-        };
-        img.onerror = () => {
-          alert('Could not decode image. Please try a different image format.');
-        };
-        img.src = e.target.result;
+        this.openPhotoCropper(e.target.result);
       };
       reader.readAsDataURL(file);
+      try { event.target.value = ''; } catch(e) {}
+    },
+
+    openPhotoCropper(src) {
+      const raw = src || this.tailoredData?.personal_info?.avatar_url;
+      if (!raw) return;
+      this.cropperRawSrc = raw;
+      this.cropperZoom = 1.0;
+      this.cropperOffsetX = 0;
+      this.cropperOffsetY = 0;
+      this.cropperRotation = 0;
+      this.cropperMaskShape = this.tailoredData?.photo_shape || 'circle';
+      this.cropperModalOpen = true;
+
+      const img = new Image();
+      img.onload = () => {
+        this.cropperImage = img;
+        this.$nextTick(() => {
+          this.drawCropperCanvas();
+          if (window.lucide) lucide.createIcons();
+        });
+      };
+      img.onerror = () => {
+        alert('Could not decode photo for cropping.');
+        this.cropperModalOpen = false;
+      };
+      img.src = raw;
+    },
+
+    closePhotoCropper() {
+      this.cropperModalOpen = false;
+      this.cropperImage = null;
+      this.cropperDragging = false;
+    },
+
+    drawCropperCanvas() {
+      const canvas = document.getElementById('cropperCanvas');
+      if (!canvas || !this.cropperImage) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Background
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(0, 0, w, h);
+
+      // Save transform for image
+      ctx.save();
+      ctx.translate(w / 2 + this.cropperOffsetX, h / 2 + this.cropperOffsetY);
+      ctx.rotate((this.cropperRotation * Math.PI) / 180);
+
+      // Base scale so shortest dimension fits 240px crop circle
+      const cropTarget = 240;
+      const baseScale = cropTarget / Math.min(this.cropperImage.width, this.cropperImage.height);
+      const scale = baseScale * this.cropperZoom;
+      const drawW = this.cropperImage.width * scale;
+      const drawH = this.cropperImage.height * scale;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(this.cropperImage, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+
+      // Mask outside of crop area
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+      ctx.beginPath();
+      ctx.rect(0, 0, w, h);
+
+      const shape = this.cropperMaskShape || 'circle';
+      const cropSize = 240;
+      const cropX = (w - cropSize) / 2;
+      const cropY = (h - cropSize) / 2;
+
+      if (shape === 'circle') {
+        ctx.arc(w / 2, h / 2, cropSize / 2, 0, Math.PI * 2, true);
+      } else if (shape === 'rounded') {
+        if (ctx.roundRect) {
+          ctx.roundRect(cropX, cropY, cropSize, cropSize, 28);
+        } else {
+          ctx.rect(cropX, cropY, cropSize, cropSize);
+        }
+      } else {
+        ctx.rect(cropX, cropY, cropSize, cropSize);
+      }
+      ctx.fill('evenodd');
+
+      // Crop guide boundary line
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      if (shape === 'circle') {
+        ctx.arc(w / 2, h / 2, cropSize / 2, 0, Math.PI * 2);
+      } else if (shape === 'rounded') {
+        if (ctx.roundRect) {
+          ctx.roundRect(cropX, cropY, cropSize, cropSize, 28);
+        } else {
+          ctx.strokeRect(cropX, cropY, cropSize, cropSize);
+        }
+      } else {
+        ctx.strokeRect(cropX, cropY, cropSize, cropSize);
+      }
+      ctx.stroke();
+
+      // Thin inner crosshair ticks for precise centering
+      ctx.setLineDash([]);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1;
+      const midX = w / 2;
+      const midY = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(midX - 10, midY); ctx.lineTo(midX + 10, midY);
+      ctx.moveTo(midX, midY - 10); ctx.lineTo(midX, midY + 10);
+      ctx.stroke();
+
+      ctx.restore();
+    },
+
+    startCropperDrag(e) {
+      this.cropperDragging = true;
+      const pt = e.touches ? e.touches[0] : e;
+      this.cropperStartX = pt.clientX;
+      this.cropperStartY = pt.clientY;
+      this.cropperOrigOffsetX = this.cropperOffsetX;
+      this.cropperOrigOffsetY = this.cropperOffsetY;
+    },
+
+    onCropperDrag(e) {
+      if (!this.cropperDragging) return;
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - this.cropperStartX;
+      const dy = pt.clientY - this.cropperStartY;
+      this.cropperOffsetX = this.cropperOrigOffsetX + dx;
+      this.cropperOffsetY = this.cropperOrigOffsetY + dy;
+      this.drawCropperCanvas();
+    },
+
+    endCropperDrag() {
+      this.cropperDragging = false;
+    },
+
+    handleCropperWheel(e) {
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      this.cropperZoom = Math.max(0.5, Math.min(3.0, +(this.cropperZoom + delta).toFixed(2)));
+      this.drawCropperCanvas();
+    },
+
+    rotateCropper() {
+      this.cropperRotation = (this.cropperRotation + 90) % 360;
+      this.drawCropperCanvas();
+    },
+
+    resetCropper() {
+      this.cropperZoom = 1.0;
+      this.cropperOffsetX = 0;
+      this.cropperOffsetY = 0;
+      this.cropperRotation = 0;
+      this.drawCropperCanvas();
+    },
+
+    toggleCropperShape() {
+      const shapes = ['circle', 'rounded', 'square'];
+      const nextIdx = (shapes.indexOf(this.cropperMaskShape) + 1) % shapes.length;
+      this.cropperMaskShape = shapes[nextIdx];
+      if (this.tailoredData) {
+        this.tailoredData.photo_shape = this.cropperMaskShape;
+      }
+      this.drawCropperCanvas();
+    },
+
+    handleCropperFileChange(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        this.openPhotoCropper(evt.target.result);
+      };
+      reader.readAsDataURL(file);
+      try { e.target.value = ''; } catch(err) {}
+    },
+
+    applyCroppedPhoto() {
+      if (!this.cropperImage) return;
+      const outCanvas = document.createElement('canvas');
+      const outDim = 450;
+      outCanvas.width = outDim;
+      outCanvas.height = outDim;
+      const ctx = outCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // 240px viewport crop circle maps to 450px high-res JPEG
+      const cropTarget = 240;
+      const outRatio = outDim / cropTarget;
+      const baseScale = cropTarget / Math.min(this.cropperImage.width, this.cropperImage.height);
+      const scale = baseScale * this.cropperZoom * outRatio;
+
+      ctx.save();
+      ctx.translate(outDim / 2 + this.cropperOffsetX * outRatio, outDim / 2 + this.cropperOffsetY * outRatio);
+      ctx.rotate((this.cropperRotation * Math.PI) / 180);
+
+      const drawW = this.cropperImage.width * scale;
+      const drawH = this.cropperImage.height * scale;
+      ctx.drawImage(this.cropperImage, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+
+      const optimizedDataUrl = outCanvas.toDataURL('image/jpeg', 0.90);
+      if (this.tailoredData && this.tailoredData.personal_info) {
+        this.tailoredData.personal_info.avatar_url = optimizedDataUrl;
+        this.tailoredData.show_photo = true;
+        this.refreshAllPreviews();
+        this.triggerAutoSave();
+      }
+      this.cropperModalOpen = false;
+      this.cropperImage = null;
     },
 
     // Design & Styling
