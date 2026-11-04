@@ -39,14 +39,15 @@ from app.cv_templates.common import (
 
 class AurelianTimelineDot(Flowable):
     """
-    Renders the elegant hollow circular bronze node dot on the left of each experience and education item.
+    Renders the elegant hollow circular bronze node dot on the left of each item.
+    Centered exactly on the LINEBEFORE vertical timeline line at x=16.0.
     """
-    def __init__(self, dot_color=colors.HexColor("#B8935A"), ring_color=colors.white, radius: float = 3.2):
+    def __init__(self, dot_color=colors.HexColor("#B8935A"), ring_color=colors.white, radius: float = 3.4):
         super().__init__()
         self.dot_color = dot_color
         self.ring_color = ring_color
         self.radius = radius
-        self.width = 14
+        self.width = 16
         self.height = 14
 
     def wrap(self, availWidth, availHeight):
@@ -55,7 +56,7 @@ class AurelianTimelineDot(Flowable):
     def draw(self):
         c = self.canv
         c.saveState()
-        x = 9.0
+        x = 16.0
         y = 7.0
         # White fill background with bronze outer ring
         c.setFillColor(self.ring_color)
@@ -279,10 +280,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.setLineWidth(1.0)
         canvas.line(SIDE_W, 0, SIDE_W, PAGE_H)
 
-        # 4. Monogram Watermark in Top-Right of Sidebar
-        canvas.setFillColor(bronze_color)
-        canvas.setFont("Times-Italic", 13.0)
-        canvas.drawRightString(SIDE_W - 20.0, PAGE_H - 34.0, monogram)
+        # 4. Monogram Watermark removed
 
         # 5. Candidate Photo with Refined Double Frame
         photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=82.0, default_shape="circle")
@@ -431,10 +429,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.setFillColor(bronze_color)
         canvas.rect(0, PAGE_H - 4.0, SIDE_W, 4.0, fill=1, stroke=0)
 
-        # 5. Monogram Watermark in Top-Right
-        canvas.setFillColor(bronze_color)
-        canvas.setFont(f_italic, 12.0)
-        canvas.drawRightString(SIDE_W - 20.0, PAGE_H - 24.0, monogram)
+        # 5. Monogram Watermark removed
 
         # 6. Sidebar Page Number at Bottom (NO duplicated candidate name or role!)
         canvas.setFont(f_bold, 7.5)
@@ -552,7 +547,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
                 ("LEFTPADDING", (0, 0), (0, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
@@ -605,7 +600,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
                 ("LEFTPADDING", (0, 0), (0, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
@@ -642,7 +637,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
                 ("LEFTPADDING", (0, 0), (0, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
@@ -672,7 +667,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.8, hairline_color),
                 ("LEFTPADDING", (0, 0), (0, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -686,28 +681,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     add_projects()
     add_certifications()
 
-    # Signature line at bottom of document
-    cur_year = datetime.datetime.now().year
-    full_name = info.full_name or "Candidate Name"
-    sig_flow = []
-    sig_flow.append(Spacer(1, spacer_h * 1.5))
-    sig_table = Table(
-        [[
-            Paragraph(f"<i>{full_name}</i>", ParagraphStyle("AuSigName", fontName=f_italic, fontSize=body_size + 6.0, leading=body_size + 8.0, textColor=ink_primary)),
-            Paragraph(f"CURRICULUM VITAE &middot; {cur_year}", ParagraphStyle("AuSigTag", fontName=f_bold, fontSize=body_size - 1.2, leading=body_leading, textColor=bronze_color, alignment=TA_RIGHT)),
-        ]],
-        colWidths=[MAIN_MAX_W * 0.6, MAIN_MAX_W * 0.4]
-    )
-    sig_table.setStyle(TableStyle([
-        ('LINEABOVE', (0, 0), (-1, -1), 0.8, hairline_color),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    sig_flow.append(sig_table)
-    body.append(KeepTogether(sig_flow))
+    # Signature line removed as requested
 
     footer_flow = render_cv_portfolio_footer(resume, primary_color=bronze_color, font_reg=f_reg, font_bold=f_bold, alignment=TA_LEFT)
     if footer_flow:

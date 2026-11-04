@@ -108,7 +108,7 @@ class NordicSectionIcon(Flowable):
 class NordicTimelineDot(Flowable):
     """
     Renders the circular node dot on the left of each experience and education item.
-    The vertical timeline line passes through x=12.
+    Centered exactly on the LINEBEFORE border at x=14.0.
     """
     def __init__(self, dot_color=colors.HexColor("#5B8FC7"), ring_color=colors.white, radius: float = 3.6):
         super().__init__()
@@ -124,7 +124,7 @@ class NordicTimelineDot(Flowable):
     def draw(self):
         c = self.canv
         c.saveState()
-        x = 12.0
+        x = 14.0
         y = 7.0
         # White background ring halo
         c.setFillColor(self.ring_color)
@@ -510,7 +510,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         hdr_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (0, -1), 0),
             ("LEFTPADDING", (1, 0), (1, 0), 4),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
@@ -550,8 +550,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
             edu_table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 1.4, blue_color),
-                ("LEFTPADDING", (0, 0), (0, 0), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
@@ -584,8 +584,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
             timeline_table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 1.4, blue_color),
-                ("LEFTPADDING", (0, 0), (0, 0), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),

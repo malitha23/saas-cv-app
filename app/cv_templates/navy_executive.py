@@ -121,10 +121,10 @@ class CircularBadge(Flowable):
 class TimelineDot(Flowable):
     """
     Renders the circular node dot on the left of each experience item.
-    The vertical timeline line passes through x=12.
-    The outer white halo ring prevents the line from crossing inside the dot.
+    Centered exactly on the LINEBEFORE border at x=14.0.
+    The outer white halo ring masks the vertical line underneath perfectly.
     """
-    def __init__(self, dot_color=colors.HexColor("#1B3A5C"), ring_color=colors.white, radius: float = 3.8):
+    def __init__(self, dot_color=colors.HexColor("#1B3A5C"), ring_color=colors.white, radius: float = 3.6):
         super().__init__()
         self.dot_color = dot_color
         self.ring_color = ring_color
@@ -138,7 +138,7 @@ class TimelineDot(Flowable):
     def draw(self):
         c = self.canv
         c.saveState()
-        x = 12.0  # Align exactly with the LINEBEFORE border of column 1
+        x = 14.0
         y = 7.0   # Vertical center of the 14pt cell, aligning with the job title
         # Outer white ring
         c.setFillColor(self.ring_color)
@@ -539,8 +539,8 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         hdr_table = Table([[badge, title_para]], colWidths=[27, CONTENT_W - 27])
         hdr_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (0, 0), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("LEFTPADDING", (0, 0), (0, -1), 0),
+            ("RIGHTPADDING", (0, 0), (0, -1), 0),
             ("LEFTPADDING", (1, 0), (1, 0), 6),
             ("TOPPADDING", (0, 0), (-1, -1), 6),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
@@ -608,8 +608,8 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             timeline_table.setStyle(TableStyle([
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LINEBEFORE", (1, 0), (1, -1), 1.1, divider_color),
-                ("LEFTPADDING", (0, 0), (0, 0), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("LEFTPADDING", (0, 0), (0, -1), 0),
+                ("RIGHTPADDING", (0, 0), (0, -1), 0),
                 ("LEFTPADDING", (1, 0), (1, -1), 10),
                 ("TOPPADDING", (0, 0), (-1, -1), 2),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
