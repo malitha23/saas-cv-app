@@ -23,6 +23,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -148,7 +149,7 @@ class TimelineDot(Flowable):
         c.restoreState()
 
 
-def _draw_sidebar_badge_header(canvas, title: str, icon_type: str, navy_color, x: float, y_top: float, max_w: float, font_bold: str) -> float:
+def _draw_sidebar_badge_header(canvas, title: str, icon_type: str, navy_color, x: float, y_top: float, max_w: float, font_bold: str, font_size: float = 9.5) -> float:
     """
     Draws a white circular badge with navy icon alongside an uppercase white heading in the sidebar.
     Returns total vertical height consumed.
@@ -192,8 +193,8 @@ def _draw_sidebar_badge_header(canvas, title: str, icon_type: str, navy_color, x
 
     # 3. Uppercase Heading text in White
     canvas.setFillColor(colors.white)
-    canvas.setFont(font_bold, 9.5)
-    canvas.drawString(bx + badge_size + 8, cy - 3.2, title.upper())
+    canvas.setFont(font_bold, font_size)
+    canvas.drawString(bx + badge_size + 8, cy - (font_size * 0.35), title.upper())
 
     canvas.restoreState()
     return badge_size + 8.0
@@ -298,7 +299,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
         # 2. Profile Photo or Monogram in Left Sidebar
         y = PAGE_H - 32.0
-        photo_size = 78.0
+        photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=78.0, default_shape="circle")
         photo_x = (SIDE_W - photo_size) / 2.0
         photo_y = y - photo_size
         radius = photo_size / 2.0
@@ -310,21 +311,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.circle(cx, cy, radius)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, photo_x, photo_y, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    # Solid white circular border (4pt)
-                    canvas.setStrokeColor(colors.white)
-                    canvas.setLineWidth(4.0)
-                    canvas.circle(cx, cy, radius, stroke=1, fill=0)
-                    img_drawn = True
-                except Exception:
-                    img_drawn = False
+                img_drawn = _draw_styled_avatar(canvas, img_bytes, photo_x, photo_y, photo_size, shape=photo_shape, radius=photo_radius, border_color=colors.white, border_width=3.5)
 
         if not img_drawn:
             # Executive Monogram placeholder
@@ -338,13 +325,14 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
             names = (info.full_name or "C").split()
             initials = "".join([n[0] for n in names[:2]]).upper()
             canvas.setFillColor(colors.white)
-            canvas.setFont(f_bold, 24)
-            canvas.drawCentredString(cx, cy - 8, initials)
+            canvas.setFont(f_bold, max(14, int(photo_size * 0.31)))
+            canvas.drawCentredString(cx, cy - (photo_size * 0.1), initials)
 
         y = photo_y - 20.0
 
         # 3. CONTACT SECTION (Left Sidebar)
-        y -= _draw_sidebar_badge_header(canvas, "Contact", "contact", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+        badge_hdr_size = max(7.5, round(side_size * 1.2, 1))
+        y -= _draw_sidebar_badge_header(canvas, "Contact", "contact", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, badge_hdr_size)
         contacts = []
         if info.phone:     contacts.append(info.phone)
         if info.email:     contacts.append(info.email)
@@ -364,7 +352,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
         # 4. EDUCATION SECTION (Left Sidebar)
         if resume.show_education and resume.education:
-            y -= _draw_sidebar_badge_header(canvas, "Education", "education", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_sidebar_badge_header(canvas, "Education", "education", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, badge_hdr_size)
             for idx, edu in enumerate(resume.education):
                 if y < 85: break
                 y -= _draw_sidebar_para(canvas, edu.institution, S["NeSideEduInst"], SIDE_PAD + 2, y, SIDE_MAX_W - 4)
@@ -381,7 +369,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
         # 5. SKILLS SECTION (Left Sidebar with Progress Bars)
         if resume.show_skills and resume.skill_categories:
-            y -= _draw_sidebar_badge_header(canvas, "Skills", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_sidebar_badge_header(canvas, "Skills", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, badge_hdr_size)
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
 
@@ -474,7 +462,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
 
         # Overflow Skills if any
         if resume.show_skills and resume.skill_categories and rendered_skills_state["cat_idx"] < len(resume.skill_categories):
-            y -= _draw_sidebar_badge_header(canvas, "Skills (Cont.)", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_sidebar_badge_header(canvas, "Skills (Cont.)", "skills", navy_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, badge_hdr_size)
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
 

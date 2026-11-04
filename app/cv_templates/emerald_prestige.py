@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -66,6 +67,8 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
         mint_accent = colors.HexColor(resume.custom_accent_color)
         emerald_dark = colors.HexColor(resume.custom_accent_color)
 
+    font_scale_factor = body_size / 9.0
+
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
 
@@ -88,13 +91,13 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
 
         # Name
         canvas.setFillColor(colors.white)
-        canvas.setFont(f_bold, 21)
+        canvas.setFont(f_bold, round(21 * font_scale_factor, 1))
         canvas.drawString(32, PAGE_H - 36, (info.full_name or "").upper())
 
         # Pill badge for headline
         if resume.target_job_title and resume.target_job_title.strip():
             badge_text = f"[  {resume.target_job_title.upper()}  ]"
-            canvas.setFont(f_bold, 9)
+            canvas.setFont(f_bold, max(7.5, round(9 * font_scale_factor, 1)))
             canvas.setFillColor(colors.HexColor("#A7F3D0") if not resume.custom_accent_color else colors.white)
             canvas.drawString(32, PAGE_H - 52, badge_text)
 
@@ -105,7 +108,7 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
             contacts.append(pub_url)
         elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio:
             contacts.append(info.portfolio)
-        canvas.setFont(f_reg, 7.8)
+        canvas.setFont(f_reg, max(6.5, round(7.8 * font_scale_factor, 1)))
         canvas.setFillColor(colors.HexColor("#D1FAE5") if not resume.custom_accent_color else colors.white)
         canvas.drawString(32, PAGE_H - 72, "  |  ".join(contacts)[:130])
 
@@ -114,21 +117,10 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                photo_size = 54
-                px, py = PAGE_W - 78, PAGE_H - CARD_H + 16
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.roundRect(px, py, photo_size, photo_size, 8)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, px, py, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    canvas.setStrokeColor(mint_accent)
-                    canvas.setLineWidth(2)
-                    canvas.roundRect(px, py, photo_size, photo_size, 8, stroke=1, fill=0)
-                except Exception:
-                    pass
+                photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=54.0, default_shape="rounded", default_radius=8.0)
+                px = PAGE_W - 24.0 - photo_size
+                py = PAGE_H - CARD_H + (CARD_H - photo_size) / 2.0
+                _draw_styled_avatar(canvas, img_bytes, px, py, photo_size, shape=photo_shape, radius=photo_radius, border_color=mint_accent, border_width=2.0)
 
         canvas.restoreState()
 
@@ -288,7 +280,11 @@ def _emerald_prestige_pdf(resume: TailoredResume) -> bytes:
     buf = io.BytesIO()
     top_m = 34 if font_scale == "spacious" else (18 if font_scale == "compact" else 24)
     bot_m = 30 if font_scale == "spacious" else (16 if font_scale == "compact" else 22)
-    margin = 38 if font_scale == "spacious" else (26 if font_scale == "compact" else 32)
+    margin = doc_margin
+    if getattr(resume, "custom_page_margin", None) is not None:
+        margin = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=margin, rightMargin=margin, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

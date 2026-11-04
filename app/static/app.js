@@ -703,10 +703,13 @@ function resumeApp() {
       this.$watch('activeTab', (val) => {
         if (val === 'portfolio') {
           if (this.editorTab !== 'portfolio') this.editorTab = 'portfolio';
+          this.renderPortfolioPreview();
         } else if (val === 'cover_letter') {
           if (this.editorTab !== 'cover_letter') this.editorTab = 'cover_letter';
+          this.renderPdfPreview();
         } else if (val === 'resume') {
           if (this.editorTab !== 'resume' && this.editorTab !== 'design') this.editorTab = 'resume';
+          this.renderPdfPreview();
         }
       });
       this.$watch('jobDescription', (val) => {
@@ -1679,6 +1682,13 @@ function resumeApp() {
     async renderPdfPreview() {
       if (!this.tailoredData) return;
 
+      // Abort previous in-flight render to avoid parallel PDF compilation & worker spam
+      if (this._pdfAbortController) {
+        try { this._pdfAbortController.abort(); } catch(e) {}
+      }
+      this._pdfAbortController = new AbortController();
+      const signal = this._pdfAbortController.signal;
+
       try {
         this.isRenderingPdf = true;
         // Stamp current template into payload before every call
@@ -1692,6 +1702,7 @@ function resumeApp() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.tailoredData),
+          signal: signal,
         });
 
         if (!res.ok) {
@@ -1711,6 +1722,7 @@ function resumeApp() {
 
         await this.renderPdfWithPdfJs(blob);
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('PDF Preview render error:', err);
       } finally {
         this.isRenderingPdf = false;
@@ -1724,7 +1736,10 @@ function resumeApp() {
           console.warn('PDF.js not initialized on page');
           return;
         }
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+        if (!window.__pdfWorkerInitialized) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
+          window.__pdfWorkerInitialized = true;
+        }
 
         const buffer = await blob.arrayBuffer();
         const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
@@ -1846,11 +1861,18 @@ function resumeApp() {
     async renderPortfolioPreview() {
       if (!this.tailoredData) return;
 
+      if (this._portfolioAbortController) {
+        try { this._portfolioAbortController.abort(); } catch(e) {}
+      }
+      this._portfolioAbortController = new AbortController();
+      const signal = this._portfolioAbortController.signal;
+
       try {
         const res = await fetch(`/api/generate-portfolio?theme=${this.portfolioTheme}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.tailoredData),
+          signal: signal,
         });
 
         if (!res.ok) throw new Error('Portfolio generation failed');
@@ -1858,6 +1880,7 @@ function resumeApp() {
         const data = await res.json();
         this.portfolioHtml = data.html;
       } catch (err) {
+        if (err.name === 'AbortError') return;
         console.error('Portfolio Preview render error:', err);
       }
     },
@@ -1925,11 +1948,15 @@ function resumeApp() {
 
       clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(() => {
-        this.renderPdfPreview();
-        this.renderPortfolioPreview();
-      }, 300);
+        // Only render the preview currently visible to user: Eliminates 50% server calls & worker spam
+        if (this.activeTab === 'portfolio') {
+          this.renderPortfolioPreview();
+        } else {
+          this.renderPdfPreview();
+        }
+      }, 450);
 
-      // Trigger automatic save to MySQL whenever any change occurs!
+      // Debounce automatic cloud save (local snapshot remains 0ms)
       this.triggerAutoSave();
     },
 
@@ -2089,6 +2116,10 @@ function resumeApp() {
       }
     },
 
+    scheduleAutoSave() {
+      this.triggerAutoSave();
+    },
+
     triggerAutoSave() {
       if (!this.tailoredData) return;
       // 1. Immediately persist full snapshot to local storage (0ms latency, survives page refresh)
@@ -2104,7 +2135,7 @@ function resumeApp() {
 
       this.autoSaveTimer = setTimeout(async () => {
         await this.performAutoSave();
-      }, 1200); // 1.2s debounced auto-save after editing stops
+      }, 2500); // 2.5s debounced cloud save drastically cuts background MySQL POST traffic
     },
 
     async performAutoSave() {
@@ -2239,7 +2270,7 @@ function resumeApp() {
               this.tailoredData.personal_info.avatar_url = optimizedDataUrl;
               this.tailoredData.show_photo = true;
               this.refreshAllPreviews();
-              this.scheduleAutoSave();
+              this.triggerAutoSave();
             }
           } catch (err) {
             console.error('Photo optimization error:', err);
@@ -2247,7 +2278,7 @@ function resumeApp() {
               this.tailoredData.personal_info.avatar_url = e.target.result;
               this.tailoredData.show_photo = true;
               this.refreshAllPreviews();
-              this.scheduleAutoSave();
+              this.triggerAutoSave();
             }
           }
         };
@@ -2260,6 +2291,19 @@ function resumeApp() {
     },
 
     // Design & Styling
+    setPhotoShape(shape) {
+      if (!this.tailoredData) return;
+      this.tailoredData.photo_shape = shape;
+      if (shape === 'square') {
+        this.tailoredData.photo_radius = 0;
+      } else if (shape === 'rounded') {
+        this.tailoredData.photo_radius = (this.tailoredData.photo_radius && this.tailoredData.photo_radius > 0 && this.tailoredData.photo_radius < 50) ? this.tailoredData.photo_radius : 10;
+      } else {
+        this.tailoredData.photo_radius = 999;
+      }
+      this.refreshAllPreviews();
+    },
+
     setAccentColor(colorHex) {
       if (!this.tailoredData) return;
       this.tailoredData.custom_accent_color = colorHex;

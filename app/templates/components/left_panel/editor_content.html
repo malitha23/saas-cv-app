@@ -47,7 +47,13 @@
                     <div class="flex items-center gap-3">
                       <!-- Live Thumbnail preview if avatar_url is set -->
                       <template x-if="tailoredData.personal_info.avatar_url">
-                        <img :src="tailoredData.personal_info.avatar_url" class="w-14 h-14 rounded-lg object-cover border-2 border-indigo-500/60 shadow flex-shrink-0 bg-slate-950">
+                        <img :src="tailoredData.personal_info.avatar_url" 
+                             :class="{
+                               'rounded-full': (tailoredData.photo_shape || 'circle') === 'circle',
+                               'rounded-xl': tailoredData.photo_shape === 'rounded',
+                               'rounded-none': tailoredData.photo_shape === 'square'
+                             }"
+                             class="w-14 h-14 object-cover border-2 border-indigo-500/60 shadow flex-shrink-0 bg-slate-950 transition-all duration-200">
                       </template>
                       <template x-if="!tailoredData.personal_info.avatar_url">
                         <div class="w-14 h-14 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0">
@@ -70,6 +76,19 @@
                         <input type="text" x-model="tailoredData.personal_info.avatar_url" @input="refreshAllPreviews()"
                           placeholder="Or paste direct image URL (https://...)"
                           class="w-full bg-slate-950 border border-slate-800 rounded p-1 text-[11px] text-slate-300 focus:border-indigo-400 focus:outline-none">
+                      </div>
+                    </div>
+                    <!-- Compact Shape & Size toolbar -->
+                    <div x-show="tailoredData.personal_info.avatar_url" class="pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                      <div class="flex items-center gap-1">
+                        <span class="text-slate-400">Shape:</span>
+                        <button type="button" @click="setPhotoShape('circle')" :class="{'bg-indigo-600 text-white font-bold': (tailoredData.photo_shape || 'circle') === 'circle', 'bg-slate-950 text-slate-400': (tailoredData.photo_shape || 'circle') !== 'circle'}" class="px-1.5 py-0.5 rounded border border-slate-800">Circle</button>
+                        <button type="button" @click="setPhotoShape('rounded')" :class="{'bg-indigo-600 text-white font-bold': tailoredData.photo_shape === 'rounded', 'bg-slate-950 text-slate-400': tailoredData.photo_shape !== 'rounded'}" class="px-1.5 py-0.5 rounded border border-slate-800">Rounded</button>
+                        <button type="button" @click="setPhotoShape('square')" :class="{'bg-indigo-600 text-white font-bold': tailoredData.photo_shape === 'square', 'bg-slate-950 text-slate-400': tailoredData.photo_shape !== 'square'}" class="px-1.5 py-0.5 rounded border border-slate-800">Square</button>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">Size:</span>
+                        <input type="range" min="40" max="100" step="2" :value="tailoredData.photo_size || 65" @input="tailoredData.photo_size = parseFloat($event.target.value); refreshAllPreviews();" class="w-16 h-1 accent-indigo-500 bg-slate-800 rounded">
                       </div>
                     </div>
                     <p class="text-[10px] text-slate-400">Supports PNG, JPG, JPEG, WEBP files or direct image web URLs.</p>

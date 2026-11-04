@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -65,6 +66,8 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
     if resume.custom_accent_color:
         cyan_tech = colors.HexColor(resume.custom_accent_color)
 
+    font_scale_factor = body_size / 9.0
+
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
 
@@ -99,10 +102,10 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
 
         # Candidate Name & Role
         canvas.setFillColor(colors.white)
-        canvas.setFont(f_bold, 18)
+        canvas.setFont(f_bold, round(18 * font_scale_factor, 1))
         canvas.drawString(34, PAGE_H - 42, (info.full_name or "").upper())
 
-        canvas.setFont(f_bold, 9.5)
+        canvas.setFont(f_bold, max(7.5, round(9.5 * font_scale_factor, 1)))
         canvas.setFillColor(cyan_tech)
         if resume.target_job_title and resume.target_job_title.strip():
             canvas.drawString(34, PAGE_H - 56, f"// ROLE: {resume.target_job_title}")
@@ -117,7 +120,7 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
         if pub_url:       contacts.append(f"> web: More on My Portfolio")
         elif getattr(resume, "show_portfolio_header", True) and getattr(resume, "show_portfolio_link", True) and info.portfolio: contacts.append(f"> web: {info.portfolio}")
 
-        canvas.setFont(f_reg, 7.5)
+        canvas.setFont(f_reg, max(6.5, round(7.5 * font_scale_factor, 1)))
         canvas.setFillColor(colors.HexColor("#94A3B8"))
         canvas.drawString(34, PAGE_H - 72, "  |  ".join(contacts)[:135])
 
@@ -126,21 +129,10 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                photo_size = 50
-                px, py = PAGE_W - 74, PAGE_H - CONSOLE_H + 12
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.roundRect(px, py, photo_size, photo_size, 6)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, px, py, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    canvas.setStrokeColor(cyan_tech)
-                    canvas.setLineWidth(1.8)
-                    canvas.roundRect(px, py, photo_size, photo_size, 6, stroke=1, fill=0)
-                except Exception:
-                    pass
+                photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=50.0, default_shape="rounded", default_radius=6.0)
+                px = PAGE_W - 24.0 - photo_size
+                py = PAGE_H - CONSOLE_H + (CONSOLE_H - photo_size) / 2.0
+                _draw_styled_avatar(canvas, img_bytes, px, py, photo_size, shape=photo_shape, radius=photo_radius, border_color=cyan_tech, border_width=1.8)
 
         canvas.restoreState()
 
@@ -300,7 +292,11 @@ def _tech_noir_pdf(resume: TailoredResume) -> bytes:
     buf = io.BytesIO()
     top_m = 30 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
     bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
-    margin = 38 if font_scale == "spacious" else (26 if font_scale == "compact" else 32)
+    margin = doc_margin
+    if getattr(resume, "custom_page_margin", None) is not None:
+        margin = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=margin, rightMargin=margin, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

@@ -745,3 +745,92 @@ def resolve_custom_layout_metrics(
 
     return (body_size, body_leading, sec_size, spacer_h, margin, side_w)
 
+
+
+def resolve_custom_avatar_metrics(
+    resume: TailoredResume,
+    base_size: float,
+    default_shape: str = "circle",
+    default_radius: Optional[float] = None
+) -> Tuple[float, str, Optional[float]]:
+    """
+    Resolves (photo_size, photo_shape, photo_radius) from resume custom settings.
+    """
+    size = base_size
+    c_size = getattr(resume, "photo_size", None)
+    if c_size is not None:
+        try:
+            val = float(c_size)
+            if 30.0 <= val <= 140.0:
+                size = round(val, 1)
+        except (ValueError, TypeError):
+            pass
+
+    shape = getattr(resume, "photo_shape", None) or default_shape
+    radius = getattr(resume, "photo_radius", None)
+    if radius is None:
+        radius = default_radius
+
+    return (size, shape, radius)
+
+
+def _draw_styled_avatar(
+    canvas,
+    img_bytes: io.BytesIO,
+    x: float,
+    y: float,
+    size: float,
+    shape: str = "circle",
+    radius: Optional[float] = None,
+    border_color: Optional[colors.Color] = None,
+    border_width: float = 1.5,
+) -> bool:
+    """
+    Renders avatar with customizable shape ('circle', 'rounded', 'square') and corner radius.
+    Image is drawn bounded inside [x, y, size, size].
+    """
+    try:
+        canvas.saveState()
+        p = canvas.beginPath()
+
+        # Determine effective corner radius
+        effective_radius = size / 2.0  # circle default
+        if shape == "square" or (radius is not None and radius <= 0.5):
+            effective_radius = 0.0
+        elif shape == "rounded" or (radius is not None and 0.5 < radius < size / 2.0):
+            effective_radius = float(radius) if radius is not None else 8.0
+        elif shape == "circle":
+            effective_radius = size / 2.0
+
+        if effective_radius >= (size / 2.0) - 0.5:
+            cx = x + size / 2.0
+            cy = y + size / 2.0
+            p.circle(cx, cy, size / 2.0)
+        elif effective_radius > 0:
+            p.roundRect(x, y, size, size, effective_radius)
+        else:
+            p.rect(x, y, size, size)
+
+        canvas.clipPath(p, stroke=0)
+        img_bytes.seek(0)
+        reader = ImageReader(img_bytes)
+        canvas.drawImage(reader, x, y, width=size, height=size, preserveAspectRatio=True)
+        canvas.restoreState()
+
+        if border_color and border_width > 0:
+            canvas.saveState()
+            canvas.setStrokeColor(border_color)
+            canvas.setLineWidth(border_width)
+            if effective_radius >= (size / 2.0) - 0.5:
+                cx = x + size / 2.0
+                cy = y + size / 2.0
+                canvas.circle(cx, cy, size / 2.0, stroke=1, fill=0)
+            elif effective_radius > 0:
+                canvas.roundRect(x, y, size, size, effective_radius, stroke=1, fill=0)
+            else:
+                canvas.rect(x, y, size, size, stroke=1, fill=0)
+            canvas.restoreState()
+        return True
+    except Exception as e:
+        print(f"[pdf_generator] Avatar draw error: {e}")
+        return False

@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -75,12 +76,14 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("PwCompany", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=sub_text))
     _add(S, ParagraphStyle("PwBody", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))
     _add(S, ParagraphStyle("PwBullet", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, leftIndent=10, firstLineIndent=-7, spaceAfter=1.8))
-    _add(S, ParagraphStyle("PwSideSecHdr", fontName=f_bold, fontSize=9.5, leading=12, textColor=dark_text, keepWithNext=True))
-    _add(S, ParagraphStyle("PwSideLabel", fontName=f_bold, fontSize=7.2, leading=9.5, textColor=sub_text))
-    _add(S, ParagraphStyle("PwSideVal", fontName=f_reg, fontSize=7.8, leading=10.5, textColor=dark_text))
-    _add(S, ParagraphStyle("PwSideEduDeg", fontName=f_bold, fontSize=7.8, leading=10.5, textColor=dark_text))
-    _add(S, ParagraphStyle("PwSideEduSub", fontName=f_reg, fontSize=7.2, leading=9.5, textColor=sub_text))
-    _add(S, ParagraphStyle("PwSideSkill", fontName=f_reg, fontSize=7.5, leading=10, textColor=body_text))
+    font_scale_factor = body_size / 9.0
+
+    _add(S, ParagraphStyle("PwSideSecHdr", fontName=f_bold, fontSize=round(9.5 * font_scale_factor, 1), leading=round(12.0 * font_scale_factor, 1), textColor=dark_text, keepWithNext=True))
+    _add(S, ParagraphStyle("PwSideLabel", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=sub_text))
+    _add(S, ParagraphStyle("PwSideVal", fontName=f_reg, fontSize=round(7.8 * font_scale_factor, 1), leading=round(10.5 * font_scale_factor, 1), textColor=dark_text))
+    _add(S, ParagraphStyle("PwSideEduDeg", fontName=f_bold, fontSize=round(7.8 * font_scale_factor, 1), leading=round(10.5 * font_scale_factor, 1), textColor=dark_text))
+    _add(S, ParagraphStyle("PwSideEduSub", fontName=f_reg, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=sub_text))
+    _add(S, ParagraphStyle("PwSideSkill", fontName=f_reg, fontSize=round(7.5 * font_scale_factor, 1), leading=round(10.0 * font_scale_factor, 1), textColor=body_text))
 
 
     rendered_pw_skills = [0]
@@ -105,20 +108,10 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                cx, cy, r = PAGE_W - 58, PAGE_H - 46, 30
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.circle(cx, cy, r)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, cx - r, cy - r, width=2*r, height=2*r, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    canvas.setStrokeColor(colors.white)
-                    canvas.setLineWidth(2.5)
-                    canvas.circle(cx, cy, r, stroke=1, fill=0)
-                except Exception as e:
-                    pass
+                photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=60.0, default_shape="circle")
+                px = PAGE_W - 28.0 - photo_size
+                py = PAGE_H - BANNER_H + (BANNER_H - photo_size) / 2.0
+                _draw_styled_avatar(canvas, img_bytes, px, py, photo_size, shape=photo_shape, radius=photo_radius, border_color=colors.white, border_width=2.5)
 
         y = PAGE_H - BANNER_H - 18
         y -= _draw_sidebar_para(canvas, "CONTACT", S["PwSideSecHdr"], SIDE_X, y, SIDE_MAX_W)
@@ -167,7 +160,8 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                                 bg_color=colors.HexColor("#E2E8F0"),
                                 text_color=dark_text,
                                 pct_color=sub_text,
-                                font_name=f_reg
+                                font_name=f_reg,
+                                font_size=round(7.5 * font_scale_factor, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
@@ -217,7 +211,8 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
                                 bg_color=colors.HexColor("#E2E8F0"),
                                 text_color=dark_text,
                                 pct_color=sub_text,
-                                font_name=f_reg
+                                font_name=f_reg,
+                                font_size=round(7.5 * font_scale_factor, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
@@ -378,7 +373,11 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     top_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 18)
     bot_m = 26 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
     right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
-    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=195, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+    doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=SIDE_W + 16, rightMargin=right_m, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)
     return buf.getvalue()

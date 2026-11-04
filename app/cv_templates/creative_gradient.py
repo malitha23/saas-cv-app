@@ -19,6 +19,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -67,6 +68,8 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
         violet_accent = colors.HexColor(resume.custom_accent_color)
         dark_indigo = colors.HexColor(resume.custom_accent_color)
 
+    font_scale_factor = body_size / 9.0
+
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
 
@@ -88,10 +91,10 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
 
         # 2. Candidate Name & Target Title
         canvas.setFillColor(colors.white)
-        canvas.setFont(f_bold, 22)
+        canvas.setFont(f_bold, round(22 * font_scale_factor, 1))
         canvas.drawString(32, PAGE_H - 38, (info.full_name or "").upper())
 
-        canvas.setFont(f_bold, 11)
+        canvas.setFont(f_bold, round(11 * font_scale_factor, 1))
         canvas.setFillColor(colors.HexColor("#A5B4FC") if not resume.custom_accent_color else colors.white)
         if resume.target_job_title and resume.target_job_title.strip():
             canvas.drawString(32, PAGE_H - 56, resume.target_job_title.upper())
@@ -101,21 +104,10 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                photo_size = 50
-                px, py = PAGE_W - 74, PAGE_H - BANNER_H + 14
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.roundRect(px, py, photo_size, photo_size, 8)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, px, py, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    canvas.setStrokeColor(violet_accent)
-                    canvas.setLineWidth(2)
-                    canvas.roundRect(px, py, photo_size, photo_size, 8, stroke=1, fill=0)
-                except Exception:
-                    pass
+                photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=50.0, default_shape="rounded", default_radius=8.0)
+                px = PAGE_W - 24.0 - photo_size
+                py = PAGE_H - BANNER_H + (BANNER_H - photo_size) / 2.0
+                _draw_styled_avatar(canvas, img_bytes, px, py, photo_size, shape=photo_shape, radius=photo_radius, border_color=violet_accent, border_width=2.0)
 
         # 3. Horizontal Contact Ribbon
         ribbon_y = PAGE_H - BANNER_H - RIBBON_H
@@ -134,7 +126,7 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
             contact_items.append(info.portfolio.replace("https://www.", "").replace("https://", ""))
         ribbon_text = "   •   ".join(contact_items)
         canvas.setFillColor(colors.HexColor("#312E81"))
-        canvas.setFont(f_bold, 7.8)
+        canvas.setFont(f_bold, max(6.5, round(7.8 * font_scale_factor, 1)))
         canvas.drawString(32, ribbon_y + 7, ribbon_text[:125])
 
         canvas.restoreState()
@@ -295,7 +287,11 @@ def _creative_gradient_pdf(resume: TailoredResume) -> bytes:
     buf = io.BytesIO()
     top_m = 34 if font_scale == "spacious" else (18 if font_scale == "compact" else 24)
     bot_m = 30 if font_scale == "spacious" else (16 if font_scale == "compact" else 22)
-    margin = 38 if font_scale == "spacious" else (26 if font_scale == "compact" else 32)
+    margin = doc_margin
+    if getattr(resume, "custom_page_margin", None) is not None:
+        margin = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(buf, pagesize=letter, leftMargin=margin, rightMargin=margin, topMargin=top_m, bottomMargin=bot_m)
     doc.build(body, onFirstPage=on_first_page, onLaterPages=on_later_pages)
     buf.seek(0)

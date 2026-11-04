@@ -20,6 +20,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -88,15 +89,17 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("V1Body", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, spaceAfter=2))
     _add(S, ParagraphStyle("V1Bullet", fontName=f_reg, fontSize=body_size, leading=body_leading, textColor=body_text, leftIndent=10, firstLineIndent=-7, spaceAfter=1.8))
 
-    _add(S, ParagraphStyle("V1SideName", fontName=f_bold, fontSize=13, leading=16, textColor=colors.white, alignment=TA_CENTER))
-    _add(S, ParagraphStyle("V1SideTitle", fontName=f_bold, fontSize=8.8, leading=11.5, textColor=accent, alignment=TA_CENTER))
-    _add(S, ParagraphStyle("V1SideSecHdr", fontName=f_bold, fontSize=8, leading=11, textColor=accent, keepWithNext=True))
-    _add(S, ParagraphStyle("V1SideLabel", fontName=f_bold, fontSize=6.8, leading=9, textColor=colors.HexColor("#94A3B8")))
-    _add(S, ParagraphStyle("V1SideVal", fontName=f_reg, fontSize=7.5, leading=10, textColor=colors.white))
-    _add(S, ParagraphStyle("V1SideCat", fontName=f_bold, fontSize=7.2, leading=9.5, textColor=colors.HexColor("#CBD5E1")))
-    _add(S, ParagraphStyle("V1SideSkill", fontName=f_reg, fontSize=6.8, leading=9, textColor=colors.HexColor("#E2E8F0")))
-    _add(S, ParagraphStyle("V1SideEduDeg", fontName=f_bold, fontSize=7.2, leading=9.5, textColor=colors.white))
-    _add(S, ParagraphStyle("V1SideEduSub", fontName=f_reg, fontSize=6.8, leading=9, textColor=colors.HexColor("#94A3B8")))
+    font_scale_factor = body_size / 9.0
+
+    _add(S, ParagraphStyle("V1SideName", fontName=f_bold, fontSize=round(13.0 * font_scale_factor, 1), leading=round(16.0 * font_scale_factor, 1), textColor=colors.white, alignment=TA_CENTER))
+    _add(S, ParagraphStyle("V1SideTitle", fontName=f_bold, fontSize=round(8.8 * font_scale_factor, 1), leading=round(11.5 * font_scale_factor, 1), textColor=accent, alignment=TA_CENTER))
+    _add(S, ParagraphStyle("V1SideSecHdr", fontName=f_bold, fontSize=round(8.0 * font_scale_factor, 1), leading=round(11.0 * font_scale_factor, 1), textColor=accent, keepWithNext=True))
+    _add(S, ParagraphStyle("V1SideLabel", fontName=f_bold, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#94A3B8")))
+    _add(S, ParagraphStyle("V1SideVal", fontName=f_reg, fontSize=round(7.5 * font_scale_factor, 1), leading=round(10.0 * font_scale_factor, 1), textColor=colors.white))
+    _add(S, ParagraphStyle("V1SideCat", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=colors.HexColor("#CBD5E1")))
+    _add(S, ParagraphStyle("V1SideSkill", fontName=f_reg, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#E2E8F0")))
+    _add(S, ParagraphStyle("V1SideEduDeg", fontName=f_bold, fontSize=round(7.2 * font_scale_factor, 1), leading=round(9.5 * font_scale_factor, 1), textColor=colors.white))
+    _add(S, ParagraphStyle("V1SideEduSub", fontName=f_reg, fontSize=round(6.8 * font_scale_factor, 1), leading=round(9.0 * font_scale_factor, 1), textColor=colors.HexColor("#94A3B8")))
 
     rendered_v1_skills = [0]
 
@@ -120,22 +123,13 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                photo_size = 54
-                photo_x = (SIDE_W - photo_size) / 2
+                photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=54.0, default_shape="rounded", default_radius=6.0)
+                photo_x = (SIDE_W - photo_size) / 2.0
                 photo_y = y - photo_size
-                try:
-                    canvas.saveState()
-                    p = canvas.beginPath()
-                    p.roundRect(photo_x, photo_y, photo_size, photo_size, 6)
-                    canvas.clipPath(p, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, photo_x, photo_y, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    canvas.setStrokeColorRGB(*ACC_RGB)
-                    canvas.setLineWidth(1.5)
-                    canvas.roundRect(photo_x, photo_y, photo_size, photo_size, 6, stroke=1, fill=0)
+                drawn = _draw_styled_avatar(canvas, img_bytes, photo_x, photo_y, photo_size, shape=photo_shape, radius=photo_radius, border_color=accent, border_width=1.5)
+                if drawn:
                     y = photo_y - 12
-                except Exception as e:
+                else:
                     y -= 4
 
         # FULL NAME & TARGET TITLE IN LEFT SIDEBAR (Page 1 Only!)
@@ -200,7 +194,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                             consumed = _draw_skill_progress_bar(
                                 canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
                                 style=bar_style, bar_color=accent, bg_color=colors.HexColor('#334155'),
-                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg
+                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(7.2 * font_scale_factor, 1)
                             )
                             y -= (consumed + 2.0)
                     else:
@@ -248,7 +242,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
                             consumed = _draw_skill_progress_bar(
                                 canvas, s, s_level, SIDE_X, y, SIDE_MAX_W,
                                 style=bar_style, bar_color=accent, bg_color=colors.HexColor('#334155'),
-                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg
+                                text_color=colors.white, pct_color=colors.HexColor('#94A3B8'), font_name=f_reg, font_size=round(7.2 * font_scale_factor, 1)
                             )
                             y -= (consumed + 2.0)
                     else:

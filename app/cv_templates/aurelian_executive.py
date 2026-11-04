@@ -27,6 +27,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -64,7 +65,7 @@ class AurelianTimelineDot(Flowable):
         c.restoreState()
 
 
-def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color, hairline_color, x: float, y_top: float, max_w: float, f_bold: str, f_reg: str) -> float:
+def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color, hairline_color, x: float, y_top: float, max_w: float, f_bold: str, f_reg: str, title_size: float = 11.5, num_size: float = 8.5) -> float:
     """
     Draws a numbered section header in the sidebar:
     e.g. '01  Contact ──────────'
@@ -73,17 +74,17 @@ def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color
     canvas.saveState()
 
     # Number in bronze
-    canvas.setFont(f_bold, 8.5)
+    canvas.setFont(f_bold, num_size)
     canvas.setFillColor(bronze_color)
     canvas.drawString(x, y_top - 9.0, num_str)
-    num_w = canvas.stringWidth(num_str, f_bold, 8.5)
+    num_w = canvas.stringWidth(num_str, f_bold, num_size)
 
     # Title in bold / dark ink
-    canvas.setFont(f_bold, 11.5)
+    canvas.setFont(f_bold, title_size)
     canvas.setFillColor(colors.HexColor("#0F0F0F"))
     title_x = x + num_w + 6.0
     canvas.drawString(title_x, y_top - 9.0, title)
-    title_w = canvas.stringWidth(title, f_bold, 11.5)
+    title_w = canvas.stringWidth(title, f_bold, title_size)
 
     # Hairline rule extending to the right edge
     rule_start_x = title_x + title_w + 6.0
@@ -94,7 +95,7 @@ def _draw_aurelian_sidebar_header(canvas, num_str: str, title: str, bronze_color
         canvas.line(rule_start_x, y_top - 5.5, rule_end_x, y_top - 5.5)
 
     canvas.restoreState()
-    return 20.0
+    return max(18.0, title_size + 8.5)
 
 
 def _draw_aurelian_skill_dots(canvas, name: str, level_pct: int, bronze_color, hairline_color, x: float, y_top: float, max_w: float, font_name: str, font_size: float = 7.8) -> float:
@@ -247,8 +248,8 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     _add(S, ParagraphStyle("AuSideAbout", fontName=f_reg, fontSize=side_size, leading=side_leading + 0.8, textColor=ink_soft, spaceAfter=4))
     _add(S, ParagraphStyle("AuSideCat", fontName=f_bold, fontSize=side_size - 0.8, leading=side_leading, textColor=bronze_color, spaceAfter=2))
 
-    MAIN_LEFT = SIDE_W + 22.0
-    MAIN_MAX_W = PAGE_W - MAIN_LEFT - 22.0
+    MAIN_LEFT = SIDE_W + MAIN_PAD
+    MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
 
     rendered_skills_state = {"cat_idx": 0, "skill_idx": 0}
 
@@ -278,9 +279,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.drawRightString(SIDE_W - 20.0, PAGE_H - 34.0, monogram)
 
         # 5. Candidate Photo with Refined Double Frame
-        photo_size = 82.0
+        photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=82.0, default_shape="circle")
         photo_x = (SIDE_W - photo_size) / 2.0
-        photo_y = PAGE_H - 126.0
+        photo_y = PAGE_H - 44.0 - photo_size
         radius = photo_size / 2.0
         cx = photo_x + radius
         cy = photo_y + radius
@@ -288,33 +289,19 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         # Outer delicate ring
         canvas.setStrokeColor(hairline_color)
         canvas.setLineWidth(0.8)
-        canvas.circle(cx, cy, radius + 8.5, stroke=1, fill=0)
+        canvas.circle(cx, cy, radius + 6.0, stroke=1, fill=0)
 
         # Inner refined bronze ring
         canvas.setStrokeColor(bronze_color)
         canvas.setLineWidth(1.0)
-        canvas.circle(cx, cy, radius + 4.5, stroke=1, fill=0)
+        canvas.circle(cx, cy, radius + 3.0, stroke=1, fill=0)
 
         has_photo = bool(getattr(resume, "show_photo", True) and info.avatar_url and info.avatar_url.strip())
         img_drawn = False
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                try:
-                    canvas.saveState()
-                    cp = canvas.beginPath()
-                    cp.circle(cx, cy, radius)
-                    canvas.clipPath(cp, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, photo_x, photo_y, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    # Soft white border
-                    canvas.setStrokeColor(colors.white)
-                    canvas.setLineWidth(2.0)
-                    canvas.circle(cx, cy, radius, stroke=1, fill=0)
-                    img_drawn = True
-                except Exception:
-                    img_drawn = False
+                img_drawn = _draw_styled_avatar(canvas, img_bytes, photo_x, photo_y, photo_size, shape=photo_shape, radius=photo_radius, border_color=colors.white, border_width=2.0)
 
         if not img_drawn:
             # Monogram avatar fallback
@@ -325,8 +312,8 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
             canvas.circle(cx, cy, radius, stroke=1, fill=0)
 
             canvas.setFillColor(bronze_color)
-            canvas.setFont("Times-Italic", 22.0)
-            canvas.drawCentredString(cx, cy - 7, monogram)
+            canvas.setFont("Times-Italic", max(14, int(photo_size * 0.3)))
+            canvas.drawCentredString(cx, cy - (photo_size * 0.1), monogram)
 
         y = photo_y - 14.0
 
@@ -349,7 +336,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         y -= 12.0
 
         # 7. SECTION 01: CONTACT
-        y -= _draw_aurelian_sidebar_header(canvas, "01", "Contact", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+        au_hdr_title_size = max(8.5, round(side_size * 1.45, 1))
+        au_hdr_num_size = max(6.8, round(side_size * 1.08, 1))
+        y -= _draw_aurelian_sidebar_header(canvas, "01", "Contact", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
         contacts = []
         if info.phone:     contacts.append(("phone", info.phone))
         if info.email:     contacts.append(("email", info.email))
@@ -372,13 +361,13 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
 
         # 8. SECTION 02: PROFILE
         if resume.show_summary and resume.professional_summary and y > 150:
-            y -= _draw_aurelian_sidebar_header(canvas, "02", "Profile", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+            y -= _draw_aurelian_sidebar_header(canvas, "02", "Profile", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= _draw_sidebar_para(canvas, resume.professional_summary, S["AuSideAbout"], SIDE_PAD, y, SIDE_MAX_W)
             y -= 8.0
 
         # 9. SECTION 03: EXPERTISE (Skills with Dot Ratings)
         if resume.show_skills and resume.skill_categories and y > 60:
-            y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+            y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= 4.0
 
             completed_all = True
@@ -450,7 +439,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         # Remaining Skills Continuation
         cat_start = rendered_skills_state["cat_idx"]
         if cat_start < len(resume.skill_categories):
-            y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise (Cont.)", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg)
+            y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise (Cont.)", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= 4.0
             for c_idx in range(cat_start, len(resume.skill_categories)):
                 cat = resume.skill_categories[c_idx]
@@ -712,6 +701,10 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
     top_m = 32 if font_scale == "spacious" else (16 if font_scale == "compact" else 20)
     bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
     right_m = 26 if font_scale == "spacious" else (18 if font_scale == "compact" else 22)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,

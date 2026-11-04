@@ -397,6 +397,15 @@ class TailoredResume(BaseModel):
     show_photo: bool = Field(
         default=False, description="Show/Hide Profile Photo in Visual Resumes"
     )
+    photo_size: Optional[float] = Field(
+        default=None, description="Custom Profile Photo size in pt (35.0 - 110.0 pt). If None, defaults to template standard."
+    )
+    photo_radius: Optional[float] = Field(
+        default=None, description="Custom Profile Photo corner radius in pt (0=square, 6-20=rounded, 999=full circle)."
+    )
+    photo_shape: Optional[str] = Field(
+        default="circle", description="Profile photo shape preset: 'circle', 'rounded', 'square'"
+    )
     show_skill_bars: bool = Field(
         default=True, description="Show progress bars for skills in visual formats"
     )

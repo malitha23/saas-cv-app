@@ -23,6 +23,7 @@ from reportlab.platypus import (
 
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
+    resolve_custom_avatar_metrics, _draw_styled_avatar,
     resolve_custom_layout_metrics,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
@@ -134,7 +135,7 @@ class NordicTimelineDot(Flowable):
         c.restoreState()
 
 
-def _draw_nordic_sidebar_header(canvas, title: str, icon_type: str, blue_color, x: float, y_top: float, max_w: float, font_bold: str) -> float:
+def _draw_nordic_sidebar_header(canvas, title: str, icon_type: str, blue_color, x: float, y_top: float, max_w: float, font_bold: str, font_size: float = 10.5) -> float:
     """
     Draws a section title in the sidebar with an icon and a solid blue underline.
     Returns total vertical height consumed.
@@ -165,18 +166,18 @@ def _draw_nordic_sidebar_header(canvas, title: str, icon_type: str, blue_color, 
         canvas.circle(cx, cy, 2.8, fill=1, stroke=0)
 
     # Title text
-    canvas.setFont(font_bold, 10.5)
+    canvas.setFont(font_bold, font_size)
     canvas.setFillColor(colors.HexColor("#3A3A3A"))
-    canvas.drawString(x + 18.0, cy - 3.5, title)
+    canvas.drawString(x + 18.0, cy - (font_size * 0.35), title)
 
     # Underline in Steel Blue
-    line_y = y_top - 18.0
+    line_y = y_top - (font_size + 7.5)
     canvas.setStrokeColor(blue_color)
     canvas.setLineWidth(1.4)
     canvas.line(x, line_y, x + max_w, line_y)
 
     canvas.restoreState()
-    return 24.0
+    return font_size + 13.5
 
 
 def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
@@ -286,9 +287,9 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         canvas.drawPath(p, fill=1, stroke=0)
 
         # 3. Avatar Overlapping the Diagonal Cut
-        photo_size = 82.0
+        photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=82.0, default_shape="circle")
         photo_x = (SIDE_W - photo_size) / 2.0
-        photo_y = PAGE_H - 116.0
+        photo_y = PAGE_H - 34.0 - photo_size
         radius = photo_size / 2.0
         cx = photo_x + radius
         cy = photo_y + radius
@@ -298,35 +299,20 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
         if has_photo:
             img_bytes = _load_avatar_image(info.avatar_url)
             if img_bytes:
-                try:
-                    canvas.saveState()
-                    cp = canvas.beginPath()
-                    cp.circle(cx, cy, radius)
-                    canvas.clipPath(cp, stroke=0)
-                    reader = ImageReader(img_bytes)
-                    canvas.drawImage(reader, photo_x, photo_y, width=photo_size, height=photo_size, preserveAspectRatio=True)
-                    canvas.restoreState()
-                    # 5pt solid white circular border
-                    canvas.setStrokeColor(colors.white)
-                    canvas.setLineWidth(5.0)
-                    canvas.circle(cx, cy, radius, stroke=1, fill=0)
-                    img_drawn = True
-                except Exception:
-                    img_drawn = False
+                img_drawn = _draw_styled_avatar(canvas, img_bytes, photo_x, photo_y, photo_size, shape=photo_shape, radius=photo_radius, border_color=colors.white, border_width=4.0)
 
         if not img_drawn:
-            # Monogram placeholder with white border
             canvas.setFillColor(colors.HexColor("#D8E3EF"))
             canvas.circle(cx, cy, radius, fill=1, stroke=0)
             canvas.setStrokeColor(colors.white)
-            canvas.setLineWidth(5.0)
+            canvas.setLineWidth(4.0)
             canvas.circle(cx, cy, radius, stroke=1, fill=0)
 
             names = (info.full_name or "C").split()
             initials = "".join([n[0] for n in names[:2]]).upper()
             canvas.setFillColor(blue_color)
-            canvas.setFont(f_bold, 24)
-            canvas.drawCentredString(cx, cy - 8, initials)
+            canvas.setFont(f_bold, max(14, int(photo_size * 0.3)))
+            canvas.drawCentredString(cx, cy - (photo_size * 0.1), initials)
 
         y = photo_y - 18.0
 
@@ -339,7 +325,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
             y -= 4.0
 
         # 5. CONTACT SECTION (Left Sidebar)
-        y -= _draw_nordic_sidebar_header(canvas, "Contact", "contact", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+        nordic_hdr_size = max(8.0, round(side_size * 1.35, 1))
+        y -= _draw_nordic_sidebar_header(canvas, "Contact", "contact", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, nordic_hdr_size)
         contacts = []
         if info.phone:     contacts.append(info.phone)
         if info.email:     contacts.append(info.email)
@@ -359,13 +346,13 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
         # 6. ABOUT ME SECTION (Left Sidebar)
         if resume.show_summary and resume.professional_summary and y > 150:
-            y -= _draw_nordic_sidebar_header(canvas, "About Me", "about", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_nordic_sidebar_header(canvas, "About Me", "about", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, nordic_hdr_size)
             y -= _draw_sidebar_para(canvas, resume.professional_summary, S["NaSideAbout"], SIDE_PAD, y, SIDE_MAX_W)
             y -= 8.0
 
         # 7. SKILLS SECTION (Left Sidebar with Progress Bars)
         if resume.show_skills and resume.skill_categories and y > 60:
-            y -= _draw_nordic_sidebar_header(canvas, "Skills", "skills", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_nordic_sidebar_header(canvas, "Skills", "skills", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, nordic_hdr_size)
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
 
@@ -445,7 +432,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
         # Overflow Skills if any
         if resume.show_skills and resume.skill_categories and rendered_skills_state["cat_idx"] < len(resume.skill_categories):
-            y -= _draw_nordic_sidebar_header(canvas, "Skills (Cont.)", "skills", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold)
+            y -= _draw_nordic_sidebar_header(canvas, "Skills (Cont.)", "skills", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, nordic_hdr_size)
             show_bars = getattr(resume, "show_skill_bars", True)
             bar_style = getattr(resume, "skill_bar_style", "sleek") or "sleek"
 
@@ -665,6 +652,10 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     top_m = 30 if font_scale == "spacious" else (15 if font_scale == "compact" else 18)
     bot_m = 28 if font_scale == "spacious" else (14 if font_scale == "compact" else 16)
     right_m = 28 if font_scale == "spacious" else (20 if font_scale == "compact" else 24)
+    if getattr(resume, "custom_page_margin", None) is not None:
+        right_m = max(14.0, float(resume.custom_page_margin))
+        top_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
+        bot_m = max(14.0, round(float(resume.custom_page_margin) * 0.8, 1))
     doc = SimpleDocTemplate(
         buf,
         pagesize=A4,
