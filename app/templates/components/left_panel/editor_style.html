@@ -242,17 +242,17 @@
 
                   <!-- Shape selector buttons -->
                   <div class="grid grid-cols-3 gap-1.5 pt-0.5">
-                    <button type="button" @click="setPhotoShape('circle')"
+                    <button type="button" @click="tailoredData.photo_shape = 'circle'; tailoredData.photo_radius = 999; refreshAllPreviews();"
                       :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.photo_shape || 'circle') === 'circle', 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.photo_shape || 'circle') !== 'circle'}"
                       class="py-1 px-1.5 rounded-md text-[10px] transition text-center flex items-center justify-center gap-1">
                       <span class="w-2.5 h-2.5 rounded-full border border-current inline-block"></span> Circle
                     </button>
-                    <button type="button" @click="setPhotoShape('rounded')"
+                    <button type="button" @click="tailoredData.photo_shape = 'rounded'; tailoredData.photo_radius = (tailoredData.photo_radius && tailoredData.photo_radius > 0 && tailoredData.photo_radius < 50) ? tailoredData.photo_radius : 10; refreshAllPreviews();"
                       :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.photo_shape === 'rounded', 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.photo_shape !== 'rounded'}"
                       class="py-1 px-1.5 rounded-md text-[10px] transition text-center flex items-center justify-center gap-1">
                       <span class="w-2.5 h-2.5 rounded-sm border border-current inline-block"></span> Rounded
                     </button>
-                    <button type="button" @click="setPhotoShape('square')"
+                    <button type="button" @click="tailoredData.photo_shape = 'square'; tailoredData.photo_radius = 0; refreshAllPreviews();"
                       :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.photo_shape === 'square', 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.photo_shape !== 'square'}"
                       class="py-1 px-1.5 rounded-md text-[10px] transition text-center flex items-center justify-center gap-1">
                       <span class="w-2.5 h-2.5 rounded-none border border-current inline-block"></span> Square
