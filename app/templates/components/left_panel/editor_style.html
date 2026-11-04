@@ -229,6 +229,32 @@
                   </div>
                 </div>
 
+                <!-- Summary Placement Toggle (Visual 2-Column Templates) -->
+                <div x-show="['visual_sidebar', 'navy_executive', 'nordic_azure', 'aurelian_executive', 'banner_periwinkle'].includes(tailoredData.template_style) && tailoredData.show_summary"
+                     class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-2">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-300 font-medium flex items-center gap-1.5 text-[11px]">
+                      <i data-lucide="layout-template" class="w-3 h-3 text-indigo-400"></i> Summary / Profile Placement
+                    </span>
+                    <span class="font-mono text-indigo-300 text-[10px] font-bold"
+                          x-text="(tailoredData.summary_placement === 'left' ? 'Left Sidebar' : 'Right Column')"></span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-1.5">
+                    <button type="button"
+                      @click="tailoredData.summary_placement = 'right'; refreshAllPreviews();"
+                      :class="{'bg-indigo-600 text-white font-bold shadow-sm': (tailoredData.summary_placement || 'right') === 'right', 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700': (tailoredData.summary_placement || 'right') !== 'right'}"
+                      class="py-1 px-2 rounded-md text-[10px] transition text-center flex items-center justify-center gap-1.5">
+                      <i data-lucide="align-left" class="w-3 h-3"></i> Right (Main Column)
+                    </button>
+                    <button type="button"
+                      @click="tailoredData.summary_placement = 'left'; refreshAllPreviews();"
+                      :class="{'bg-indigo-600 text-white font-bold shadow-sm': tailoredData.summary_placement === 'left', 'bg-slate-950 text-slate-400 border border-slate-800 hover:border-slate-700': tailoredData.summary_placement !== 'left'}"
+                      class="py-1 px-2 rounded-md text-[10px] transition text-center flex items-center justify-center gap-1.5">
+                      <i data-lucide="sidebar" class="w-3 h-3"></i> Left (Sidebar)
+                    </button>
+                  </div>
+                </div>
+
                 <!-- 5. Profile Photo Size & Corner Radius / Shape (Visual Formats) -->
                 <div x-show="['visual_sidebar', 'navy_executive', 'nordic_azure', 'aurelian_executive', 'banner_periwinkle', 'creative_gradient', 'emerald_prestige', 'tech_noir'].includes(tailoredData.template_style) && tailoredData.show_photo !== false"
                      class="bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 space-y-2">

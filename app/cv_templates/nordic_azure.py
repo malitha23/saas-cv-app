@@ -215,6 +215,8 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
     f_reg, f_bold, f_italic = _get_font_names(getattr(resume, "font_family", "Helvetica"))
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
+    summary_placement = getattr(resume, "summary_placement", "right") or "right"
+    summary_on_left = (summary_placement == "left")
 
     if font_scale == "compact":
         body_size, body_leading, name_size = 7.8, 10.8, 16.0
@@ -255,6 +257,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
     # Platypus Styles for Right Main Column
     S = getSampleStyleSheet()
     _add(S, ParagraphStyle("NaSecTitle", fontName=f_bold, fontSize=body_size + 2.5, leading=body_leading + 2.0, textColor=colors.HexColor("#3A3A3A")))
+    _add(S, ParagraphStyle("NaBody", fontName=f_reg, fontSize=body_size, leading=body_leading + 1.0, textColor=body_text_color, spaceAfter=4))
     _add(S, ParagraphStyle("NaJobTitle", fontName=f_bold, fontSize=body_size + 0.8, leading=body_leading + 1.2, textColor=text_dark))
     _add(S, ParagraphStyle("NaJobCompany", fontName=f_italic, fontSize=body_size - 0.2, leading=body_leading, textColor=text_gray, spaceAfter=2))
     _add(S, ParagraphStyle("NaBullet", fontName=f_reg, fontSize=body_size - 0.2, leading=body_leading, textColor=body_text_color, leftIndent=8, firstLineIndent=-6, spaceAfter=2))
@@ -347,11 +350,11 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
         y -= 8.0
 
-        # 6. ABOUT ME SECTION (Left Sidebar)
-        if resume.show_summary and resume.professional_summary and y > 150:
+        # 6. ABOUT ME SECTION (Left Sidebar - if summary_on_left is True)
+        if resume.show_summary and resume.professional_summary and summary_on_left and y > 150:
             y -= _draw_nordic_sidebar_header(canvas, "About Me", "about", blue_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, nordic_hdr_size)
             y -= _draw_sidebar_para(canvas, resume.professional_summary, S["NaSideAbout"], SIDE_PAD, y, SIDE_MAX_W)
-            y -= 8.0
+            y -= side_sec_gap
 
         # 7. SKILLS SECTION (Left Sidebar with Progress Bars)
         if resume.show_skills and resume.skill_categories and y > 60:
@@ -517,6 +520,12 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
 
     # Section ordering for main column (Education, Experience, Projects, Certifications)
     # Note: Summary/About Me is already featured in the left sidebar!
+    def add_summary():
+        if resume.show_summary and resume.professional_summary and not summary_on_left:
+            body.extend(make_main_header("Professional Summary", "profile"))
+            body.append(Paragraph(resume.professional_summary, S["NaBody"]))
+            body.append(Spacer(1, spacer_h * 0.6))
+
     # 1. EDUCATION (Timeline with Steel Blue line & dots)
     def add_education():
         if resume.show_education and resume.education:
@@ -641,6 +650,7 @@ def _nordic_azure_pdf(resume: TailoredResume) -> bytes:
             body.append(Spacer(1, spacer_h * 0.5))
 
     # Build sequence
+    add_summary()
     add_education()
     add_experience()
     add_projects()

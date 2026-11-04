@@ -30,6 +30,7 @@ from app.cv_templates.common import (
 )
 
 def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
+    summary_placement = getattr(resume, "summary_placement", "right") or "right"
     """
     Format 1: Left Architectural Column
     - Page 1 Sidebar features Candidate Full Name & Target Job Title at the top!
@@ -180,6 +181,12 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             y -= _draw_sidebar_para(canvas, val, S["V1SideVal"], SIDE_X, y, SIDE_MAX_W)
             y -= side_sec_gap
 
+        if summary_placement == "left" and resume.show_summary and resume.professional_summary and y > 140:
+            y -= _draw_sidebar_para(canvas, "PROFILE", S["V1SideSecHdr"], SIDE_X, y, SIDE_MAX_W)
+            y -= 2
+            y -= _draw_sidebar_para(canvas, resume.professional_summary, S["V1SideSkill"], SIDE_X, y, SIDE_MAX_W)
+            y -= side_sec_gap
+
         # Technical Skills in Sidebar (Page 1)
         if resume.show_skills and resume.skill_categories and y > 90:
             canvas.setStrokeColorRGB(0.25, 0.32, 0.45)
@@ -287,7 +294,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
             order.append(sec_name)
 
     def add_summary():
-        if resume.show_summary and resume.professional_summary:
+        if resume.show_summary and resume.professional_summary and summary_placement != "left":
             sec_flow = [
                 Paragraph("PROFESSIONAL SUMMARY", S["V1SecHdr"]),
                 HRFlowable(width="100%", thickness=1.4, color=accent, spaceBefore=0, spaceAfter=3),

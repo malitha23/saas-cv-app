@@ -188,6 +188,9 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
 
     f_reg, f_bold, f_italic = _get_font_names(getattr(resume, "font_family", "Times-Roman"))
 
+    summary_placement = getattr(resume, "summary_placement", "right") or "right"
+    summary_on_left = (summary_placement == "left")
+
     # Dynamic Proportional Font Scaling
     font_scale = getattr(resume, "font_size_scale", "standard") or "standard"
     if font_scale == "compact":
@@ -362,15 +365,16 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
 
         y -= side_sec_gap
 
-        # 8. SECTION 02: PROFILE
-        if resume.show_summary and resume.professional_summary and y > 150:
+        # 8. SECTION 02: PROFILE (Only if summary_on_left is True)
+        if resume.show_summary and resume.professional_summary and summary_on_left and y > 150:
             y -= _draw_aurelian_sidebar_header(canvas, "02", "Profile", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= _draw_sidebar_para(canvas, resume.professional_summary, S["AuSideAbout"], SIDE_PAD, y, SIDE_MAX_W)
             y -= side_sec_gap
 
-        # 9. SECTION 03: EXPERTISE (Skills with Dot Ratings)
+        # 9. EXPERTISE (Skills with Dot Ratings)
         if resume.show_skills and resume.skill_categories and y > 60:
-            y -= _draw_aurelian_sidebar_header(canvas, "03", "Expertise", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
+            exp_num = "03" if (resume.show_summary and resume.professional_summary and summary_on_left) else "02"
+            y -= _draw_aurelian_sidebar_header(canvas, exp_num, "Expertise", bronze_color, hairline_color, SIDE_PAD, y, SIDE_MAX_W, f_bold, f_reg, au_hdr_title_size, au_hdr_num_size)
             y -= 4.0
 
             completed_all = True
@@ -493,6 +497,15 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         flow.append(h_table)
         flow.append(Spacer(1, spacer_h * 0.8))
         return flow
+
+    def add_summary():
+        nonlocal section_counter
+        if resume.show_summary and resume.professional_summary and not summary_on_left:
+            r_num = romans[min(section_counter - 1, len(romans) - 1)]
+            section_counter += 1
+            body.extend(make_main_header(r_num, "Professional Summary"))
+            body.append(Paragraph(resume.professional_summary, S["AuBody"]))
+            body.append(Spacer(1, spacer_h * 0.6))
 
     # SECTION I: EDUCATION
     section_counter = 1

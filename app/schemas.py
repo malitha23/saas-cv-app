@@ -421,6 +421,9 @@ class TailoredResume(BaseModel):
     skill_bar_style: str = Field(
         default="sleek", description="Progress bar style: 'sleek', 'segmented', 'badge'"
     )
+    summary_placement: Optional[str] = Field(
+        default="right", description="Placement of professional summary: 'right' (main column) or 'left' (sidebar for supported 2-column templates)"
+    )
     show_summary: bool = Field(
         default=True, description="Show/Hide Professional Summary"
     )

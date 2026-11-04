@@ -29,6 +29,7 @@ from app.cv_templates.common import (
 )
 
 def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
+    summary_placement = getattr(resume, "summary_placement", "right") or "right"
     """Format 2: Soft Periwinkle top banner with circular photo on right and 2-column layout."""
     _sanitize_pdf_data(resume)
     PAGE_W, PAGE_H = letter
@@ -248,7 +249,7 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
             order.append(sec_name)
 
     def add_pw_summary():
-        if resume.show_summary and resume.professional_summary:
+        if resume.show_summary and resume.professional_summary and summary_placement != "left":
             sec_flow = [
                 Paragraph("OBJECTIVE", S["PwSecHdr"]),
                 HRFlowable(width="100%", thickness=1.0, color=colors.HexColor("#CBD5E1"), spaceBefore=0, spaceAfter=4),

@@ -201,6 +201,7 @@ def _draw_sidebar_badge_header(canvas, title: str, icon_type: str, navy_color, x
 
 
 def _navy_executive_pdf(resume: TailoredResume) -> bytes:
+    summary_placement = getattr(resume, "summary_placement", "right") or "right"
     """
     Renders the modern 'Navy Executive' CV layout:
     - 35% Left Sidebar in Deep Corporate Navy (#1B3A5C)
