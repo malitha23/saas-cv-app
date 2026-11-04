@@ -28,7 +28,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -224,6 +224,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         MAIN_PAD = float(resume.custom_page_margin)
     MAIN_LEFT = SIDE_W + MAIN_PAD
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=32.0, base_bottom_margin=24.0)
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
     name_size = round(body_size * 2.3, 1)
@@ -251,6 +252,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
 
     MAIN_LEFT = SIDE_W + MAIN_PAD
     MAIN_MAX_W = PAGE_W - MAIN_LEFT - MAIN_PAD
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=32.0, base_bottom_margin=24.0)
 
     rendered_skills_state = {"cat_idx": 0, "skill_idx": 0}
 
@@ -282,7 +284,7 @@ def _aurelian_executive_pdf(resume: TailoredResume) -> bytes:
         # 5. Candidate Photo with Refined Double Frame
         photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=82.0, default_shape="circle")
         photo_x = (SIDE_W - photo_size) / 2.0
-        photo_y = PAGE_H - 44.0 - photo_size
+        photo_y = PAGE_H - max(28.0, top_m + 12.0) - photo_size
         radius = photo_size / 2.0
         cx = photo_x + radius
         cy = photo_y + radius

@@ -394,6 +394,12 @@ class TailoredResume(BaseModel):
     custom_page_margin: Optional[float] = Field(
         default=None, description="Custom document page margin in pt (14.0 - 48.0 pt). If None, defaults to template standard."
     )
+    custom_top_margin: Optional[float] = Field(
+        default=None, description="Custom top margin / header padding in pt (10.0 - 60.0 pt). If None, defaults to template standard."
+    )
+    custom_bottom_margin: Optional[float] = Field(
+        default=None, description="Custom bottom margin / footer padding in pt (10.0 - 50.0 pt). If None, defaults to template standard."
+    )
     custom_sidebar_width: Optional[float] = Field(
         default=None, description="Custom sidebar column width for two-column visual formats in pt (140.0 - 230.0 pt)."
     )

@@ -130,8 +130,8 @@
                 </button>
                 <div class="flex items-center gap-2">
                   <button type="button"
-                    x-show="tailoredData.custom_font_size || tailoredData.custom_sidebar_font_size || tailoredData.custom_section_spacing || tailoredData.custom_page_margin || tailoredData.custom_sidebar_width"
-                    @click="tailoredData.custom_font_size = null; tailoredData.custom_sidebar_font_size = null; tailoredData.custom_section_spacing = null; tailoredData.custom_page_margin = null; tailoredData.custom_sidebar_width = null; refreshAllPreviews();"
+                    x-show="tailoredData.custom_font_size || tailoredData.custom_sidebar_font_size || tailoredData.custom_section_spacing || tailoredData.custom_page_margin || tailoredData.custom_top_margin || tailoredData.custom_bottom_margin || tailoredData.custom_sidebar_width"
+                    @click="tailoredData.custom_font_size = null; tailoredData.custom_sidebar_font_size = null; tailoredData.custom_section_spacing = null; tailoredData.custom_page_margin = null; tailoredData.custom_top_margin = null; tailoredData.custom_bottom_margin = null; tailoredData.custom_sidebar_width = null; refreshAllPreviews();"
                     class="text-[10px] text-amber-400 hover:text-amber-300 font-semibold transition bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20" title="Reset all sliders to standard template defaults">
                     ↺ Reset Sliders
                   </button>

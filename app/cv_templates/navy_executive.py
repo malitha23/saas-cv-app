@@ -24,7 +24,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -215,7 +215,8 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     PAGE_W, PAGE_H = A4  # 595.28 x 841.89 pt
     SIDE_W = 208.0       # 35% of page width
     SIDE_PAD = 18.0
-    SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)  # 172 pt
+    SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=24.0, base_bottom_margin=20.0)  # 172 pt
 
     # Color Palette
     navy_hex = "#1B3A5C"
@@ -260,6 +261,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_PAD * 2)
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=24.0, base_bottom_margin=20.0)
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
     name_size = round(body_size * 2.6, 1)
@@ -299,7 +301,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
 
         # 2. Profile Photo or Monogram in Left Sidebar
-        y = PAGE_H - 32.0
+        y = PAGE_H - max(20.0, top_m + 8.0)
         photo_size, photo_shape, photo_radius = resolve_custom_avatar_metrics(resume, base_size=78.0, default_shape="circle")
         photo_x = (SIDE_W - photo_size) / 2.0
         photo_y = y - photo_size
@@ -445,7 +447,7 @@ def _navy_executive_pdf(resume: TailoredResume) -> bytes:
         canvas.setFillColor(navy_color)
         canvas.rect(0, 0, SIDE_W, PAGE_H, fill=1, stroke=0)
 
-        y = PAGE_H - 32.0
+        y = PAGE_H - max(20.0, top_m + 8.0)
 
         # Overflow Education if any
         if resume.show_education and resume.education and rendered_edu_count[0] < len(resume.education):

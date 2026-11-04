@@ -768,6 +768,40 @@ def resolve_custom_sidebar_font_size(
     return round(fallback_body_size, 2)
 
 
+def resolve_custom_vertical_margins(
+    resume: TailoredResume,
+    base_top_margin: float,
+    base_bottom_margin: float
+) -> Tuple[float, float]:
+    """
+    Resolves custom top and bottom document margins.
+    Allows users to fine-tune vertical spacing to fit content cleanly onto 1 page
+    or balance header and footer paddings.
+    """
+    top_m = base_top_margin
+    bot_m = base_bottom_margin
+
+    c_top = getattr(resume, "custom_top_margin", None)
+    if c_top is not None:
+        try:
+            val = float(c_top)
+            if 6.0 <= val <= 80.0:
+                top_m = round(val, 2)
+        except (ValueError, TypeError):
+            pass
+
+    c_bot = getattr(resume, "custom_bottom_margin", None)
+    if c_bot is not None:
+        try:
+            val = float(c_bot)
+            if 6.0 <= val <= 70.0:
+                bot_m = round(val, 2)
+        except (ValueError, TypeError):
+            pass
+
+    return (top_m, bot_m)
+
+
 def resolve_custom_avatar_metrics(
     resume: TailoredResume,
     base_size: float,

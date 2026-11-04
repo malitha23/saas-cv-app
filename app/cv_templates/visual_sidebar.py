@@ -21,7 +21,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -40,7 +40,9 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     PAGE_W, PAGE_H = letter
     SIDE_W = 185
     SIDE_X = 14
-    SIDE_MAX_W = SIDE_W - (SIDE_X * 2)  # 157 pt
+    SIDE_MAX_W = SIDE_W - (SIDE_X * 2)
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=22.0, base_bottom_margin=22.0)  # 157 pt
 
     side_bg = colors.HexColor("#0F172A")
     accent = colors.HexColor("#2563EB")
@@ -76,6 +78,8 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = SIDE_W - (SIDE_X * 2)
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=22.0, base_bottom_margin=22.0)
 
     dark_text = colors.HexColor("#0F172A")
     body_text = colors.HexColor("#1E293B")
@@ -121,7 +125,7 @@ def _visual_sidebar_pdf(resume: TailoredResume) -> bytes:
         canvas.setLineWidth(1.5)
         canvas.line(SIDE_W, 0, SIDE_W, PAGE_H)
 
-        y = PAGE_H - 24
+        y = PAGE_H - max(16.0, top_m)
 
         # Profile photo
         has_photo = bool(getattr(resume, "show_photo", False) and info.avatar_url and info.avatar_url.strip())

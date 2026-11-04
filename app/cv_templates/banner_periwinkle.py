@@ -20,7 +20,7 @@ from reportlab.platypus import (
 from app.schemas import TailoredResume
 from app.cv_templates.common import (
     resolve_custom_avatar_metrics, _draw_styled_avatar,
-    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size,
+    resolve_custom_layout_metrics, resolve_custom_sidebar_font_size, resolve_custom_vertical_margins,
     get_published_portfolio_url,
     render_cv_portfolio_footer,
     _add, _hex_to_rgb, _load_avatar_image, _get_font_names,
@@ -69,6 +69,8 @@ def _banner_periwinkle_pdf(resume: TailoredResume) -> bytes:
     if custom_side_w is not None:
         SIDE_W = custom_side_w
         SIDE_MAX_W = max(100, SIDE_W - (SIDE_X * 2))
+
+    top_m, bot_m = resolve_custom_vertical_margins(resume, base_top_margin=BANNER_H + 16.0, base_bottom_margin=20.0)
 
     side_size = resolve_custom_sidebar_font_size(resume, fallback_body_size=body_size)
     side_leading = round(side_size * 1.35, 1)
