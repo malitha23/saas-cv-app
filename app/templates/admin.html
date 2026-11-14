@@ -3997,6 +3997,173 @@
           </div>
         </div>
 
+        <!-- ═════════════════════════════════════════════════════════════════ -->
+        <!-- GEMINI API KEY FAILOVER POOL & AUTO-RECOVERY RESILIENCE CARD       -->
+        <!-- ═════════════════════════════════════════════════════════════════ -->
+        <div class="bg-slate-900 border border-violet-800/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <div class="p-2 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/30">
+                  <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-lg sm:text-xl font-black text-white tracking-tight">
+                  Gemini API Key Failover Pool & Auto-Recovery
+                </h3>
+              </div>
+              <p class="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                Prevents downtime when keys expire or hit Google 429 rate limits. Transparently rotates across healthy keys.
+              </p>
+            </div>
+
+            <!-- Health Badges & Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+              <template x-if="geminiKeyPool">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-bold border"
+                    :class="geminiKeyPool.active_keys > 0 ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/10 text-rose-300 border-rose-500/30'">
+                    <span class="inline-block w-2 h-2 rounded-full mr-1.5"
+                      :class="geminiKeyPool.active_keys > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'"></span>
+                    <span x-text="geminiKeyPool.active_keys + ' Active Key(s)'"></span>
+                  </span>
+
+                  <template x-if="geminiKeyPool.cooldown_keys > 0">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                      <span x-text="geminiKeyPool.cooldown_keys + ' in 429 Cooldown'"></span>
+                    </span>
+                  </template>
+
+                  <template x-if="geminiKeyPool.expired_keys > 0">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                      <span x-text="geminiKeyPool.expired_keys + ' Expired'"></span>
+                    </span>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Test All Button -->
+              <button @click="testAllGeminiKeys()" :disabled="isTestingKeys"
+                class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50">
+                <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400" :class="{'animate-spin': isTestingKeys}"></i>
+                <span x-text="isTestingKeys ? 'Testing...' : 'Test All Keys (0 Tokens)'"></span>
+              </button>
+
+              <!-- GCP Auto Generate Button -->
+              <button @click="autoGenerateGeminiKey()" :disabled="isAutoGeneratingKey"
+                class="px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50"
+                title="Generates a new key via Google Cloud API if GCP Service Account is configured">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400" :class="{'animate-spin': isAutoGeneratingKey}"></i>
+                <span x-text="isAutoGeneratingKey ? 'Minting...' : 'Auto-Generate via GCP'"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Feedback Toast / Notice -->
+          <template x-if="keyPoolFeedback">
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-indigo-500/30 text-xs text-slate-200 flex items-center justify-between">
+              <span x-text="keyPoolFeedback"></span>
+              <button @click="keyPoolFeedback = ''" class="text-slate-400 hover:text-white ml-2 text-xs font-bold">✕</button>
+            </div>
+          </template>
+
+          <!-- Key Pool Table -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4">Key Preview</th>
+                  <th class="py-3 px-4">Health Status</th>
+                  <th class="py-3 px-4">Source</th>
+                  <th class="py-3 px-4">Requests (OK / Fail)</th>
+                  <th class="py-3 px-4">Last Verified / Error</th>
+                  <th class="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/80 font-mono">
+                <template x-if="!geminiKeyPool || !geminiKeyPool.keys || geminiKeyPool.keys.length === 0">
+                  <tr>
+                    <td colspan="6" class="py-6 text-center text-slate-500 font-sans">
+                      No Gemini API keys registered in pool. Add one below.
+                    </td>
+                  </tr>
+                </template>
+
+                <template x-for="k in (geminiKeyPool?.keys || [])" :key="k.key_preview">
+                  <tr class="hover:bg-slate-900/50 transition">
+                    <td class="py-3 px-4 font-bold text-slate-200" x-text="k.key_preview"></td>
+                    <td class="py-3 px-4 font-sans">
+                      <template x-if="k.status === 'active'">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          Active & Healthy
+                        </span>
+                      </template>
+                      <template x-if="k.status === 'cooldown'">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                          Cooldown (<span x-text="k.cooldown_remaining_sec"></span>s)
+                        </span>
+                      </template>
+                      <template x-if="k.status === 'expired'">
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                          Expired / Revoked
+                        </span>
+                      </template>
+                    </td>
+                    <td class="py-3 px-4 font-sans text-slate-400 text-[11px]" x-text="k.source"></td>
+                    <td class="py-3 px-4">
+                      <span class="text-emerald-400 font-bold" x-text="k.success_count"></span>
+                      <span class="text-slate-500"> / </span>
+                      <span class="text-rose-400 font-bold" x-text="k.failure_count"></span>
+                    </td>
+                    <td class="py-3 px-4 font-sans text-[11px] max-w-xs truncate text-slate-400">
+                      <div x-text="k.last_verified || k.last_used || 'Not tested yet'"></div>
+                      <template x-if="k.last_error">
+                        <div class="text-[10px] text-rose-400 truncate mt-0.5" :title="k.last_error" x-text="k.last_error"></div>
+                      </template>
+                    </td>
+                    <td class="py-3 px-4 text-right font-sans">
+                      <button @click="removeGeminiKey(k.key_preview)"
+                        class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition">
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Add Key Input Bar (Hot Reload - No Restart) -->
+          <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i>
+                Add New Gemini API Key (Hot-Reload into Live Engine)
+              </label>
+              <span class="text-[11px] text-slate-400">No server or Docker restart needed</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="password" x-model="newGeminiKeyInput" placeholder="Paste Google AI API Key (AIzaSy...)"
+                class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-violet-500">
+
+              <button @click="addGeminiKey()" :disabled="isAddingKey || !newGeminiKeyInput"
+                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/40 transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0">
+                <i data-lucide="check" class="w-4 h-4" :class="{'animate-spin': isAddingKey}"></i>
+                <span x-text="isAddingKey ? 'Validating & Activating...' : 'Validate & Activate Key'"></span>
+              </button>
+            </div>
+
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              💡 <b>Failover Pro-Tip:</b> You can obtain 2-3 free API keys from different Google accounts at
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-violet-400 underline font-semibold">Google AI Studio</a>
+              and add them here. The system will automatically cycle across them, eliminating downtime when daily quotas or keys expire.
+            </p>
+          </div>
+        </div>
+
         <!-- 4 Stat Cards: Daily, Weekly, Monthly, Lifetime -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
@@ -4326,6 +4493,13 @@
         aiMetrics: null,
         isLoadingAiMetrics: false,
         aiMetricsError: '',
+        geminiKeyPool: null,
+        isLoadingKeyPool: false,
+        isTestingKeys: false,
+        isAddingKey: false,
+        newGeminiKeyInput: '',
+        keyPoolFeedback: '',
+        isAutoGeneratingKey: false,
         countryPricingMap: {},
         isSavingCountry: false,
         countrySaveMsg: '',
@@ -6998,6 +7172,143 @@
             this.aiMetricsError = e.message;
           } finally {
             this.isLoadingAiMetrics = false;
+            this.loadGeminiKeyPool();
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async loadGeminiKeyPool() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          this.isLoadingKeyPool = true;
+          try {
+            const res = await fetch('/api/admin/gemini/pool-status', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              this.geminiKeyPool = await res.json();
+            }
+          } catch (e) {
+            console.error('Failed to load Gemini key pool:', e);
+          } finally {
+            this.isLoadingKeyPool = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async testAllGeminiKeys() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          this.isTestingKeys = true;
+          this.keyPoolFeedback = 'Running zero-token health checks across all keys...';
+          try {
+            const res = await fetch('/api/admin/gemini/keys/test-all', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              this.geminiKeyPool = data.summary;
+              this.keyPoolFeedback = `✅ Tested ${data.tested_count} key(s): ${data.summary.active_keys} active, ${data.summary.expired_keys} expired, ${data.summary.cooldown_keys} in cooldown.`;
+            } else {
+              const err = await res.json();
+              this.keyPoolFeedback = `❌ Test failed: ${err.detail || 'Unknown error'}`;
+            }
+          } catch (e) {
+            this.keyPoolFeedback = `❌ Test failed: ${e.message}`;
+          } finally {
+            this.isTestingKeys = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async addGeminiKey() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          const k = (this.newGeminiKeyInput || '').trim();
+          if (!k || k.length < 20) {
+            this.keyPoolFeedback = '⚠️ Please enter a valid Google Gemini API Key (at least 20 characters).';
+            return;
+          }
+          this.isAddingKey = true;
+          this.keyPoolFeedback = 'Validating key with Google AI and activating...';
+          try {
+            const res = await fetch('/api/admin/gemini/keys/add', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ key: k, test_first: true })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.newGeminiKeyInput = '';
+              this.geminiKeyPool = data.pool_status;
+              this.keyPoolFeedback = `🎉 ${data.message}`;
+            } else {
+              this.keyPoolFeedback = `❌ Failed to activate key: ${data.detail || data.message || 'Key rejected by Google AI'}`;
+            }
+          } catch (e) {
+            this.keyPoolFeedback = `❌ Error: ${e.message}`;
+          } finally {
+            this.isAddingKey = false;
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async removeGeminiKey(preview) {
+          if (!confirm(`Are you sure you want to remove Gemini key '${preview}' from the rotation pool?`)) return;
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          try {
+            const res = await fetch('/api/admin/gemini/keys/remove', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ key_preview: preview })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.geminiKeyPool = data.pool_status;
+              this.keyPoolFeedback = `🗑️ Key ${preview} removed from pool.`;
+            } else {
+              this.keyPoolFeedback = `❌ Remove failed: ${data.detail}`;
+            }
+          } catch (e) {
+            this.keyPoolFeedback = `❌ Remove error: ${e.message}`;
+          } finally {
+            this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
+          }
+        },
+
+        async autoGenerateGeminiKey() {
+          const token = localStorage.getItem('saas_token');
+          if (!token) return;
+          this.isAutoGeneratingKey = true;
+          this.keyPoolFeedback = 'Requesting Google Cloud API Keys API to mint a fresh key...';
+          try {
+            const res = await fetch('/api/admin/gemini/keys/auto-generate', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({})
+            });
+            const data = await res.json();
+            if (res.ok) {
+              this.geminiKeyPool = data.pool_status;
+              this.keyPoolFeedback = `✨ ${data.message} (${data.key_preview})`;
+            } else {
+              this.keyPoolFeedback = `ℹ️ ${data.detail || 'GCP Auto-Minting requires GCP_PROJECT_ID and GCP Service Account credentials.'}`;
+            }
+          } catch (e) {
+            this.keyPoolFeedback = `❌ Auto-generation error: ${e.message}`;
+          } finally {
+            this.isAutoGeneratingKey = false;
             this.$nextTick(() => { if (window.lucide) window.lucide.createIcons(); });
           }
         }

@@ -16,7 +16,8 @@ def extract_scanned_documents_with_gemini(images_data: List[Tuple[bytes, str]]) 
     scanned PDF image pages using Gemini Vision AI.
     Processes images in batches with strict timeout and fallback handling.
     """
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    from app.services.gemini_key_manager import gemini_key_manager
+    api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key or not images_data:
         return ""
 

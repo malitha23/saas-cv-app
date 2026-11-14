@@ -2269,3 +2269,90 @@ async def trigger_growth_bot_now(
     result = execute_growth_bot_cycle(db, force_now=True, max_to_send=max_send)
     return {"success": True, "result": result}
 
+
+# ═════════════════════════════════════════════════════════════════════
+# GEMINI API KEY POOL, LIVE HEALTH & FAILOVER RESILIENCE
+# ═════════════════════════════════════════════════════════════════════
+
+class GeminiAddKeyRequest(BaseModel):
+    key: str
+    test_first: bool = True
+
+
+class GeminiRemoveKeyRequest(BaseModel):
+    key_preview: str
+
+
+class GeminiAutoGenerateKeyRequest(BaseModel):
+    project_id: Optional[str] = None
+    service_account_json: Optional[str] = None
+
+
+@router.get("/api/admin/gemini/pool-status")
+async def get_gemini_pool_status_endpoint(
+    current_user: User = Depends(require_admin),
+):
+    """Returns real-time health telemetry, cooldown timers, and failover status for all Gemini API keys."""
+    from app.services.gemini_key_manager import gemini_key_manager
+    return gemini_key_manager.get_pool_status()
+
+
+@router.post("/api/admin/gemini/keys/add")
+async def add_gemini_key_endpoint(
+    payload: GeminiAddKeyRequest,
+    current_user: User = Depends(require_admin),
+):
+    """
+    Dynamically registers and validates a new Gemini API key into the runtime pool.
+    Persists to .env and SaasSetting with zero server downtime.
+    """
+    from app.services.gemini_key_manager import gemini_key_manager
+    result = gemini_key_manager.add_key(
+        new_key=payload.key,
+        test_first=payload.test_first,
+        persist_env=True,
+        persist_db=True,
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message"))
+    return result
+
+
+@router.post("/api/admin/gemini/keys/test-all")
+async def test_all_gemini_keys_endpoint(
+    current_user: User = Depends(require_admin),
+):
+    """Executes live, 0-token health verification checks on all registered keys in the pool."""
+    from app.services.gemini_key_manager import gemini_key_manager
+    return gemini_key_manager.test_all_keys()
+
+
+@router.post("/api/admin/gemini/keys/remove")
+async def remove_gemini_key_endpoint(
+    payload: GeminiRemoveKeyRequest,
+    current_user: User = Depends(require_admin),
+):
+    """Deletes an expired or revoked key from the pool and synchronizes .env & DB."""
+    from app.services.gemini_key_manager import gemini_key_manager
+    result = gemini_key_manager.remove_key(payload.key_preview, persist=True)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message"))
+    return result
+
+
+@router.post("/api/admin/gemini/keys/auto-generate")
+async def auto_generate_gemini_key_endpoint(
+    payload: Optional[GeminiAutoGenerateKeyRequest] = None,
+    current_user: User = Depends(require_admin),
+):
+    """
+    Calls Google Cloud API Keys API to programmatically mint a brand new API key
+    if GCP Service Account credentials are configured.
+    """
+    from app.services.gemini_key_manager import gemini_key_manager
+    p_id = payload.project_id if payload else None
+    sa_json = payload.service_account_json if payload else None
+    result = gemini_key_manager.auto_generate_key_via_gcp(project_id=p_id, service_account_json=sa_json)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message"))
+    return result

@@ -1,3 +1,4 @@
+from app.services.gemini_key_manager import gemini_key_manager
 import os
 import json
 import uuid
@@ -128,7 +129,7 @@ async def chat_copilot_endpoint(
         )
 
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         return await asyncio.to_thread(
             chat_with_career_copilot,
             messages=payload.messages,
@@ -169,7 +170,7 @@ async def start_mock_interview_endpoint(
     q_count = payload.question_count if tier in ["pro", "elite"] else min(3, payload.question_count)
 
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         res = generate_mock_interview_questions(
             target_role=payload.target_role,
             target_company=payload.target_company,
@@ -198,7 +199,7 @@ async def evaluate_interview_answer_endpoint(
     Requires authenticated user account.
     """
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         res = evaluate_mock_interview_answer(
             question_text=payload.question_text,
             candidate_answer=payload.candidate_answer_transcript,
@@ -224,7 +225,7 @@ async def final_interview_report_endpoint(
     Requires authenticated user account.
     """
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         eval_dicts = [e.dict() for e in payload.evaluations]
         res = generate_interview_final_report(
             target_role=payload.target_role,
@@ -312,7 +313,7 @@ async def conference_turn_endpoint(
     CONFERENCE_SESSION_TURNS[payload.session_id] = session_turns + 1
 
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         res = process_conference_conversation_turn(
             session_id=payload.session_id,
             candidate_transcript=payload.candidate_transcript,
@@ -345,7 +346,7 @@ async def conference_debrief_endpoint(
                 db.commit()
                 db.refresh(current_user)
 
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
         res = generate_conference_debrief(
             session_id=payload.session_id,
             target_role=payload.target_role,

@@ -26,10 +26,18 @@ static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 @router.get("/api/health")
 async def health_check():
     """Health status and API readiness."""
-    has_gemini_key = bool(os.getenv("GEMINI_API_KEY"))
+    from app.services.gemini_key_manager import gemini_key_manager
+    pool_stat = gemini_key_manager.get_pool_status()
+    has_gemini_key = pool_stat.get("is_operational", False) or bool(os.getenv("GEMINI_API_KEY"))
     return {
         "status": "healthy",
         "gemini_api_configured": has_gemini_key,
+        "gemini_pool": {
+            "total_keys": pool_stat.get("total_keys", 0),
+            "active_keys": pool_stat.get("active_keys", 0),
+            "cooldown_keys": pool_stat.get("cooldown_keys", 0),
+            "expired_keys": pool_stat.get("expired_keys", 0),
+        },
         "engine": "Gemini Flash + ReportLab ATS + Custom Portfolio Engine",
         "version": "1.3.0"
     }

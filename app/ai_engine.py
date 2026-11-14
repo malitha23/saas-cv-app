@@ -473,19 +473,14 @@ def generate_with_gemini(
     cover_letter_tone: str = "professional",
 ) -> TailoredResume:
     """Generate ATS-optimized resume, cover letter, and portfolio preserving 100% of candidate's real data."""
-    server_key = os.getenv("GEMINI_API_KEY", "").strip()
-    provided_key = (api_key or "").strip()
+    from app.services.gemini_key_manager import gemini_key_manager
 
-    # Priority: If provided_key is valid (at least 20 chars), try it first. If it fails, fallback to server_key!
-    keys_to_attempt = []
-    if provided_key and len(provided_key) >= 20:
-        keys_to_attempt.append(provided_key)
-    if server_key and server_key not in keys_to_attempt:
-        keys_to_attempt.append(server_key)
+    # Multi-key failover rotation: retrieves healthy keys in priority order
+    keys_to_attempt = gemini_key_manager.get_active_keys(provided_key=api_key)
 
     for k in keys_to_attempt:
         try:
-            return _call_gemini_api(
+            result = _call_gemini_api(
                 resume_text=resume_text,
                 job_description=job_description,
                 api_key=k,
@@ -495,11 +490,38 @@ def generate_with_gemini(
                 template_style=template_style,
                 cover_letter_tone=cover_letter_tone,
             )
+            gemini_key_manager.record_success(k)
+            return result
         except Exception as e:
+            gemini_key_manager.record_error(k, e)
             print(
                 f"[Gemini API Warning] Error with key {k[:8]}...: {e}. Trying next option..."
             )
             continue
+
+    # If all existing keys failed, attempt autonomous GCP programmatic key generation if configured
+    try:
+        gcp_res = gemini_key_manager.auto_generate_key_via_gcp()
+        if gcp_res.get("success") and gcp_res.get("key"):
+            fresh_key = gcp_res["key"]
+            print(f"[AI Engine] Auto-minted fresh Gemini key via Google Cloud API: {fresh_key[:8]}... Retrying generation.")
+            try:
+                result = _call_gemini_api(
+                    resume_text=resume_text,
+                    job_description=job_description,
+                    api_key=fresh_key,
+                    job_title=job_title,
+                    company_name=company_name,
+                    role_archetype=role_archetype or "auto",
+                    template_style=template_style,
+                    cover_letter_tone=cover_letter_tone,
+                )
+                gemini_key_manager.record_success(fresh_key)
+                return result
+            except Exception as ge:
+                gemini_key_manager.record_error(fresh_key, ge)
+    except Exception as gcp_err:
+        print(f"[AI Engine] Autonomous recovery attempt error: {gcp_err}")
 
     print(
         "[AI Engine] Live Gemini call unavailable. Using universal fallback parser preserving 100% data."
@@ -1342,63 +1364,74 @@ def generate_gemini_text(
     max_tokens: int = 250,
     temperature: float = 0.6,
 ) -> str:
-    """Helper to query Gemini models with automatic fallback across 2.5-flash, 3.1-flash-lite, and REST."""
-    k = api_key or os.getenv("GEMINI_API_KEY")
-    if not k:
+    """Helper to query Gemini models with automatic fallback across keys and models."""
+    from app.services.gemini_key_manager import gemini_key_manager
+
+    keys_to_try = gemini_key_manager.get_active_keys(provided_key=api_key)
+    if not keys_to_try:
         return ""
+
     models_to_try = [
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
         "gemini-3.8-flash",
     ]
-    try:
-        from google import genai
-        from google.genai import types
 
-        client = genai.Client(api_key=k, http_options=types.HttpOptions(timeout=15000))
+    for k in keys_to_try:
+        try:
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=k, http_options=types.HttpOptions(timeout=15000))
+            for m in models_to_try:
+                try:
+                    res = client.models.generate_content(
+                        model=m,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            max_output_tokens=max_tokens,
+                            temperature=temperature,
+                            automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                                disable=True
+                            ),
+                        ),
+                    )
+                    if res and res.text and res.text.strip():
+                        gemini_key_manager.record_success(k)
+                        return res.text.strip()
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # REST Fallback
+        import requests
+
         for m in models_to_try:
             try:
-                res = client.models.generate_content(
-                    model=m,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        max_output_tokens=max_tokens,
-                        temperature=temperature,
-                        automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                            disable=True
-                        ),
-                    ),
-                )
-                if res and res.text and res.text.strip():
-                    return res.text.strip()
-            except Exception:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={k}"
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "maxOutputTokens": max_tokens,
+                        "temperature": temperature,
+                    },
+                }
+                res = requests.post(url, json=payload, timeout=15)
+                if res.status_code == 200:
+                    data = res.json()
+                    parts = (
+                        data.get("candidates", [])[0].get("content", {}).get("parts", [])
+                    )
+                    if parts and parts[0].get("text"):
+                        gemini_key_manager.record_success(k)
+                        return parts[0]["text"].strip()
+                elif res.status_code in (400, 401, 403, 429):
+                    gemini_key_manager.record_error(k, res.text)
+            except Exception as re_err:
+                gemini_key_manager.record_error(k, re_err)
                 continue
-    except Exception:
-        pass
 
-    # REST Fallback
-    import requests
-
-    for m in models_to_try:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={k}"
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "maxOutputTokens": max_tokens,
-                    "temperature": temperature,
-                },
-            }
-            res = requests.post(url, json=payload, timeout=15)
-            if res.status_code == 200:
-                data = res.json()
-                parts = (
-                    data.get("candidates", [])[0].get("content", {}).get("parts", [])
-                )
-                if parts and parts[0].get("text"):
-                    return parts[0]["text"].strip()
-        except Exception:
-            continue
     return ""
 
 
@@ -2842,8 +2875,8 @@ def chat_with_career_copilot(
     api_key: Optional[str] = None,
 ) -> ChatCopilotResponse:
     """Context-aware AI Career Copilot Chatbot."""
-    server_key = os.getenv("GEMINI_API_KEY", "").strip()
-    active_key = (api_key or "").strip() or server_key
+    from app.services.gemini_key_manager import gemini_key_manager
+    active_key = gemini_key_manager.get_active_key(provided_key=api_key) or os.getenv("GEMINI_API_KEY", "").strip()
 
     resume_context = resume_context or {}
     personal_info = resume_context.get("personal_info", {})

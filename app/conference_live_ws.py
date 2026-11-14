@@ -33,7 +33,8 @@ async def handle_conference_live_websocket(
     Streams raw 24kHz PCM audio chunks directly to browser with sub-800ms latency.
     """
     await websocket.accept()
-    api_key = os.getenv("GEMINI_API_KEY")
+    from app.services.gemini_key_manager import gemini_key_manager
+    api_key = gemini_key_manager.get_active_key() or os.getenv("GEMINI_API_KEY")
     logger.info(f"[Gemini Live WS] Client connected for role: '{role}' at '{company}'")
     if not api_key:
         await websocket.send_json({
