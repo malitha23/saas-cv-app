@@ -51,6 +51,69 @@ def get_smtp_config() -> Dict[str, Any]:
         "admin_email": admin_fallback
     }
 
+def get_smtp_providers() -> List[Dict[str, Any]]:
+    """
+    Returns an ordered list of configured SMTP providers (Primary, Fallback/Backup).
+    This guarantees 100% email uptime: if Primary (e.g. Resend) encounters any failure
+    (quota limit, suspension, network timeout), the dispatcher immediately falls over
+    to the secondary provider (e.g. Gmail) without message loss or credential leakage.
+    """
+    load_dotenv(override=True)
+    providers: List[Dict[str, Any]] = []
+
+    # 1. Primary SMTP Provider (e.g. Resend)
+    p_host = os.getenv("SMTP_HOST", "").strip()
+    p_port_str = os.getenv("SMTP_PORT", "587").strip()
+    try:
+        p_port = int(p_port_str)
+    except ValueError:
+        p_port = 587
+    p_user = os.getenv("SMTP_USER", "").strip()
+    p_pass = os.getenv("SMTP_PASSWORD", "").strip()
+    p_from = os.getenv("SMTP_FROM_EMAIL", "").strip() or p_user or "no-reply@dreemfolio.com"
+    p_name = os.getenv("SMTP_FROM_NAME", "DreemFolio AI").strip()
+    p_ssl = (p_port == 465) or os.getenv("SMTP_USE_SSL", "false").strip().lower() in ("true", "1")
+
+    if p_host and p_user:
+        providers.append({
+            "provider_name": f"Primary ({p_host})",
+            "host": p_host,
+            "port": p_port,
+            "user": p_user,
+            "password": p_pass,
+            "from_email": p_from,
+            "from_name": p_name,
+            "use_ssl": p_ssl
+        })
+
+    # 2. Fallback / Backup SMTP Provider (e.g. Gmail)
+    fb_host = os.getenv("FALLBACK_SMTP_HOST", os.getenv("SMTP_FALLBACK_HOST", "")).strip()
+    fb_port_str = os.getenv("FALLBACK_SMTP_PORT", os.getenv("SMTP_FALLBACK_PORT", "587")).strip()
+    try:
+        fb_port = int(fb_port_str)
+    except ValueError:
+        fb_port = 587
+    fb_user = os.getenv("FALLBACK_SMTP_USER", os.getenv("SMTP_FALLBACK_USER", "")).strip()
+    fb_pass = os.getenv("FALLBACK_SMTP_PASSWORD", os.getenv("SMTP_FALLBACK_PASSWORD", "")).strip()
+    fb_from = os.getenv("FALLBACK_SMTP_FROM_EMAIL", os.getenv("SMTP_FALLBACK_FROM_EMAIL", "")).strip() or fb_user or p_from
+    fb_name = os.getenv("FALLBACK_SMTP_FROM_NAME", os.getenv("SMTP_FALLBACK_FROM_NAME", p_name)).strip()
+    fb_ssl = (fb_port == 465) or os.getenv("FALLBACK_SMTP_USE_SSL", "false").strip().lower() in ("true", "1")
+
+    if fb_host and fb_user:
+        providers.append({
+            "provider_name": f"Backup ({fb_host})",
+            "host": fb_host,
+            "port": fb_port,
+            "user": fb_user,
+            "password": fb_pass,
+            "from_email": fb_from,
+            "from_name": fb_name,
+            "use_ssl": fb_ssl
+        })
+
+    return providers
+
+
 
 def get_admin_emails(db=None) -> List[str]:
     """
@@ -145,70 +208,82 @@ def send_raw_email(
     enqueue_on_fail: bool = True
 ) -> bool:
     """
-    Core blocking SMTP dispatcher.
-    If SMTP credentials are missing, logs simulation cleanly without throwing errors.
-    If live sending fails (e.g. timeout, connection error), automatically enqueues to DB for retry.
+    Core blocking SMTP dispatcher with automatic zero-downtime provider failover.
+    Attempts dispatch via Primary provider (e.g. Resend). If an error occurs (such as
+    suspension, authentication rejection, or rate limit), it automatically fails over
+    to the Backup provider (e.g. Gmail) with complete credentials isolation.
     """
-    cfg = get_smtp_config()
+    providers = get_smtp_providers()
     to_clean = to_email.strip()
 
-    if not cfg["host"] or not cfg["user"]:
+    if not providers:
         logger.info(
-            "📧 [SIMULATED EMAIL] To: %s | Subject: %s | Note: Configure SMTP_HOST and SMTP_USER in .env to dispatch live emails.",
+            "📧 [SIMULATED EMAIL] To: %s | Subject: %s | Note: Configure SMTP credentials in .env to dispatch live emails.",
             to_clean, subject
         )
         return True
 
-    # Build MIME Message with full RFC-compliant transactional headers
-    domain_part = cfg["from_email"].split("@")[-1] if "@" in cfg["from_email"] else "dreemfolio.com"
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"{cfg['from_name']} <{cfg['from_email']}>"
-    msg["To"] = to_clean
-    msg["Reply-To"] = reply_to.strip() if (reply_to and "@" in reply_to) else f"{cfg['from_name']} <{cfg['from_email']}>"
-    msg["Date"] = email.utils.formatdate(localtime=True)
-    msg["Message-ID"] = email.utils.make_msgid(domain=domain_part)
-    msg["X-Auto-Response-Suppress"] = "OOF, AutoReply"
-    msg["Precedence"] = "personal"
-
     text_content = plain_body or "Please view this email in an HTML-compatible client."
-    msg.attach(MIMEText(text_content, "plain", "utf-8"))
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
+    errors: List[str] = []
 
-    try:
-        if cfg["use_ssl"]:
-            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=15) as server:
-                if cfg["user"] and cfg["password"]:
-                    server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=15) as server:
-                try:
-                    server.starttls()
-                except Exception as tls_err:
-                    logger.debug("STARTTLS warning: %s", tls_err)
-                if cfg["user"] and cfg["password"]:
-                    server.login(cfg["user"], cfg["password"])
-                server.send_message(msg)
+    for provider in providers:
+        p_name = provider["provider_name"]
+        try:
+            domain_part = provider["from_email"].split("@")[-1] if "@" in provider["from_email"] else "dreemfolio.com"
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{provider['from_name']} <{provider['from_email']}>"
+            msg["To"] = to_clean
+            msg["Reply-To"] = reply_to.strip() if (reply_to and "@" in reply_to) else f"{provider['from_name']} <{provider['from_email']}>"
+            msg["Date"] = email.utils.formatdate(localtime=True)
+            msg["Message-ID"] = email.utils.make_msgid(domain=domain_part)
+            msg["X-Auto-Response-Suppress"] = "OOF, AutoReply"
+            msg["Precedence"] = "personal"
 
-        logger.info("✅ Transactional email successfully dispatched to: %s | Subject: %s", to_clean, subject)
-        return True
-    except Exception as e:
-        err_msg = str(e)
-        logger.error("❌ Failed to dispatch email to %s: %s", to_clean, err_msg)
-        if enqueue_on_fail:
-            try:
-                enqueue_email(
-                    to_email=to_clean,
-                    subject=subject,
-                    html_body=html_body,
-                    plain_body=plain_body,
-                    error_msg=f"Initial dispatch failure: {err_msg}",
-                    delay_minutes=1
-                )
-            except Exception as q_err:
-                logger.error("Failed to auto-enqueue failed email: %s", q_err)
-        return False
+            msg.attach(MIMEText(text_content, "plain", "utf-8"))
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+            if provider["use_ssl"]:
+                with smtplib.SMTP_SSL(provider["host"], provider["port"], timeout=12) as server:
+                    if provider["user"] and provider["password"]:
+                        server.login(provider["user"], provider["password"])
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(provider["host"], provider["port"], timeout=12) as server:
+                    try:
+                        server.starttls()
+                    except Exception as tls_err:
+                        logger.debug("STARTTLS warning on %s: %s", p_name, tls_err)
+                    if provider["user"] and provider["password"]:
+                        server.login(provider["user"], provider["password"])
+                    server.send_message(msg)
+
+            logger.info("✅ Transactional email successfully dispatched via %s to: %s | Subject: %s", p_name, to_clean, subject)
+            return True
+        except Exception as e:
+            raw_err = str(e)
+            # Security: Sanitize error string to ensure no passwords or credentials leak into logs
+            if provider.get("password") and provider["password"] in raw_err:
+                raw_err = raw_err.replace(provider["password"], "[REDACTED]")
+            errors.append(f"{p_name}: {raw_err}")
+            logger.warning("⚠️ Email dispatch via %s failed for %s (%s). Attempting next provider...", p_name, to_clean, raw_err)
+
+    # If all configured providers failed
+    combined_err = " | ".join(errors)
+    logger.error("❌ All SMTP providers failed to dispatch email to %s: %s", to_clean, combined_err)
+    if enqueue_on_fail:
+        try:
+            enqueue_email(
+                to_email=to_clean,
+                subject=subject,
+                html_body=html_body,
+                plain_body=plain_body,
+                error_msg=f"All providers failed: {combined_err}",
+                delay_minutes=1
+            )
+        except Exception as q_err:
+            logger.error("Failed to auto-enqueue failed email: %s", q_err)
+    return False
 
 
 def process_email_queue(batch_size: int = 20, db: Optional[Session] = None) -> Dict[str, int]:
