@@ -1397,6 +1397,7 @@ class SendCampaignRequest(BaseModel):
     message_body: Optional[str] = None
     cta_text: Optional[str] = "Check Your ATS Score Free →"
     cta_url: Optional[str] = "https://www.dreemfolio.com/ats-resume-checker"
+    max_batch_size: Optional[int] = 15  # Anti-suspension safe batch size
 
 
 class PreviewEmailRequest(BaseModel):
@@ -1552,8 +1553,8 @@ def _dispatch_campaign_worker(
                     failed_count += 1
 
                 db.commit()
-                # Friendly delay between sends
-                time.sleep(0.35)
+                # Anti-Suspension throttle: 3.5s gentle delay between sends protects Resend & Gmail sender reputation
+                time.sleep(3.5)
             except Exception as item_err:
                 logger.error("Error sending marketing campaign email to %s: %s", lead.email, item_err)
                 lead.status = "failed"
@@ -1904,6 +1905,12 @@ async def send_marketing_campaign(
     if not target_ids:
         raise HTTPException(status_code=400, detail="No matching leads found for this campaign criteria.")
 
+    # Anti-Suspension Guard: Cap the batch to a safe limit (default 15, max 50) to protect Resend/Gmail
+    safe_cap = payload.max_batch_size if (payload.max_batch_size and payload.max_batch_size > 0) else 15
+    if len(target_ids) > safe_cap:
+        logger.info(f"🛡️ [Anti-Suspension Guard] Capping batch from {len(target_ids)} to safe limit of {safe_cap} leads.")
+        target_ids = target_ids[:safe_cap]
+
     # Record campaign log
     campaign_log = MarketingCampaignLog(
         subject=payload.subject,
@@ -1937,7 +1944,7 @@ async def send_marketing_campaign(
 
     return {
         "success": True,
-        "message": f"Promotional campaign successfully launched! Sending to {len(target_ids)} leads in background.",
+        "message": f"Promotional campaign successfully launched! Sending safely to {len(target_ids)} leads in background (3.5s anti-suspension throttle).",
         "campaign_id": campaign_log.id,
         "targeted_count": len(target_ids)
     }

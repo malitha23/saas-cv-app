@@ -3053,36 +3053,44 @@
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" @click="loadMarketingCampaignsData()" :disabled="isLoadingCampaignData"
-              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5" :class="{'animate-spin': isLoadingCampaignData}"></i>
-              <span>Refresh</span>
-            </button>
-            <button type="button" @click="showCsvUploadModal = true"
-              class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-1.5 transition">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-              <span>Upload CSV File</span>
-            </button>
-            <button type="button" @click="showCsvPasteModal = true"
-              class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
-              <i data-lucide="clipboard" class="w-3.5 h-3.5 text-cyan-400"></i>
-              <span>Paste CSV Text</span>
-            </button>
-            <button type="button" @click="syncRegisteredUsersToLeads()" :disabled="isSyncingUsers"
-              class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold text-xs rounded-xl border border-purple-500/30 flex items-center gap-1.5 transition"
-              title="Automatically import all signed-up users into marketing leads without duplicates">
-              <i data-lucide="user-plus" class="w-3.5 h-3.5 text-purple-400" :class="{'animate-spin': isSyncingUsers}"></i>
-              <span x-text="isSyncingUsers ? 'Syncing...' : 'Sync Registered Users'">Sync Registered Users</span>
-            </button>
+            <!-- Primary Action: Send Promote Mail -->
             <button type="button" @click="openSendCampaignModal('never_sent')"
               class="px-4 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:brightness-110 text-white font-bold text-xs rounded-xl shadow-lg shadow-pink-600/30 flex items-center gap-1.5 transition">
               <i data-lucide="send" class="w-3.5 h-3.5"></i>
               <span>Send Promote Mail</span>
             </button>
-            <button type="button" @click="exportLeadsCsv()"
-              class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
-              <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span>Export CSV</span>
+
+            <!-- Secondary: Upload CSV -->
+            <button type="button" @click="showCsvUploadModal = true"
+              class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Import CSV</span>
+            </button>
+
+            <!-- Paste CSV (Compact) -->
+            <button type="button" @click="showCsvPasteModal = true"
+              class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 flex items-center gap-1.5 transition">
+              <i data-lucide="clipboard" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Paste Text</span>
+            </button>
+
+            <!-- Sync Users (Compact) -->
+            <button type="button" @click="syncRegisteredUsersToLeads()" :disabled="isSyncingUsers"
+              class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-purple-300 font-semibold text-xs rounded-xl border border-purple-500/30 flex items-center gap-1.5 transition"
+              title="Automatically import all signed-up users into marketing leads without duplicates">
+              <i data-lucide="user-plus" class="w-3.5 h-3.5 text-purple-400" :class="{'animate-spin': isSyncingUsers}"></i>
+              <span x-text="isSyncingUsers ? 'Syncing...' : 'Sync Users'">Sync Users</span>
+            </button>
+
+            <!-- Compact Actions: Export & Refresh -->
+            <button type="button" @click="exportLeadsCsv()" title="Export all leads to CSV"
+              class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition flex items-center justify-center">
+              <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+            </button>
+
+            <button type="button" @click="loadMarketingCampaignsData()" :disabled="isLoadingCampaignData" title="Refresh leads data"
+              class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition flex items-center justify-center">
+              <i data-lucide="refresh-cw" class="w-4 h-4" :class="{'animate-spin': isLoadingCampaignData}"></i>
             </button>
           </div>
         </div>
@@ -4612,6 +4620,7 @@
         pastedCsvTag: 'csv_import',
         campaignForm: {
           target_type: 'never_sent',
+          max_batch_size: 15,
           position_filter: '',
           test_email: '',
           subject: 'Land More Interviews with DreemFolio AI - ATS Resume & Live Portfolio',
@@ -7004,7 +7013,8 @@
                 headline: this.campaignForm.headline,
                 message_body: this.campaignForm.message_body,
                 cta_text: this.campaignForm.cta_text,
-                cta_url: this.campaignForm.cta_url
+                cta_url: this.campaignForm.cta_url,
+                max_batch_size: this.campaignForm.max_batch_size || 15
               })
             });
             const data = await res.json();
@@ -7626,6 +7636,49 @@
             <input type="email" x-model="campaignForm.test_email" placeholder="you@example.com"
               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
           </div>
+        </div>
+
+        <!-- Safe Batch Limit & Anti-Suspension Controls -->
+        <div x-show="campaignForm.target_type !== 'test'" class="rounded-xl bg-slate-950/70 border border-emerald-500/30 p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+              Safe Batch Size (Anti-Suspension Guard)
+            </label>
+            <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono"
+              x-text="(campaignForm.max_batch_size || 15) + ' leads / batch'"></span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <button type="button" @click="campaignForm.max_batch_size = 5"
+              :class="campaignForm.max_batch_size === 5 ? 'bg-emerald-600 text-white font-bold border-emerald-500 shadow-sm' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="py-2 px-3 rounded-xl border text-center transition">
+              <div class="font-bold">5 Leads</div>
+              <div class="text-[10px] opacity-75">Ultra-safe</div>
+            </button>
+            <button type="button" @click="campaignForm.max_batch_size = 10"
+              :class="campaignForm.max_batch_size === 10 ? 'bg-emerald-600 text-white font-bold border-emerald-500 shadow-sm' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="py-2 px-3 rounded-xl border text-center transition">
+              <div class="font-bold">10 Leads</div>
+              <div class="text-[10px] opacity-75">Safe rate</div>
+            </button>
+            <button type="button" @click="campaignForm.max_batch_size = 15"
+              :class="campaignForm.max_batch_size === 15 ? 'bg-emerald-600 text-white font-bold border-emerald-500 shadow-sm' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="py-2 px-3 rounded-xl border text-center transition">
+              <div class="font-bold">15 Leads ⭐</div>
+              <div class="text-[10px] opacity-75">Recommended</div>
+            </button>
+            <button type="button" @click="campaignForm.max_batch_size = 25"
+              :class="campaignForm.max_batch_size === 25 ? 'bg-emerald-600 text-white font-bold border-emerald-500 shadow-sm' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'"
+              class="py-2 px-3 rounded-xl border text-center transition">
+              <div class="font-bold">25 Leads</div>
+              <div class="text-[10px] opacity-75">Max safe</div>
+            </button>
+          </div>
+
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            🛡️ <b>Anti-Suspension Throttle:</b> Emails are automatically throttled with a gentle <b>3.5s delay</b> between sends to protect your Resend & Gmail sender reputation and prevent account suspension.
+          </p>
         </div>
 
         <!-- Preset Template Buttons -->

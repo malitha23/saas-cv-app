@@ -1070,8 +1070,8 @@ def execute_growth_bot_cycle(db: Session, force_now: bool = False, max_to_send: 
                     mlead.status = "sent"
 
                 db.commit()
-                # Friendly delay between sends to protect SMTP reputation
-                time.sleep(1.5)
+                # Anti-Suspension throttle: 3.5s gentle delay protects Resend and Gmail sender reputation
+                time.sleep(3.5)
             else:
                 failed_count += 1
                 db.add(GrowthBotLog(
