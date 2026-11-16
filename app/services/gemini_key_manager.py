@@ -23,7 +23,7 @@ class GeminiKeyEntry:
 
     def __init__(self, key: str, source: str = "env"):
         self.key: str = key.strip()
-        self.source: str = source  # "env", "saas_setting", "gcp_auto", "runtime_admin"
+        self.source: str = source  # "env", "paneladmin", "saas_setting", "gcp_auto"
         self.status: str = "active"  # "active", "cooldown", "expired"
         self.cooldown_until: float = 0.0
         self.last_used: Optional[str] = None
@@ -75,12 +75,13 @@ class GeminiKeyManager:
     
     Capabilities:
     1. Multi-key pool rotation (failover & load-distribution).
-    2. Dynamic key hot-reloading without server or container restart.
-    3. Automatic 429 quota exhaustion cooldown (auto-reactivates after cooldown).
-    4. Automatic 400/401/403 deactivation of dead/deleted keys with instant failover.
-    5. Programmatic autonomous key minting via Google Cloud API Keys API.
-    6. Zero-token fast health validation.
-    7. Automated admin alerting upon key failure.
+    2. Dynamic key hot-reloading with instant database persistence (SaasSetting & .env).
+    3. Multi-worker synchronization across process reloads & server restarts.
+    4. Automatic 429 quota exhaustion cooldown (auto-reactivates after cooldown).
+    5. Automatic 400/401/403 deactivation of dead/deleted keys with instant failover.
+    6. Programmatic autonomous key minting via Google Cloud API Keys API.
+    7. Zero-token fast health validation.
+    8. Automated admin alerting upon key failure.
     """
 
     def __init__(self):
@@ -95,8 +96,8 @@ class GeminiKeyManager:
     # ──────────────────────────────────────────────────────────────────────────
     # KEY LOADING & POOL INITIALIZATION
     # ──────────────────────────────────────────────────────────────────────────
-    def load_keys(self) -> None:
-        """Loads API keys from .env, environment variables, and SaasSettings."""
+    def load_keys(self, db: Optional[Any] = None) -> None:
+        """Loads API keys from database (SaasSetting), .env, and environment variables."""
         with self._lock:
             load_dotenv(self._env_path, override=True)
 
@@ -126,8 +127,8 @@ class GeminiKeyManager:
                 if k_str not in self._keys:
                     self._keys[k_str] = GeminiKeyEntry(key=k_str, source=src)
 
-            # 4. Attempt to load from SaasSetting in Database if engine exists
-            self._load_from_saas_settings()
+            # 4. Load from SaasSetting in Database (Primary persistence across reloads)
+            self._load_from_saas_settings(db=db)
 
             self._last_loaded = time.time()
             usable_count = sum(1 for e in self._keys.values() if e.is_usable)
@@ -135,32 +136,60 @@ class GeminiKeyManager:
                 f"[Gemini Key Manager] Initialized {len(self._keys)} total key(s) ({usable_count} usable)."
             )
 
-    def _load_from_saas_settings(self) -> None:
+    def _load_from_saas_settings(self, db: Optional[Any] = None) -> None:
         """Loads supplementary keys persisted in the database saas_settings table."""
+        close_session = False
+        active_db = db
+
+        if active_db is None:
+            try:
+                from app.database import SessionLocal
+                active_db = SessionLocal()
+                close_session = True
+            except Exception as dbe:
+                logger.debug(f"[Gemini Key Manager] SaasSetting DB connection skipped: {dbe}")
+                return
+
         try:
-            from app.database import engine
-            from sqlalchemy.orm import Session
             from sqlalchemy import select
             from app.models import SaasSetting
 
-            if not engine:
-                return
-
-            with Session(engine) as db:
-                stmt = select(SaasSetting).where(SaasSetting.key == "gemini_api_key_pool")
-                row = db.scalars(stmt).first()
-                if row and row.value:
-                    try:
-                        stored_list = json.loads(row.value)
-                        if isinstance(stored_list, list):
-                            for item in stored_list:
+            stmt = select(SaasSetting).where(SaasSetting.key == "gemini_api_key_pool")
+            row = active_db.scalars(stmt).first()
+            if row and row.value:
+                try:
+                    stored_list = json.loads(row.value)
+                    if isinstance(stored_list, list):
+                        for item in stored_list:
+                            if isinstance(item, dict):
+                                k = str(item.get("key", "")).strip()
+                                st = item.get("status", "active")
+                                src = item.get("source", "paneladmin")
+                            else:
                                 k = str(item).strip()
-                                if k and len(k) >= 20 and k not in self._keys:
-                                    self._keys[k] = GeminiKeyEntry(key=k, source="saas_setting")
-                    except Exception:
-                        pass
+                                st = "active"
+                                src = "paneladmin"
+
+                            if k and len(k) >= 20:
+                                if k not in self._keys:
+                                    self._keys[k] = GeminiKeyEntry(key=k, source=src)
+                                    self._keys[k].status = st
+                                    if isinstance(item, dict):
+                                        self._keys[k].success_count = item.get("success_count", 0)
+                                        self._keys[k].failure_count = item.get("failure_count", 0)
+                                        self._keys[k].last_used = item.get("last_used")
+                                        self._keys[k].last_verified = item.get("last_verified")
+                                        self._keys[k].last_error = item.get("last_error")
+                except Exception as je:
+                    logger.debug(f"[Gemini Key Manager] JSON parse error in saas_settings: {je}")
         except Exception as e:
             logger.debug(f"[Gemini Key Manager] SaasSetting load skipped: {e}")
+        finally:
+            if close_session and active_db:
+                try:
+                    active_db.close()
+                except Exception:
+                    pass
 
     # ──────────────────────────────────────────────────────────────────────────
     # KEY SELECTION & FAILOVER ROTATION
@@ -292,6 +321,9 @@ class GeminiKeyManager:
                     f"⚠️ [Gemini Key Manager] Key {entry.masked_key} hit 429 quota. Placed in cooldown for {QUOTA_COOLDOWN_SECONDS}s."
                 )
 
+            # Persist status update to DB
+            self._persist_keys_to_db()
+
             usable_remaining = sum(1 for e in self._keys.values() if e.is_usable)
 
             # If all keys are down, attempt autonomous GCP key generation if available
@@ -415,6 +447,9 @@ class GeminiKeyManager:
                     "status_code": test_res.get("status_code", 0),
                 })
 
+            # Persist tested status to DB
+            self._persist_keys_to_db()
+
         return {
             "tested_count": len(results),
             "summary": self.get_pool_status(),
@@ -430,10 +465,11 @@ class GeminiKeyManager:
         test_first: bool = True,
         persist_env: bool = True,
         persist_db: bool = True,
+        db: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Dynamically registers a new Gemini API key into the running system.
-        No server restart required.
+        Persists to SaasSetting and .env immediately. No server restart required.
         """
         clean_k = new_key.strip()
         if not clean_k or len(clean_k) < 20:
@@ -454,7 +490,7 @@ class GeminiKeyManager:
         with self._lock:
             entry = self._keys.get(clean_k)
             if not entry:
-                entry = GeminiKeyEntry(key=clean_k, source="runtime_admin")
+                entry = GeminiKeyEntry(key=clean_k, source="paneladmin")
                 self._keys[clean_k] = entry
             entry.status = initial_status
             entry.cooldown_until = (
@@ -466,23 +502,23 @@ class GeminiKeyManager:
             if os.getenv("GEMINI_API_KEY") != clean_k and initial_status == "active":
                 os.environ["GEMINI_API_KEY"] = clean_k
 
+            if persist_db:
+                self._persist_keys_to_db(db=db)
+
             if persist_env:
                 self._persist_keys_to_env()
 
-            if persist_db:
-                self._persist_keys_to_db()
-
         return {
             "success": True,
-            "message": f"Key {entry.masked_key} successfully added and activated in the pool!",
+            "message": f"Key {entry.masked_key} successfully added, validated, and permanently saved!",
             "key_preview": entry.masked_key,
             "status": entry.status,
             "verification": verification,
-            "pool_status": self.get_pool_status(),
+            "pool_status": self.get_pool_status(db=db),
         }
 
-    def remove_key(self, key_str: str, persist: bool = True) -> Dict[str, Any]:
-        """Removes a key from the rotation pool."""
+    def remove_key(self, key_str: str, persist: bool = True, db: Optional[Any] = None) -> Dict[str, Any]:
+        """Removes a key from the rotation pool and updates DB + .env."""
         clean_k = key_str.strip()
         with self._lock:
             # Match by full key or prefix
@@ -498,13 +534,13 @@ class GeminiKeyManager:
             del self._keys[target]
 
             if persist:
+                self._persist_keys_to_db(db=db)
                 self._persist_keys_to_env()
-                self._persist_keys_to_db()
 
         return {
             "success": True,
-            "message": "Key successfully removed from pool.",
-            "pool_status": self.get_pool_status(),
+            "message": "Key successfully removed from pool and database.",
+            "pool_status": self.get_pool_status(db=db),
         }
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -514,15 +550,11 @@ class GeminiKeyManager:
         self,
         project_id: Optional[str] = None,
         service_account_json: Optional[str] = None,
+        db: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Programmatically generates a new Google Cloud API Key using GCP Service Account.
         Uses Google Cloud API Keys API (apikeys.googleapis.com).
-        
-        Requirements for auto-generation:
-        - GCP_SERVICE_ACCOUNT_JSON (env variable or file path) OR service_account_json parameter.
-        - GCP_PROJECT_ID (env variable or parameter).
-        - Service Account must have `roles/serviceusage.apiKeysAdmin` on the GCP project.
         """
         proj_id = project_id or os.getenv("GCP_PROJECT_ID", "").strip()
         sa_creds_raw = service_account_json or os.getenv("GCP_SERVICE_ACCOUNT_JSON", "").strip()
@@ -591,13 +623,11 @@ class GeminiKeyManager:
             operation_data = resp.json()
             key_string = None
 
-            # Check if keyString is returned directly or if an LRO operation is returned
             if "response" in operation_data and "keyString" in operation_data["response"]:
                 key_string = operation_data["response"]["keyString"]
             elif "keyString" in operation_data:
                 key_string = operation_data["keyString"]
             elif "name" in operation_data and "operations/" in operation_data["name"]:
-                # Poll operation until done (max 10 seconds)
                 op_name = operation_data["name"]
                 op_url = f"https://apikeys.googleapis.com/v2/{op_name}"
                 for _ in range(5):
@@ -617,7 +647,7 @@ class GeminiKeyManager:
 
             # Add newly minted key to the active rotation pool
             add_res = self.add_key(
-                key_string, test_first=True, persist_env=True, persist_db=True
+                key_string, test_first=True, persist_env=True, persist_db=True, db=db
             )
             logger.info(
                 f"🎉 [GCP Key Auto-Gen] Programmatically minted new Gemini key {key_string[:8]}... via Google Cloud API!"
@@ -628,7 +658,7 @@ class GeminiKeyManager:
                 "message": f"Successfully minted fresh Gemini key via Google Cloud API!",
                 "key": key_string,
                 "key_preview": f"{key_string[:8]}...{key_string[-4:]}",
-                "pool_status": self.get_pool_status(),
+                "pool_status": self.get_pool_status(db=db),
             }
 
         except Exception as exc:
@@ -659,10 +689,10 @@ class GeminiKeyManager:
             with open(self._env_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Replace or append GEMINI_API_KEY
-            if re.search(r"^\s*GEMINI_API_KEY\s*=.*$", content, flags=re.MULTILINE):
+            # Replace or append GEMINI_API_KEY (matching uncommented lines)
+            if re.search(r"^[ \t]*GEMINI_API_KEY\s*=.*$", content, flags=re.MULTILINE):
                 content = re.sub(
-                    r"^\s*GEMINI_API_KEY\s*=.*$",
+                    r"^[ \t]*GEMINI_API_KEY\s*=.*$",
                     f"GEMINI_API_KEY={primary_key}",
                     content,
                     flags=re.MULTILINE,
@@ -670,10 +700,10 @@ class GeminiKeyManager:
             else:
                 content += f"\nGEMINI_API_KEY={primary_key}\n"
 
-            # Replace or append GEMINI_API_KEYS
-            if re.search(r"^\s*GEMINI_API_KEYS\s*=.*$", content, flags=re.MULTILINE):
+            # Replace or append GEMINI_API_KEYS (matching uncommented lines)
+            if re.search(r"^[ \t]*GEMINI_API_KEYS\s*=.*$", content, flags=re.MULTILINE):
                 content = re.sub(
-                    r"^\s*GEMINI_API_KEYS\s*=.*$",
+                    r"^[ \t]*GEMINI_API_KEYS\s*=.*$",
                     f"GEMINI_API_KEYS={joined_keys}",
                     content,
                     flags=re.MULTILINE,
@@ -690,45 +720,77 @@ class GeminiKeyManager:
         except Exception as e:
             logger.error(f"[Gemini Key Manager] Failed to write keys to .env: {e}")
 
-    def _persist_keys_to_db(self) -> None:
+    def _persist_keys_to_db(self, db: Optional[Any] = None) -> None:
         """Persists the key pool to saas_settings table for database-backed environments."""
+        close_session = False
+        active_db = db
+
+        if active_db is None:
+            try:
+                from app.database import SessionLocal
+                active_db = SessionLocal()
+                close_session = True
+            except Exception as dbe:
+                logger.error(f"[Gemini Key Manager] Could not connect to DB to save keys: {dbe}")
+                return
+
         try:
-            from app.database import engine
-            from sqlalchemy.orm import Session
             from sqlalchemy import select
             from app.models import SaasSetting
 
-            if not engine:
-                return
-
             all_keys = [k for k in self._keys.keys() if len(k) >= 20]
-            json_val = json.dumps(all_keys)
+            save_payload = []
+            for k in all_keys:
+                entry = self._keys[k]
+                save_payload.append({
+                    "key": entry.key,
+                    "status": entry.status,
+                    "source": entry.source or "paneladmin",
+                    "success_count": entry.success_count,
+                    "failure_count": entry.failure_count,
+                    "last_used": entry.last_used,
+                    "last_verified": entry.last_verified,
+                    "last_error": entry.last_error,
+                })
+            json_val = json.dumps(save_payload)
 
-            with Session(engine) as db:
-                stmt = select(SaasSetting).where(SaasSetting.key == "gemini_api_key_pool")
-                row = db.scalars(stmt).first()
-                if row:
-                    row.value = json_val
-                    row.updated_at = datetime.utcnow()
-                else:
-                    db.add(
-                        SaasSetting(
-                            key="gemini_api_key_pool",
-                            value=json_val,
-                            description="Active Gemini API Key pool list for failover and load distribution",
-                        )
-                    )
-                db.commit()
-                logger.info("[Gemini Key Manager] Successfully synchronized key pool to SaasSetting.")
+            stmt = select(SaasSetting).where(SaasSetting.key == "gemini_api_key_pool")
+            row = active_db.scalars(stmt).first()
+            if row:
+                row.value = json_val
+                row.updated_at = datetime.utcnow()
+            else:
+                row = SaasSetting(
+                    key="gemini_api_key_pool",
+                    value=json_val,
+                    description="Active Gemini API Key pool list for failover and load distribution",
+                )
+                active_db.add(row)
+
+            active_db.commit()
+            logger.info(f"✅ [Gemini Key Manager] Successfully saved {len(all_keys)} keys to SaasSetting database!")
         except Exception as e:
-            logger.debug(f"[Gemini Key Manager] SaasSetting persist skipped: {e}")
+            logger.error(f"❌ [Gemini Key Manager] SaasSetting persist failed: {e}")
+            try:
+                active_db.rollback()
+            except Exception:
+                pass
+        finally:
+            if close_session and active_db:
+                try:
+                    active_db.close()
+                except Exception:
+                    pass
 
     # ──────────────────────────────────────────────────────────────────────────
     # STATUS & TELEMETRY REPORTING
     # ──────────────────────────────────────────────────────────────────────────
-    def get_pool_status(self) -> Dict[str, Any]:
-        """Provides complete health metrics for the admin interface."""
+    def get_pool_status(self, db: Optional[Any] = None) -> Dict[str, Any]:
+        """Provides complete health metrics for the admin interface, re-syncing with DB."""
         with self._lock:
+            # Re-sync with database first so worker processes never fall out of sync
+            self._load_from_saas_settings(db=db)
+
             entries = list(self._keys.values())
             active_count = sum(1 for e in entries if e.status == "active")
             cooldown_count = sum(1 for e in entries if e.status == "cooldown")

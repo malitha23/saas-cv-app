@@ -213,7 +213,7 @@
                 x-text="onboardingCandidatesList.length"></span>
         </button>
 
-        <button @click="activeTab = 'ai_metrics'; loadAiMetrics()"
+        <button @click="activeTab = 'ai_metrics'; loadAiMetrics(); loadGeminiKeyPool()"
           :class="activeTab === 'ai_metrics' ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'"
           class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative">
           <i data-lucide="cpu" class="w-4 h-4 text-violet-400"></i>
@@ -4859,7 +4859,8 @@
               this.loadMarketingCampaignsData(),
               this.loadGrowthBotStatus(),
               this.loadOnboardingCandidates(),
-              this.loadAiMetrics()
+              this.loadAiMetrics(),
+              this.loadGeminiKeyPool()
             ]);
           } catch (e) {
             this.accessDenied = true;
@@ -7246,6 +7247,7 @@
               this.newGeminiKeyInput = '';
               this.geminiKeyPool = data.pool_status;
               this.keyPoolFeedback = `🎉 ${data.message}`;
+              await this.loadGeminiKeyPool();
             } else {
               this.keyPoolFeedback = `❌ Failed to activate key: ${data.detail || data.message || 'Key rejected by Google AI'}`;
             }
@@ -7274,6 +7276,7 @@
             if (res.ok) {
               this.geminiKeyPool = data.pool_status;
               this.keyPoolFeedback = `🗑️ Key ${preview} removed from pool.`;
+              await this.loadGeminiKeyPool();
             } else {
               this.keyPoolFeedback = `❌ Remove failed: ${data.detail}`;
             }
